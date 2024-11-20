@@ -1,10 +1,11 @@
+import { Navbar } from "@/components/layout/navbar";
+import { ThemeProvider } from "@/components/layout/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import { cn } from "@/lib/utils";
+import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
-import { Navbar } from "@/components/layout/navbar";
-import { ThemeProvider } from "@/components/layout/theme-provider";
-import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -55,6 +56,7 @@ export default function RootLayout({
 
           {children}
         </ThemeProvider>
+        <Toaster />
         <Analytics />
       </body>
     </html>
