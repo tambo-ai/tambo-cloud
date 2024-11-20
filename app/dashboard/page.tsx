@@ -1,24 +1,42 @@
 "use client";
 
+import { AuthForm } from "@/components/auth/auth-form";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { createProject, getUserProjects } from "../services/hydra.service";
+import { getSupabaseClient } from "../utils/supabase";
 import { CreateProjectDialog } from "./components/CreateProjectDialog";
 import { ProjectCard } from "./components/ProjectCard";
 import { ProjectResponseDto } from "./types/types";
-
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadProjects();
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    try {
+      const supabase = getSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      if (session) {
+        loadProjects();
+      }
+    } catch (error) {
+      console.error("Error checking auth status:", error);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadProjects = async () => {
     try {
@@ -30,8 +48,6 @@ export default function DashboardPage() {
         description: "Failed to load projects",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -53,6 +69,26 @@ export default function DashboardPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="container py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="h-48 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="container max-w-md py-8">
+        <AuthForm />
+      </div>
+    );
+  }
+
   return (
     <div className="container py-8">
       <div className="flex justify-between items-center mb-8">
@@ -62,22 +98,14 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="h-48 animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project: ProjectResponseDto) => (
-            <ProjectCard 
-              key={project.id} 
-              project={project}
-            />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {projects.map((project: ProjectResponseDto) => (
+          <ProjectCard 
+            key={project.id} 
+            project={project}
+          />
+        ))}
+      </div>
 
       <CreateProjectDialog
         open={isCreateDialogOpen}
