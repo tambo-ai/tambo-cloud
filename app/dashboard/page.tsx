@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
-import { hydraService } from "../services/hydra.service";
+import { createProject, getUserProjects } from "../services/hydra.service";
 import { CreateProjectDialog } from "./components/CreateProjectDialog";
 import { ProjectCard } from "./components/ProjectCard";
 import { ProjectResponseDto } from "./types/types";
@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
   const loadProjects = async () => {
     try {
-      const projectsData = await hydraService.getUserProjects();
+      const projectsData = await getUserProjects();
       setProjects(projectsData);
     } catch (error) {
       toast({
@@ -37,7 +37,7 @@ export default function DashboardPage() {
 
   const handleCreateProject = async (projectName: string) => {
     try {
-      await hydraService.createProject(projectName);
+      await createProject(projectName);
       await loadProjects();
       setIsCreateDialogOpen(false);
       toast({
