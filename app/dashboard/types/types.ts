@@ -1,7 +1,9 @@
 // Project Types
 export interface ProjectResponseDto {
     id: string;
-    name: string;
+    name: {
+        projectName: string;
+    }
     userId: string;
 }
 

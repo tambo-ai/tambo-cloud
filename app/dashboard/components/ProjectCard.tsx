@@ -9,7 +9,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{project.name}</CardTitle>
+        <CardTitle>{project.name.projectName}</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground">Project ID: {project.id}</p>
