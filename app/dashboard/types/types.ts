@@ -12,6 +12,14 @@ export interface ProjectDto {
     userId: string;
 }
 
+export interface Project {
+    id: string;
+    name: string;
+    userId: string;
+    apiKeys: APIKeyResponseDto[];
+    providerKeys: ProviderKeyResponseDto[];
+}
+
 // API Key Types
 export interface APIKeyResponseDto {
     id: string;
@@ -22,34 +30,16 @@ export interface APIKeyResponseDto {
     createdByUserId: string;
 }
 
-// API Response Types
-export interface ApiResponse<T> {
-    data: T;
-    message?: string;
-    status: number;
+export interface ProviderKeyResponseDto {
+    id: string;
+    providerName: string;
+    providerKeyEncrypted: string;
 }
 
-// Error Types
-export interface ApiError {
-    message: string;
-    status: number;
-    errors?: Record<string, string[]>;
-}
-
-// Request Types
 export interface CreateProjectRequest {
     name: string;
 }
 
 export interface CreateApiKeyRequest {
     name: string;
-}
-
-// Pagination Types (if needed)
-export interface PaginatedResponse<T> {
-    items: T[];
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
 }
