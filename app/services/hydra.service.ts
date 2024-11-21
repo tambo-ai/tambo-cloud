@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getSupabaseClient } from '../utils/supabase';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.usehydra.ai';
+const API_BASE_URL = process.env.NEXT_PUBLIC_HYDRA_API_URL || 'https://api.usehydra.ai';
 
 
 const getHeaders = async () => {
@@ -80,6 +80,14 @@ export const addProviderKey = async (projectId: string, providerName: string, pr
 export const removeProviderKey = async (projectId: string, providerKeyId: string) => {
     const response = await axios.delete(
         `${API_BASE_URL}/projects/${projectId}/provider-key/${providerKeyId}`,
+        { headers: await getHeaders() }
+    );
+    return response.data;
+};
+
+export const getProviderKeys = async (projectId: string) => {
+    const response = await axios.get(
+        `${API_BASE_URL}/projects/${projectId}/provider-keys`,
         { headers: await getHeaders() }
     );
     return response.data;

@@ -34,6 +34,7 @@ export interface ProviderKeyResponseDto {
     id: string;
     providerName: string;
     providerKeyEncrypted: string;
+    partiallyHiddenKey: string;
 }
 
 export interface CreateProjectRequest {

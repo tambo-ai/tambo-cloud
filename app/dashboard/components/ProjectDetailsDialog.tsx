@@ -13,8 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { generateApiKey, getApiKeys, removeApiKey, removeProject } from "../../services/hydra.service";
-import { APIKeyResponseDto, ProjectResponseDto } from "../types/types";
+import { addProviderKey, generateApiKey, getApiKeys, getProviderKeys, removeApiKey, removeProject } from "../../services/hydra.service";
+import { APIKeyResponseDto, ProjectResponseDto, ProviderKeyResponseDto } from "../types/types";
 
 interface ProjectDetailsDialogProps {
   project: ProjectResponseDto;
@@ -50,10 +50,14 @@ export function ProjectDetailsDialog({
     action: async () => {},
   });
   const { toast } = useToast();
+  const [isEditingProviderKey, setIsEditingProviderKey] = useState(false);
+  const [providerKey, setProviderKey] = useState('');
+  const [providerKeys, setProviderKeys] = useState<ProviderKeyResponseDto[]>([]);
 
   useEffect(() => {
     if (open) {
       loadApiKeys();
+      loadProviderKeys();
     }
   }, [open, project.id]);
 
@@ -66,6 +70,22 @@ export function ProjectDetailsDialog({
       toast({
         title: "Error",
         description: "Failed to load API keys",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadProviderKeys = async () => {
+    try {
+      setIsLoading(true);
+      const keys = await getProviderKeys(project.id);
+      setProviderKeys(keys);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load provider keys",
         variant: "destructive",
       });
     } finally {
@@ -152,6 +172,24 @@ export function ProjectDetailsDialog({
     }
   };
 
+  const handleUpdateProviderKey = async () => {
+    try {
+      await addProviderKey(project.id, "openai", providerKey);
+      await loadProviderKeys();
+      setIsEditingProviderKey(false);
+      toast({
+        title: "Success",
+        description: "Provider key updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update provider key",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px]">
@@ -179,6 +217,59 @@ export function ProjectDetailsDialog({
               <p className="text-sm text-muted-foreground">{project.id}</p>
             </div>
             
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-sm font-semibold">OpenAI API Key</h4>
+                {isEditingProviderKey ? (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleUpdateProviderKey}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditingProviderKey(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditingProviderKey(true)}
+                  >
+                    Edit
+                  </Button>
+                )}
+              </div>
+              {isEditingProviderKey ? (
+                <input
+                  type="text"
+                  value={providerKey}
+                  onChange={(e) => setProviderKey(e.target.value)}
+                  className="w-full px-2 py-1 text-sm border rounded"
+                  placeholder="Enter OpenAI API Key"
+                  autoFocus
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {isLoading ? 'Loading...' : (
+                    providerKeys.length > 0 
+                      ? (providerKeys[providerKeys.length - 1].partiallyHiddenKey 
+                        ? providerKeys[providerKeys.length - 1].partiallyHiddenKey.slice(0, 15) 
+                        : `${providerKeys[providerKeys.length - 1].providerKeyEncrypted.slice(0, 15)}...`)
+                      : 'No provider key set'
+                  )}
+                </p>
+              )}
+            </div>
+
             <div>
               <div className="flex justify-between items-center mb-2">
                 <h4 className="text-sm font-semibold">API Keys</h4>
