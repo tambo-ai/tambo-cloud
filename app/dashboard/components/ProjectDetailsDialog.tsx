@@ -1,8 +1,19 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { generateApiKey, getApiKeys } from "../../services/hydra.service";
+import { generateApiKey, getApiKeys, removeApiKey } from "../../services/hydra.service";
 import { APIKeyResponseDto, ProjectResponseDto } from "../types/types";
 
 interface ProjectDetailsDialogProps {
@@ -22,6 +33,7 @@ export function ProjectDetailsDialog({
   const [newKeyName, setNewKeyName] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
   const [newGeneratedKey, setNewGeneratedKey] = useState<string | null>(null);
+  const [keyToDelete, setKeyToDelete] = useState<APIKeyResponseDto | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -75,6 +87,27 @@ export function ProjectDetailsDialog({
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleDeleteApiKey = async () => {
+    if (!keyToDelete) return;
+    
+    try {
+      await removeApiKey(project.id, keyToDelete.id);
+      await loadApiKeys();
+      toast({
+        title: "Success",
+        description: "API key deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete API key",
+        variant: "destructive",
+      });
+    } finally {
+      setKeyToDelete(null);
     }
   };
 
@@ -176,11 +209,27 @@ export function ProjectDetailsDialog({
                       {apiKeys.map((key) => (
                         <div
                           key={key.id}
-                          className="p-3 rounded-lg bg-muted/60 space-y-1 max-w-full "
+                          className="p-3 rounded-lg bg-muted/60 space-y-1 max-w-full"
                         >
-                          <p className="text-sm font-medium">{key.name}</p>
-                          <p className="text-sm text-muted-foreground">{key.lastUsed ? `Last used: ${key.lastUsed.toLocaleString()}` : 'Never used'}</p>
-                          <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis">{key.partiallyHiddenKey.slice(0, 15)}</p>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm font-medium">{key.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {key.lastUsed ? `Last used: ${key.lastUsed.toLocaleString()}` : 'Never used'}
+                              </p>
+                              <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis">
+                                {key.partiallyHiddenKey.slice(0, 15)}
+                              </p>
+                            </div>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => setKeyToDelete(key)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -193,6 +242,25 @@ export function ProjectDetailsDialog({
           </div>
         </div>
 
+        <AlertDialog open={!!keyToDelete} onOpenChange={(open) => !open && setKeyToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete API Key</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this API key? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/90"
+                onClick={handleDeleteApiKey}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );
