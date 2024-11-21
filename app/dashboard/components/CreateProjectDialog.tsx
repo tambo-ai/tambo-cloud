@@ -1,27 +1,38 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (projectName: string) => void;
+  onSubmit: (projectName: string, providerKey: string) => Promise<void>;
 }
+
+const formSchema = z.object({
+  projectName: z.string().min(1, "Project name is required"),
+  providerKey: z.string().min(1, "API key is required"),
+});
 
 export function CreateProjectDialog({
   open,
   onOpenChange,
   onSubmit,
 }: CreateProjectDialogProps) {
-  const [projectName, setProjectName] = useState("");
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      projectName: "",
+      providerKey: "",
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!projectName.trim()) return;
-    onSubmit(projectName.trim());
-    setProjectName("");
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    onSubmit(values.projectName.trim(), values.providerKey.trim());
+    form.reset();
   };
 
   return (
@@ -30,22 +41,45 @@ export function CreateProjectDialog({
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="py-4">
-            <Input
-              placeholder="Project name"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              autoFocus
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="projectName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Project name" autoFocus />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">Create</Button>
-          </DialogFooter>
-        </form>
+            <FormField
+              control={form.control}
+              name="providerKey"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your OpenAI API Key</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Provider API Key" />
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-sm text-muted-foreground">
+                    Hydra will use your API key to make AI calls on your behalf until we implement our payment system.
+                  </p>
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Create</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

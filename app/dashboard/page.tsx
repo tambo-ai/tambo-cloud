@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
-import { createProject, getUserProjects } from "../services/hydra.service";
+import { addProviderKey, createProject, getUserProjects } from "../services/hydra.service";
 import { getSupabaseClient } from "../utils/supabase";
 import { CreateProjectDialog } from "./components/CreateProjectDialog";
 import { ProjectCard } from "./components/ProjectCard";
@@ -53,9 +53,10 @@ export default function DashboardPage() {
     }
   };
 
-  const handleCreateProject = async (projectName: string) => {
+  const handleCreateProject = async (projectName: string, providerKey: string) => {
     try {
-      await createProject(projectName);
+      const project = await createProject(projectName);
+      await addProviderKey(project.id, "openai", providerKey);
       await loadProjects();
       setIsCreateDialogOpen(false);
       toast({

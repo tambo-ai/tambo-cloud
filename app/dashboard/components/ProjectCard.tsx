@@ -16,7 +16,7 @@ export function ProjectCard({ project, onProjectDeleted }: ProjectCardProps) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>{project.name.projectName}</CardTitle>
+          <CardTitle>{typeof project.name === 'string' ? project.name : project.name.projectName}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">Project ID: {project.id}</p>

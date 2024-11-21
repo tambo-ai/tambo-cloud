@@ -157,7 +157,7 @@ export function ProjectDetailsDialog({
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
-            {project.name.projectName}
+            {typeof project.name === 'string' ? project.name : project.name.projectName}
             <Button
               size="sm"
               variant="destructive"

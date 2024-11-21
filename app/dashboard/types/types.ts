@@ -3,7 +3,7 @@ export interface ProjectResponseDto {
     id: string;
     name: {
         projectName: string;
-    }
+    } | string;
     userId: string;
 }
 
