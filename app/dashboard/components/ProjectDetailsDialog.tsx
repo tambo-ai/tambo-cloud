@@ -111,6 +111,12 @@ export function ProjectDetailsDialog({
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleCreateApiKey();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px]">
@@ -136,6 +142,8 @@ export function ProjectDetailsDialog({
                       placeholder="Enter key name"
                       className="px-2 py-1 text-sm border rounded"
                       disabled={isCreating}
+                      autoFocus
+                      onKeyDown={handleKeyPress}
                     />
                     <Button
                       size="sm"
