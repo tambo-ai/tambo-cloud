@@ -113,15 +113,17 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {projects.map((project: ProjectResponseDto) => (
               <ProjectCard
-                  key={project.id}
-                  project={project} />
-              ))}
-            </div>
-            <CreateProjectDialog
-              open={isCreateDialogOpen}
-              onOpenChange={setIsCreateDialogOpen}
-              onSubmit={handleCreateProject} />
-          </>
+                key={project.id}
+                project={project}
+                onProjectDeleted={loadProjects}
+              />
+            ))}
+          </div>
+          <CreateProjectDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            onSubmit={handleCreateProject} />
+        </>
       )}
     </div>
   );

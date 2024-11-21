@@ -6,9 +6,10 @@ import { ProjectDetailsDialog } from "./ProjectDetailsDialog";
 
 interface ProjectCardProps {
   project: ProjectResponseDto;
+  onProjectDeleted?: () => void;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onProjectDeleted }: ProjectCardProps) {
   const [showDetails, setShowDetails] = useState(false);
 
   return (
@@ -29,6 +30,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         project={project}
         open={showDetails}
         onOpenChange={setShowDetails}
+        onProjectDeleted={onProjectDeleted}
       />
     </>
   );

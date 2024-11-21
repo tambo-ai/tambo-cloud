@@ -36,6 +36,13 @@ export const getProject = async (id: string) => {
     return response.data;
 };
 
+export const removeProject = async (id: string) => {
+    const response = await axios.delete(`${API_BASE_URL}/projects/${id}`, {
+        headers: await getHeaders(),
+    });
+    return response.data;
+};
+
 export const generateApiKey = async (projectId: string, name: string) => {
     const response = await axios.put(
         `${API_BASE_URL}/projects/${projectId}/api-key/${name}`,

@@ -13,19 +13,29 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { generateApiKey, getApiKeys, removeApiKey } from "../../services/hydra.service";
+import { generateApiKey, getApiKeys, removeApiKey, removeProject } from "../../services/hydra.service";
 import { APIKeyResponseDto, ProjectResponseDto } from "../types/types";
 
 interface ProjectDetailsDialogProps {
   project: ProjectResponseDto;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onProjectDeleted?: () => void;
+}
+
+interface AlertState {
+  show: boolean;
+  title: string;
+  description: string;
+  action: () => Promise<void>;
+  data?: { id: string };
 }
 
 export function ProjectDetailsDialog({
   project,
   open,
   onOpenChange,
+  onProjectDeleted,
 }: ProjectDetailsDialogProps) {
   const [apiKeys, setApiKeys] = useState<APIKeyResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +43,12 @@ export function ProjectDetailsDialog({
   const [newKeyName, setNewKeyName] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
   const [newGeneratedKey, setNewGeneratedKey] = useState<string | null>(null);
-  const [keyToDelete, setKeyToDelete] = useState<APIKeyResponseDto | null>(null);
+  const [alertState, setAlertState] = useState<AlertState>({
+    show: false,
+    title: '',
+    description: '',
+    action: async () => {},
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,10 +106,9 @@ export function ProjectDetailsDialog({
   };
 
   const handleDeleteApiKey = async () => {
-    if (!keyToDelete) return;
-    
     try {
-      await removeApiKey(project.id, keyToDelete.id);
+      if (!alertState.data) return;
+      await removeApiKey(project.id, alertState.data?.id);
       await loadApiKeys();
       toast({
         title: "Success",
@@ -107,7 +121,7 @@ export function ProjectDetailsDialog({
         variant: "destructive",
       });
     } finally {
-      setKeyToDelete(null);
+      setAlertState({ show: false, title: '', description: '', action: async () => {}, data: undefined });
     }
   };
 
@@ -117,11 +131,46 @@ export function ProjectDetailsDialog({
     }
   };
 
+  const handleDeleteProject = async () => {
+    try {
+      await removeProject(project.id);
+      onOpenChange(false);
+      onProjectDeleted?.();
+      toast({
+        title: "Success",
+        description: "Project deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete project",
+        variant: "destructive",
+      });
+    }
+    finally {
+      setAlertState({ show: false, title: '', description: '', action: async () => {}, data: undefined });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>{project.name.projectName}</DialogTitle>
+          <DialogTitle className="flex justify-between items-center">
+            {project.name.projectName}
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => setAlertState({
+                show: true,
+                title: "Delete Project",
+                description: "Are you sure you want to delete this project? This action cannot be undone.",
+                action: handleDeleteProject,
+              })}
+            >
+              Delete Project
+            </Button>
+          </DialogTitle>
         </DialogHeader>
         <div className="py-4">
           <div className="space-y-4">
@@ -233,7 +282,13 @@ export function ProjectDetailsDialog({
                               size="icon"
                               variant="ghost"
                               className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => setKeyToDelete(key)}
+                              onClick={() => setAlertState({
+                                show: true,
+                                title: "Delete API Key",
+                                description: "Are you sure you want to delete this API key? This action cannot be undone.",
+                                action: handleDeleteApiKey,
+                                data: { id: key.id }
+                              })}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -250,19 +305,23 @@ export function ProjectDetailsDialog({
           </div>
         </div>
 
-        <AlertDialog open={!!keyToDelete} onOpenChange={(open) => !open && setKeyToDelete(null)}>
+        {/* Replace existing AlertDialog with generic version */}
+        <AlertDialog 
+          open={alertState.show} 
+          onOpenChange={(open) => !open && setAlertState({ show: false, title: '', description: '', action: async () => {}, data: undefined })}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete API Key</AlertDialogTitle>
+              <AlertDialogTitle>{alertState.title}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this API key? This action cannot be undone.
+                {alertState.description}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive hover:bg-destructive/90"
-                onClick={handleDeleteApiKey}
+                onClick={alertState.action}
               >
                 Delete
               </AlertDialogAction>
