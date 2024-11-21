@@ -37,6 +37,7 @@
     "fumadocs-ui": "^14.2.1",
     "i": "^0.3.7",
     "lucide-react": "^0.383.0",
+    "luxon": "^3.5.0",
     "next": "14.2.3",
     "next-themes": "^0.3.0",
     "react": "^18",
@@ -49,6 +50,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/luxon": "^3.4.2",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

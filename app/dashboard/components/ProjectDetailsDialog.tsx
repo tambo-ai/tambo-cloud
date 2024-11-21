@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
+import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { addProviderKey, generateApiKey, getApiKeys, getProviderKeys, removeApiKey, removeProject } from "../../services/hydra.service";
 import { APIKeyResponseDto, ProjectResponseDto, ProviderKeyResponseDto } from "../types/types";
@@ -363,7 +364,9 @@ export function ProjectDetailsDialog({
                             <div>
                               <p className="text-sm font-medium">{key.name}</p>
                               <p className="text-sm text-muted-foreground">
-                                {key.lastUsed ? `Last used: ${key.lastUsed.toLocaleString()}` : 'Never used'}
+                                {key.lastUsed 
+                                  ? `Last used: ${DateTime.fromISO(key.lastUsed).toFormat("EEE MMM d 'at' h:mma")}`
+                                  : 'Never used'}
                               </p>
                               <p className="text-sm text-muted-foreground overflow-hidden text-ellipsis">
                                 {key.partiallyHiddenKey.slice(0, 15)}

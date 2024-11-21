@@ -25,8 +25,8 @@ export interface APIKeyResponseDto {
     id: string;
     name: string;
     partiallyHiddenKey: string;
-    lastUsed: Date;
-    created: Date;
+    lastUsed: string;
+    created: string;
     createdByUserId: string;
 }
 
