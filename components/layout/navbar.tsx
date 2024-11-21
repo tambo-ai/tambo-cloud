@@ -1,15 +1,10 @@
 "use client";
-import { ChevronsDown, Github, Menu, Twitter, BookOpen } from "lucide-react";
+import { track } from "@vercel/analytics";
+import { BookOpen, Menu, Twitter } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import React from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "../ui/sheet";
-import { Separator } from "../ui/separator";
+import { Button } from "../ui/button";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -18,11 +13,16 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "../ui/navigation-menu";
-import { Button } from "../ui/button";
-import Link from "next/link";
-import Image from "next/image";
+import { Separator } from "../ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "../ui/sheet";
 import { ToggleTheme } from "./toogle-theme";
-import { track } from "@vercel/analytics";
 
 interface RouteProps {
   href: string;
@@ -77,6 +77,17 @@ export const Navbar = () => {
               </SheetHeader>
 
               <div className="flex flex-col gap-2">
+                <Button
+                  onClick={() => {
+                    setIsOpen(false);
+                    handleNavClick("Mobile Dashboard");
+                  }}
+                  asChild
+                  variant="ghost"
+                  className="justify-start text-base"
+                >
+                  <Link href="/dashboard">Dashboard</Link>
+                </Button>
                 {routeList.map(({ href, label }) => (
                   <Button
                     key={href}
@@ -197,7 +208,14 @@ export const Navbar = () => {
         </NavigationMenuList>
       </NavigationMenu>
 
-      <div className="hidden lg:flex">
+      <div className="hidden lg:flex items-center">
+        <Link
+          href="/dashboard"
+          onClick={() => handleNavClick("Dashboard")}
+        >
+          <Button className="text-xs px-2 ">dashboard</Button>
+        </Link>
+
         <ToggleTheme />
 
         <Button
