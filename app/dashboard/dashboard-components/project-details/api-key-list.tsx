@@ -1,43 +1,18 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { generateApiKey, getApiKeys, removeApiKey } from "@/app/services/hydra.service";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
-import { addProviderKey, generateApiKey, getApiKeys, getProviderKeys, removeApiKey, removeProject } from "../../services/hydra.service";
-import { APIKeyResponseDto, ProjectResponseDto, ProviderKeyResponseDto } from "../types/types";
+import { APIKeyResponseDto, ProjectResponseDto } from "../../types/types";
+import { DeleteAlertDialog } from "./delete-alert-dialog";
+import { AlertState } from "./project-details-dialog";
 
-interface ProjectDetailsDialogProps {
+interface APIKeyListProps {
   project: ProjectResponseDto;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onProjectDeleted?: () => void;
 }
 
-interface AlertState {
-  show: boolean;
-  title: string;
-  description: string;
-  action: () => Promise<void>;
-  data?: { id: string };
-}
-
-export function ProjectDetailsDialog({
-  project,
-  open,
-  onOpenChange,
-  onProjectDeleted,
-}: ProjectDetailsDialogProps) {
+export function APIKeyList({ project }: APIKeyListProps) {
   const [apiKeys, setApiKeys] = useState<APIKeyResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -48,21 +23,14 @@ export function ProjectDetailsDialog({
     show: false,
     title: '',
     description: '',
-    action: async () => {},
   });
   const { toast } = useToast();
-  const [isEditingProviderKey, setIsEditingProviderKey] = useState(false);
-  const [providerKey, setProviderKey] = useState('');
-  const [providerKeys, setProviderKeys] = useState<ProviderKeyResponseDto[]>([]);
 
   useEffect(() => {
-    if (open) {
-      loadApiKeys();
-      loadProviderKeys();
-    }
-  }, [open, project.id]);
+    loadApiKeys();
+  }, [project.id]);
 
-  const loadApiKeys = async () => {
+    const loadApiKeys = async () => {
     try {
       setIsLoading(true);
       const keys = await getApiKeys(project.id);
@@ -78,23 +46,7 @@ export function ProjectDetailsDialog({
     }
   };
 
-  const loadProviderKeys = async () => {
-    try {
-      setIsLoading(true);
-      const keys = await getProviderKeys(project.id);
-      setProviderKeys(keys);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load provider keys",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreateApiKey = async () => {
+    const handleCreateApiKey = async () => {
     if (!newKeyName.trim()) {
       toast({
         title: "Error",
@@ -127,6 +79,7 @@ export function ProjectDetailsDialog({
   };
 
   const handleDeleteApiKey = async () => {
+    setIsLoading(true);
     try {
       if (!alertState.data) return;
       await removeApiKey(project.id, alertState.data?.id);
@@ -142,136 +95,19 @@ export function ProjectDetailsDialog({
         variant: "destructive",
       });
     } finally {
-      setAlertState({ show: false, title: '', description: '', action: async () => {}, data: undefined });
+      setAlertState({ show: false, title: '', description: '', data: undefined });
+      setIsLoading(false)
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+    const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleCreateApiKey();
     }
   };
-
-  const handleDeleteProject = async () => {
-    try {
-      await removeProject(project.id);
-      onOpenChange(false);
-      onProjectDeleted?.();
-      toast({
-        title: "Success",
-        description: "Project deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete project",
-        variant: "destructive",
-      });
-    }
-    finally {
-      setAlertState({ show: false, title: '', description: '', action: async () => {}, data: undefined });
-    }
-  };
-
-  const handleUpdateProviderKey = async () => {
-    try {
-      await addProviderKey(project.id, "openai", providerKey);
-      await loadProviderKeys();
-      setIsEditingProviderKey(false);
-      toast({
-        title: "Success",
-        description: "Provider key updated successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update provider key",
-        variant: "destructive",
-      });
-    }
-  };
-
+  
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle className="flex justify-between items-center">
-            {typeof project.name === 'string' ? project.name : project.name.projectName}
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setAlertState({
-                show: true,
-                title: "Delete Project",
-                description: "Are you sure you want to delete this project? This action cannot be undone.",
-                action: handleDeleteProject,
-              })}
-            >
-              Delete Project
-            </Button>
-          </DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <div className="space-y-4">
-            <div>
-              <h4 className="text-sm font-semibold">Project ID</h4>
-              <p className="text-sm text-muted-foreground">{project.id}</p>
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="text-sm font-semibold">OpenAI API Key</h4>
-                {isEditingProviderKey ? (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={handleUpdateProviderKey}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setIsEditingProviderKey(false);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsEditingProviderKey(true)}
-                  >
-                    Edit
-                  </Button>
-                )}
-              </div>
-              {isEditingProviderKey ? (
-                <input
-                  type="text"
-                  value={providerKey}
-                  onChange={(e) => setProviderKey(e.target.value)}
-                  className="w-full px-2 py-1 text-sm border rounded"
-                  placeholder="Enter OpenAI API Key"
-                  autoFocus
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {isLoading ? 'Loading...' : (
-                    providerKeys.length > 0 
-                      ? (providerKeys[providerKeys.length - 1].partiallyHiddenKey 
-                        ? providerKeys[providerKeys.length - 1].partiallyHiddenKey.slice(0, 15) 
-                        : `${providerKeys[providerKeys.length - 1].providerKeyEncrypted.slice(0, 15)}...`)
-                      : 'No provider key set'
-                  )}
-                </p>
-              )}
-            </div>
-
-            <div>
+    <div>
               <div className="flex justify-between items-center mb-2">
                 <h4 className="text-sm font-semibold">API Keys</h4>
                 {showNameInput ? (
@@ -380,7 +216,6 @@ export function ProjectDetailsDialog({
                                 show: true,
                                 title: "Delete API Key",
                                 description: "Are you sure you want to delete this API key? This action cannot be undone.",
-                                action: handleDeleteApiKey,
                                 data: { id: key.id }
                               })}
                             >
@@ -395,34 +230,11 @@ export function ProjectDetailsDialog({
                   )}
                 </>
               )}
+              <DeleteAlertDialog
+                alertState={alertState}
+                setAlertState={setAlertState}
+                onConfirm={handleDeleteApiKey}
+        />
             </div>
-          </div>
-        </div>
-
-        {/* Replace existing AlertDialog with generic version */}
-        <AlertDialog 
-          open={alertState.show} 
-          onOpenChange={(open) => !open && setAlertState({ show: false, title: '', description: '', action: async () => {}, data: undefined })}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{alertState.title}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {alertState.description}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive hover:bg-destructive/90"
-                onClick={alertState.action}
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </DialogContent>
-    </Dialog>
   );
 } 

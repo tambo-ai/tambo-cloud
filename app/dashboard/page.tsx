@@ -7,8 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { addProviderKey, createProject, getUserProjects } from "../services/hydra.service";
 import { getSupabaseClient } from "../utils/supabase";
-import { CreateProjectDialog } from "./components/CreateProjectDialog";
-import { ProjectCard } from "./components/ProjectCard";
+import { CreateProjectDialog } from "./dashboard-components/create-project-dialog";
+import { ProjectCard } from "./dashboard-components/project-card";
 import { ProjectResponseDto } from "./types/types";
 
 export default function DashboardPage() {

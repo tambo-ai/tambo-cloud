@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
 import { ProjectResponseDto } from "../types/types";
-import { ProjectDetailsDialog } from "./ProjectDetailsDialog";
+import { ProjectDetailsDialog } from "./project-details/project-details-dialog";
 
 interface ProjectCardProps {
   project: ProjectResponseDto;
