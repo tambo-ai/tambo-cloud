@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthForm } from "@/components/auth/auth-form";
+import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -97,7 +98,8 @@ export default function DashboardPage() {
 
   return (
     <div className="container max-w-6xl py-8">
-      <div className="flex justify-between items-center mb-8">
+      <Navbar showBackground={false} showDashboardButton={false} showLogoutButton={true} />
+      <div className="flex justify-between items-center my-8">
         <h1 className="text-2xl font-semibold">Projects</h1>
       </div>
       {!isAuthenticated ? (
