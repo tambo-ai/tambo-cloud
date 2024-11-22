@@ -87,9 +87,9 @@ export default function DashboardPage() {
 
   if (isAuthenticated == null) {
     return (
-      <div className="container py-8">
+      <div className="container max-w-6xl py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Projects</h1>
+          <h1 className="text-2xl font-semibold">Projects</h1>
         </div>
         <LoadingCards />
       </div>
