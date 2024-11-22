@@ -146,7 +146,7 @@ export function APIKeyList({ project }: APIKeyListProps) {
                     size="sm"
                     onClick={() => setShowNameInput(true)}
                   >
-                    Create New Key
+                    + Create API Key
                   </Button>
                 )}
               </div>

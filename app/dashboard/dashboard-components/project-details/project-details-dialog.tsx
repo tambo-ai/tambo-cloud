@@ -65,7 +65,7 @@ export function ProjectDetailsDialog({
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>
-            {typeof project.name === 'string' ? project.name : project.name.projectName}
+            {project.name}
           </DialogTitle>
         </DialogHeader>
         
