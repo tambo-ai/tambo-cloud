@@ -109,9 +109,15 @@ export default function DashboardPage() {
           <LoadingCards />
       ) : (
         <>
-          <Button onClick={() => setIsCreateDialogOpen(true)} className="mb-4">
-            Create Project
-          </Button>
+          <div className="flex justify-between items-center w-full mb-8 border-b p-4 pb-2 gap-4">
+            <span className="text-sm text-muted-foreground">
+              {projects.length} project{projects.length !== 1 ? 's' : ''}
+            </span>
+            <Button onClick={() => setIsCreateDialogOpen(true)} className="text-xs px-3"
+              variant="default">
+              + New
+            </Button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {projects.map((project: ProjectResponseDto) => (
               <ProjectCard
