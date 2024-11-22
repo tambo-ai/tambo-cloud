@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
+import { CreateProjectDialog } from "../../components/dashboard-components/create-project-dialog";
+import { ProjectCard } from "../../components/dashboard-components/project-card";
 import { addProviderKey, createProject, getUserProjects } from "../services/hydra.service";
 import { getSupabaseClient } from "../utils/supabase";
-import { CreateProjectDialog } from "./dashboard-components/create-project-dialog";
-import { ProjectCard } from "./dashboard-components/project-card";
 import { ProjectResponseDto } from "./types/types";
 
 export default function DashboardPage() {
