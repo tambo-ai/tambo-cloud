@@ -1,11 +1,15 @@
 ---
-title: Slack (Under Development) 🚧
-description: Integration of Hydra AI with Slack
+title: Slack (Preview) 🚧
+description: Build intelligent Slack apps with AI
 ---
 
-> **Note:** This feature is currently under active development. The documentation below represents our planned implementation and may change before release. Send feedback to [support@usehydra.ai](mailto:support@usehydra.ai).
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
----
+<Callout type="warn" title="Preview Feature">
+  This feature is currently under active development. The documentation below
+  represents our planned implementation and may change before release. Send
+  feedback to [support@usehydra.ai](mailto:support@usehydra.ai).
+</Callout>
 
 ## Why Hydra AI for Slack? ⚡
 
@@ -38,15 +42,21 @@ Whether you're building workflows, modals, or interactive home tabs, Hydra AI si
 
 ### 1. Install Required Dependencies
 
-```bash
-# npm
+<Tabs items={["npm", "yarn", "pnpm"]}>
+
+```bash tab="npm"
 npm install --save jsx-slack @slack/web-api hydra-ai
 ```
 
-```bash
-# yarn
+```bash tab="yarn"
 yarn add jsx-slack @slack/web-api hydra-ai
 ```
+
+```bash tab="pnpm"
+pnpm add jsx-slack @slack/web-api hydra-ai
+```
+
+</Tabs>
 
 ---
 
@@ -54,7 +64,7 @@ yarn add jsx-slack @slack/web-api hydra-ai
 
 Create an instance of HydraClient in your application:
 
-```typescript
+```typescript title="src/hydra-client.ts"
 import HydraClient from "hydra-ai";
 
 const hydraClient = new HydraClient("gpt-4", "openai");
@@ -68,7 +78,7 @@ Define Slack components using your preferred templating approach. We recommend `
 
 #### Example: Welcome Message
 
-```typescript
+```typescript title="src/components/welcomeMessage.ts"
 import { jsxslack } from "jsx-slack";
 import { Blocks, Section } from "jsx-slack";
 
@@ -96,7 +106,7 @@ Let HydraClient dynamically generate components based on user queries.
 
 #### Example: Generate a Component for a User Query
 
-```typescript
+```typescript title="src/generateComponent.ts"
 const generatedComponent = await hydraClient.generateComponent(
   "Send a welcome message to Jane Doe",
   (progress) => console.log(`Progress: ${progress}`)
@@ -113,7 +123,7 @@ Use the Slack API to send the generated blocks.
 
 #### Example: Send a Slack Message
 
-```typescript
+```typescript title="src/sendSlackMessage.ts"
 import { WebClient } from "@slack/web-api";
 
 const slackClient = new WebClient(process.env.SLACK_TOKEN);
@@ -134,7 +144,7 @@ Add external data-fetching capabilities to your components with `contextTools`.
 
 #### Example: Fetching a Dynamic User List
 
-```typescript
+```typescript title="src/components/dynamicUserList.ts"
 await hydraClient.registerComponent(
   "dynamicUserList",
   "A Slack message showing a dynamic user list",
@@ -175,7 +185,7 @@ HydraClient supports different types of Slack interactions:
 
 #### Example: Create a Modal
 
-```typescript
+```typescript title="src/components/feedbackModal.ts"
 import { Modal, Input, Section, Divider } from "jsx-slack";
 
 export const feedbackModal = () => jsxslack`
@@ -197,27 +207,16 @@ await hydraClient.registerComponent(
 
 #### Example: Open the Modal
 
-```typescript
+```typescript title="src/openFeedbackModal.ts"
 await slackClient.views.open({
   trigger_id: "YOUR_TRIGGER_ID", // Replace with your trigger ID
   view: generatedModal.component,
 });
 ```
 
----
+## Future Roadmap
 
-## Error Handling
-
-HydraClient includes built-in error handling:
-
-- Returns a default Slack message if a component can't be generated.
-- Provides detailed error logs for debugging.
-
----
-
-## Coming Soon Features
-
-We’re constantly improving HydraClient! Here’s what’s coming:
+We're constantly improving HydraClient! Here's what's coming:
 
 | Feature                      | Description                                                                       | Status      |
 | ---------------------------- | --------------------------------------------------------------------------------- | ----------- |
@@ -227,6 +226,9 @@ We’re constantly improving HydraClient! Here’s what’s coming:
 | **Debug Mode**               | Visualize and log generated Slack JSON payloads.                                  | Coming Soon |
 | **Validation**               | Verify compatibility of generated components with Slack Block Kit before sending. | Coming Soon |
 | **Multi-Platform Support**   | Extend support to other platforms like Microsoft Teams and Discord.               | Coming Soon |
+| **Error Handling**           | Comprehensive error handling with detailed logs and recovery strategies.          | Coming Soon |
+| **Error Reporting**          | Automated error reporting and monitoring capabilities.                            | Coming Soon |
+| **Fallback Mechanisms**      | Graceful degradation and fallback options when components fail.                   | Coming Soon |
 
 ---
 
@@ -248,4 +250,23 @@ Not yet. HydraClient generates a new component for every request. Caching is a p
 
 ## Feedback on our documentation:
 
-This is being built right now so let us know if you want us to change or improve our implementation. [support@usehydra.ai](mailto:support@usehydra.ai).
+This is being built right now so let us know if you want us to change or improve our implementation.
+
+import { MailIcon, MessageCircleIcon } from "lucide-react";
+
+<Cards>
+  <Card
+    icon={<MailIcon />}
+    href="mailto:support@usehydra.ai"
+    title="Email Support"
+  >
+    Contact us at support@usehydra.ai
+  </Card>
+  <Card
+    icon={<MessageCircleIcon />}
+    href="https://discord.gg/AkCvQ3sM"
+    title="Discord Community"
+  >
+    Join our Discord community for help
+  </Card>
+</Cards>
