@@ -23,6 +23,7 @@ export default function DashboardPage() {
   }, []);
 
   const checkAuth = async () => {
+    console.log("Checking auth status");
     try {
       const supabase = getSupabaseClient();
       const { data: { session } } = await supabase.auth.getSession();
@@ -30,6 +31,9 @@ export default function DashboardPage() {
       if (session) {
         loadProjects();
       }
+      else {
+        setIsLoading(false);
+      } 
     } catch (error) {
       console.error("Error checking auth status:", error);
       setIsAuthenticated(false);
@@ -94,7 +98,7 @@ export default function DashboardPage() {
   if (!isAuthenticated) {
     return (
       <div className="container max-w-md py-8">
-        <AuthForm />
+        <AuthForm isSignUpInitialValue={false} routeOnSuccess="/dashboard" />
       </div>
     );
   }
