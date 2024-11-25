@@ -6,6 +6,7 @@ import {
 } from "./types/slack";
 
 const SLACK_API_BASE = "https://slack.com/api";
+import { sendWelcomeEmail } from "@/lib/emails/slack-integration";
 
 export async function callSlackAPI<T>(
   endpoint: string,
@@ -39,6 +40,8 @@ export async function createSlackChannel(
   companyName: string,
   email: string
 ): Promise<CreateChannelResult> {
+  await sendWelcomeEmail([email]);
+
   // Validate email domain if needed
   if (process.env.ALLOWED_EMAIL_DOMAINS) {
     const allowedDomains = process.env.ALLOWED_EMAIL_DOMAINS.split(",");
