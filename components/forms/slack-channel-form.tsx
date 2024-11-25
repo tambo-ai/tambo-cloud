@@ -12,6 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import Link from "next/link";
 import { CreateSlackChannelSchema } from "@/lib/types/slack";
 import type { CreateSlackChannelInput } from "@/lib/types/slack";
 import { useState } from "react";
@@ -70,11 +71,7 @@ export function SlackChannelForm({ onSuccess }: SlackChannelFormProps) {
         );
       }
 
-      if (
-        !data.data?.channelId ||
-        !data.data?.channelName ||
-        !data.data?.inviteLink
-      ) {
+      if (!data.data?.channelId || !data.data?.channelName) {
         throw new Error("Invalid response from server");
       }
 
@@ -174,12 +171,12 @@ export function SlackChannelForm({ onSuccess }: SlackChannelFormProps) {
                 </a>
               </Button>
             ) : (
-              <p className="text-center text-destructive">
-                Error: Invite link not available
+              <p className="text-center text-green-500">
+                We sent you an invite link via email.
               </p>
             )}
-            <Button variant="outline" onClick={resetForm} className="w-full">
-              Create Another Channel
+            <Button variant="outline" className="w-full">
+              <Link href="/docs">Check out the docs</Link>
             </Button>
           </div>
         </div>

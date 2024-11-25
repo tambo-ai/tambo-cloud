@@ -23,6 +23,13 @@ export interface CreateChannelResponse {
 export interface InviteResponse {
   ok: true;
   invite_id: string;
+  url: string;
+  is_legacy_shared_channel: boolean;
+  conf_code: string;
+  warning: string;
+  response_metadata: {
+    warnings: string[];
+  };
 }
 
 export interface ConversationInfoResponse {
