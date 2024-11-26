@@ -115,7 +115,7 @@ export default async function Page(props: {
           <Author
             twitterUsername={post.metadata.author}
             name={post.metadata.author}
-            image={"/michael-magan-li.jpeg"}
+            image={post.metadata.authorImage || "/michael-magan-li.jpeg"}
           />
         </div>
         <article

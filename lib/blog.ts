@@ -17,6 +17,7 @@ export type Post = {
   publishedAt: string;
   summary: string;
   author: string;
+  authorImage?: string;
   slug: string;
   image?: string;
 };
