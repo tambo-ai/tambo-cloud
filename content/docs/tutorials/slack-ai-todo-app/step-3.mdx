@@ -2,7 +2,7 @@
 title: "Step 3: Add Hydra AI listener"
 ---
 
-In this step, we'll install Hydra and add a message listener that sends messages to Hydra AI and responds to the user with Hydra's output.
+In this step, we'll add a message listener that sends messages to Hydra AI and responds to the user with Hydra's output.
 
 ## Add Hydra AI message listener
 
@@ -10,9 +10,7 @@ In this step, we'll install Hydra and add a message listener that sends messages
 
     1. **Add Hydra AI message handler file**
 
-        Add a new file called `hydra-message.ts` under `src/listeners/messages` directory.
-
-        Copy the following code into the file:
+        Create a new file called `hydra-message.ts` under `src/listeners/messages` directory and copy the following code into the file:
 
         ```ts
         import { AllMiddlewareArgs } from "@slack/bolt";
@@ -120,5 +118,14 @@ In this step, we'll install Hydra and add a message listener that sends messages
     2. **Send a message to Hydra**
 
         Send a message in a channel where the app is added. You should see a message saying "Thinking..." and then a message with Hydra's response.
+
+    <p align="center">
+        <img 
+            src="/assets/hydra-listener.gif" 
+            alt="Demo of Slack App with Hydra responding" 
+            width="600"
+            className="rounded-lg border dark:border-zinc-800"
+        />
+    </p>
 
    In the next step, we'll register the Todo list components and see how Hydra can respond with interactive UI components instead of just text.

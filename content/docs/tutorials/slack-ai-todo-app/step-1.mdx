@@ -30,7 +30,7 @@ Let's install the app into a Slack workspace and test it out.
 
 1. **Create and install Slack app**
 
-    Follow instructions here to install the app in your Slack workspace: [Slack app setup instructions](https://github.com/slack-samples/bolt-ts-starter-template?tab=readme-ov-file#create-a-slack-app)
+    Follow instructions here to install the app in your Slack workspace and get your Slack app token and bot token: [Slack app setup instructions](https://github.com/slack-samples/bolt-ts-starter-template?tab=readme-ov-file#create-a-slack-app)
 
 2. **Set up environment variables**
 
@@ -53,11 +53,22 @@ Finally, let's run the app and test it out in Slack!
     npm start
     ```
 
+    You should see some output in the terminal ending with a line that says: `⚡️ Bolt app is running! ⚡️`
+
 2. **Add the app to a channel and say "hello"**
 
     Add the app to a channel in your Slack workspace by typing `@hydra-slack-app-template`. Then, say "hello" in the channel.
 
     If you've done everything correctly, you should see the app respond with "Hello, world!". Now we've got an app that can respond to messages in Slack!
+
+    <p align="center">
+        <img 
+            src="/assets/hello-listener.gif" 
+            alt="Demo of Slack App saying hello" 
+            width="600"
+            className="rounded-lg border dark:border-zinc-800"
+        />
+    </p>
 
 
 In the next step, we'll send messages through Hydra AI and let it respond to messages in a conversational way with interactive UI components.
