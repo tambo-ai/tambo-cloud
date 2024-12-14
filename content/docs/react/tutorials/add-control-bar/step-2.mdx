@@ -2,21 +2,7 @@
 title: "Step 2: Add the control bar and Hydra AI"
 ---
 
-In this step we'll add the control bar component and install Hydra. This will include adding a Hydra config file to the app, and getting a Hydra API key set. The Hydra CLI will help us with that.
-
-## Add the control bar component
-
-Let's start by adding the control bar component to the app using the hydra cli. This will also initialize the Hydra config file for us.
-
-We can use the following command:
-
-```bash
-npx hydra-ai-cli add control-bar
-```
-
-You'll be prompted to create a Hydra account, and then the control-bar component will be added to the app under `/src/components/ui/control-bar.tsx`. Note that instead of importing a package that contains the control bar, we've installed the source code of the control bar into the app so we can modify it to fit our needs.
-
-If you look at the control bar code, you'll see that the component has some dependencies on Hydra, so we'll install that next.
+In this step we'll install Hydra and add the control bar component. This will include adding a Hydra config file to the app, and getting a Hydra API key set. 
 
 ## Add Hydra AI
 
@@ -42,7 +28,7 @@ Before we can have Hydra respond to messages and control UI components, we need 
 
     export function initializeHydra() {
         const hydra = new HydraClient({
-            hydraApiKey: process.env.HYDRAAI_API_KEY,
+            hydraApiKey: process.env.NEXT_PUBLIC_HYDRA_API_KEY,
         });
 
         return hydra;
@@ -60,5 +46,30 @@ Before we can have Hydra respond to messages and control UI components, we need 
     Once you've created a project and copied an API key, add the following to the `.env.local` file:
 
     ```
-    HYDRAAI_API_KEY=your-api-key
+    NEXT_PUBLIC_HYDRA_API_KEY=your-api-key
     ```
+
+
+
+## Add the control bar component
+
+Next, we'll add the control bar component to the app using the Hydra CLI.
+
+We can use the following command:
+
+```bash
+npx hydra-ai-cli add control-bar
+```
+
+You'll be prompted to login to your Hydra account, and then the control-bar component will be added to the app under `/src/components/ui/control-bar.tsx`. Note that instead of importing a package that contains the control bar, we've installed the source code of the control bar into the app so we can modify it to fit our needs.
+
+<p align="center">
+  <img 
+    src="/assets/control-bar/add-controlbar.png" 
+    alt="Hydra CLI adding control bar component" 
+    width="600"
+    className="rounded-lg border dark:border-zinc-800"
+  />
+</p>
+
+In the next step, we'll 'tell' Hydra what components we want it to use.

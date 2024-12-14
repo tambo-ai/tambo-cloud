@@ -206,5 +206,6 @@ To register them with Hydra, we'll update the `hydra-config.ts` file we created 
 
     In addition, we also are using optional fields:
     - `loadingComponent`: A component to show while the main component is loading.
-    - `contextTools`: A list of functions that Hydra can call to get extra context data when the component is chosen. In this case, we're using the `tasksContextTool` to let Hydra see the list of all tasks when deciding how to generate the input data for the components.
-    - `generateProps`: A function that runs after Hydra generates input data for the component and before the component is shown. It is used when we don't want Hydra to generate the entire input data for the component.
+    - `contextTools`: A list of functions that Hydra can call to get extra context data when the component is chosen. In this case, we're using the `getLeadsTool` and `getMessagesTool` to let Hydra see the leads and messages data when deciding how to generate the input data for the components.
+
+Now we've got Hydra configured, let's test it out!

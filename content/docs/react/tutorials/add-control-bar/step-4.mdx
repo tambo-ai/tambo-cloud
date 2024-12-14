@@ -16,9 +16,15 @@ We can replace `src/app/page.tsx` with the following:
 "use client";
 import CRMDashboard from "@/components/dashboard/crm-dashboard";
 import ControlBar from "@/components/ui/control-bar";
-import hydra from "@/hydra-config";
+import hydra, { initializeHydra } from "@/hydra-config";
+import { useEffect } from "react";
 
 export default function Home() {
+
+  useEffect(() => {
+    initializeHydra();
+  }, []);
+
   return (
     <div className="min-h-screen p-8 pb-20 font-[family-name:var(--font-geist-sans)] bg-[#2E3645]">
       <main className="flex flex-col gap-8 items-center justify-center pt-24">
@@ -40,9 +46,8 @@ export default function Home() {
 
     Try some commands like:
 
-    - "add a task"
-    - "add a meeting"
-    - "add a message"
+    - "show my leads who work at MegaCorp"
+    - "add a meeting with John for next week"
 
 <p align="center">
   <img 
