@@ -9,7 +9,7 @@ module.exports = {
   presets: [createPreset()],
 
   content: [
-    "./node_modules/fumadocs-ui/dist/**/*.js",
+    "../../node_modules/fumadocs-ui/dist/**/*.js",
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
