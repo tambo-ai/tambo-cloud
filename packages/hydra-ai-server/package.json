@@ -1,0 +1,24 @@
+{
+  "name": "@hydra-ai/hydra-ai-server",
+  "version": "0.0.4",
+  "description": "Server package for running hydra-ai",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "openai": "^4.63.0",
+    "token.js": "^0.4.5",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2"
+  }
+}
