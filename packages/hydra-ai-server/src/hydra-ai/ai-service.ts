@@ -19,7 +19,7 @@ export default class AIService {
   constructor(
     openAiKey: string,
     model: string = "gpt-4o",
-    provider: Provider = "openai"
+    provider: Provider = "openai",
   ) {
     this.llmClient = new TokenJSClient(openAiKey, model, provider);
     this.promptService = new PromptService();
@@ -29,13 +29,13 @@ export default class AIService {
       this.llmClient,
       this.promptService,
       this.parserService,
-      this.toolService
+      this.toolService,
     );
     this.decisionService = new ComponentDecisionService(
       this.llmClient,
       this.promptService,
       this.parserService,
-      this.hydrationService
+      this.hydrationService,
     );
   }
 
@@ -47,13 +47,13 @@ export default class AIService {
     messageHistory: any[],
     component: any,
     toolResponse?: any,
-    availableComponents?: any
+    availableComponents?: any,
   ): Promise<ComponentDecision> {
     return this.hydrationService.hydrateComponent(
       messageHistory,
       component,
       toolResponse,
-      availableComponents
+      availableComponents,
     );
   }
 }
