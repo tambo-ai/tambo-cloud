@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiSecurity } from '@nestjs/swagger';
-import { HydraBackend } from '@use-hydra-ai/hydra-ai-server';
+import { ComponentDecision, HydraBackend } from '@use-hydra-ai/hydra-ai-server';
 import { decryptProviderKey } from 'src/common/key.utils';
 import { CorrelationLoggerService } from 'src/common/services/logger.service';
 import { ProjectsService } from 'src/projects/projects.service';
@@ -21,19 +21,28 @@ export class ComponentsController {
   async generateComponent(
     @Body() generateComponentDto: GenerateComponentDto,
     @Req() request, // Assumes the request object has the projectId
-  ) {
+  ): Promise<ComponentDecision> {
+    if (!generateComponentDto.messageHistory?.length) {
+      throw new Error('Message history is required and cannot be empty');
+    }
+
     this.logger.log(
       `generating component for project ${request.projectId}, with message: ${generateComponentDto.messageHistory[generateComponentDto.messageHistory.length - 1].message}`,
     );
     const projectId = request.projectId;
-
     const project = await this.projectsService.findOneWithKeys(projectId);
+    if (!project) {
+      throw new Error('Project not found');
+    }
     const providerKeys = project.getProviderKeys();
-    if (providerKeys.length === 0) {
+    if (!providerKeys?.length) {
       throw new Error('No provider keys found for project');
     }
     const providerKey =
       providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+    if (!providerKey) {
+      throw new Error('No provider key found for project');
+    }
     const decryptedProviderKey = decryptProviderKey(providerKey);
 
     //TODO: Don't instantiate HydraBackend every request
@@ -41,7 +50,7 @@ export class ComponentsController {
 
     const component = await hydraBackend.generateComponent(
       generateComponentDto.messageHistory,
-      generateComponentDto.availableComponents,
+      generateComponentDto.availableComponents ?? {},
     );
     this.logger.log(`generated component: ${JSON.stringify(component)}`);
     return component;
@@ -55,19 +64,29 @@ export class ComponentsController {
     const projectId = request.projectId;
 
     const project = await this.projectsService.findOneWithKeys(projectId);
+    if (!project) {
+      throw new Error('Project not found');
+    }
 
     const providerKeys = project.getProviderKeys();
-    if (providerKeys.length === 0) {
+    if (!providerKeys?.length) {
       throw new Error('No provider keys found for project');
     }
     const providerKey =
       providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+    if (!providerKey) {
+      throw new Error('No provider key found for project');
+    }
     const decryptedProviderKey = decryptProviderKey(providerKey);
 
     const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
 
+    if (!hydrateComponentDto.component) {
+      throw new Error('Component is required');
+    }
+
     const hydratedComponent = await hydraBackend.hydrateComponentWithData(
-      hydrateComponentDto.messageHistory,
+      hydrateComponentDto.messageHistory ?? [],
       hydrateComponentDto.component,
       hydrateComponentDto.toolResponse,
     );

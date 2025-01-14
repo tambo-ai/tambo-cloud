@@ -1,4 +1,4 @@
-import { Injectable, LoggerService } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { ExtractComponentResponseDto } from 'src/extractor/dto/extract-component-response.dto';
 import { AIServiceInterface } from '../interfaces/ai.service.interface';
@@ -6,7 +6,6 @@ import { AIServiceInterface } from '../interfaces/ai.service.interface';
 @Injectable()
 export class OpenAIService implements AIServiceInterface {
   private readonly openai: OpenAI;
-  private readonly logger: LoggerService;
 
   constructor(apiKey: string) {
     this.openai = new OpenAI({ apiKey });

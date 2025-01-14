@@ -1,7 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { CorrelationLoggerService } from 'src/common/services/logger.service';
 import { AuthUser } from 'src/users/entities/authuser.entity';
-import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 import { ProjectsService } from '../projects.service';
 
@@ -20,26 +19,32 @@ export class ProjectAccessOwnGuard implements CanActivate {
     const correlationId = request['correlationId'];
     const authUser: AuthUser = request.authUser;
     try {
-      const user: User = await this.usersService.findOneByAuthId(authUser.id);
+      const user = await this.usersService.findOneByAuthId(authUser.id);
       if (request.params.userId) {
-        if (request.params.userId != user.id) {
+        if (request.params.userId != user?.id) {
           this.logger.warn(
-            `[${correlationId}] User ${user.id} attempted to access project for user ${request.params.userId}`,
+            `[${correlationId}] User ${user?.id} attempted to access project for user ${request.params.userId}`,
           );
           return false;
         }
       }
       const projectId = request.params.id;
       const project = await this.projectsService.findOne(projectId);
-      if (project.userId == user.id) {
-        request.userId = user.id;
+      if (!project) {
+        this.logger.warn(
+          `[${correlationId}] Project ${projectId} not found for user ${user?.id}`,
+        );
+        return false;
+      }
+      if (project.userId === user?.id) {
+        request.userId = user?.id;
         this.logger.log(
-          `[${correlationId}] User ${user.id} accessed their project ${projectId}`,
+          `[${correlationId}] User ${user?.id} accessed their project ${projectId}`,
         );
         return true;
       }
       this.logger.warn(
-        `[${correlationId}] User ${user.id} attempted to access project ${projectId} owned by ${project.userId}`,
+        `[${correlationId}] User ${user?.id} attempted to access project ${projectId} owned by ${project.userId}`,
       );
       return false;
     } catch (e: any) {

@@ -3,11 +3,11 @@ import { APIKey } from './api-key.entity';
 import { ProviderKey } from './provider-key.entity';
 
 export class Project {
-  id: string;
-  name: string;
-  userId: string;
-  private apiKeys: APIKey[];
-  private providerKeys: ProviderKey[];
+  id?: string;
+  name?: string;
+  userId?: string;
+  apiKeys?: APIKey[];
+  providerKeys: ProviderKey[] = [];
 
   addApiKey(
     name: string,
@@ -31,7 +31,7 @@ export class Project {
   }
 
   getApiKeys() {
-    return this.apiKeys;
+    return this.apiKeys ?? [];
   }
 
   hideApiKey(apiKey: string, visibleCharacters = 4): string {
@@ -44,9 +44,6 @@ export class Project {
     providerKeyEncrypted: string,
     originalKey: string,
   ) {
-    if (!this.providerKeys) {
-      this.providerKeys = [];
-    }
     const providerKey: ProviderKey = {
       id: uuidv4(),
       providerName: providerName,
@@ -57,7 +54,6 @@ export class Project {
   }
 
   removeProviderKey(providerKeyId: string) {
-    if (!this.providerKeys) return;
     this.providerKeys = this.providerKeys.filter(
       (key) => key.id !== providerKeyId,
     );

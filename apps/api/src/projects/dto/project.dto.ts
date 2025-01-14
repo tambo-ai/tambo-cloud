@@ -1,7 +1,7 @@
 import { IsNotEmpty } from 'class-validator';
 
 export class ProjectDto {
-  name: string;
+  name?: string;
   @IsNotEmpty()
-  userId: string;
+  userId?: string;
 }

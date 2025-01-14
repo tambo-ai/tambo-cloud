@@ -4,8 +4,8 @@ export class ExtractComponentDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(1000000) // 1MB max file size
-  content: string;
+  content?: string;
 
   @IsUUID()
-  correlationId: string;
+  correlationId?: string;
 }

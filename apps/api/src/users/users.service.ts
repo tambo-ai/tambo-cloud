@@ -10,7 +10,7 @@ import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  private readonly logger: LoggerService;
+  private readonly logger: LoggerService | undefined;
   constructor(
     @Inject('UsersRepository')
     private readonly repository: repositoryInterface.RepositoryInterface<
@@ -32,12 +32,12 @@ export class UsersService {
     return user;
   }
 
-  async findOneByAuthId(id: string): Promise<User> {
+  async findOneByAuthId(id: string): Promise<User | null> {
     try {
       const user = await this.repository.getByField('authId', id);
       return user;
     } catch (e) {
-      this.logger.error(e);
+      this.logger?.error(e);
       throw new NotFoundException();
     }
   }

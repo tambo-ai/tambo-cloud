@@ -1,6 +1,6 @@
 export class ProviderKeyResponseDto {
-  id: string;
-  providerName: string;
-  providerKeyEncrypted: string;
-  partiallyHiddenKey: string;
+  id?: string;
+  providerName?: string;
+  providerKeyEncrypted?: string;
+  partiallyHiddenKey?: string;
 }

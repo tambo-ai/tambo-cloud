@@ -4,7 +4,6 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 import { AuthUser } from '../entities/authuser.entity';
 
@@ -19,16 +18,16 @@ export class UserAccessOwnGuard implements CanActivate {
     const correlationId = request['correlationId'];
     const authUser: AuthUser = request.authUser;
     try {
-      const user: User = await this.usersService.findOneByAuthId(authUser.id);
-      const requestedUserId = request.params.id;
-      if (user.id == requestedUserId) {
+      const user = await this.usersService.findOneByAuthId(authUser.id);
+      const requestedUserId: string = request.params.id;
+      if (user?.id == requestedUserId) {
         this.logger.log(
           `[${correlationId}] User ${user.id} accessed their own data`,
         );
         return true;
       }
       this.logger.warn(
-        `[${correlationId}] User ${user.id} attempted to access data for user ${requestedUserId}`,
+        `[${correlationId}] User ${user?.id} attempted to access data for user ${requestedUserId}`,
       );
       return false;
     } catch (e: any) {

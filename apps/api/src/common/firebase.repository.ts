@@ -1,14 +1,17 @@
 import { Firestore } from '@google-cloud/firestore';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import * as serviceAccount from '../../firestore-creds.json';
 import { FieldSearchValue, RepositoryInterface } from './repository.interface';
 
 @Injectable()
-export class FirebaseRepository<E, D> implements RepositoryInterface<E, D> {
+export class FirebaseRepository<
+  E extends object,
+  D extends admin.firestore.WithFieldValue<admin.firestore.DocumentData>,
+> implements RepositoryInterface<E, D>
+{
   db: Firestore;
   collectionName: string;
-  private readonly logger = new Logger(FirebaseRepository.name);
   private readonly entityConstructor: new () => E;
 
   constructor(collectionName: string, entityConstructor: new () => E) {
@@ -32,7 +35,7 @@ export class FirebaseRepository<E, D> implements RepositoryInterface<E, D> {
       .add({ ...entityDto });
     const entityWithId: E = {
       id: res.id,
-      ...(entityDto as Partial<E>),
+      ...(entityDto as unknown as Partial<E>),
     } as E;
 
     return entityWithId;

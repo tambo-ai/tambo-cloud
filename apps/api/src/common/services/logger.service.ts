@@ -3,7 +3,7 @@ import { RequestLog } from '../middleware/request-logger.middleware';
 
 @Injectable({ scope: Scope.REQUEST })
 export class CorrelationLoggerService extends Logger {
-  private correlationId: string;
+  private correlationId?: string;
 
   setCorrelationId(correlationId: string) {
     this.correlationId = correlationId;

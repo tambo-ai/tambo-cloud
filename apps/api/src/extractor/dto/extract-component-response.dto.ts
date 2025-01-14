@@ -3,9 +3,9 @@ interface ComponentPropsMetadata {
 }
 
 export class ExtractComponentResponseDto {
-  name: string;
-  description: string;
-  propsDefinition: ComponentPropsMetadata;
-  isDefaultExport: boolean;
+  name?: string;
+  description?: string;
+  propsDefinition?: ComponentPropsMetadata;
+  isDefaultExport?: boolean;
   srcfileName?: string;
 }

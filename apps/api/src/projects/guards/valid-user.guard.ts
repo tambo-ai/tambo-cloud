@@ -1,7 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { CorrelationLoggerService } from 'src/common/services/logger.service';
 import { AuthUser } from 'src/users/entities/authuser.entity';
-import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
 
 @Injectable()
@@ -17,9 +16,9 @@ export class ValidUserGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const authUser: AuthUser = request.authUser;
     try {
-      const user: User = await this.usersService.findOneByAuthId(authUser.id);
-      request.userId = user.id;
-      this.logger.log(`Validated user ${user.id}`);
+      const user = await this.usersService.findOneByAuthId(authUser.id);
+      request.userId = user?.id;
+      this.logger.log(`Validated user ${user?.id}`);
       return true;
     } catch (e: any) {
       this.logger.error(

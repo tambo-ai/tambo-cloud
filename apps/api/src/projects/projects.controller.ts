@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -89,6 +90,9 @@ export class ProjectsController {
     @Body() addProviderKeyDto: AddProviderKeyDto,
   ) {
     const { providerName, providerKey } = addProviderKeyDto;
+    if (!providerName || !providerKey) {
+      throw new BadRequestException('Provider name and key are required');
+    }
     return this.projectsService.addProviderKey(id, providerName, providerKey);
   }
 

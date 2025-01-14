@@ -15,7 +15,7 @@ export class ExtractorController {
     @Body() extractComponentDto: ExtractComponentDto,
   ): Promise<ExtractComponentResponseDto[]> {
     return this.aiService.extractComponentDefinitions(
-      extractComponentDto.content,
+      extractComponentDto.content ?? '',
     );
   }
 }

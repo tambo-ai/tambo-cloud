@@ -1,4 +1,4 @@
-import { Inject, Injectable, LoggerService } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import {
   encryptApiKey,
@@ -14,7 +14,6 @@ import { Project } from './entities/project.entity';
 
 @Injectable()
 export class ProjectsService {
-  private readonly logger: LoggerService;
   constructor(
     @Inject('ProjectsRepository')
     private readonly repository: repositoryInterface.RepositoryInterface<
@@ -36,19 +35,22 @@ export class ProjectsService {
     return this.repository.getAllByField('userId', userId);
   }
 
-  async findOne(id: string): Promise<ProjectResponseDto> {
+  async findOne(id: string): Promise<ProjectResponseDto | null> {
     return this.repository.get(id);
   }
 
-  async findOneWithKeys(id: string): Promise<Project> {
+  async findOneWithKeys(id: string): Promise<Project | null> {
     return this.repository.get(id);
   }
 
   async update(
     id: string,
     updateProjectDto: ProjectDto,
-  ): Promise<ProjectResponseDto> {
+  ): Promise<ProjectResponseDto | null> {
     const project = await this.repository.get(id);
+    if (!project) {
+      throw new Error('Project not found');
+    }
     const updatedProject = {
       ...updateProjectDto,
       apiKeys: project.getApiKeys(),
@@ -105,7 +107,7 @@ export class ProjectsService {
         timestamp._seconds * 1000 + timestamp._nanoseconds / 1000000,
       );
     }
-    return null;
+    return undefined;
   }
 
   async updateApiKeyLastUsed(
@@ -170,6 +172,10 @@ export class ProjectsService {
     providerKey: string,
   ) {
     const project = await this.repository.get(projectId);
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
     const providerKeyEncrypted = encryptProviderKey(providerName, providerKey);
     project.addProviderKey(providerName, providerKeyEncrypted, providerKey);
     await this.repository.update(projectId, project);
@@ -180,12 +186,18 @@ export class ProjectsService {
     projectId: string,
   ): Promise<ProviderKeyResponseDto[]> {
     const project = await this.repository.get(projectId);
+    if (!project) {
+      throw new Error('Project not found');
+    }
     const providerKeys = project.getProviderKeys();
     return providerKeys;
   }
 
   async removeProviderKey(projectId: string, providerKeyId: string) {
     const project = await this.repository.get(projectId);
+    if (!project) {
+      throw new Error('Project not found');
+    }
     project.removeProviderKey(providerKeyId);
     await this.repository.update(projectId, project);
     return project;
