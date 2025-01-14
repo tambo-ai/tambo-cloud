@@ -9,7 +9,8 @@
     "SLACK_TEAM_ID",
     "INTERNAL_SLACK_USER_ID",
     "RESEND_API_KEY",
-    "DISALLOWED_EMAIL_DOMAINS"
+    "DISALLOWED_EMAIL_DOMAINS",
+    "NODE_ENV"
   ],
   "tasks": {
     "build": {
