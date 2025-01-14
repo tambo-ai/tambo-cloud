@@ -1,7 +1,7 @@
 import { Firestore } from '@google-cloud/firestore';
 import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import * as serviceAccount from '../../firestore-creds.json';
+// import * as serviceAccount from '../../firestore-creds.json';
 import { FieldSearchValue, RepositoryInterface } from './repository.interface';
 
 @Injectable()
@@ -16,6 +16,8 @@ export class FirebaseRepository<
 
   constructor(collectionName: string, entityConstructor: new () => E) {
     if (!admin.apps.length) {
+      const serviceAccount = getServiceAccountCredentials();
+
       // Initialize Firebase Admin SDK only if it hasn't been initialized already
       admin.initializeApp({
         credential: admin.credential.cert(
@@ -200,4 +202,21 @@ export class FirebaseRepository<
       }
     }
   }
+}
+
+function getServiceAccountCredentials(): admin.ServiceAccount {
+  // first try GOOGLE_APPLICATION_CREDENTIALS_JSON
+  // then try GOOGLE_APPLICATION_CREDENTIALS
+
+  const serviceAccount = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+  if (serviceAccount) {
+    return JSON.parse(serviceAccount);
+  }
+
+  const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (serviceAccountPath) {
+    return require(serviceAccountPath);
+  }
+
+  throw new Error('No service account credentials found');
 }
