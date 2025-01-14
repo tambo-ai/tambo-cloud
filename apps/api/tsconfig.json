@@ -5,7 +5,8 @@
     "experimentalDecorators": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "strictNullChecks": false,
     "noImplicitAny": false,
+    "moduleResolution": "bundler",
+    "module": "Preserve"
   }
 }

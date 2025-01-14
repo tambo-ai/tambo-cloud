@@ -1,12 +1,12 @@
 {
   "extends": "@use-hydra-ai/typescript-config/base",
   "compilerOptions": {
-    "module": "CommonJS",
-    "moduleResolution": "node",
     "rootDir": "./src",
     "declaration": true,
     "outDir": "./dist",
     "esModuleInterop": true,
+    "moduleResolution": "bundler",
+    "module": "Preserve",
   },
   "include": [
     "src/**/*.ts",
