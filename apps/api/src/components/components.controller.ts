@@ -1,6 +1,6 @@
-import { HydraBackend } from '@hydra-ai/hydra-ai-server';
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiSecurity } from '@nestjs/swagger';
+import { HydraBackend } from '@use-hydra-ai/hydra-ai-server';
 import { decryptProviderKey } from 'src/common/key.utils';
 import { CorrelationLoggerService } from 'src/common/services/logger.service';
 import { ProjectsService } from 'src/projects/projects.service';

@@ -1,9 +1,6 @@
 {
   "extends": "@use-hydra-ai/typescript-config/base",
   "compilerOptions": {
-    "declaration": true,
-    "removeComments": true,
-    "resolveJsonModule": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
