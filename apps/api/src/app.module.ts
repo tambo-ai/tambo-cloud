@@ -17,13 +17,13 @@ import { RegistryModule } from './registry/registry.module';
     ComponentsModule,
     ProjectsModule,
     RegistryModule,
-    ExtractorModule
+    ExtractorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule implements OnModuleInit {
-  constructor(private configService: ConfigService) { }
+  constructor(private configService: ConfigService) {}
 
   onModuleInit() {
     ConfigServiceSingleton.initialize(this.configService);

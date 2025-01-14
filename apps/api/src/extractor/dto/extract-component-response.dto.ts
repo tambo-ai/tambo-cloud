@@ -1,11 +1,11 @@
 interface ComponentPropsMetadata {
-    type: string;
+  type: string;
 }
 
 export class ExtractComponentResponseDto {
-    name: string;
-    description: string;
-    propsDefinition: ComponentPropsMetadata;
-    isDefaultExport: boolean;
-    srcfileName?: string;
-} 
+  name: string;
+  description: string;
+  propsDefinition: ComponentPropsMetadata;
+  isDefaultExport: boolean;
+  srcfileName?: string;
+}

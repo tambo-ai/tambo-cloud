@@ -5,17 +5,17 @@ import { AIServiceInterface } from '../interfaces/ai.service.interface';
 
 @Injectable()
 export class OpenAIService implements AIServiceInterface {
-    private readonly openai: OpenAI;
-    private readonly logger: LoggerService;
+  private readonly openai: OpenAI;
+  private readonly logger: LoggerService;
 
-    constructor(
-        apiKey: string,
-    ) {
-        this.openai = new OpenAI({ apiKey });
-    }
+  constructor(apiKey: string) {
+    this.openai = new OpenAI({ apiKey });
+  }
 
-    async extractComponentDefinitions(fileContents: string): Promise<ExtractComponentResponseDto[]> {
-        const systemPrompt = `
+  async extractComponentDefinitions(
+    fileContents: string,
+  ): Promise<ExtractComponentResponseDto[]> {
+    const systemPrompt = `
         You are a bot that extracts react components, inferring their usage from the codebase.
 
         I will give you a typescript file and you will return a of JSON object with a single entry, 'entries', which is an array of objects.
@@ -29,26 +29,26 @@ export class OpenAIService implements AIServiceInterface {
 		ONLY return components that have been exported from the file.
     `;
 
-        const response = await this.openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                {
-                    role: "system",
-                    content: systemPrompt,
-                },
-                {
-                    role: "user",
-                    content: fileContents,
-                },
-            ],
-            response_format: {
-                type: "json_object",
-            },
-        });
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt,
+        },
+        {
+          role: 'user',
+          content: fileContents,
+        },
+      ],
+      response_format: {
+        type: 'json_object',
+      },
+    });
 
-        const components = JSON.parse(
-            response.choices[0].message.content ?? "[]",
-        ) as { entries: ExtractComponentResponseDto[] };
-        return components.entries;
-    }
-} 
+    const components = JSON.parse(
+      response.choices[0].message.content ?? '[]',
+    ) as { entries: ExtractComponentResponseDto[] };
+    return components.entries;
+  }
+}

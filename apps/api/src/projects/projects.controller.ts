@@ -24,7 +24,7 @@ import { ProjectsService } from './projects.service';
 @UseGuards(SupabaseAuthGuard)
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) { }
+  constructor(private readonly projectsService: ProjectsService) {}
 
   @UseGuards(ValidUserGuard)
   @Post()

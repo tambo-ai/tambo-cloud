@@ -14,7 +14,7 @@ export class ApiKeyGuard implements CanActivate {
   constructor(
     private readonly projectsService: ProjectsService,
     private readonly logger: CorrelationLoggerService,
-  ) { }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -37,7 +37,7 @@ export class ApiKeyGuard implements CanActivate {
 
       this.logger.log(`Valid API key used for project ${projectId}`);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `Error validating API key: ${error.message}`,
         error.stack,
@@ -66,7 +66,7 @@ export class ApiKeyGuard implements CanActivate {
       }
 
       return isValid;
-    } catch (error) {
+    } catch (error: any) {
       throw new UnauthorizedException(error.message);
     }
   }

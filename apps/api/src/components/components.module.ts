@@ -6,12 +6,8 @@ import { ComponentsController } from './components.controller';
 import { ComponentsService } from './components.service';
 
 @Module({
-  imports: [
-    ConfigModule,
-    ProjectsModule,
-    AIModule,
-  ],
+  imports: [ConfigModule, ProjectsModule, AIModule],
   controllers: [ComponentsController],
   providers: [ComponentsService],
 })
-export class ComponentsModule { }
+export class ComponentsModule {}

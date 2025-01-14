@@ -1,1 +1,1 @@
-export { ComponentDecision as ComponentChoice } from "./component-choice";
+export type { ComponentDecision as ComponentChoice } from "./component-choice";

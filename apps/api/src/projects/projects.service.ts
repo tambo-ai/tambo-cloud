@@ -5,7 +5,7 @@ import {
   encryptProviderKey,
   hashKey,
 } from 'src/common/key.utils';
-import { RepositoryInterface } from 'src/common/repository.interface';
+import * as repositoryInterface from 'src/common/repository.interface';
 import { APIKeyResponseDto } from './dto/api-key-response.dto';
 import { ProjectResponseDto } from './dto/project-response.dto';
 import { ProjectDto } from './dto/project.dto';
@@ -17,8 +17,11 @@ export class ProjectsService {
   private readonly logger: LoggerService;
   constructor(
     @Inject('ProjectsRepository')
-    private readonly repository: RepositoryInterface<Project, ProjectDto>,
-  ) { }
+    private readonly repository: repositoryInterface.RepositoryInterface<
+      Project,
+      ProjectDto
+    >,
+  ) {}
 
   async create(createProjectDto: ProjectDto): Promise<ProjectResponseDto> {
     const projectWithKeys = { ...createProjectDto, apiKeys: [] };
@@ -173,7 +176,9 @@ export class ProjectsService {
     return project;
   }
 
-  async findAllProviderKeys(projectId: string): Promise<ProviderKeyResponseDto[]> {
+  async findAllProviderKeys(
+    projectId: string,
+  ): Promise<ProviderKeyResponseDto[]> {
     const project = await this.repository.get(projectId);
     const providerKeys = project.getProviderKeys();
     return providerKeys;

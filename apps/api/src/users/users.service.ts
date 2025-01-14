@@ -1,5 +1,10 @@
-import { Inject, Injectable, LoggerService, NotFoundException } from '@nestjs/common';
-import { RepositoryInterface } from 'src/common/repository.interface';
+import {
+  Inject,
+  Injectable,
+  LoggerService,
+  NotFoundException,
+} from '@nestjs/common';
+import * as repositoryInterface from 'src/common/repository.interface';
 import { UserDto } from './dto/user.dto';
 import { User } from './entities/user.entity';
 
@@ -8,8 +13,11 @@ export class UsersService {
   private readonly logger: LoggerService;
   constructor(
     @Inject('UsersRepository')
-    private readonly repository: RepositoryInterface<User, UserDto>,
-  ) { }
+    private readonly repository: repositoryInterface.RepositoryInterface<
+      User,
+      UserDto
+    >,
+  ) {}
 
   async create(createUserDto: UserDto): Promise<User> {
     const user = await this.repository.create(createUserDto);

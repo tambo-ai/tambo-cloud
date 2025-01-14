@@ -4,7 +4,7 @@ import { CorrelationLoggerService } from './services/logger.service';
 
 @Global()
 @Module({
-    providers: [CorrelationLoggerService, RequestLoggerMiddleware],
-    exports: [CorrelationLoggerService, RequestLoggerMiddleware],
+  providers: [CorrelationLoggerService, RequestLoggerMiddleware],
+  exports: [CorrelationLoggerService, RequestLoggerMiddleware],
 })
-export class LoggerModule { } 
+export class LoggerModule {}

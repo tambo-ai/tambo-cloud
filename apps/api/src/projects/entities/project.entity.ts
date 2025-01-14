@@ -39,7 +39,11 @@ export class Project {
     return apiKey.substring(0, visibleCharacters) + hiddenPart;
   }
 
-  addProviderKey(providerName: string, providerKeyEncrypted: string, originalKey: string) {
+  addProviderKey(
+    providerName: string,
+    providerKeyEncrypted: string,
+    originalKey: string,
+  ) {
     if (!this.providerKeys) {
       this.providerKeys = [];
     }

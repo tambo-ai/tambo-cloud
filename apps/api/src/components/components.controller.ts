@@ -15,14 +15,16 @@ export class ComponentsController {
   constructor(
     private projectsService: ProjectsService,
     private logger: CorrelationLoggerService,
-  ) { }
+  ) {}
 
   @Post('generate')
   async generateComponent(
     @Body() generateComponentDto: GenerateComponentDto,
     @Req() request, // Assumes the request object has the projectId
   ) {
-    this.logger.log(`generating component for project ${request.projectId}, with message: ${generateComponentDto.messageHistory[generateComponentDto.messageHistory.length - 1].message}`);
+    this.logger.log(
+      `generating component for project ${request.projectId}, with message: ${generateComponentDto.messageHistory[generateComponentDto.messageHistory.length - 1].message}`,
+    );
     const projectId = request.projectId;
 
     const project = await this.projectsService.findOneWithKeys(projectId);
@@ -30,7 +32,8 @@ export class ComponentsController {
     if (providerKeys.length === 0) {
       throw new Error('No provider keys found for project');
     }
-    const providerKey = providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+    const providerKey =
+      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
     const decryptedProviderKey = decryptProviderKey(providerKey);
 
     //TODO: Don't instantiate HydraBackend every request
@@ -57,7 +60,8 @@ export class ComponentsController {
     if (providerKeys.length === 0) {
       throw new Error('No provider keys found for project');
     }
-    const providerKey = providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+    const providerKey =
+      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
     const decryptedProviderKey = decryptProviderKey(providerKey);
 
     const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
