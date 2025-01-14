@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "clean": "rm -rf dist"
   },
   "author": "",
   "license": "ISC",
