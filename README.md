@@ -4,7 +4,12 @@
 
 - [hydra-ai-client](./apps/web) - The main nextjs app, including the landing page and the admin dashboard
 - [hydra-ai-api](./apps/api) - The nestjs api server, including the swagger ui and the api routes
-- [hydra-ai-server](./packages/hydra-ai-server) - A library for interacting with the LLM
+- [hydra-ai-server](./packages/hydra-ai-server) - A library for interacting with the LLMj
+
+There are some basic supporting packages:
+
+- [hydra-ai-types](./packages/typescript-config) - All the typescript config files for the project, with specific configs for NextJS apps and libraries
+- [hydra-ai-eslint-config](./packages/eslint-config) - All the eslint config files for the project, with specific configs for NextJS apps and libraries
 
 ## Development
 
