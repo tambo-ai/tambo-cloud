@@ -34,7 +34,6 @@ export const env = createEnv({
   runtimeEnv: {
     DISALLOWED_EMAIL_DOMAINS: process.env.DISALLOWED_EMAIL_DOMAINS,
     INTERNAL_SLACK_USER_ID: process.env.INTERNAL_SLACK_USER_ID,
-    NODE_ENV: process.env.NODE_ENV,
     SLACK_OAUTH_TOKEN: process.env.SLACK_OAUTH_TOKEN,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_HYDRA_API_URL: process.env.NEXT_PUBLIC_HYDRA_API_URL,
