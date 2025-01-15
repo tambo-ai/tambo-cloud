@@ -11,10 +11,8 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import { env } from "@/lib/env";
 // import { db } from "@/server/db";
-import { createBrowserClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { getServerSupabaseclient } from "../supabase";
 
 /**
  * 1. CONTEXT
@@ -29,30 +27,7 @@ import { cookies } from "next/headers";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const cookieStore = await cookies();
-
-  const supabase = createBrowserClient(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
-            );
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    },
-  );
+  const supabase = await getServerSupabaseclient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
