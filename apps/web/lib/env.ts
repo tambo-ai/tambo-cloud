@@ -16,6 +16,7 @@ export const env = createEnv({
     DISALLOWED_EMAIL_DOMAINS: z.string().min(1).optional(),
     INTERNAL_SLACK_USER_ID: z.string().min(1).optional(),
     SLACK_OAUTH_TOKEN: z.string().min(1).optional(),
+    PORT: z.string().min(1).optional(),
   },
   /*
    * Environment variables available on the client (and server).
@@ -39,6 +40,7 @@ export const env = createEnv({
     DISALLOWED_EMAIL_DOMAINS: process.env.DISALLOWED_EMAIL_DOMAINS,
     INTERNAL_SLACK_USER_ID: process.env.INTERNAL_SLACK_USER_ID,
     SLACK_OAUTH_TOKEN: process.env.SLACK_OAUTH_TOKEN,
+    PORT: process.env.PORT,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_HYDRA_API_URL: process.env.NEXT_PUBLIC_HYDRA_API_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
