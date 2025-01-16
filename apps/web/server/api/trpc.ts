@@ -11,8 +11,16 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-// import { db } from "@/server/db";
+import { Session, SupabaseClient } from "@supabase/supabase-js";
+import { db } from "@use-hydra-ai/db";
 import { getServerSupabaseclient } from "../supabase";
+
+export type Context = {
+  db: typeof db;
+  session: Session | null;
+  supabase: SupabaseClient;
+  headers: Headers;
+};
 
 /**
  * 1. CONTEXT
@@ -26,14 +34,16 @@ import { getServerSupabaseclient } from "../supabase";
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: { headers: Headers }) => {
+export const createTRPCContext = async (opts: {
+  headers: Headers;
+}): Promise<Context> => {
   const supabase = await getServerSupabaseclient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   return {
-    // db,
+    db,
     session,
     supabase,
     ...opts,
