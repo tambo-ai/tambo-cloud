@@ -38,4 +38,12 @@ export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
     fields: [projectMembers.projectId],
     references: [projects.id],
   }),
+  user: one(authUsers, {
+    fields: [projectMembers.userId],
+    references: [authUsers.id],
+  }),
+}));
+
+export const userRelations = relations(authUsers, ({ many }) => ({
+  projects: many(projectMembers),
 }));
