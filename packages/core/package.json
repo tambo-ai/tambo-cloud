@@ -15,5 +15,8 @@
   "devDependencies": {
     "@use-hydra-ai/eslint-config": "*",
     "@use-hydra-ai/typescript-config": "*"
+  },
+  "volta": {
+    "extends": "../../package.json"
   }
 }
