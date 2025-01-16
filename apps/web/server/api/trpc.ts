@@ -11,12 +11,13 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
+import { env } from "@/lib/env";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
-import { db } from "@use-hydra-ai/db";
+import { getDb, HydraDatabase } from "@use-hydra-ai/db";
 import { getServerSupabaseclient } from "../supabase";
 
 export type Context = {
-  db: typeof db;
+  db: HydraDatabase;
   session: Session | null;
   supabase: SupabaseClient;
   headers: Headers;
@@ -41,6 +42,7 @@ export const createTRPCContext = async (opts: {
   const {
     data: { session },
   } = await supabase.auth.getSession();
+  const db = getDb(env.DATABASE_URL);
 
   return {
     db,

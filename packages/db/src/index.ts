@@ -1,10 +1,15 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle, PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+export type HydraDatabase = PostgresJsDatabase<typeof schema>;
 
-// quick hack to get the db connection
-const client = postgres(process.env.DATABASE_URL!, { prepare: false });
+function getDb(databaseUrl: string): HydraDatabase {
+  // quick hack to get the db connection
+  const client = postgres(databaseUrl, { prepare: false });
 
-const db = drizzle(client, { schema });
+  const db = drizzle(client, { schema });
 
-export { db, schema };
+  return db;
+}
+
+export { getDb, schema };
