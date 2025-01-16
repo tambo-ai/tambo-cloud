@@ -1,7 +1,8 @@
 import { env } from "@/lib/env";
 import { createBrowserClient } from "@supabase/ssr";
+import { type SupabaseClient } from "@supabase/supabase-js";
 
-let supabase: ReturnType<typeof createBrowserClient>;
+let supabase: SupabaseClient;
 
 export function getSupabaseClient() {
   if (!supabase) {
