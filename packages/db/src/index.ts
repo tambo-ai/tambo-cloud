@@ -7,4 +7,4 @@ const client = postgres(process.env.DATABASE_URL!, { prepare: false });
 
 const db = drizzle(client, { casing: "snake_case", schema });
 
-export { db };
+export { db, schema };

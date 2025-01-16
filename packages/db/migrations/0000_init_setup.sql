@@ -8,7 +8,12 @@ CREATE OR REPLACE FUNCTION generate_custom_id(
 DECLARE
     random_part TEXT;
     signature TEXT;
-    secret_key TEXT := current_setting('custom.custom_id_secret_key');
+    -- This is just a dummy secret key for now. When we eventually parameterize this in
+    -- the environment, we'll need to call SET_CONFIG() before and after each transaction
+    -- see the createDrizzle example for RLS in https://orm.drizzle.team/docs/rls for a
+    -- rough idea of how to do this.
+    secret_key TEXT := COALESCE(current_setting('custom.custom_id_secret_key', true), 
+                                'dummy-secret-key-FxEMIkJKnody');
 BEGIN
     IF random_length <= 0 THEN
         RAISE EXCEPTION 'random_length must be greater than 0';
@@ -28,8 +33,3 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- This is just a dummy secret key for now. When we eventually parameterize this in
--- the environment, we'll need to call SET_CONFIG() before and after each transaction
--- see the createDrizzle example for RLS in https://orm.drizzle.team/docs/rls for a
--- rough idea of how to do this.
-SELECT SET_CONFIG('custom.custom_id_secret_key', 'dummy-secret-key-FxEMIkJKnody', false);

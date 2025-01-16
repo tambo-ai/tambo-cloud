@@ -1,6 +1,6 @@
 {
-  "id": "4c276899-1899-441d-8abe-a0a0fe4ec5a6",
-  "prevId": "fab46fa0-38ba-4ada-b3aa-b124f1261c5f",
+  "id": "76e97e22-6875-4dc9-9da1-1469b1c5e97d",
+  "prevId": "4c276899-1899-441d-8abe-a0a0fe4ec5a6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -92,7 +92,7 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true,
-          "default": "generate_custom_id('p')"
+          "default": "generate_custom_id('p_')"
         },
         "name": {
           "name": "name",

@@ -2,12 +2,12 @@ import { relations, sql } from "drizzle-orm";
 import { pgTable } from "drizzle-orm/pg-core";
 import { authUsers } from "drizzle-orm/supabase";
 
-export const project = pgTable("projects", ({ text, timestamp }) => ({
+export const projects = pgTable("projects", ({ text, timestamp }) => ({
   id: text("id")
     .primaryKey()
     .notNull()
     .unique()
-    .default(sql`generate_custom_id('p')`),
+    .default(sql`generate_custom_id('p_')`),
   name: text("name").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -15,12 +15,12 @@ export const project = pgTable("projects", ({ text, timestamp }) => ({
 
 export const projectMembers = pgTable(
   "project_members",
-  ({ text, timestamp, bigserial }) => ({
+  ({ uuid, text, timestamp, bigserial }) => ({
     id: bigserial("id", { mode: "bigint" }).primaryKey(),
     projectId: text("project_id")
-      .references(() => project.id)
+      .references(() => projects.id)
       .notNull(),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .references(() => authUsers.id)
       .notNull(),
     role: text("role").notNull(),
@@ -29,13 +29,13 @@ export const projectMembers = pgTable(
   }),
 );
 // Add relations for project <-> members
-export const projectRelations = relations(project, ({ many }) => ({
+export const projectRelations = relations(projects, ({ many }) => ({
   members: many(projectMembers),
 }));
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
-  project: one(project, {
+  project: one(projects, {
     fields: [projectMembers.projectId],
-    references: [project.id],
+    references: [projects.id],
   }),
 }));
