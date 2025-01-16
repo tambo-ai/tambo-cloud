@@ -27,3 +27,9 @@ BEGIN
     RETURN prefix || random_part || '.' || signature;
 END;
 $$ LANGUAGE plpgsql;
+
+-- This is just a dummy secret key for now. When we eventually parameterize this in
+-- the environment, we'll need to call SET_CONFIG() before and after each transaction
+-- see the createDrizzle example for RLS in https://orm.drizzle.team/docs/rls for a
+-- rough idea of how to do this.
+SELECT SET_CONFIG('custom.custom_id_secret_key', 'dummy-secret-key-FxEMIkJKnody', false);
