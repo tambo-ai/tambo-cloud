@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import { pgTable } from "drizzle-orm/pg-core";
 import { authUsers } from "drizzle-orm/supabase";
+export { authUsers } from "drizzle-orm/supabase";
 
 export const projects = pgTable("projects", ({ text, timestamp }) => ({
   id: text("id")
