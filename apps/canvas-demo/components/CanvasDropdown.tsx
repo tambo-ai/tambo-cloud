@@ -177,8 +177,7 @@ export function CanvasDropdown() {
           <div className="flex items-center gap-1">
             <Command className="h-4 w-4" />
             <span>
-              Pro tip: Press {isMac ? "⌘" : "Ctrl"}+T to quickly open the canvas
-              switcher
+              Pro tip: Press Ctrl+T to quickly open the canvas switcher
             </span>
           </div>,
           { duration: 4000 }
@@ -202,7 +201,7 @@ export function CanvasDropdown() {
           <Plus className="h-4 w-4" />
           <span className="sr-only">New Canvas</span>
           <kbd className="pointer-events-none absolute right-1.5 top-1.5 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-            <span className="text-xs">{isMac ? "⌘" : "Ctrl"}</span>T
+            <span className="text-xs">Ctrl</span>T
           </kbd>
         </Button>
       </PopoverTrigger>
