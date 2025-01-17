@@ -4,8 +4,6 @@ import { DemoRequestEmail } from "@/emails/DemoRequest";
 import { render } from "@react-email/render";
 import { z } from "zod";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 // Schema for contact request body
 const contactRequestSchema = z.object({
   email: z.string().email(),
@@ -23,6 +21,14 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json(
+        { error: "Resend API key not configured" },
+        { status: 500 }
+      );
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const { email } = result.data;
     const html = await render(DemoRequestEmail({ userEmail: email }));
 
