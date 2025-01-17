@@ -15,7 +15,7 @@
     "typescript": "^5.7.3"
   },
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "packageManager": "npm@10.9.2",
   "workspaces": [
