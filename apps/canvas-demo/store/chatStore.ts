@@ -96,10 +96,7 @@ export const useChatStore = create<ChatState>()(
 
           const response = await hydraClient.generateComponent(
             JSON.stringify({
-              messages: [
-                ...hydraMessages,
-                { sender: "user", message: trimmedInput },
-              ],
+              messages: hydraMessages,
               componentName: "FredChart",
             })
           );
