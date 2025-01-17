@@ -36,6 +36,8 @@
       "cache": false,
       "persistent": true
     },
-    "start": {}
+    "start": {
+      "dependsOn": ["^build"]
+    }
   }
 }
