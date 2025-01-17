@@ -1,0 +1,10 @@
+Whenever you get a request, read the code, think through how to implment the change, and ask the user for feedback.
+
+Only make code changes once the user has reviewed your chnages.
+
+Code:
+1. Immutability
+2. Functional Programming
+3. Define Types
+
+After coding alwasy `npm run lint` and `npm run format`. Always!!!
