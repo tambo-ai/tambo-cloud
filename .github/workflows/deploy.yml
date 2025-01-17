@@ -1,11 +1,11 @@
 name: Deploy Database Migrations
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "packages/db/**"
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types:
+      - completed
 
 jobs:
   deploy-migrations:
