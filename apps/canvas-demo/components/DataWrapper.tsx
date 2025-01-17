@@ -338,9 +338,26 @@ export function DataWrapper({
     (input: InputConfig) => {
       const value = params[input.key as keyof typeof params];
 
-      if (input.type === "date") return null;
-
       switch (input.type) {
+        case "date":
+          return (
+            <div key={input.key} className="flex flex-col space-y-2">
+              <Label className="text-sm font-medium">{input.label}</Label>
+              <DateRangePickerWithPresets
+                dateRange={{
+                  from: params.observation_start
+                    ? new Date(params.observation_start)
+                    : undefined,
+                  to: params.observation_end
+                    ? new Date(params.observation_end)
+                    : undefined,
+                }}
+                onDateRangeChange={onDateRangeChange}
+                presets={defaultTimeHorizons}
+              />
+            </div>
+          );
+
         case "select":
           if (input.key !== "frequency" && input.key !== "units") return null;
 
