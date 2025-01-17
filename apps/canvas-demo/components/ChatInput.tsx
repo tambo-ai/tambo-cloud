@@ -44,26 +44,27 @@ export function ChatInput() {
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const startTime = performance.now();
+      const submittedInput = input.trim();
 
-      if (!input.trim() || isLoading) return;
+      if (!submittedInput || isLoading) return;
 
       posthog.capture("message_submitted", {
-        message_length: input.length,
-        is_command: input.startsWith("/"),
+        message_length: submittedInput.length,
+        is_command: submittedInput.startsWith("/"),
         input_method: "text",
-        has_chart_reference: input.toLowerCase().includes("chart"),
+        has_chart_reference: submittedInput.toLowerCase().includes("chart"),
         time_since_last_message: getTimeSinceLastMessage(),
         composition_duration_ms: getCompositionDuration(),
       });
 
-      submitMessage(input)
+      submitMessage(submittedInput)
         .then(() => {
           const duration = performance.now() - startTime;
           recordMessageSent(duration);
           resetCompositionTracking();
 
           posthog.capture("message_sent_success", {
-            message_length: input.length,
+            message_length: submittedInput.length,
             response_time_ms: duration,
             ...getSessionMetrics(),
           });
@@ -71,7 +72,7 @@ export function ChatInput() {
         .catch((error: unknown) => {
           recordMessageError();
           posthog.capture("message_send_error", {
-            message_length: input.length,
+            message_length: submittedInput.length,
             error: error instanceof Error ? error.message : "Unknown error",
             failed_after_ms: performance.now() - startTime,
             ...getSessionMetrics(),
