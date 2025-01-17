@@ -103,6 +103,7 @@ export function CanvasDropdown() {
   >([]);
   const [newCanvasName, setNewCanvasName] = useState("");
   const [hasShownTip, setHasShownTip] = useState(false);
+  const [isMac, setIsMac] = useState(false);
 
   const { switchCanvas, createNewCanvas } = useCanvas();
   const { searchQuery, setSearchQuery, filteredCanvases, isLoading } =
@@ -144,6 +145,10 @@ export function CanvasDropdown() {
     }
   }, [switchCanvas, setChatCanvas, createNewCanvas]);
 
+  useEffect(() => {
+    setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
+  }, []);
+
   const handleCreateCanvas = useCallback(
     (name: string = newCanvasName) => {
       const canvasName = name.trim() || `Canvas ${canvases.length + 1}`;
@@ -168,7 +173,6 @@ export function CanvasDropdown() {
     (open: boolean) => {
       setIsOpen(open);
       if (open && !hasShownTip) {
-        const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
         toast.info(
           <div className="flex items-center gap-1">
             <Command className="h-4 w-4" />
@@ -183,7 +187,7 @@ export function CanvasDropdown() {
         localStorage.setItem(STORAGE_KEYS.CANVAS_TIP, "true");
       }
     },
-    [hasShownTip]
+    [hasShownTip, isMac]
   );
 
   useEffect(() => {
@@ -198,12 +202,7 @@ export function CanvasDropdown() {
           <Plus className="h-4 w-4" />
           <span className="sr-only">New Canvas</span>
           <kbd className="pointer-events-none absolute right-1.5 top-1.5 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-            <span className="text-xs">
-              {navigator.platform.toUpperCase().indexOf("MAC") >= 0
-                ? "⌘"
-                : "Ctrl"}
-            </span>
-            T
+            <span className="text-xs">{isMac ? "⌘" : "Ctrl"}</span>T
           </kbd>
         </Button>
       </PopoverTrigger>
