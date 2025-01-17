@@ -16,7 +16,8 @@
     "API_KEY_SECRET",
     "PROVIDER_KEY_SECRET",
     "SUPABASE_URL",
-    "SUPABASE_ANON_KEY"
+    "SUPABASE_ANON_KEY",
+    "EXTRACTION_OPENAI_API_KEY"
   ],
   "tasks": {
     "build": {
