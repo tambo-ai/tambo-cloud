@@ -105,5 +105,6 @@ export const providerKeyRelations = relations(providerKeys, ({ one }) => ({
 
 export const projectRelations = relations(projects, ({ many }) => ({
   members: many(projectMembers),
+  apiKeys: many(apiKeys),
   providerKeys: many(providerKeys),
 }));
