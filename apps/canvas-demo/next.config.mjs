@@ -12,7 +12,6 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   compress: true,
-  swcMinify: true,
 };
 
 export default nextConfig;

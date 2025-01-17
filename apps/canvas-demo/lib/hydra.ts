@@ -11,12 +11,10 @@ interface HydraStatus {
   progress?: number;
 }
 
-if (!process.env.NEXT_PUBLIC_HYDRA_API_KEY) {
-  throw new Error("HYDRA_API_KEY is not defined in environment variables");
-}
+const hydraApiKey = process.env.NEXT_PUBLIC_HYDRA_API_KEY;
 
 export const hydraClient = new HydraClient({
-  hydraApiKey: process.env.NEXT_PUBLIC_HYDRA_API_KEY,
+  hydraApiKey: hydraApiKey || "",
 });
 
 const fredSearchTool: ComponentContextTool = {
