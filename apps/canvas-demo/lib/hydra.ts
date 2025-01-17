@@ -11,10 +11,12 @@ interface HydraStatus {
   progress?: number;
 }
 
-const hydraApiKey = process.env.NEXT_PUBLIC_HYDRA_API_KEY;
+if (!process.env.NEXT_PUBLIC_HYDRA_API_KEY) {
+  throw new Error("NEXT_PUBLIC_HYDRA_API_KEY environment variable is required");
+}
 
 export const hydraClient = new HydraClient({
-  hydraApiKey: hydraApiKey || "",
+  hydraApiKey: process.env.NEXT_PUBLIC_HYDRA_API_KEY,
 });
 
 const fredSearchTool: ComponentContextTool = {

@@ -13,7 +13,8 @@
     "NODE_ENV",
     "PORT",
     "FRED_API_KEY",
-    "HYDRA_API_KEY"
+    "NEXT_PUBLIC_HYDRA_API_KEY",
+    "NEXT_PUBLIC_POSTHOG_KEY"
   ],
   "tasks": {
     "build": {

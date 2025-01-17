@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+if (!process.env.FRED_API_KEY) {
+  throw new Error("FRED_API_KEY environment variable is required");
+}
+
 const FRED_API_KEY = process.env.FRED_API_KEY;
 const BASE_URL = "https://api.stlouisfed.org/fred";
 

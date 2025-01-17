@@ -22,10 +22,7 @@ export async function POST(request: Request) {
     }
 
     if (!process.env.RESEND_API_KEY) {
-      return NextResponse.json(
-        { error: "Resend API key not configured" },
-        { status: 500 }
-      );
+      throw new Error("RESEND_API_KEY environment variable is required");
     }
 
     const resend = new Resend(process.env.RESEND_API_KEY);

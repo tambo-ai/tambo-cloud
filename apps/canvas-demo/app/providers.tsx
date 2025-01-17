@@ -6,9 +6,13 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
+if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+  throw new Error("NEXT_PUBLIC_POSTHOG_KEY environment variable is required");
+}
+
 // Initialize PostHog in client-side code
 if (typeof window !== "undefined") {
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY || "", {
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
     api_host: "https://app.posthog.com",
     loaded: (posthog) => {
       if (process.env.NODE_ENV === "development") posthog.debug();
