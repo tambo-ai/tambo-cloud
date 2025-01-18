@@ -1,3 +1,22 @@
+/**
+ * This script migrates a firebase backup to the db.
+ *
+ * It is designed to be run in a transaction so that it can be rolled back if
+ * there are any errors.
+ *
+ * It is designed to be run in a dry run mode where it will not actually commit
+ * the transaction.
+ *
+ * You can generate a firestore backup with
+ *
+ * npx -p node-firestore-import-export firestore-export -a credentials.json -b backup.json
+ *
+ * You can then run this script with
+ *
+ * DATABASE_URL=... tsx src/migrate.ts backup.json
+ *
+ * add DRY_RUN=1 to the environment to not actually commit the transaction
+ */
 import { and, eq, inArray } from "drizzle-orm";
 import fs from "fs";
 import { getDb, schema } from "./index";
