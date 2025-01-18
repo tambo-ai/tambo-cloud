@@ -21,7 +21,7 @@ import { and, eq, ExtractTablesWithRelations, inArray } from "drizzle-orm";
 import { PgTransaction } from "drizzle-orm/pg-core";
 import { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import fs from "fs";
-import { getDb, schema } from "./index";
+import { closeDb, getDb, schema } from "./index";
 type FirebaseTimestamp = {
   __datatype__: "timestamp";
   value: {
@@ -192,8 +192,7 @@ async function run() {
       console.error("error: ", e);
     }
   } finally {
-    // close the db
-    await db.$client.end();
+    await closeDb();
   }
 
   console.log("migration complete");
