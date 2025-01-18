@@ -1,7 +1,7 @@
 import { env } from "@/lib/env";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { encryptApiKey, encryptProviderKey, hashKey } from "@use-hydra-ai/core";
-import { HydraDatabase, schema } from "@use-hydra-ai/db";
+import { HydraDatabase, HydraTransaction, schema } from "@use-hydra-ai/db";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 
@@ -136,7 +136,7 @@ export const projectRouter = createTRPCRouter({
 });
 
 async function ensureProjectAccess(
-  db: HydraDatabase,
+  db: HydraDatabase | HydraTransaction,
   projectId: string,
   userId: string,
 ) {
