@@ -101,6 +101,18 @@ async function run() {
           console.log("cannot find project owner ", userId);
           continue;
         }
+
+        // verifying we have a user
+        const user = await findUser(tx, projectOwner);
+        if (!user) {
+          console.log(
+            "  cannot find user ",
+            projectOwner.email,
+            projectOwner.authId,
+          );
+          continue;
+        }
+
         // check if the user already has a matching project
         const [existingProject] = await tx
           .select()
@@ -113,7 +125,7 @@ async function run() {
                 db
                   .select({ id: schema.projectMembers.projectId })
                   .from(schema.projectMembers)
-                  .where(eq(schema.projectMembers.userId, projectOwner.authId)),
+                  .where(eq(schema.projectMembers.userId, user.id)),
               ),
             ),
           );
@@ -128,16 +140,6 @@ async function run() {
           projectOwner.email,
         );
 
-        // verifying we have a user
-        const user = await findUser(tx, projectOwner);
-        if (!user) {
-          console.log(
-            "  cannot find user ",
-            projectOwner.email,
-            projectOwner.authId,
-          );
-          continue;
-        }
         projectCount++;
 
         // insert the project
@@ -149,14 +151,14 @@ async function run() {
           .returning();
         await tx.insert(schema.projectMembers).values({
           projectId: newProject.id,
-          userId: projectOwner.authId,
+          userId: user.id,
           role: "admin",
         });
 
         for (const apiKey of project.apiKeys) {
           await tx.insert(schema.apiKeys).values({
             hashedKey: apiKey.hashedKey,
-            createdByUserId: projectOwner.authId,
+            createdByUserId: user.id,
             name: apiKey.name,
             partiallyHiddenKey: apiKey.partiallyHiddenKey,
             projectId: newProject.id,
