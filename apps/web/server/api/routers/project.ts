@@ -3,10 +3,11 @@ import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { encryptApiKey, encryptProviderKey, hashKey } from "@use-hydra-ai/core";
 import { HydraDatabase, HydraTransaction, schema } from "@use-hydra-ai/db";
 import { randomBytes } from "crypto";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 export const projectRouter = createTRPCRouter({
-  getProjects: protectedProcedure.query(async ({ ctx }) => {
+  getUserProjects: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
     const db = ctx.db;
 
@@ -63,6 +64,16 @@ export const projectRouter = createTRPCRouter({
       });
 
       return project;
+    }),
+
+  removeProject: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = ctx.db;
+      await db
+        .delete(schema.projectMembers)
+        .where(eq(schema.projectMembers.projectId, input.id));
+      await db.delete(schema.projects).where(eq(schema.projects.id, input.id));
     }),
 
   addProviderKey: protectedProcedure
