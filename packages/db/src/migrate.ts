@@ -17,7 +17,9 @@
  *
  * add DRY_RUN=1 to the environment to not actually commit the transaction
  */
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, ExtractTablesWithRelations, inArray } from "drizzle-orm";
+import { PgTransaction } from "drizzle-orm/pg-core";
+import { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 import fs from "fs";
 import { getDb, schema } from "./index";
 type FirebaseTimestamp = {
@@ -127,10 +129,7 @@ async function run() {
         );
 
         // verifying we have a user
-        const [user] = await tx
-          .select()
-          .from(schema.authUsers)
-          .where(eq(schema.authUsers.id, projectOwner.authId));
+        const user = await findUser(tx, projectOwner);
         if (!user) {
           console.log(
             "  cannot find user ",
@@ -188,12 +187,7 @@ async function run() {
     if (e.message === "Rollback") {
       console.log("rollback detected");
     } else {
-      console.error(
-        "error: ",
-        e.message === "Rollback",
-        Object.entries(e),
-        JSON.stringify(e),
-      );
+      console.error("error: ", e);
     }
   } finally {
     // close the db
@@ -204,3 +198,28 @@ async function run() {
 }
 
 await run();
+
+async function findUser(
+  tx: PgTransaction<
+    PostgresJsQueryResultHKT,
+    typeof schema,
+    ExtractTablesWithRelations<typeof schema>
+  >,
+  projectOwner: FirebaseUser,
+) {
+  const [user] = await tx
+    .select()
+    .from(schema.authUsers)
+    .where(eq(schema.authUsers.id, projectOwner.authId));
+  if (!user) {
+    // look up by email
+    const [userByEmail] = await tx
+      .select()
+      .from(schema.authUsers)
+      .where(eq(schema.authUsers.email, projectOwner.email));
+    if (userByEmail) {
+      return userByEmail;
+    }
+  }
+  return user;
+}
