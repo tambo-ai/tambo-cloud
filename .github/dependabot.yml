@@ -6,3 +6,10 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
+    groups:
+      trpc:
+        patterns:
+          - "@trpc/*"
+      nestjs:
+        patterns:
+          - "@nestjs/*"
