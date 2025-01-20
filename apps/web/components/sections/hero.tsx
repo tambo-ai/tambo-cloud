@@ -24,7 +24,7 @@ function HeroPill() {
         🛠️ New
       </div>
       <p className="text-xs font-medium text-primary sm:text-sm">
-        Introducing Canvas SDK
+        Introducing Canvas UI
       </p>
       <svg
         width="12"
@@ -67,7 +67,7 @@ function HeroTitles() {
           }}
         >
           <AuroraText className="leading-tight sm:leading-normal">
-            Apps That Think Like Your Users
+            Build Apps That Think Like Your Users
           </AuroraText>
         </motion.span>
       </motion.h1>
@@ -81,7 +81,7 @@ function HeroTitles() {
           ease,
         }}
       >
-        Build adaptive interfaces that guide users to what they need, instantly
+        Add AI to your app to help your users find what they need.
       </motion.p>
     </div>
   );
@@ -106,7 +106,7 @@ function HeroCTA() {
           )}
         >
           <Icons.logo className="h-5 w-5 sm:h-6 sm:w-6" />
-          Get Early Access
+          Build Your App with Hydra
         </Button>
       </motion.div>
       <EmailDialog open={showDialog} onOpenChange={setShowDialog} />
@@ -115,76 +115,61 @@ function HeroCTA() {
 }
 const LazySpline = lazy(() => import("@splinetool/react-spline"));
 
+function SplineAnimation() {
+  return (
+    <div className="w-full h-full">
+      <LazySpline
+        scene="https://prod.spline.design/mZBrYNcnoESGlTUG/scene.splinecode"
+        className="w-full h-full"
+      />
+    </div>
+  );
+}
+
 export function Hero() {
-  const [showSpline, setShowSpline] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    // Use a more reliable way to detect mobile devices
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+
+    const updateIsMobile = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
     };
 
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
+    // Initial check
+    updateIsMobile(mediaQuery);
 
-    return () => window.removeEventListener("resize", checkMobile);
+    // Add listener for changes
+    mediaQuery.addEventListener("change", updateIsMobile);
+
+    return () => mediaQuery.removeEventListener("change", updateIsMobile);
   }, []);
-
-  useEffect(() => {
-    if (!isMobile) {
-      const timer = setTimeout(() => {
-        setShowSpline(true);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isMobile]);
 
   return (
     <Section id="hero" className="py-8 sm:py-12 lg:py-24">
       <div className="flex flex-col lg:flex-row items-center w-full lg:gap-16">
-        <div className="flex flex-col items-center lg:items-start text-center lg:text-left px-4 sm:px-6 lg:px-0 lg:max-w-[640px]">
+        <div className="flex flex-col items-center lg:items-start text-center lg:text-left lg:max-w-[640px]">
           <HeroPill />
           <HeroTitles />
-
-          {/* Mobile animation */}
-          <div className="block lg:hidden w-full aspect-square mt-8">
-            <Suspense>
-              {showSpline && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 1 }}
-                  className="w-full h-full"
-                >
-                  <LazySpline
-                    scene="https://prod.spline.design/mZBrYNcnoESGlTUG/scene.splinecode"
-                    className="w-full h-full"
-                  />
-                </motion.div>
-              )}
-            </Suspense>
-          </div>
-
           <HeroCTA />
         </div>
 
-        {/* Desktop animation */}
-        <div className="hidden lg:block w-[640px] aspect-square">
-          <Suspense>
-            {showSpline && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 1 }}
-                className="w-full h-full"
-              >
-                <LazySpline
-                  scene="https://prod.spline.design/mZBrYNcnoESGlTUG/scene.splinecode"
-                  className="w-full h-full"
-                />
-              </motion.div>
-            )}
+        {/* Hero animation */}
+        <div className="hidden lg:block w-full lg:w-1/2 aspect-square mt-8 lg:mt-0">
+          <Suspense
+            fallback={
+              <div className="w-full h-full bg-muted/10 animate-pulse rounded-lg" />
+            }
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8 }}
+              className="w-full h-full"
+            >
+              <SplineAnimation />
+            </motion.div>
           </Suspense>
         </div>
       </div>

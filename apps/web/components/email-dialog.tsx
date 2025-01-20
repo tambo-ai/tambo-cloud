@@ -52,10 +52,9 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Get Early Access</DialogTitle>
+          <DialogTitle>Ready to Build?</DialogTitle>
           <DialogDescription>
-            Enter your email to get early access to Hydra AI and stay updated on
-            our latest developments.
+            Want to learn what you can build with Hydra AI?
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,17 +70,17 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
           {success ? (
             <div className="flex items-center gap-2 text-green-500">
               <Icons.logo className="h-4 w-4" />
-              <span>Thanks for subscribing!</span>
+              <span>Thanks for reaching out!</span>
             </div>
           ) : (
             <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? (
                 <>
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                  Subscribing...
+                  Sending email...
                 </>
               ) : (
-                "Get Early Access"
+                "Send us a Note"
               )}
             </Button>
           )}

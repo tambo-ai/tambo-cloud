@@ -11,10 +11,10 @@ export default function Home() {
     <main className="flex min-h-screen flex-col">
       <Header />
       <div className="flex-1">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl">
           <Hero />
           <AnalyticsSection />
-          <SaasFeatures />
+          {/* <SaasFeatures /> */}
           <Features />
           <Community />
           <Footer />

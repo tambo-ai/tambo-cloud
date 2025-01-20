@@ -29,8 +29,8 @@ const features = [
 export function SaasFeatures() {
   return (
     <Section id="saas-features">
-      <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-x-8 w-full p-6 lg:p-12 overflow-hidden">
-        <div className="relative lg:h-full lg:col-span-1 order-1 lg:order-2">
+      <div className="grid lg:grid-cols-2 items-center gap-16">
+        <div className="relative lg:col-start-2">
           <div className="aspect-video w-full rounded-lg bg-muted">
             {/* Video player component will go here */}
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -51,7 +51,7 @@ export function SaasFeatures() {
           </div>
         </div>
 
-        <div className="flex flex-col justify-start items-start lg:col-span-1 mt-8 lg:mt-0 order-2 lg:order-1">
+        <div className="flex flex-col space-y-8 lg:col-start-1 lg:row-start-1">
           <motion.div
             className="flex flex-col space-y-4"
             initial={{ opacity: 0, y: 20 }}
@@ -72,14 +72,14 @@ export function SaasFeatures() {
           </motion.div>
 
           <motion.div
-            className="mt-8 grid gap-6"
+            className="grid gap-6"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             {features.map((feature, index) => (
-              <div key={index} className="flex items-start space-x-4">
+              <div key={index} className="flex items-start gap-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <feature.icon className="h-5 w-5 text-primary" />
                 </div>
