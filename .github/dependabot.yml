@@ -16,3 +16,12 @@ updates:
       radix-ui:
         patterns:
           - "@radix-ui/*"
+      drizzle:
+        # drizzle-kit and drizzle-orm
+        patterns:
+          - "drizzle-kit"
+          - "drizzle-orm"
+      eslint:
+        patterns:
+          - "@eslint/*"
+          - "eslint"
