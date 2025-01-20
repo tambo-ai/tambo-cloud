@@ -13,3 +13,6 @@ updates:
       nestjs:
         patterns:
           - "@nestjs/*"
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
