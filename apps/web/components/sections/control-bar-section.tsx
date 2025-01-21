@@ -79,7 +79,7 @@ export function ControlBarSection() {
               href={content.cta.link}
               className={cn(
                 buttonVariants({ variant: "secondary" }),
-                "flex gap-2 bg-accent hover:bg-accent/90"
+                "flex gap-2 bg-accent hover:bg-accent/90",
               )}
             >
               <ExternalLinkIcon className="h-4 w-4" />

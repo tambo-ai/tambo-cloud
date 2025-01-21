@@ -105,7 +105,7 @@ function HeroCTA() {
           onClick={() => setShowDialog(true)}
           className={cn(
             buttonVariants({ variant: "default" }),
-            "w-full sm:w-auto text-background flex gap-2 rounded-lg py-6 sm:py-4"
+            "w-full sm:w-auto text-background flex gap-2 rounded-lg py-6 sm:py-4",
           )}
         >
           <Icons.logo className="h-5 w-5 sm:h-6 sm:w-6" />

@@ -137,7 +137,7 @@ export default function HeroVideoDialog({
       <div
         className={cn(
           "relative bg-muted rounded-3xl p-8 text-center",
-          className
+          className,
         )}
       >
         <p className="text-muted-foreground">Failed to load video</p>
@@ -158,7 +158,7 @@ export default function HeroVideoDialog({
           onClick={handleVideoClick}
           className={cn(
             "w-full h-full object-cover transition-opacity duration-300",
-            isPlaying ? "opacity-100" : "opacity-50"
+            isPlaying ? "opacity-100" : "opacity-50",
           )}
           muted
           loop

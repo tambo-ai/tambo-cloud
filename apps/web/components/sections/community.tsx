@@ -77,7 +77,7 @@ export function Community() {
             href={content.cta.link}
             className={cn(
               buttonVariants({ variant: "default" }),
-              "text-lg flex items-center gap-2"
+              "text-lg flex items-center gap-2",
             )}
           >
             {(() => {
