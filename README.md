@@ -42,6 +42,40 @@ These are also available as npm scripts:
 - `npm run lint` - Lints the api and web apps
 - `npm run check-types` - Checks the types in the api and web apps
 
+### Database setup
+
+The database is setup with [Drizzle](https://orm.drizzle.team/docs/introduction/getting-started) and [Supabase](https://supabase.com/). The following instructions will get a local database running and setup the database schema.
+
+The following is a shortened version of the instructions from the supabase docs: https://supabase.com/docs/guides/local-development
+
+#### Initialize supabase:
+
+You generally only need to do this once:
+
+```bash
+npx supabase login
+npx supabase link
+# Ignore the diff that may show up
+npx supabase start
+```
+
+Now configure the database in the `apps/api/.env` and `apps/web/.env` files:
+
+```bash
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=xxxxxx # get from `supabase start` output
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+```
+
+#### Run the database migrations:
+
+This will set up the database schema and run the migrations.
+
+```bash
+cd packages/db
+npm run db:migrate
+```
+
 # Shadcn Landing Page Template
 
 The landing page comes from a [Shadcn Landing Page Template](https://github.com/nobruf/shadcn-landing-page) and is built with [Shadcn](https://ui.shadcn.com/), [Next.js](https://nextjs.org/), [TypeScript](https://www.typescriptlang.org/), and [Tailwind](https://tailwindcss.com/).
