@@ -1,5 +1,5 @@
 import { TailwindIndicator } from "@/components/tailwind-indicator";
-import { ThemeProvider } from "@/components/layout/theme-provider";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Toaster } from "@/components/ui/toaster";
 import { siteConfig } from "@/lib/config";
@@ -51,12 +51,12 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn(
         `${GeistSans.variable} ${GeistMono.variable}`,
-        inter.className,
+        inter.className
       )}
     >
       <body
         className={cn(
-          "min-h-screen bg-background antialiased w-full mx-auto scroll-smooth font-sans flex flex-col",
+          "min-h-screen bg-background antialiased w-full mx-auto scroll-smooth font-sans flex flex-col"
         )}
       >
         <ThemeProvider

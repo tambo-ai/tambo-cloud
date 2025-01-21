@@ -6,26 +6,26 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
-  MessageSquareTextIcon,
-  GraduationCapIcon,
-  LineChartIcon,
+  BrainCircuitIcon,
+  Hourglass,
+  TrendingUpIcon,
   ExternalLinkIcon,
 } from "lucide-react";
 import { AuroraText } from "@/components/aurora-text";
-import HeroVideoDialog from "@/components/ui/hero-video-dialog";
 import { copy } from "@/lib/copy";
+// import HeroVideoDialog from "@/components/ui/hero-video-dialog";
 
 const iconMap = {
-  MessageSquareText: MessageSquareTextIcon,
-  GraduationCap: GraduationCapIcon,
-  LineChart: LineChartIcon,
+  BrainCircuit: BrainCircuitIcon,
+  Hourglass: Hourglass,
+  TrendingUp: TrendingUpIcon,
 } as const;
 
-const content = copy.analytics;
+const content = copy.controlBar;
 
-export function AnalyticsSection() {
+export function ControlBarSection() {
   return (
-    <Section id="analytics">
+    <Section id="control-bar">
       <div className="flex flex-col items-center text-center lg:text-left lg:items-start max-w-3xl mx-auto lg:max-w-none lg:grid lg:grid-cols-2 gap-16">
         <div className="flex flex-col space-y-8 order-2 lg:order-1">
           <motion.div
@@ -72,10 +72,9 @@ export function AnalyticsSection() {
 
         <div className="flex flex-col space-y-4 w-full order-1 lg:order-2">
           <div className="aspect-video w-full rounded-lg">
-            <HeroVideoDialog
-              videoSrc={content.demo.videoSrc}
-              className="w-full shadow-2xl rounded-3xl border border-border"
-            />
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted rounded-3xl border border-border">
+              Video Demo Placeholder
+            </div>
           </div>
           <div className="flex justify-center">
             <Link

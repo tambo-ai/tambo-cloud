@@ -8,23 +8,26 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { EmailDialog } from "@/components/email-dialog";
+import { copy } from "@/lib/copy";
 
 const ease = [0.16, 1, 0.3, 1];
+
+const heroContent = copy.hero;
 
 function HeroPill() {
   return (
     <motion.a
-      href="https://canvas.usehydra.ai/"
+      href={heroContent.pill.link}
       className="flex w-auto items-center space-x-2 rounded-full bg-primary/20 px-2 py-1 ring-1 ring-accent whitespace-pre"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease }}
     >
       <div className="w-fit rounded-full bg-accent px-2 py-0.5 text-left text-xs font-medium text-primary sm:text-sm">
-        🛠️ New
+        {heroContent.pill.label}
       </div>
       <p className="text-xs font-medium text-primary sm:text-sm">
-        Introducing Canvas UI
+        {heroContent.pill.text}
       </p>
       <svg
         width="12"
@@ -67,7 +70,7 @@ function HeroTitles() {
           }}
         >
           <AuroraText className="leading-tight sm:leading-normal">
-            Build Apps That Think Like Your Users
+            {heroContent.title}
           </AuroraText>
         </motion.span>
       </motion.h1>
@@ -81,7 +84,7 @@ function HeroTitles() {
           ease,
         }}
       >
-        Add AI to your app to help your users find what they need.
+        {heroContent.subtitle}
       </motion.p>
     </div>
   );
@@ -106,7 +109,7 @@ function HeroCTA() {
           )}
         >
           <Icons.logo className="h-5 w-5 sm:h-6 sm:w-6" />
-          Build Your App with Hydra
+          {heroContent.cta.buttonText}
         </Button>
       </motion.div>
       <EmailDialog open={showDialog} onOpenChange={setShowDialog} />

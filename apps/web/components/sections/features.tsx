@@ -1,102 +1,51 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { icons } from "lucide-react";
 import { Section } from "@/components/section";
-import { buttonVariants, Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import {
-  RocketIcon,
-  WrenchIcon,
-  BrainCircuitIcon,
-  SparklesIcon,
-} from "lucide-react";
-import { AuroraText } from "@/components/aurora-text";
-import { useState } from "react";
-import { EmailDialog } from "@/components/email-dialog";
+import { copy } from "@/lib/copy";
 
-const features = [
-  {
-    title: "Start fast with prebuilt functionality",
-    description:
-      "Get up and running quickly with our ready-to-use components and integrations",
-    icon: RocketIcon,
-  },
-  {
-    title: "Customize Hydra AI to fit your workflows",
-    description: "Adapt and extend our platform to match your specific needs",
-    icon: WrenchIcon,
-  },
-  {
-    title: "Scale confidently with smarter interfaces",
-    description: "Build interfaces that grow and evolve with your application",
-    icon: BrainCircuitIcon,
-  },
-];
+const content = copy.features;
 
 export function Features() {
-  const [showDialog, setShowDialog] = useState(false);
-
   return (
-    <Section id="features">
-      <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
-        <motion.div
-          className="flex flex-col space-y-4"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
-            <AuroraText>Fast Start. Flexible Design. Smarter Apps.</AuroraText>
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            Hydra AI is built for developers who want to create adaptive,
-            user-friendly interfaces without slowing down development.
-          </p>
-        </motion.div>
+    <Section id="features" className="container py-24 sm:py-32">
+      <h2 className="text-lg text-primary text-center mb-2 tracking-wider">
+        {content.title}
+      </h2>
 
-        <motion.div
-          className="mt-12 grid gap-8 md:grid-cols-3"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="flex flex-col items-center space-y-4 p-6 rounded-lg bg-muted/50"
-            >
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <feature.icon className="h-6 w-6 text-primary" />
-              </div>
-              <div className="space-y-2 text-center">
-                <h3 className="text-xl font-medium">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
-              </div>
-            </div>
-          ))}
-        </motion.div>
+      <h2 className="text-3xl md:text-4xl text-center font-bold mb-4">
+        {content.heading}
+      </h2>
 
-        <motion.div
-          className="mt-12"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-        >
-          <Button
-            onClick={() => setShowDialog(true)}
-            className={cn(
-              buttonVariants({ variant: "default" }),
-              "text-lg flex items-center gap-2"
-            )}
-          >
-            We want to build with you.
-            <SparklesIcon className="h-4 w-4" />
-          </Button>
-          <EmailDialog open={showDialog} onOpenChange={setShowDialog} />
-        </motion.div>
+      <h3 className="md:w-1/2 mx-auto text-xl text-center text-muted-foreground mb-8">
+        {content.description}
+      </h3>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {content.list.map(({ icon, title, description }) => (
+          <div key={title}>
+            <Card className="h-full bg-background border-0 shadow-none">
+              <CardHeader className="flex justify-center items-center">
+                <div className="bg-primary/20 p-2 rounded-full ring-8 ring-primary/10 mb-4">
+                  <Icon
+                    name={icon as keyof typeof icons}
+                    size={24}
+                    color="hsl(var(--primary))"
+                    className="text-primary"
+                  />
+                </div>
+
+                <CardTitle>{title}</CardTitle>
+              </CardHeader>
+
+              <CardContent className="text-muted-foreground text-center">
+                {description}
+              </CardContent>
+            </Card>
+          </div>
+        ))}
       </div>
     </Section>
   );

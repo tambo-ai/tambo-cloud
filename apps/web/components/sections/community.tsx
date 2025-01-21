@@ -12,25 +12,16 @@ import {
   BookIcon,
 } from "lucide-react";
 import { AuroraText } from "@/components/aurora-text";
+import { copy } from "@/lib/copy";
 
-const features = [
-  {
-    title: "Easy to implement with detailed guides",
-    description: "Clear documentation and step-by-step integration guides",
-    icon: BookOpenIcon,
-  },
-  {
-    title: "Works seamlessly across web and mobile",
-    description: "Built for cross-platform compatibility from the ground up",
-    icon: SmartphoneIcon,
-  },
-  {
-    title: "Fits into any modern React stack",
-    description:
-      "Integrates with Next.js, React Native, Expo, Remix, Gatsby, Astro, and other modern frameworks",
-    icon: PackageIcon,
-  },
-];
+const iconMap = {
+  BookOpen: BookOpenIcon,
+  Smartphone: SmartphoneIcon,
+  Package: PackageIcon,
+  Book: BookIcon,
+} as const;
+
+const content = copy.community;
 
 export function Community() {
   return (
@@ -44,12 +35,9 @@ export function Community() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
-            <AuroraText>Built for Users, Loved by Developers</AuroraText>
+            <AuroraText>{content.title}</AuroraText>
           </h2>
-          <p className="text-lg text-muted-foreground">
-            Hydra AI is easy to integrate and built for scale. Developers love
-            our clear documentation, fast setup, and flexibility.
-          </p>
+          <p className="text-lg text-muted-foreground">{content.description}</p>
         </motion.div>
 
         <motion.div
@@ -59,13 +47,16 @@ export function Community() {
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          {features.map((feature, index) => (
+          {content.features.map((feature, index) => (
             <div
               key={index}
               className="flex flex-col items-center space-y-4 p-6 rounded-lg bg-muted/50"
             >
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                <feature.icon className="h-6 w-6 text-primary" />
+                {(() => {
+                  const Icon = iconMap[feature.icon as keyof typeof iconMap];
+                  return <Icon className="h-6 w-6 text-primary" />;
+                })()}
               </div>
               <div className="space-y-2 text-center">
                 <h3 className="text-xl font-medium">{feature.title}</h3>
@@ -83,14 +74,17 @@ export function Community() {
           transition={{ duration: 0.8, delay: 0.4 }}
         >
           <Link
-            href="/docs"
+            href={content.cta.link}
             className={cn(
               buttonVariants({ variant: "default" }),
               "text-lg flex items-center gap-2"
             )}
           >
-            <BookIcon className="h-4 w-4" />
-            Read our docs
+            {(() => {
+              const Icon = iconMap[content.cta.icon as keyof typeof iconMap];
+              return <Icon className="h-4 w-4" />;
+            })()}
+            {content.cta.text}
           </Link>
         </motion.div>
       </div>

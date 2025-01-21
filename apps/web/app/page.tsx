@@ -1,5 +1,5 @@
 import { AnalyticsSection } from "@/components/sections/analytics-section";
-import { SaasFeatures } from "@/components/sections/saas-features";
+import { ControlBarSection } from "@/components/sections/control-bar-section";
 import { Features } from "@/components/sections/features";
 import { Footer } from "@/components/sections/footer";
 import { Hero } from "@/components/sections/hero";
@@ -14,7 +14,7 @@ export default function Home() {
         <div className="mx-auto w-full max-w-7xl">
           <Hero />
           <AnalyticsSection />
-          {/* <SaasFeatures /> */}
+          <ControlBarSection />
           <Features />
           <Community />
           <Footer />
