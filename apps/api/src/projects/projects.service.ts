@@ -82,7 +82,7 @@ export class ProjectsService {
 
   async findOneWithKeys(id: string): Promise<Project | null> {
     const project = await this.db.query.projects.findFirst({
-      where: (projects, { eq }) => eq(schema.projects.id, id),
+      where: (projects, { eq }) => eq(projects.id, id),
       with: {
         members: true,
         apiKeys: true,
