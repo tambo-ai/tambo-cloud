@@ -4,7 +4,7 @@ import {
   createHash,
   randomBytes,
 } from 'crypto';
-import { ConfigServiceSingleton } from 'src/config.service';
+import { ConfigServiceSingleton } from '../config.service';
 
 const algorithm = 'aes-256-cbc';
 const IV_LENGTH = 16; // 16 bytes for AES
