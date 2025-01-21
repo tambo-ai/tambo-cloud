@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { AuroraText } from "@/components/aurora-text";
 import { copy } from "@/lib/copy";
-// import HeroVideoDialog from "@/components/ui/hero-video-dialog";
+import HeroVideoDialog from "@/components/ui/hero-video-dialog";
 
 const iconMap = {
   BrainCircuit: BrainCircuitIcon,
@@ -72,9 +72,7 @@ export function ControlBarSection() {
 
         <div className="flex flex-col space-y-4 w-full order-1 lg:order-2">
           <div className="aspect-video w-full rounded-lg">
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted rounded-3xl border border-border">
-              Video Demo Placeholder
-            </div>
+            <HeroVideoDialog videoSrc={content.demo.videoSrc} />
           </div>
           <div className="flex justify-center">
             <Link

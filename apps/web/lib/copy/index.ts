@@ -57,9 +57,9 @@ export const copy = {
     ],
   },
   analytics: {
-    title: "Conversational Analytics Made Simple",
+    title: "Integrate Conversational Analytics in to your app",
     description:
-      "Let users explore data effortlessly with natural language. Hydra AI translates their questions into insights without the need for complex dashboards.",
+      "Hydra AI provides a simple, powerful way to integrate conversational analytics into your app.",
     features: [
       {
         title: "Seamless Data Integration",
