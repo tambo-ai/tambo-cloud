@@ -169,7 +169,7 @@ export const projectRouter = createTRPCRouter({
       return {
         ...row,
         // return the full api key to the client one time
-        apiKey,
+        apiKey: encryptedKey,
       };
     }),
 
