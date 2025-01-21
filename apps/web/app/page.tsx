@@ -1,4 +1,3 @@
-// Test comment for pre-commit hook
 import { AnalyticsSection } from "@/components/sections/analytics-section";
 import { ControlBarSection } from "@/components/sections/control-bar-section";
 import { Features } from "@/components/sections/features";
