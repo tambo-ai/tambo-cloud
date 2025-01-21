@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Play } from "lucide-react";
+import { motion } from "framer-motion";
 import { track } from "@vercel/analytics";
 import { useTheme } from "next-themes";
 
@@ -78,7 +77,6 @@ export default function HeroVideoDialog({
 }: HeroVideoProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
-  const [animationStarted, setAnimationStarted] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [currentVideoSrc, setCurrentVideoSrc] = useState(videoSrc);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -94,26 +92,34 @@ export default function HeroVideoDialog({
     setCurrentVideoSrc(newVideoSrc);
   }, [systemTheme, theme, videoSrc, darkModeVideoSrc]);
 
+  // Auto-play muted on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimationStarted(true);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handlePlayClick = () => {
     if (videoRef.current) {
+      videoRef.current.play().catch((error) => {
+        console.error("Failed to autoplay video:", error);
+      });
+    }
+  }, [currentVideoSrc]);
+
+  const handlePlayClick = async () => {
+    if (!videoRef.current) return;
+
+    try {
       videoRef.current.currentTime = 0;
-      videoRef.current.play().catch(() => setVideoError(true));
       videoRef.current.muted = false;
+      await videoRef.current.play();
       setIsPlaying(true);
       setShowControls(true);
       track("Video Play", { src: currentVideoSrc });
+    } catch (error) {
+      console.error("Failed to play video:", error);
+      setVideoError(true);
     }
   };
 
   const handleVideoClick = () => {
+    if (!videoRef.current) return;
+
     if (isPlaying) {
       setShowControls(!showControls);
     } else {
@@ -150,15 +156,17 @@ export default function HeroVideoDialog({
         <video
           ref={videoRef}
           onClick={handleVideoClick}
-          className={`w-full h-full object-cover ${
+          className={cn(
+            "w-full h-full object-cover transition-opacity duration-300",
             isPlaying ? "opacity-100" : "opacity-50"
-          } transition-opacity duration-300`}
-          autoPlay
+          )}
           muted
           loop
           playsInline
           controls={showControls}
           onError={handleVideoError}
+          preload="auto"
+          autoPlay
         >
           <source src={currentVideoSrc} type="video/mp4" />
         </video>
