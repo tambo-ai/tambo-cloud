@@ -7,7 +7,7 @@ export const copy = {
     },
     title: "Ship AI Features in Hours, Not Months",
     subtitle:
-      "Powerful AI capabilities, zero complexity. Build smarter apps without managing infrastructure.",
+      "Powerful AI capabilities that integrate seamlessly into your existing apps. Add intelligence without managing infrastructure.",
     cta: {
       buttonText: "Request Early Access",
     },
@@ -16,7 +16,7 @@ export const copy = {
     title: "Features",
     heading: "AI Tools for Every Use Case",
     description:
-      "Hydra AI provides tools to transform your app with AI-powered capabilities. Deliver smarter, more intuitive experiences faster than ever before.",
+      "Hydra AI provides tools to add AI-powered capabilities to your existing applications. Enhance your app with smarter, more intuitive experiences faster than ever before.",
     list: [
       {
         icon: "Brain",
@@ -28,7 +28,7 @@ export const copy = {
         icon: "Zap",
         title: "Fast Integration",
         description:
-          "Get started in hours, not weeks. Hydra AI tools integrate quickly without requiring AI expertise or significant infrastructure changes.",
+          "Add to your existing app in hours, not weeks. Hydra AI tools plug directly into your current stack without requiring AI expertise or infrastructure changes.",
       },
       {
         icon: "Puzzle",
@@ -91,7 +91,7 @@ export const copy = {
   controlBar: {
     title: "Simplify User Journeys with AI",
     description:
-      "Make your app easier to navigate. Hydra AI's control bar predicts user needs and surfaces the right features at the right time.",
+      "Enhance your existing app's navigation. Hydra AI's control bar drops in seamlessly to surface the right features at the right time.",
     features: [
       {
         title: "Context-Aware Guidance",
@@ -121,31 +121,31 @@ export const copy = {
     },
   },
   community: {
-    title: "Built for Developers, Loved by Teams",
+    title: "Built With Your Stack in Mind",
     description:
-      "Modern tools, clear documentation, and robust APIs designed to help you build smarter apps faster.",
+      "Add AI features to your existing app without rebuilding your infrastructure.",
     features: [
       {
-        title: "Comprehensive Documentation",
+        title: "Keep Your Auth and Data",
         description:
-          "Step-by-step guides and examples to get you from setup to production quickly.",
+          "Works with your existing JWT tokens and database connections. No parallel systems or data duplication needed.",
         icon: "BookOpen",
       },
       {
-        title: "Cross-Platform Compatibility",
+        title: "Test Before Production",
         description:
-          "Works seamlessly with React, React Native, Next.js, and other modern frameworks.",
+          "Debug AI interactions locally, see exactly how responses will work with your data, and tune behavior through configuration.",
         icon: "Smartphone",
       },
       {
-        title: "Plug and Play",
+        title: "Start Fast, Customize Later",
         description:
-          "Drop Hydra AI into your existing workflow with minimal disruption.",
+          "Begin with our React components for chat and analytics, then customize the UI and behavior as your needs grow.",
         icon: "Package",
       },
     ],
     cta: {
-      text: "Explore the Docs",
+      text: "See Integration Guide",
       icon: "Book",
       link: "/docs",
     },
