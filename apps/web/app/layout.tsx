@@ -10,7 +10,8 @@ import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { PHProvider, PostHogPageview } from "./providers";
+import { Suspense } from "react";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -52,15 +53,18 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn(
         `${GeistSans.variable} ${GeistMono.variable}`,
-        inter.className
+        inter.className,
       )}
     >
-      <body
-        className={cn(
-          "min-h-screen bg-background antialiased w-full mx-auto scroll-smooth font-sans flex flex-col"
-        )}
-      >
-        <PostHogProvider>
+      <Suspense>
+        <PostHogPageview />
+      </Suspense>
+      <PHProvider>
+        <body
+          className={cn(
+            "min-h-screen bg-background antialiased w-full mx-auto scroll-smooth font-sans flex flex-col",
+          )}
+        >
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -72,8 +76,8 @@ export default function RootLayout({
           </ThemeProvider>
           <Toaster />
           <Analytics />
-        </PostHogProvider>
-      </body>
+        </body>
+      </PHProvider>
     </html>
   );
 }
