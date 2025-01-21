@@ -10,11 +10,6 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // @Post()
-  // create(@Body() createUserDto: UserDto) {
-  //   return this.usersService.create(createUserDto);
-  // }
-
   @UseGuards(UserAccessOwnGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
