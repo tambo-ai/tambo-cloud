@@ -11,7 +11,7 @@
     "dev": "nest start --watch",
     "start:dev": "nest start --watch -e 'node --experimental-require-module'",
     "start:debug": "nest start --debug --watch ",
-    "start:prod": "node dist/src/main",
+    "start:prod": "node dist/apps/api/src/main",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
