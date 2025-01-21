@@ -1,15 +1,22 @@
 # HydraAI Monorepo
 
-## This repo is a monorepo for the HydraAI project. It contains the following packages:
+## This repo is a monorepo for the HydraAI project.
 
-- [hydra-ai-client](./apps/web) - The main nextjs app, including the landing page and the admin dashboard
+The main apps are in the [apps](./apps) directory:
+
+- [hydra-ai-client](./apps/web) - The main nextjs app, including the landing page and the project dashboard
 - [hydra-ai-api](./apps/api) - The nestjs api server, including the swagger ui and the api routes
-- [hydra-ai-server](./packages/hydra-ai-server) - A library for interacting with the LLMj
 
-There are some basic supporting packages:
+There are shared libraries in the [packages](./packages) directory:
 
-- [hydra-ai-types](./packages/typescript-config) - All the typescript config files for the project, with specific configs for NextJS apps and libraries
-- [hydra-ai-eslint-config](./packages/eslint-config) - All the eslint config files for the project, with specific configs for NextJS apps and libraries
+- [hydra-ai-server](./packages/hydra-ai-server) - A library for interacting with the LLM
+- [@use-hydra-ai/core](./packages/core) - A library for basic shared utilities/etc.
+- [@use-hydra-ai/db](./packages/db) - A library for interacting with the database. This is mostly the drizzle schema and migrations.
+
+There also are some basic supporting packages only used during development:
+
+- [@use-hydra-ai/eslint-config](./packages/eslint-config) - All the eslint config files for the project, with specific configs for NextJS apps and libraries
+- [@use-hydra-ai/typescript-config](./packages/typescript-config) - All the typescript config files for the project, with specific configs for NextJS apps and libraries
 
 ## Development
 
