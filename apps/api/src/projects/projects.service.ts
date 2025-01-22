@@ -134,8 +134,8 @@ export class ProjectsService {
       name: apiKey.name,
       hashedKey: apiKey.hashedKey,
       partiallyHiddenKey: apiKey.partiallyHiddenKey ?? undefined,
-      created: this.convertTimestampToDate(apiKey.createdAt),
-      lastUsed: this.convertTimestampToDate(apiKey.lastUsedAt),
+      created: apiKey.createdAt,
+      lastUsed: apiKey.lastUsedAt ?? undefined,
       createdByUserId: apiKey.createdByUserId,
     }));
   }
@@ -194,7 +194,12 @@ export class ProjectsService {
     projectId: string,
     providerKeyId: string,
   ): Promise<Project | null | undefined> {
-    return operations.deleteProviderKey(this.db, projectId, providerKeyId);
+    await operations.deleteProviderKey(this.db, projectId, providerKeyId);
+    const project = await this.findOneWithKeys(projectId);
+    if (!project) {
+      throw new Error('Project not found');
+    }
+    return project;
   }
 
   private convertTimestampToDate(
