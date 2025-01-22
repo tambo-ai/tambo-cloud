@@ -12,8 +12,7 @@ import { RegistryModule } from './registry/registry.module';
 
 @Module({
   imports: [
-    // this isn't formatted right yet
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot(),
     LoggerModule,
     ComponentsModule,
     ProjectsModule,
