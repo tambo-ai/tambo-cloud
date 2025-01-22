@@ -115,7 +115,7 @@ export class ProjectsService {
     name: string,
   ): Promise<string> {
     const apiKeySecret = this.config.getOrThrow('API_KEY_SECRET');
-    return operations.createApiKey(apiKeySecret, this.db, {
+    return operations.createApiKey(this.db, apiKeySecret, {
       projectId,
       userId,
       name,

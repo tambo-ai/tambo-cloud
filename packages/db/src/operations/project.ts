@@ -103,8 +103,8 @@ export async function deleteProject(
 }
 
 export async function createApiKey(
-  apiKeySecret: string,
   db: HydraTransaction,
+  apiKeySecret: string,
   {
     projectId,
     userId,
