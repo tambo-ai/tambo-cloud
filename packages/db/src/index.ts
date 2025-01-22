@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import * as operations from "./operations";
 import * as schema from "./schema";
 import type { HydraDatabase } from "./types";
 
@@ -26,4 +27,4 @@ async function closeDb() {
 }
 
 export * from "./types";
-export { closeDb, getDb, schema };
+export { closeDb, getDb, operations, schema };
