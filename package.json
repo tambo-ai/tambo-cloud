@@ -36,10 +36,10 @@
     "resend": "^4.1.1"
   },
   "lint-staged": {
-    "apps/web/**/*.{js,jsx,ts,tsx}": [
+    "*.{js,jsx,ts,tsx}": [
       "prettier --write",
-      "eslint --fix --config apps/web/eslint.config.mjs",
-      "cd apps/web && tsc --noEmit"
+      "turbo run lint --fix --",
+      "turbo run check-types --"
     ],
     "*.{json,md}": [
       "prettier --write"
