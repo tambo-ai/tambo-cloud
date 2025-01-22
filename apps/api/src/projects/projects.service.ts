@@ -8,11 +8,6 @@ import { ProjectDto } from './dto/project.dto';
 import { ProviderKeyResponseDto } from './dto/provider-key-response.dto';
 import { Project } from './entities/project.entity';
 
-interface FirebaseTimestamp {
-  _seconds: number;
-  _nanoseconds: number;
-}
-
 @Injectable()
 export class ProjectsService {
   constructor(
@@ -200,22 +195,5 @@ export class ProjectsService {
       throw new Error('Project not found');
     }
     return project;
-  }
-
-  private convertTimestampToDate(
-    timestamp: FirebaseTimestamp | Date | null | undefined,
-  ): Date | undefined {
-    if (!timestamp) {
-      return undefined;
-    }
-    if (timestamp instanceof Date) {
-      return timestamp;
-    }
-    if ('_seconds' in timestamp && '_nanoseconds' in timestamp) {
-      return new Date(
-        timestamp._seconds * 1000 + timestamp._nanoseconds / 1000000,
-      );
-    }
-    return undefined;
   }
 }
