@@ -34,15 +34,5 @@
   },
   "dependencies": {
     "resend": "^4.1.1"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "prettier --write",
-      "turbo run lint --fix --",
-      "turbo run check-types --"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
   }
 }
