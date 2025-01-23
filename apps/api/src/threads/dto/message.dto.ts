@@ -9,10 +9,10 @@ export enum MessageRole {
 
 export class MessageDto {
   @IsEnum(MessageRole)
-  role: MessageRole;
+  role!: MessageRole;
 
   @IsNotEmpty()
-  content: string | Record<string, unknown>;
+  content!: string | Record<string, unknown>;
 
   @IsOptional()
   metadata?: Record<string, unknown>;

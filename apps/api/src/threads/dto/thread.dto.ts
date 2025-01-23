@@ -2,7 +2,7 @@ import { IsOptional, IsString } from 'class-validator';
 
 export class ThreadDto {
   @IsString()
-  projectId: string;
+  projectId!: string;
 
   @IsString()
   @IsOptional()
