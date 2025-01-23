@@ -6,7 +6,7 @@ import {
   hashKey,
   hideApiKey,
 } from "@use-hydra-ai/core";
-import { HydraDatabase, HydraTransaction, schema } from "@use-hydra-ai/db";
+import { HydraDb, schema } from "@use-hydra-ai/db";
 import { randomBytes } from "crypto";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -205,7 +205,7 @@ export const projectRouter = createTRPCRouter({
 });
 
 async function ensureProjectAccess(
-  db: HydraDatabase | HydraTransaction,
+  db: HydraDb,
   projectId: string,
   userId: string,
 ) {
