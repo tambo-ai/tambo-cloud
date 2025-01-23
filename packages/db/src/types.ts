@@ -16,3 +16,10 @@ export type HydraTransaction = PgTransaction<
   typeof schema,
   ExtractTablesWithRelations<typeof schema>
 >;
+
+/**
+ * Interface to the Hydra database. This is preferred over explicit
+ * HydraDatabase or HydraTransaction, so that you can do most operations
+ * without having to know if you're in or out of a transaction.
+ */
+export type HydraDb = HydraDatabase | HydraTransaction;

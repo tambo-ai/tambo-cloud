@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { HydraTransaction } from '@use-hydra-ai/db';
+import type { HydraDatabase } from '@use-hydra-ai/db';
 import { operations } from '@use-hydra-ai/db';
 import { APIKeyResponseDto } from './dto/api-key-response.dto';
 import { ProjectResponseDto } from './dto/project-response.dto';
@@ -12,7 +12,7 @@ import { Project } from './entities/project.entity';
 export class ProjectsService {
   constructor(
     @Inject('DbRepository')
-    private readonly db: HydraTransaction,
+    private readonly db: HydraDatabase,
     private readonly config: ConfigService,
   ) {}
 

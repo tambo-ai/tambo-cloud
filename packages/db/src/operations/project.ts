@@ -7,10 +7,10 @@ import {
 import { createHash, randomBytes } from "crypto";
 import { and, eq } from "drizzle-orm";
 import * as schema from "../schema";
-import type { HydraTransaction } from "../types";
+import type { HydraDb } from "../types";
 
 export async function createProject(
-  db: HydraTransaction,
+  db: HydraDb,
   { name, userId }: { name: string; userId: string },
 ) {
   if (!userId) {
@@ -37,7 +37,7 @@ export async function createProject(
   };
 }
 
-export async function getProjectsForUser(db: HydraTransaction, userId: string) {
+export async function getProjectsForUser(db: HydraDb, userId: string) {
   return db.query.projects.findMany({
     where: (projects, { inArray }) =>
       inArray(
@@ -50,7 +50,7 @@ export async function getProjectsForUser(db: HydraTransaction, userId: string) {
   });
 }
 
-export async function getProject(db: HydraTransaction, id: string) {
+export async function getProject(db: HydraDb, id: string) {
   return db.query.projects.findFirst({
     where: (projects, { eq, or, and, isNotNull }) =>
       or(
@@ -63,7 +63,7 @@ export async function getProject(db: HydraTransaction, id: string) {
   });
 }
 
-export async function getProjectWithKeys(db: HydraTransaction, id: string) {
+export async function getProjectWithKeys(db: HydraDb, id: string) {
   return db.query.projects.findFirst({
     where: (projects, { eq, or, and, isNotNull }) =>
       or(
@@ -79,7 +79,7 @@ export async function getProjectWithKeys(db: HydraTransaction, id: string) {
 }
 
 export async function updateProject(
-  db: HydraTransaction,
+  db: HydraDb,
   id: string,
   { name }: { name: string },
 ) {
@@ -91,8 +91,8 @@ export async function updateProject(
   return updated;
 }
 
-export async function deleteProject(
-  db: HydraTransaction,
+export async function hasProjectAccess(
+  db: HydraDb,
   id: string,
 ): Promise<boolean> {
   const deleted = await db
@@ -103,7 +103,7 @@ export async function deleteProject(
 }
 
 export async function createApiKey(
-  db: HydraTransaction,
+  db: HydraDb,
   apiKeySecret: string,
   {
     projectId,
@@ -126,14 +126,14 @@ export async function createApiKey(
   return encryptedKey;
 }
 
-export async function getApiKeys(db: HydraTransaction, projectId: string) {
+export async function getApiKeys(db: HydraDb, projectId: string) {
   return db.query.apiKeys.findMany({
     where: eq(schema.apiKeys.projectId, projectId),
   });
 }
 
 export async function updateApiKeyLastUsed(
-  db: HydraTransaction,
+  db: HydraDb,
   {
     projectId,
     hashedKey,
@@ -162,7 +162,7 @@ export async function updateApiKeyLastUsed(
 }
 
 export async function deleteApiKey(
-  db: HydraTransaction,
+  db: HydraDb,
   projectId: string,
   apiKeyId: string,
 ): Promise<boolean> {
@@ -174,7 +174,7 @@ export async function deleteApiKey(
 }
 
 export async function validateApiKey(
-  db: HydraTransaction,
+  db: HydraDb,
   projectId: string,
   apiKey: string,
 ): Promise<boolean> {
@@ -194,7 +194,7 @@ export async function validateApiKey(
 }
 
 export async function addProviderKey(
-  db: HydraTransaction,
+  db: HydraDb,
   providerKeySecret: string,
   {
     projectId,
@@ -225,14 +225,14 @@ export async function addProviderKey(
   return getProjectWithKeys(db, projectId);
 }
 
-export async function getProviderKeys(db: HydraTransaction, projectId: string) {
+export async function getProviderKeys(db: HydraDb, projectId: string) {
   return db.query.providerKeys.findMany({
     where: eq(schema.providerKeys.projectId, projectId),
   });
 }
 
 export async function deleteProviderKey(
-  db: HydraTransaction,
+  db: HydraDb,
   projectId: string,
   providerKeyId: string,
 ) {
