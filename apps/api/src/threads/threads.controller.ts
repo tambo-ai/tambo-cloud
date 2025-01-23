@@ -9,9 +9,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiSecurity } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from 'nest-supabase-guard/dist/supabase-auth.guard';
-import { ProjectAccessOwnGuard } from '../projects/guards/project-access-own.guard';
+import {
+  ProjectAccessOwnGuard,
+  ProjectIdParameterKey,
+} from 'src/projects/guards/project-access-own.guard';
 import { MessageDto } from './dto/message.dto';
 import { ThreadDto } from './dto/thread.dto';
 import { ThreadsService } from './threads.service';
@@ -23,14 +26,17 @@ import { ThreadsService } from './threads.service';
 export class ThreadsController {
   constructor(private readonly threadsService: ThreadsService) {}
 
+  @ProjectIdParameterKey('projectId')
   @UseGuards(ProjectAccessOwnGuard)
   @Post()
   create(@Body() createThreadDto: ThreadDto) {
     return this.threadsService.create(createThreadDto);
   }
 
+  @ProjectIdParameterKey('projectId')
   @UseGuards(ProjectAccessOwnGuard)
   @Get('project/:projectId')
+  @ApiQuery({ name: 'contextKey', required: false })
   findAllForProject(
     @Param('projectId') projectId: string,
     @Query('contextKey') contextKey?: string,
@@ -38,43 +44,40 @@ export class ThreadsController {
     return this.threadsService.findAllForProject(projectId, { contextKey });
   }
 
-  @UseGuards(ProjectAccessOwnGuard)
+  //   @UseGuards(ProjectAccessOwnGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.threadsService.findOne(id);
   }
 
-  @UseGuards(ProjectAccessOwnGuard)
+  //   @UseGuards(ProjectAccessOwnGuard)
   @Put(':id')
   update(@Param('id') id: string, @Body() updateThreadDto: ThreadDto) {
     return this.threadsService.update(id, updateThreadDto);
   }
 
-  @UseGuards(ProjectAccessOwnGuard)
+  //   @UseGuards(ProjectAccessOwnGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.threadsService.remove(id);
   }
 
-  @UseGuards(ProjectAccessOwnGuard)
-  @Post(':threadId/messages')
-  addMessage(
-    @Param('threadId') threadId: string,
-    @Body() messageDto: MessageDto,
-  ) {
+  //   @UseGuards(ProjectAccessOwnGuard)
+  @Post(':id/messages')
+  addMessage(@Param('id') threadId: string, @Body() messageDto: MessageDto) {
     return this.threadsService.addMessage(threadId, messageDto);
   }
 
-  @UseGuards(ProjectAccessOwnGuard)
-  @Get(':threadId/messages')
-  getMessages(@Param('threadId') threadId: string) {
+  //   @UseGuards(ProjectAccessOwnGuard)
+  @Get(':id/messages')
+  getMessages(@Param('id') threadId: string) {
     return this.threadsService.getMessages(threadId);
   }
 
-  @UseGuards(ProjectAccessOwnGuard)
-  @Delete(':threadId/messages/:messageId')
+  //   @UseGuards(ProjectAccessOwnGuard)
+  @Delete(':id/messages/:messageId')
   deleteMessage(
-    @Param('threadId') threadId: string,
+    @Param('id') threadId: string,
     @Param('messageId') messageId: string,
   ) {
     return this.threadsService.deleteMessage(messageId);
