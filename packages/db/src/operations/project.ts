@@ -98,10 +98,12 @@ export async function hasProjectAccess(
   id: string,
   userId: string,
 ) {
-  return db.query.projectMembers.findFirst({
-    where: (projectMembers, { eq }) =>
-      eq(projectMembers.projectId, id) && eq(projectMembers.userId, userId),
+  const firstProjectMembership = await db.query.projectMembers.findFirst({
+    where: (projectMembers, { eq, and }) =>
+      and(eq(projectMembers.projectId, id), eq(projectMembers.userId, userId)),
   });
+
+  return !!firstProjectMembership;
 }
 
 export async function ensureProjectAccess(
