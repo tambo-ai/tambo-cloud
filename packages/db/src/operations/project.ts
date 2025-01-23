@@ -17,24 +17,26 @@ export async function createProject(
     throw new Error("User ID is required");
   }
 
-  const [project] = await db
-    .insert(schema.projects)
-    .values({
-      name: name ?? "New Project",
-    })
-    .returning();
+  return await db.transaction(async (tx) => {
+    const [project] = await tx
+      .insert(schema.projects)
+      .values({
+        name: name ?? "New Project",
+      })
+      .returning();
 
-  await db.insert(schema.projectMembers).values({
-    projectId: project.id,
-    userId: userId,
-    role: "admin",
+    await tx.insert(schema.projectMembers).values({
+      projectId: project.id,
+      userId: userId,
+      role: "admin",
+    });
+
+    return {
+      id: project.id,
+      name: project.name,
+      userId,
+    };
   });
-
-  return {
-    id: project.id,
-    name: project.name,
-    userId,
-  };
 }
 
 export async function getProjectsForUser(db: HydraDb, userId: string) {
@@ -94,12 +96,48 @@ export async function updateProject(
 export async function hasProjectAccess(
   db: HydraDb,
   id: string,
-): Promise<boolean> {
-  const deleted = await db
-    .delete(schema.projects)
-    .where(eq(schema.projects.id, id))
-    .returning();
-  return deleted.length > 0;
+  userId: string,
+) {
+  return db.query.projectMembers.findFirst({
+    where: (projectMembers, { eq }) =>
+      eq(projectMembers.projectId, id) && eq(projectMembers.userId, userId),
+  });
+}
+
+export async function ensureProjectAccess(
+  db: HydraDb,
+  id: string,
+  userId: string,
+) {
+  const access = await hasProjectAccess(db, id, userId);
+  if (!access) {
+    throw new Error("User does not have access to this project");
+  }
+}
+
+export async function deleteProject(db: HydraDb, id: string): Promise<boolean> {
+  return await db.transaction(async (tx) => {
+    // Delete provider keys
+    await tx
+      .delete(schema.providerKeys)
+      .where(eq(schema.providerKeys.projectId, id));
+
+    // Delete API keys
+    await tx.delete(schema.apiKeys).where(eq(schema.apiKeys.projectId, id));
+
+    // Delete project members
+    await tx
+      .delete(schema.projectMembers)
+      .where(eq(schema.projectMembers.projectId, id));
+
+    // Finally delete the project itself
+    const deleted = await tx
+      .delete(schema.projects)
+      .where(eq(schema.projects.id, id))
+      .returning();
+
+    return deleted.length > 0;
+  });
 }
 
 export async function createApiKey(
@@ -208,21 +246,23 @@ export async function addProviderKey(
     userId: string;
   },
 ) {
-  const providerKeyEncrypted = encryptProviderKey(
-    providerName,
-    providerKey,
-    providerKeySecret,
-  );
+  return await db.transaction(async (tx) => {
+    const providerKeyEncrypted = encryptProviderKey(
+      providerName,
+      providerKey,
+      providerKeySecret,
+    );
 
-  await db.insert(schema.apiKeys).values({
-    projectId,
-    name: providerName,
-    hashedKey: providerKeyEncrypted,
-    partiallyHiddenKey: hideApiKey(providerKey),
-    createdByUserId: userId,
+    await tx.insert(schema.apiKeys).values({
+      projectId,
+      name: providerName,
+      hashedKey: providerKeyEncrypted,
+      partiallyHiddenKey: hideApiKey(providerKey),
+      createdByUserId: userId,
+    });
+
+    return getProjectWithKeys(tx, projectId);
   });
-
-  return getProjectWithKeys(db, projectId);
 }
 
 export async function getProviderKeys(db: HydraDb, projectId: string) {
@@ -236,14 +276,16 @@ export async function deleteProviderKey(
   projectId: string,
   providerKeyId: string,
 ) {
-  await db
-    .delete(schema.providerKeys)
-    .where(
-      and(
-        eq(schema.providerKeys.id, providerKeyId),
-        eq(schema.providerKeys.projectId, projectId),
-      ),
-    );
+  return await db.transaction(async (tx) => {
+    await tx
+      .delete(schema.providerKeys)
+      .where(
+        and(
+          eq(schema.providerKeys.id, providerKeyId),
+          eq(schema.providerKeys.projectId, projectId),
+        ),
+      );
 
-  return getProjectWithKeys(db, projectId);
+    return getProjectWithKeys(tx, projectId);
+  });
 }
