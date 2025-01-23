@@ -260,12 +260,11 @@ export async function addProviderKey(
       providerKeySecret,
     );
 
-    await tx.insert(schema.apiKeys).values({
+    await tx.insert(schema.providerKeys).values({
       projectId,
-      name: providerName,
-      hashedKey: providerKeyEncrypted,
+      providerKeyEncrypted,
+      providerName,
       partiallyHiddenKey: hideApiKey(providerKey),
-      createdByUserId: userId,
     });
 
     return getProjectWithKeys(tx, projectId);
