@@ -158,7 +158,7 @@ export async function createApiKey(
     name,
     hashedKey,
     createdByUserId: userId,
-    partiallyHiddenKey: hideApiKey(encryptedKey),
+    partiallyHiddenKey: hideApiKey(encryptedKey, 10),
   });
 
   return encryptedKey;
@@ -206,7 +206,12 @@ export async function deleteApiKey(
 ): Promise<boolean> {
   const deleted = await db
     .delete(schema.apiKeys)
-    .where(eq(schema.apiKeys.id, apiKeyId))
+    .where(
+      and(
+        eq(schema.apiKeys.id, apiKeyId),
+        eq(schema.apiKeys.projectId, projectId),
+      ),
+    )
     .returning();
   return deleted.length > 0;
 }

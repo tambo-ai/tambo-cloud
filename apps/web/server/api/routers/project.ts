@@ -25,15 +25,6 @@ export const projectRouter = createTRPCRouter({
             .from(schema.projectMembers)
             .where(eq(schema.projectMembers.userId, userId)),
         ),
-      with: {
-        members: {
-          with: {
-            user: true,
-          },
-        },
-        apiKeys: true,
-        providerKeys: true,
-      },
     });
 
     return projects.map((project) => ({
@@ -86,9 +77,6 @@ export const projectRouter = createTRPCRouter({
       await db
         .delete(schema.apiKeys)
         .where(eq(schema.apiKeys.projectId, projectId));
-      await db
-        .delete(schema.projectMembers)
-        .where(eq(schema.projectMembers.projectId, projectId));
       await db
         .delete(schema.projectMembers)
         .where(eq(schema.projectMembers.projectId, projectId));
