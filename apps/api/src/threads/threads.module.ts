@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { getDb } from '@use-hydra-ai/db';
-import { UsersModule } from 'src/users/users.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { UsersModule } from '../users/users.module';
 import { ThreadsController } from './threads.controller';
 import { ThreadsService } from './threads.service';
 

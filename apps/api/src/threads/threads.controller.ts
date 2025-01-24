@@ -14,7 +14,7 @@ import { SupabaseAuthGuard } from 'nest-supabase-guard/dist/supabase-auth.guard'
 import {
   ProjectAccessOwnGuard,
   ProjectIdParameterKey,
-} from 'src/projects/guards/project-access-own.guard';
+} from '../projects/guards/project-access-own.guard';
 import { MessageDto } from './dto/message.dto';
 import { ThreadDto } from './dto/thread.dto';
 import { ThreadsService } from './threads.service';
