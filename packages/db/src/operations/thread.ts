@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { MessageRole } from "../MessageRole";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
 
@@ -109,7 +110,7 @@ export async function addMessage(
     metadata,
   }: {
     threadId: string;
-    role: schema.MessageRole;
+    role: MessageRole;
     content: MessageContent;
     component?: MessageComponent;
     metadata?: MessageMetadata;

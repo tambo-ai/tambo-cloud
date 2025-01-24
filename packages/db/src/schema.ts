@@ -1,15 +1,8 @@
 import { relations, sql } from "drizzle-orm";
 import { index, pgTable } from "drizzle-orm/pg-core";
 import { authUsers } from "drizzle-orm/supabase";
+import { MessageRole } from "./MessageRole";
 export { authUsers } from "drizzle-orm/supabase";
-
-export enum MessageRole {
-  User = "user",
-  Assistant = "assistant",
-  System = "system",
-  Function = "function",
-  Hydra = "hydra",
-}
 
 export const projects = pgTable("projects", ({ text, timestamp }) => ({
   id: text("id")
