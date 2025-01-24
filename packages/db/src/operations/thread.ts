@@ -5,8 +5,7 @@ import type { HydraDb } from "../types";
 export type ThreadMetadata = Record<string, unknown>;
 export type MessageContent = string | Record<string, unknown>;
 export type MessageMetadata = Record<string, unknown>;
-export type MessageRole = "user" | "assistant" | "system" | "function";
-
+export type MessageComponent = Record<string, unknown>;
 export async function createThread(
   db: HydraDb,
   {
@@ -106,11 +105,13 @@ export async function addMessage(
     threadId,
     role,
     content,
+    component,
     metadata,
   }: {
     threadId: string;
-    role: MessageRole;
+    role: schema.MessageRole;
     content: MessageContent;
+    component?: MessageComponent;
     metadata?: MessageMetadata;
   },
 ) {

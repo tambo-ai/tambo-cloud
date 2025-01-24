@@ -45,7 +45,8 @@ export class ThreadsService {
     return operations.addMessage(this.db, {
       threadId,
       role: messageDto.role,
-      content: messageDto.content,
+      content: messageDto.message,
+      component: messageDto.component,
       metadata: messageDto.metadata,
     });
   }

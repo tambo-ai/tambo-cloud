@@ -1,19 +1,16 @@
+import { schema } from '@use-hydra-ai/db';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 
-export enum MessageRole {
-  User = 'user',
-  Assistant = 'assistant',
-  System = 'system',
-  Function = 'function',
-}
-
 export class MessageDto {
-  @IsEnum(MessageRole)
-  role!: MessageRole;
+  @IsEnum(schema.MessageRole)
+  role!: schema.MessageRole;
 
   @IsNotEmpty()
-  content!: string | Record<string, unknown>;
+  message!: string;
 
   @IsOptional()
   metadata?: Record<string, unknown>;
+
+  @IsOptional()
+  component?: Record<string, unknown>;
 }
