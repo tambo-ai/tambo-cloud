@@ -122,6 +122,7 @@ export async function addMessage(
       role,
       content,
       metadata,
+      componentDecision: component,
     })
     .returning();
 
