@@ -22,7 +22,7 @@ export const projects = pgTable("projects", ({ text, timestamp }) => ({
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }));
-
+export type DBProject = typeof projects.$inferSelect;
 export const projectMembers = pgTable(
   "project_members",
   ({ uuid, text, timestamp, bigserial }) => ({
@@ -38,7 +38,7 @@ export const projectMembers = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   }),
 );
-
+export type DBProjectMember = typeof projectMembers.$inferSelect;
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
   project: one(projects, {
     fields: [projectMembers.projectId],
@@ -73,7 +73,7 @@ export const apiKeys = pgTable("api_keys", ({ text, timestamp, uuid }) => ({
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   lastUsedAt: timestamp("last_used_at"),
 }));
-
+export type DBApiKey = typeof apiKeys.$inferSelect;
 export const apiKeyRelations = relations(apiKeys, ({ one }) => ({
   createdBy: one(authUsers, {
     fields: [apiKeys.createdByUserId],
@@ -137,7 +137,7 @@ export const threads = pgTable(
     };
   },
 );
-
+export type DBThread = typeof threads.$inferSelect;
 export const messages = pgTable("messages", ({ text, timestamp, jsonb }) => ({
   id: text("id")
     .primaryKey()
@@ -155,6 +155,7 @@ export const messages = pgTable("messages", ({ text, timestamp, jsonb }) => ({
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }));
+export type DBMessage = typeof messages.$inferSelect;
 
 export const threadRelations = relations(threads, ({ one, many }) => ({
   project: one(projects, {
