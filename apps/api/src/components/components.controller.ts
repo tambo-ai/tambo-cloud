@@ -105,7 +105,7 @@ export class ComponentsController {
       role: MessageRole.Hydra,
       message: component.message,
       // HACK: for now just jam the full component decision into the content
-      component: component as unknown as Record<string, unknown>,
+      component: component,
     });
     return resolvedThreadId;
   }
