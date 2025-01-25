@@ -31,7 +31,9 @@ export function ThreadMessages({ thread }: Readonly<ThreadMessagesProps>) {
                     <code className="font-mono">
                       &lt;{message.componentDecision.componentName}
                       {message.componentDecision.props &&
-                        ` ${Object.keys(message.componentDecision.props).join(" ")}={...}`}{" "}
+                        ` ${Object.keys(message.componentDecision.props)
+                          .map((key) => `${key}={...}`)
+                          .join(" ")}`}{" "}
                       /&gt;
                     </code>
                   )}
