@@ -44,7 +44,11 @@ export const threadRouter = createTRPCRouter({
         ctx.session.user.id,
       );
 
-      return operations.getThread(ctx.db, input.threadId);
+      const thread = await operations.getThread(ctx.db, input.threadId);
+      if (thread?.projectId !== input.projectId) {
+        throw new Error("Thread not found");
+      }
+      return thread;
     }),
 
   deleteThread: protectedProcedure
@@ -61,7 +65,11 @@ export const threadRouter = createTRPCRouter({
         input.projectId,
         ctx.session.user.id,
       );
-
+      // make sure the thread belongs to the project
+      const thread = await operations.getThread(ctx.db, input.threadId);
+      if (thread?.projectId !== input.projectId) {
+        throw new Error("Thread not found");
+      }
       return operations.deleteThread(ctx.db, input.threadId);
     }),
 });
