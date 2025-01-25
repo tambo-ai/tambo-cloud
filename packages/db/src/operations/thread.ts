@@ -1,4 +1,4 @@
-import { ComponentDecision } from "@use-hydra-ai/hydra-ai-server";
+import type { ComponentDecision } from "@use-hydra-ai/hydra-ai-server";
 import { and, eq } from "drizzle-orm";
 import { MessageRole } from "../MessageRole";
 import * as schema from "../schema";
