@@ -1,7 +1,9 @@
+import type { ComponentDecision } from "@use-hydra-ai/hydra-ai-server";
 import { relations, sql } from "drizzle-orm";
 import { index, pgTable } from "drizzle-orm/pg-core";
 import { authUsers } from "drizzle-orm/supabase";
 import { MessageRole } from "./MessageRole";
+import { customJsonb } from "./drizzleUtil";
 export { authUsers } from "drizzle-orm/supabase";
 
 export const projects = pgTable("projects", ({ text, timestamp }) => ({
@@ -144,7 +146,7 @@ export const messages = pgTable("messages", ({ text, timestamp, jsonb }) => ({
     enum: Object.values<string>(MessageRole) as [MessageRole],
   }).notNull(),
   content: jsonb("content").notNull(),
-  componentDecision: jsonb("component_decision"),
+  componentDecision: customJsonb<ComponentDecision>("component_decision"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }));

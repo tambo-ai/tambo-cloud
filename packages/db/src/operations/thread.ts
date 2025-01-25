@@ -35,7 +35,9 @@ export async function getThread(db: HydraDb, threadId: string) {
   return db.query.threads.findFirst({
     where: eq(schema.threads.id, threadId),
     with: {
-      messages: true,
+      messages: {
+        orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+      },
     },
   });
 }
