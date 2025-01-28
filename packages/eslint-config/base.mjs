@@ -9,7 +9,6 @@ import tseslint from "typescript-eslint";
  */
 export default tseslint.config(
   js.configs.recommended,
-  // @ts-expect-error types don't match
   eslintConfigPrettier,
   tseslint.configs.recommended,
   {
@@ -22,6 +21,7 @@ export default tseslint.config(
   },
   {
     plugins: {
+      // @ts-expect-error not sure why this is not working
       onlyWarn,
     },
   },
@@ -32,7 +32,11 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
       ],
     },
   },

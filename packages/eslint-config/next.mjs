@@ -13,7 +13,6 @@ import baseConfig from "./base.mjs";
 export default tseslint.config(
   ...baseConfig,
   js.configs.recommended,
-  // @ts-expect-error types don't match
   eslintConfigPrettier,
   ...tseslint.configs.recommended,
   {
@@ -29,6 +28,7 @@ export default tseslint.config(
     plugins: {
       "@next/next": pluginNext,
     },
+    // @ts-expect-error types don't match
     rules: {
       ...pluginNext.configs.recommended.rules,
       ...pluginNext.configs["core-web-vitals"].rules,
@@ -45,7 +45,11 @@ export default tseslint.config(
       "react/react-in-jsx-scope": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
       ],
     },
   },
