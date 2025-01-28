@@ -6,13 +6,12 @@ import tseslint from "typescript-eslint";
 
 /**
  * A shared ESLint configuration for the repository.
- *
- * @type {import("eslint").Linter.Config[]}
- * */
-export const config = [
+ */
+export default tseslint.config(
   js.configs.recommended,
+  // @ts-expect-error types don't match
   eslintConfigPrettier,
-  ...tseslint.configs.recommended,
+  tseslint.configs.recommended,
   {
     plugins: {
       turbo: turboPlugin,
@@ -29,4 +28,4 @@ export const config = [
   {
     ignores: ["dist/**"],
   },
-];
+);
