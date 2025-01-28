@@ -44,7 +44,7 @@ export function SlackChannelForm({ onSuccess }: SlackChannelFormProps) {
 
   interface APIError {
     error: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
   }
 
   async function onSubmit(values: CreateSlackChannelInput) {
@@ -92,12 +92,6 @@ export function SlackChannelForm({ onSuccess }: SlackChannelFormProps) {
       setIsLoading(false);
     }
   }
-
-  const resetForm = () => {
-    setError(null);
-    setInviteData(null);
-    form.reset();
-  };
 
   return (
     <Form {...form}>

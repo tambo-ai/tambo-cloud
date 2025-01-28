@@ -41,7 +41,7 @@ export function EmailDialog({ open, onOpenChange }: EmailDialogProps) {
 
       setSuccess(true);
       setEmail("");
-    } catch (err) {
+    } catch (_err) {
       setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
