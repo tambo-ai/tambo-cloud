@@ -1,4 +1,4 @@
-import { JSONSchema } from "openai/lib/jsonschema";
+import { type JSONSchema7 } from "json-schema";
 import { ComponentPropsMetadata } from "./component-props-metadata";
 
 export interface ComponentMetadata {
@@ -17,7 +17,7 @@ export interface ComponentContextToolMetadata {
     isRequired: boolean;
     items?: { type: string };
     enumValues?: string[];
-    schema?: JSONSchema;
+    schema?: JSONSchema7;
   }[];
 }
 
