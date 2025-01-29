@@ -21,6 +21,10 @@ export const env = createEnv({
     API_KEY_SECRET: z.string().min(1),
     PROVIDER_KEY_SECRET: z.string().min(1),
     RESEND_API_KEY: z.string().min(1).optional(),
+    // for dogfooding our own API
+    HYDRA_API_KEY: z.string().min(1).optional(),
+    // for smoketesting
+    WEATHER_API_KEY: z.string().min(1).optional(),
   },
   /*
    * Environment variables available on the client (and server).
@@ -57,5 +61,7 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    WEATHER_API_KEY: process.env.WEATHER_API_KEY,
+    HYDRA_API_KEY: process.env.HYDRA_API_KEY,
   },
 });
