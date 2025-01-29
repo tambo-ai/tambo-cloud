@@ -25,9 +25,16 @@ export default function SmokePage() {
     return client;
   });
   const [threadId, setThreadId] = useState<string | null>(null);
+
+  // XXX Here are the callbacks that I have access to at render time, but I have
+  // already registered the components. Maybe I should have passed them in above
+  // when I called registerComponents?
   const { mutateAsync: getAirQuality } = api.demo.aqi.useMutation();
   const { mutateAsync: getForecast } = api.demo.forecast.useMutation();
   const { mutateAsync: getHistoricalWeather } = api.demo.history.useMutation();
+
+  // XXX and here is where I'd call generateComponent. I have the callbacks now,
+  // should I be able to use them?
   const { mutateAsync: generateComponent } = useMutation({
     mutationFn: async () => {
       const response = await hydraClient.generateComponent(
@@ -234,6 +241,10 @@ function registerComponents(client: HydraClient) {
     propsDefinition: {
       data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
     },
+    contextTools: [
+      // XXX here I want to add a tool that will get the weather forecast for the
+      // next 7 days, but I don't have access to the callback right now.
+    ],
   });
   client.registerComponent({
     component: AirQuality,
@@ -241,6 +252,14 @@ function registerComponents(client: HydraClient) {
     description: "Air quality",
     propsDefinition: {
       data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
+    },
+  });
+  client.registerComponent({
+    component: WeatherForecast,
+    name: "WeatherForecast",
+    description: "Weather forecast",
+    propsDefinition: {
+      data: "{ forecast: { date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }[] }",
     },
   });
 }
