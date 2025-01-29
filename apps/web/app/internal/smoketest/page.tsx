@@ -42,7 +42,7 @@ export default function SmokePage() {
         },
         threadId ?? undefined,
       );
-      setThreadId((response as any).threadId);
+      setThreadId(response.threadId ?? null);
       return response;
     },
   });
