@@ -5,45 +5,48 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { env } from "@/lib/env";
 import { api } from "@/trpc/react";
-import HydraClient from "@hydra-ai/client";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { HydraClient } from "hydra-ai";
+import { ReactElement, useState } from "react";
 interface Message {
   role: "user" | "assistant";
-  content: string;
+  content: string | ReactElement;
 }
 
 export default function SmokePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [hydraClient] = useState(() => {
-    const client = new HydraClient({ apiKey: env.HYDRA_API_KEY });
+    const client = new HydraClient({
+      hydraApiKey: env.HYDRA_API_KEY,
+      hydraApiUrl: env.HYDRA_API_URL,
+    });
+    registerComponents(client);
     return client;
   });
   const [threadId, setThreadId] = useState<string | null>(null);
   const { mutateAsync: getAirQuality } = api.demo.aqi.useMutation();
   const { mutateAsync: getForecast } = api.demo.forecast.useMutation();
   const { mutateAsync: getHistoricalWeather } = api.demo.history.useMutation();
-  hydraClient.components.generate({
-    threadId: threadId ?? undefined,
-    availableComponents: [],
-    messageHistory: [],
-  });
-  const { mutateAsync: generate } = useMutation({
+  const { mutateAsync: generateComponent } = useMutation({
     mutationFn: async () => {
-      const response = await hydraClient.components.generate({
-        threadId: threadId ?? undefined,
-        availableComponents: [],
-        messageHistory: [],
-      });
+      const response = await hydraClient.generateComponent(
+        input,
+        (msg) => {
+          console.log(msg);
+        },
+        threadId ?? undefined,
+      );
       setThreadId((response as any).threadId);
       return response;
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
+
+    const response = await generateComponent();
 
     // Add user message
     const userMessage: Message = {
@@ -56,9 +59,12 @@ export default function SmokePage() {
       role: "assistant",
       content: "Ok",
     };
+    if (response?.component) {
+      assistantMessage.content = response.component;
 
-    setMessages((prev) => [...prev, userMessage, assistantMessage]);
-    setInput("");
+      setMessages((prev) => [...prev, userMessage, assistantMessage]);
+      setInput("");
+    }
   };
 
   return (
@@ -91,4 +97,150 @@ export default function SmokePage() {
       </Card>
     </div>
   );
+}
+
+interface WeatherDay {
+  date: string;
+  day: {
+    maxtemp_c: number;
+    mintemp_c: number;
+    avgtemp_c: number;
+    maxwind_kph: number;
+    totalprecip_mm: number;
+    avghumidity: number;
+    condition: {
+      text: string;
+      icon: string;
+    };
+  };
+}
+
+interface WeatherDayProps {
+  readonly data: WeatherDay;
+}
+
+const WeatherDay = ({ data }: WeatherDayProps): React.ReactNode => {
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-medium">
+            {new Date(data.date).toLocaleDateString()}
+          </p>
+          <div className="flex items-center gap-2">
+            <img
+              src={data.day.condition.icon}
+              alt={data.day.condition.text}
+              width={64}
+              height={64}
+            />
+            <p className="text-sm text-muted-foreground">
+              {data.day.condition.text}
+            </p>
+          </div>
+        </div>
+
+        <div className="text-right">
+          <div className="text-2xl font-bold">
+            {Math.round(data.day.avgtemp_c)}°C
+          </div>
+          <div className="text-sm text-muted-foreground">
+            H: {Math.round(data.day.maxtemp_c)}° L:{" "}
+            {Math.round(data.day.mintemp_c)}°
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-muted-foreground">Wind</p>
+          <p>{Math.round(data.day.maxwind_kph)} km/h</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Precipitation</p>
+          <p>{data.day.totalprecip_mm} mm</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Humidity</p>
+          <p>{Math.round(data.day.avghumidity)}%</p>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+interface AirQualityProps {
+  readonly data: {
+    aqi: number;
+    pm2_5: number;
+    pm10: number;
+    o3: number;
+    no2: number;
+  };
+}
+
+const AirQuality = ({ data }: AirQualityProps): React.ReactNode => {
+  const getAqiLevel = (aqi: number) => {
+    if (aqi <= 50) return "Good";
+    if (aqi <= 100) return "Moderate";
+    if (aqi <= 150) return "Unhealthy for Sensitive Groups";
+    if (aqi <= 200) return "Unhealthy";
+    if (aqi <= 300) return "Very Unhealthy";
+    return "Hazardous";
+  };
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-medium">Air Quality</p>
+          <p className="text-sm text-muted-foreground">
+            {getAqiLevel(data.aqi)}
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-bold">{data.aqi}</div>
+          <div className="text-sm text-muted-foreground">AQI</div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p className="text-muted-foreground">PM2.5</p>
+          <p>{data.pm2_5} µg/m³</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">PM10</p>
+          <p>{data.pm10} µg/m³</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Ozone</p>
+          <p>{data.o3} ppb</p>
+        </div>
+        <div>
+          <p className="text-muted-foreground">Nitrogen Dioxide</p>
+          <p>{data.no2} ppb</p>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+function registerComponents(client: HydraClient) {
+  client.registerComponent({
+    component: WeatherDay,
+    name: "WeatherDay",
+    description: "A weather day",
+    propsDefinition: {
+      data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
+    },
+  });
+  client.registerComponent({
+    component: AirQuality,
+    name: "AirQuality",
+    description: "Air quality",
+    propsDefinition: {
+      data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
+    },
+  });
 }
