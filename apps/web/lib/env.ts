@@ -23,6 +23,7 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().min(1).optional(),
     // for dogfooding our own API
     HYDRA_API_KEY: z.string().min(1).optional(),
+    HYDRA_API_URL: z.string().min(1).optional(),
     // for smoketesting
     WEATHER_API_KEY: z.string().min(1).optional(),
   },
@@ -63,5 +64,6 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     WEATHER_API_KEY: process.env.WEATHER_API_KEY,
     HYDRA_API_KEY: process.env.HYDRA_API_KEY,
+    HYDRA_API_URL: process.env.HYDRA_API_URL,
   },
 });

@@ -21,6 +21,7 @@
     "NEXT_PUBLIC_POSTHOG_KEY",
     "NEXT_PUBLIC_POSTHOG_HOST",
     "HYDRA_API_KEY",
+    "HYDRA_API_URL",
     "WEATHER_API_KEY"
   ],
   "tasks": {
