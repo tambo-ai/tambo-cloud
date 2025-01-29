@@ -11,7 +11,7 @@ import { HydraClient } from "hydra-ai";
 import { ReactElement, useMemo, useState } from "react";
 interface Message {
   role: "user" | "assistant";
-  content: string | ReactElement;
+  content: (string | ReactElement)[];
 }
 
 export default function SmokePage() {
@@ -19,28 +19,35 @@ export default function SmokePage() {
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<string | null>(null);
 
-  const { mutateAsync: getAirQuality } = api.demo.aqi.useMutation();
-  const { mutateAsync: getForecast } = api.demo.forecast.useMutation();
-  const { mutateAsync: getHistoricalWeather } = api.demo.history.useMutation();
+  const { mutateAsync: getAirQuality, isPending: isAqiPending } =
+    api.demo.aqi.useMutation();
+  const { mutateAsync: getForecast, isPending: isForecastPending } =
+    api.demo.forecast.useMutation();
+  const { mutateAsync: getHistoricalWeather, isPending: isHistoryPending } =
+    api.demo.history.useMutation();
   const hydraClient = useWeatherHydra({
     getForecast,
     getHistoricalWeather,
     getAirQuality,
   });
 
-  const { mutateAsync: generateComponent } = useMutation({
-    mutationFn: async () => {
-      const response = await hydraClient.generateComponent(
-        input,
-        (msg) => {
-          console.log(msg);
-        },
-        threadId ?? undefined,
-      );
-      setThreadId(response.threadId ?? null);
-      return response;
-    },
-  });
+  const { mutateAsync: generateComponent, isPending: isGenerating } =
+    useMutation({
+      mutationFn: async () => {
+        const response = await hydraClient.generateComponent(
+          input,
+          (msg) => {
+            console.log(msg);
+          },
+          threadId ?? undefined,
+        );
+        setThreadId(response.threadId ?? null);
+        return response;
+      },
+    });
+
+  const isLoading =
+    isAqiPending || isForecastPending || isHistoryPending || isGenerating;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,20 +58,19 @@ export default function SmokePage() {
     // Add user message
     const userMessage: Message = {
       role: "user",
-      content: input,
+      content: [input],
     };
 
     // Add assistant response
     const assistantMessage: Message = {
       role: "assistant",
-      content: "Ok",
+      content: [response.message],
     };
     if (response?.component) {
-      assistantMessage.content = response.component;
-
-      setMessages((prev) => [...prev, userMessage, assistantMessage]);
-      setInput("");
+      assistantMessage.content.push(response.component);
     }
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    setInput("");
   };
 
   return (
@@ -80,7 +86,9 @@ export default function SmokePage() {
                   : "bg-muted mr-12"
               }`}
             >
-              {message.content}
+              {message.content.map((content, index) => (
+                <div key={index}>{content}</div>
+              ))}
             </div>
           ))}
         </div>
@@ -91,8 +99,15 @@ export default function SmokePage() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type a message..."
             className="flex-1"
+            disabled={isLoading}
           />
-          <Button type="submit">Send</Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <span className="inline-block animate-spin">⟳</span>
+            ) : (
+              "Send"
+            )}
+          </Button>
         </form>
       </Card>
     </div>
