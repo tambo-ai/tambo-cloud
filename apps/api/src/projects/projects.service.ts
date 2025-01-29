@@ -4,7 +4,6 @@ import type { HydraDatabase } from '@use-hydra-ai/db';
 import { operations } from '@use-hydra-ai/db';
 import { APIKeyResponse } from './dto/api-key-response.dto';
 import { ProjectResponse } from './dto/project-response.dto';
-import { ProjectResponse2 } from './dto/project.dto';
 import { ProviderKeyResponse } from './dto/provider-key-response.dto';
 import { Project } from './entities/project.entity';
 
@@ -16,7 +15,7 @@ export class ProjectsService {
     private readonly config: ConfigService,
   ) {}
 
-  async create(createProjectDto: ProjectResponse2): Promise<ProjectResponse> {
+  async create(createProjectDto: ProjectResponse): Promise<ProjectResponse> {
     if (!createProjectDto.userId) {
       throw new Error('User ID is required');
     }
@@ -86,7 +85,7 @@ export class ProjectsService {
 
   async update(
     id: string,
-    updateProjectDto: ProjectResponse2,
+    updateProjectDto: ProjectResponse,
   ): Promise<ProjectResponse | null> {
     if (!updateProjectDto.name) {
       throw new Error('Project name is required');
@@ -186,7 +185,7 @@ export class ProjectsService {
   async removeProviderKey(
     projectId: string,
     providerKeyId: string,
-  ): Promise<ProjectResponse2 | null | undefined> {
+  ): Promise<ProjectResponse | null | undefined> {
     await operations.deleteProviderKey(this.db, projectId, providerKeyId);
     const project = await this.findOneWithKeys(projectId);
     if (!project) {
