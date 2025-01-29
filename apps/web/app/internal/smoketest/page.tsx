@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { env } from "@/lib/env";
 import { api } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
+import { ComponentContextTool } from "@use-hydra-ai/hydra-ai-server";
 import { HydraClient } from "hydra-ai";
-import { ReactElement, useState } from "react";
+import { ReactElement, useMemo, useState } from "react";
 interface Message {
   role: "user" | "assistant";
   content: string | ReactElement;
@@ -16,14 +17,6 @@ interface Message {
 export default function SmokePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [hydraClient] = useState(() => {
-    const client = new HydraClient({
-      hydraApiKey: env.HYDRA_API_KEY,
-      hydraApiUrl: env.HYDRA_API_URL,
-    });
-    registerComponents(client);
-    return client;
-  });
   const [threadId, setThreadId] = useState<string | null>(null);
 
   // XXX Here are the callbacks that I have access to at render time, but I have
@@ -32,6 +25,11 @@ export default function SmokePage() {
   const { mutateAsync: getAirQuality } = api.demo.aqi.useMutation();
   const { mutateAsync: getForecast } = api.demo.forecast.useMutation();
   const { mutateAsync: getHistoricalWeather } = api.demo.history.useMutation();
+  const hydraClient = useWeatherHydra({
+    getForecast,
+    getHistoricalWeather,
+    getAirQuality,
+  });
 
   // XXX and here is where I'd call generateComponent. I have the callbacks now,
   // should I be able to use them?
@@ -233,7 +231,101 @@ const AirQuality = ({ data }: AirQualityProps): React.ReactNode => {
   );
 };
 
-function registerComponents(client: HydraClient) {
+function useWeatherHydra({
+  getForecast,
+  getHistoricalWeather,
+  getAirQuality,
+}: {
+  getForecast: (...args: any[]) => Promise<any>;
+  getHistoricalWeather: (...args: any[]) => Promise<any>;
+  getAirQuality: (...args: any[]) => Promise<any>;
+}) {
+  return useMemo(() => {
+    console.log("regenerating hydra client");
+    const client = new HydraClient({
+      hydraApiKey: env.NEXT_PUBLIC_HYDRA_API_KEY,
+      hydraApiUrl: env.NEXT_PUBLIC_HYDRA_API_URL,
+    });
+    const tools: Record<string, ComponentContextTool> = {
+      forecast: {
+        definition: {
+          name: "getWeatherForecast",
+          description: "Get the weather forecast",
+          parameters: [
+            {
+              name: "params",
+              type: "object",
+              description:
+                "The parameters to get the weather forecast for, as an object with just one key, 'location', e.g. '{location: \"New York\"}'",
+              isRequired: true,
+              schema: {
+                type: "object",
+                properties: {
+                  location: { type: "string" },
+                },
+              },
+            },
+          ],
+        },
+        getComponentContext: (...args) => {
+          console.log("calling getForecast with args", args);
+          return getForecast(...args);
+        },
+      },
+      history: {
+        definition: {
+          name: "getHistoricalWeather",
+          description: "Get the historical weather",
+          parameters: [
+            {
+              name: "params",
+              type: "object",
+              description: `The parameters to get the historical weather for, as an object with two keys, 
+                'location' and 'datetime', e.g. '{location: "New York", datetime: "2024-01-01"}'`,
+              isRequired: true,
+              schema: {
+                type: "object",
+                properties: {
+                  location: { type: "string" },
+                  datetime: { type: "string" },
+                },
+              },
+            },
+          ],
+        },
+        getComponentContext: getHistoricalWeather,
+      },
+      aqi: {
+        definition: {
+          name: "getAirQuality",
+          description: "Get the air quality",
+          parameters: [
+            {
+              name: "params",
+              type: "object",
+              description: `The parameters to get the air quality for, as an object with just one key, 'location', e.g. '{location: "New York"}'`,
+              isRequired: true,
+              schema: {
+                type: "object",
+                properties: {
+                  location: { type: "string" },
+                },
+              },
+            },
+          ],
+        },
+        getComponentContext: getAirQuality,
+      },
+    };
+    registerComponents(client, tools);
+    return client;
+  }, [getAirQuality, getForecast, getHistoricalWeather]);
+}
+
+function registerComponents(
+  client: HydraClient,
+  tools: Record<string, ComponentContextTool>,
+) {
   client.registerComponent({
     component: WeatherDay,
     name: "WeatherDay",
@@ -241,10 +333,7 @@ function registerComponents(client: HydraClient) {
     propsDefinition: {
       data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
     },
-    contextTools: [
-      // XXX here I want to add a tool that will get the weather forecast for the
-      // next 7 days, but I don't have access to the callback right now.
-    ],
+    contextTools: [tools.forecast, tools.history],
   });
   client.registerComponent({
     component: AirQuality,
@@ -253,13 +342,6 @@ function registerComponents(client: HydraClient) {
     propsDefinition: {
       data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
     },
-  });
-  client.registerComponent({
-    component: WeatherForecast,
-    name: "WeatherForecast",
-    description: "Weather forecast",
-    propsDefinition: {
-      data: "{ forecast: { date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }[] }",
-    },
+    contextTools: [tools.aqi],
   });
 }
