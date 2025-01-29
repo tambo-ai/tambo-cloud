@@ -2,10 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { HydraDatabase } from '@use-hydra-ai/db';
 import { operations } from '@use-hydra-ai/db';
-import { APIKeyResponseDto } from './dto/api-key-response.dto';
-import { ProjectResponseDto } from './dto/project-response.dto';
-import { ProjectDto } from './dto/project.dto';
-import { ProviderKeyResponseDto } from './dto/provider-key-response.dto';
+import { APIKeyResponse } from './dto/api-key-response.dto';
+import { ProjectResponse } from './dto/project-response.dto';
+import { ProjectResponse2 } from './dto/project.dto';
+import { ProviderKeyResponse } from './dto/provider-key-response.dto';
 import { Project } from './entities/project.entity';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class ProjectsService {
     private readonly config: ConfigService,
   ) {}
 
-  async create(createProjectDto: ProjectDto): Promise<ProjectResponseDto> {
+  async create(createProjectDto: ProjectResponse2): Promise<ProjectResponse> {
     if (!createProjectDto.userId) {
       throw new Error('User ID is required');
     }
@@ -33,7 +33,7 @@ export class ProjectsService {
     };
   }
 
-  async findAllForUser(userId: string): Promise<ProjectResponseDto[]> {
+  async findAllForUser(userId: string): Promise<ProjectResponse[]> {
     const projects = await operations.getProjectsForUser(this.db, userId);
     return projects.map((project) => ({
       id: project.id,
@@ -42,7 +42,7 @@ export class ProjectsService {
     }));
   }
 
-  async findOne(id: string): Promise<ProjectResponseDto | null> {
+  async findOne(id: string): Promise<ProjectResponse | null> {
     const project = await operations.getProject(this.db, id);
     if (!project || !project.members?.[0]) {
       return null;
@@ -86,8 +86,8 @@ export class ProjectsService {
 
   async update(
     id: string,
-    updateProjectDto: ProjectDto,
-  ): Promise<ProjectResponseDto | null> {
+    updateProjectDto: ProjectResponse2,
+  ): Promise<ProjectResponse | null> {
     if (!updateProjectDto.name) {
       throw new Error('Project name is required');
     }
@@ -122,7 +122,7 @@ export class ProjectsService {
     });
   }
 
-  async findAllApiKeys(projectId: string): Promise<APIKeyResponseDto[]> {
+  async findAllApiKeys(projectId: string): Promise<APIKeyResponse[]> {
     const apiKeys = await operations.getApiKeys(this.db, projectId);
     return apiKeys.map((apiKey) => ({
       id: apiKey.id,
@@ -163,7 +163,7 @@ export class ProjectsService {
     providerName: string,
     providerKey: string,
     userId: string,
-  ): Promise<ProjectResponseDto | null | undefined> {
+  ): Promise<ProjectResponse | null | undefined> {
     const providerKeySecret = this.config.getOrThrow('PROVIDER_KEY_SECRET');
     return operations.addProviderKey(this.db, providerKeySecret, {
       projectId,
@@ -173,9 +173,7 @@ export class ProjectsService {
     });
   }
 
-  async findAllProviderKeys(
-    projectId: string,
-  ): Promise<ProviderKeyResponseDto[]> {
+  async findAllProviderKeys(projectId: string): Promise<ProviderKeyResponse[]> {
     const providerKeys = await operations.getProviderKeys(this.db, projectId);
     return providerKeys.map((providerKey) => ({
       id: providerKey.id,
@@ -188,7 +186,7 @@ export class ProjectsService {
   async removeProviderKey(
     projectId: string,
     providerKeyId: string,
-  ): Promise<Project | null | undefined> {
+  ): Promise<ProjectResponse2 | null | undefined> {
     await operations.deleteProviderKey(this.db, projectId, providerKeyId);
     const project = await this.findOneWithKeys(projectId);
     if (!project) {
