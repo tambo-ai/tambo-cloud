@@ -19,9 +19,6 @@ export default function SmokePage() {
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<string | null>(null);
 
-  // XXX Here are the callbacks that I have access to at render time, but I have
-  // already registered the components. Maybe I should have passed them in above
-  // when I called registerComponents?
   const { mutateAsync: getAirQuality } = api.demo.aqi.useMutation();
   const { mutateAsync: getForecast } = api.demo.forecast.useMutation();
   const { mutateAsync: getHistoricalWeather } = api.demo.history.useMutation();
@@ -31,8 +28,6 @@ export default function SmokePage() {
     getAirQuality,
   });
 
-  // XXX and here is where I'd call generateComponent. I have the callbacks now,
-  // should I be able to use them?
   const { mutateAsync: generateComponent } = useMutation({
     mutationFn: async () => {
       const response = await hydraClient.generateComponent(
@@ -241,7 +236,6 @@ function useWeatherHydra({
   getAirQuality: (...args: any[]) => Promise<any>;
 }) {
   return useMemo(() => {
-    console.log("regenerating hydra client");
     const client = new HydraClient({
       hydraApiKey: env.NEXT_PUBLIC_HYDRA_API_KEY,
       hydraApiUrl: env.NEXT_PUBLIC_HYDRA_API_URL,
@@ -267,10 +261,7 @@ function useWeatherHydra({
             },
           ],
         },
-        getComponentContext: (...args) => {
-          console.log("calling getForecast with args", args);
-          return getForecast(...args);
-        },
+        getComponentContext: getForecast,
       },
       history: {
         definition: {
