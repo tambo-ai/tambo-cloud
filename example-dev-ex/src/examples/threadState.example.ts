@@ -54,6 +54,22 @@ export const exampleThreadState: Record<string, HydraThreadState> = {
             recipients: ["jill.hill@example.com"],
           },
         },
+        suggestions: [
+          {
+            title: "Schedule Follow-up",
+            detailedSuggestion:
+              "Would you like me to help schedule a calendar reminder for the lunch meeting once Jill responds?",
+            suggestedTools: ["getCalendar", "createEvent"],
+            components: ["CalendarComponent"],
+          },
+          {
+            title: "Draft Response Template",
+            detailedSuggestion:
+              "I can prepare a response template for when Jill confirms her preferred time.",
+            suggestedTools: ["getContacts", "getCalendar"],
+            components: ["EmailComponent"],
+          },
+        ],
       },
     ],
     contextId: "user123-emails",
@@ -89,6 +105,28 @@ export const exampleThreadState: Record<string, HydraThreadState> = {
             tags: ["groceries"],
           },
         },
+        suggestions: [
+          {
+            title: "Add Categories",
+            detailedSuggestion:
+              "Would you like to organize your shopping list by categories (produce, dairy, etc.)?",
+            components: ["NoteComponent"],
+          },
+          {
+            title: "Create Shopping Schedule",
+            detailedSuggestion:
+              "I can help you create a regular shopping schedule and set reminders.",
+            suggestedTools: ["getCalendar", "createRecurringEvent"],
+            components: ["CalendarComponent", "NoteComponent"],
+          },
+          {
+            title: "Share List",
+            detailedSuggestion:
+              "Would you like to share this shopping list with someone?",
+            suggestedTools: ["getContacts", "shareNote"],
+            components: ["ShareComponent"],
+          },
+        ],
       },
     ],
     contextId: "user123-notes",

@@ -2,30 +2,59 @@ import {
   useThreadCore,
   useThreadMessages,
   type HydraStreamingState,
+  type HydraSuggestion,
   type HydraThread,
   type HydraThreadMessage,
 } from "hydra-ai-react";
-import { type ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 
-// Separate message component for better organization
+// Suggestion component
+const Suggestions = ({
+  suggestions,
+  onSelect,
+}: {
+  suggestions?: HydraSuggestion[];
+  onSelect: (suggestion: HydraSuggestion) => void;
+}): ReactElement | null => {
+  if (!suggestions?.length) return null;
+
+  return (
+    <div>
+      <h4>Suggested Next Steps:</h4>
+      <div>
+        {suggestions.map((suggestion, index) => (
+          <div key={index}>
+            <h5>{suggestion.title}</h5>
+            <p>{suggestion.detailedSuggestion}</p>
+            <button onClick={() => onSelect(suggestion)}>Try This</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Message component with suggestions
 const ThreadMessage = ({
   message,
+  onSelectSuggestion,
 }: {
   message: HydraThreadMessage;
+  onSelectSuggestion: (suggestion: HydraSuggestion) => void;
 }): ReactElement => {
   return (
-    <div className="message">
+    <div>
       <p>
         <strong>{message.role === "user" ? "User" : "AI"}:</strong>{" "}
         {message.message}
       </p>
       {message.aiStatus?.map((status, i) => (
-        <p key={i} className="status">
+        <p key={i}>
           <strong>{status.state}:</strong> {status.message}
         </p>
       ))}
       {message.streamingState && (
-        <div className="streaming-status">
+        <div>
           <p>
             <strong>Streaming Status:</strong>
           </p>
@@ -40,7 +69,7 @@ const ThreadMessage = ({
         </div>
       )}
       {message.generatedComponent?.component && (
-        <div className="generated-component">
+        <div>
           <h4>Generated Component:</h4>
           <message.generatedComponent.component
             {...message.generatedComponent.interactiveProps}
@@ -48,35 +77,114 @@ const ThreadMessage = ({
         </div>
       )}
       {message.interactedComponent?.component && (
-        <div className="interacted-component">
+        <div>
           <h4>Interacted Component:</h4>
           <message.interactedComponent.component
             {...message.interactedComponent.interactiveProps}
           />
         </div>
       )}
+      {message.role === "ai" && (
+        <Suggestions
+          suggestions={message.suggestions}
+          onSelect={onSelectSuggestion}
+        />
+      )}
     </div>
   );
 };
 
-// Individual thread component using specialized hooks
-const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
-  const { messages, send, clear } = useThreadMessages(thread.id);
+// New input component with suggestion context
+const ThreadInput = ({
+  onSend,
+  selectedSuggestion,
+  onCancelSuggestion,
+}: {
+  onSend: (message: string, suggestion?: HydraSuggestion) => Promise<void>;
+  selectedSuggestion?: HydraSuggestion;
+  onCancelSuggestion: () => void;
+}): ReactElement => {
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) return;
+
+    await onSend(message, selectedSuggestion);
+    setMessage("");
+  };
 
   return (
-    <div className="thread">
-      <div className="thread-header">
+    <div>
+      {selectedSuggestion && (
+        <div>
+          <div>
+            <h4>Selected Action: {selectedSuggestion.title}</h4>
+            <button onClick={onCancelSuggestion} title="Cancel suggestion">
+              ×
+            </button>
+          </div>
+          <p>{selectedSuggestion.detailedSuggestion}</p>
+          {(selectedSuggestion.suggestedTools?.length ?? 0) > 0 && (
+            <div>
+              <span>Using: </span>
+              {selectedSuggestion.suggestedTools?.join(", ")}
+            </div>
+          )}
+        </div>
+      )}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder={
+            selectedSuggestion
+              ? "Add any additional context..."
+              : "Type your message..."
+          }
+        />
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  );
+};
+
+// Updated Thread component
+const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
+  const { messages, send, clear } = useThreadMessages(thread.id);
+  const [selectedSuggestion, setSelectedSuggestion] =
+    useState<HydraSuggestion>();
+
+  const handleSend = async (message: string, suggestion?: HydraSuggestion) => {
+    await send(message, { suggestion });
+    setSelectedSuggestion(undefined);
+  };
+
+  const handleSuggestionSelect = (suggestion: HydraSuggestion) => {
+    setSelectedSuggestion(suggestion);
+  };
+
+  return (
+    <div>
+      <div>
         <h2>{thread.title}</h2>
         <button onClick={() => clear()}>Clear Messages</button>
       </div>
-      <div className="messages">
+      <div>
         {messages.map((msg, index) => (
-          <ThreadMessage key={index} message={msg} />
+          <ThreadMessage
+            key={index}
+            message={msg}
+            onSelectSuggestion={handleSuggestionSelect}
+          />
         ))}
       </div>
-      <div className="thread-actions">
-        <button onClick={() => send("New message")}>Send Message</button>
-      </div>
+      <ThreadInput
+        onSend={handleSend}
+        selectedSuggestion={selectedSuggestion}
+        onCancelSuggestion={() => setSelectedSuggestion(undefined)}
+      />
     </div>
   );
 };
@@ -86,12 +194,12 @@ export const MessageThread = (): ReactElement => {
   const { operations, state } = useThreadCore();
 
   return (
-    <div className="message-thread">
-      <div className="thread-controls">
+    <div>
+      <div>
         <h1>Message Threads</h1>
         <button onClick={() => operations.create()}>New Thread</button>
       </div>
-      <div className="threads">
+      <div>
         {state.threads.map((thread) => (
           <Thread key={thread.id} thread={thread} />
         ))}

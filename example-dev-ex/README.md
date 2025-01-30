@@ -262,10 +262,85 @@ const threadId3 = await createThread("My Thread", undefined, { isAutoTitle: true
 };
 ```
 
+## 6. Suggestions
+
+Hydra provides a built-in suggestion system that allows the AI to guide users through multi-step interactions. Each AI response can include suggested next steps that users can easily follow.
+
+### Structure
+
+```typescript
+interface HydraSuggestion {
+  title: string; // Brief, actionable title to be displayed to the user
+  detailedSuggestion: string; // Detailed explanation of the suggestion.
+  suggestedTools?: string[]; // Tools that might be helpful
+  components?: string[]; // Components that might be relevant
+}
+```
+
+### Implementation
+
+Suggestions are included in AI responses and can be acted upon in the next message:
+
+```typescript
+// AI response includes suggestions
+const aiMessage = {
+  role: "ai",
+  message: "I've created your shopping list.",
+  ...
+  suggestions: [
+    {
+      title: "Add Categories",
+      detailedSuggestion: "Would you like to organize your list by categories?",
+      components: ["NoteComponent"],
+    },
+  ],
+};
+
+// Acting on a suggestion
+const { send } = useThreadMessages(threadId);
+await send("Yes, let's do that", { suggestion: selectedSuggestion });
+```
+
+### Usage Example
+
+```typescript
+function ThreadMessage({ message, onSelectSuggestion }) {
+  return (
+    <div>
+      <p>{message.message}</p>
+
+      {message.role === "ai" && (
+        <Suggestions
+          suggestions={message.suggestions}
+          onSelect={onSelectSuggestion}
+        />
+      )}
+    </div>
+  );
+}
+
+function Thread({ threadId }) {
+  const { send, messages } = useThreadMessages(threadId);
+
+  const handleSuggestion = async (suggestion) => {
+    await send("Let's try this suggestion", { suggestion });
+  };
+
+  return (
+    <div>
+      {messages.map(msg => (
+        <ThreadMessage
+          message={msg}
+          onSelectSuggestion={handleSuggestion}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
 ## TBD
 
-- suggestions
-- Multiple messages
 - system messages propmt
 
 ## Future

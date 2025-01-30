@@ -53,6 +53,19 @@ declare module "hydra-ai-react" {
     interactiveProps: Record<string, any>;
   }
 
+  // Simplified suggestion types
+  export interface HydraSuggestion {
+    title: string;
+    detailedSuggestion: string;
+    suggestedTools?: string[];
+    components?: string[];
+  }
+
+  export interface ThreadMessageOptions {
+    suggestion?: HydraSuggestion; // Include the suggestion being acted upon
+    autoTitle?: boolean; // Whether to auto-generate title
+  }
+
   export interface HydraThreadMessage {
     role: "user" | "ai";
     message: string;
@@ -60,6 +73,8 @@ declare module "hydra-ai-react" {
     streamingState?: Record<string, HydraStreamingState>;
     generatedComponent?: HydraComponentState;
     interactedComponent?: HydraComponentState | null;
+    suggestions?: HydraSuggestion[];
+    selectedSuggestion?: HydraSuggestion; // Track which suggestion was selected
   }
 
   export interface HydraThreadState {
@@ -69,7 +84,11 @@ declare module "hydra-ai-react" {
 
   // Core operations type
   export interface ThreadOperations {
-    send: (threadId: string, message: string) => Promise<void>;
+    send: (
+      threadId: string,
+      message: string,
+      options?: ThreadMessageOptions,
+    ) => Promise<void>;
     update: (threadId: string, updates: Partial<HydraThread>) => Promise<void>;
     delete: (threadId: string) => Promise<void>;
     archive: (threadId: string) => Promise<void>;
@@ -92,7 +111,7 @@ declare module "hydra-ai-react" {
 
   // Specialized hook return types
   export interface ThreadMessages {
-    send: (message: string) => Promise<void>;
+    send: (message: string, options?: ThreadMessageOptions) => Promise<void>;
     clear: () => Promise<void>;
     messages: HydraThreadMessage[];
   }
@@ -121,6 +140,7 @@ declare module "hydra-ai-react" {
   export function useSendThreadMessage(): (
     threadId: string,
     message: string,
+    options?: ThreadMessageOptions,
   ) => Promise<void>;
   export function useGetThreadsByContext(): (
     contextId: string,
@@ -139,5 +159,19 @@ declare module "hydra-ai-react" {
     generatedProps: T;
     interactiveProps: T;
     updateInteractiveProps: (updates: Partial<T>) => void;
+  };
+
+  // Suggestion handling types
+  export interface SuggestionHandlers {
+    accept: (suggestion: HydraSuggestion) => Promise<void>;
+    dismiss: (suggestion: HydraSuggestion) => Promise<void>;
+    getSuggestions: () => HydraSuggestion[];
+  }
+
+  // Add specialized suggestion hook
+  export function useThreadSuggestions(threadId: string): {
+    suggestions: HydraSuggestion[];
+    accept: (suggestion: HydraSuggestion) => Promise<void>;
+    dismiss: (suggestion: HydraSuggestion) => Promise<void>;
   };
 }
