@@ -1,6 +1,6 @@
 import {
-  SuggestedAction,
-  ToolCallRequest,
+  SuggestedAction as SuggestedActionInterface,
+  ToolCallRequest as ToolCallRequestInterface,
 } from '@use-hydra-ai/hydra-ai-server';
 
 export class ComponentDecision {
@@ -10,4 +10,19 @@ export class ComponentDecision {
   suggestedActions?: SuggestedAction[];
   toolCallRequest?: ToolCallRequest;
   threadId?: string;
+}
+
+export class ToolCallRequest implements Partial<ToolCallRequestInterface> {
+  toolCallId?: string;
+  tool?: string;
+  parameters?: {
+    parameterName: string;
+    parameterValue: any;
+  }[];
+  toolName?: string;
+}
+
+export class SuggestedAction implements Partial<SuggestedActionInterface> {
+  label?: string;
+  actionText?: string;
 }
