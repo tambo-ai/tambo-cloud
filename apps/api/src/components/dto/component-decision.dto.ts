@@ -3,7 +3,7 @@ import {
   ToolCallRequest,
 } from '@use-hydra-ai/hydra-ai-server';
 
-export class ComponentDecisionWithThreadId {
+export class ComponentDecision {
   componentName?: string | null;
   props?: Record<string, any>;
   message?: string;
