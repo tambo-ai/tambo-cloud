@@ -5,6 +5,15 @@ import { NoteComponent } from "../components/NoteComponent";
 import { EmailPropsSchema, NotePropsSchema } from "../schemas/componentSchemas";
 import { GetCalendarSchema, GetContactsSchema } from "../schemas/toolSchemas";
 
+const systemMessage = `You are a helpful AI assistant focused on productivity and communication. Always be professional, concise, and clear in your responses.`;
+
+const prompt = `For all tasks:
+- Maintain consistent formatting
+- Be clear and structured
+- Focus on user's needs
+- Provide concise, actionable responses
+- Use professional language`;
+
 // Define available tools
 const tools = {
   getContacts: {
@@ -50,5 +59,7 @@ export const initializeHydra = (): HydraInitConfig => {
     apiKey: process.env.NEXT_PUBLIC_HYDRA_API_KEY,
     components,
     tools,
+    systemMessage,
+    prompt,
   };
 };

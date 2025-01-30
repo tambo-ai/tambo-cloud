@@ -20,6 +20,9 @@ declare module "hydra-ai-react" {
     apiKey: string;
     components: Record<string, HydraComponent>;
     tools: Record<string, HydraTool>;
+    systemMessage?: string;
+    prompt?: string;
+    componentPrompts?: Record<string, string>;
   }
 
   export interface HydraProviderProps {
@@ -148,6 +151,16 @@ declare module "hydra-ai-react" {
   export function useClearThreadMessages(): (threadId: string) => Promise<void>;
   export function useArchiveThread(): (threadId: string) => Promise<void>;
 
+  // Configuration hooks
+  export function useUpdateSystemMessage(): (message: string) => Promise<void>;
+  export function useUpdatePrompt(): (prompt: string) => Promise<void>;
+  export function useSystemConfig(): {
+    systemMessage: string | undefined;
+    prompt: string | undefined;
+    updateSystemMessage: (message: string) => Promise<void>;
+    updatePrompt: (prompt: string) => Promise<void>;
+  };
+
   // Specialized hooks (common patterns)
   export function useThreadMessages(threadId: string): ThreadMessages;
   export function useThreadComponent(messageId: string): ThreadComponent;
@@ -174,4 +187,12 @@ declare module "hydra-ai-react" {
     accept: (suggestion: HydraSuggestion) => Promise<void>;
     dismiss: (suggestion: HydraSuggestion) => Promise<void>;
   };
+
+  export interface HydraContext {
+    config: HydraInitConfig;
+    updateSystemMessage: (message: string) => Promise<void>;
+    updatePrompt: (prompt: string) => Promise<void>;
+  }
+
+  export function useHydraContext(): HydraContext | null;
 }

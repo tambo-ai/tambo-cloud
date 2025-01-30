@@ -194,7 +194,7 @@ function MessagePanel({ threadId }) {
    - Implementing common patterns
    - Want a simpler API
    ```typescript
-   const { send, messages } = useThreadMessages(threadId);
+   const { send }: ThreadMessages = useThreadMessages(threadId);
    ```
 
 #### Best Practices
@@ -339,9 +339,63 @@ function Thread({ threadId }) {
 }
 ```
 
-## TBD
+## 7. System Messages and Prompts
 
-- system messages propmt
+Hydra AI allows you to configure the AI's behavior using system messages and prompts. These can be set during initialization or updated dynamically using hooks.
+
+### Initial Configuration
+
+Configure system messages and prompts in your `hydraConfig.ts`:
+
+```typescript
+const systemMessage = `You are a helpful AI assistant focused on productivity and communication.`;
+
+const prompt = `For all tasks:
+- Maintain consistent formatting
+- Be clear and structured
+- Focus on user's needs`;
+
+export const initializeHydra = (): HydraInitConfig => ({
+  // ... other config
+  systemMessage,
+  prompt,
+});
+```
+
+### Hooks
+
+Three hooks are available for managing system configuration:
+
+#### useUpdateSystemMessage
+
+Updates just the system message:
+
+```typescript
+const updateSystemMessage = useUpdateSystemMessage();
+await updateSystemMessage("New system message");
+```
+
+#### useUpdatePrompt
+
+Updates just the prompt:
+
+```typescript
+const updatePrompt = useUpdatePrompt();
+await updatePrompt("New prompt");
+```
+
+#### useSystemConfig
+
+Comprehensive hook that provides both current values and update functions:
+
+```typescript
+const {
+  systemMessage, // Current system message
+  prompt, // Current prompt
+  updateSystemMessage,
+  updatePrompt,
+} = useSystemConfig();
+```
 
 ## Future
 
