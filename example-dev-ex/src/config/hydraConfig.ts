@@ -1,5 +1,8 @@
-import { type HydraInitConfig } from "hydra-ai-react";
-import { getCalendar, getContacts } from "../api/apiTools";
+import {
+  createComponentRegistry,
+  createToolRegistry,
+  type HydraInitConfig,
+} from "hydra-ai-react";
 import { EmailComponent } from "../components/EmailComponent";
 import { NoteComponent } from "../components/NoteComponent";
 import { EmailPropsSchema, NotePropsSchema } from "../schemas/componentSchemas";
@@ -14,51 +17,49 @@ const prompt = `For all tasks:
 - Provide concise, actionable responses
 - Use professional language`;
 
-// Define available tools
-const tools = {
+// Define tool registry
+export const toolRegistry = createToolRegistry({
   getContacts: {
-    name: "Get Contacts",
     description:
       "Retrieves user contacts with optional filtering and pagination",
-    func: getContacts,
     inputSchema: GetContactsSchema,
   },
   getCalendar: {
-    name: "Get Calendar",
     description: "Fetches calendar events within a specified date range",
-    func: getCalendar,
     inputSchema: GetCalendarSchema,
   },
-};
+});
 
-// Define components with their associated tools
-const components = {
+// Define component registry
+export const componentRegistry = createComponentRegistry<
+  typeof toolRegistry.tools
+>({
   EmailComponent: {
-    name: "Email Composer",
+    component: EmailComponent,
     description:
       "Compose and edit emails with contact and calendar integration",
-    component: EmailComponent,
     propsSchema: EmailPropsSchema,
     associatedTools: ["getContacts", "getCalendar"],
   },
   NoteComponent: {
-    name: "Note Editor",
-    description: "Create and edit notes with optional tags",
     component: NoteComponent,
+    description: "Create and edit notes with optional tags",
     propsSchema: NotePropsSchema,
-    associatedTools: [], // This component doesn't need any tools
+    associatedTools: [],
   },
-};
+});
 
-export const initializeHydra = (): HydraInitConfig => {
+export const initializeHydra = (): HydraInitConfig<
+  typeof toolRegistry.tools
+> => {
   if (!process.env.NEXT_PUBLIC_HYDRA_API_KEY) {
     throw new Error("NEXT_PUBLIC_HYDRA_API_KEY is not set");
   }
 
   return {
     apiKey: process.env.NEXT_PUBLIC_HYDRA_API_KEY,
-    components,
-    tools,
+    toolRegistry,
+    componentRegistry,
     systemMessage,
     prompt,
   };

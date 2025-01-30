@@ -41,32 +41,78 @@ Hydra is initialized with a configuration file that defines the components and t
 - `hydraConfig.ts`: Configures available components and tools that Hydra can use, including tool associations
 - `HydraProvider.tsx`: Root provider that initializes Hydra with your API key and configuration
 
-### 2. Components and Tools Registry
+### 2. Tool and Component Registries
 
-1. Zod is strongly encouraged for schemas, but we also support JSONschemas.
-2. Components and tools are decoupled, but can be "associated" with each other.
+Hydra uses separate registries for tools and components with Zod schemas for type safety.
 
-Components can declare which tools they need access to:
+#### Tool Registry
 
 ```typescript
-const components = {
+// Define available tools with schemas
+export const toolRegistry = createToolRegistry({
+  getContacts: {
+    description: "Retrieves user contacts list",
+    inputSchema: z.object({
+      userId: z.string(),
+      limit: z.number().optional(),
+    }),
+  },
+});
+
+// Register implementations when ready
+toolRegistry.registerTool("getContacts", async (input) => {
+  const { userId, limit } = input; // Fully typed
+  return fetchContacts(userId, limit);
+});
+```
+
+#### Component Registry
+
+```typescript
+// Components reference tools from the registry
+export const componentRegistry = createComponentRegistry<
+  typeof toolRegistry.tools
+>({
   EmailComponent: {
     component: EmailComponent,
     propsSchema: EmailPropsSchema,
-    associatedTools: ["getContacts", "getCalendar"], // Tools this component can use
+    associatedTools: ["getContacts"],
   },
-  NoteComponent: {
-    component: NoteComponent,
-    propsSchema: NotePropsSchema,
-    associatedTools: [], // No tools needed
-  },
-};
+});
 ```
 
-[ ] TODO: Add a tools example.
-[ ] TODO: Make sure it handles callbacks to functions.
+#### Usage Examples
 
-This association helps Hydra understand which tools to make available to each component.
+1. Direct tool usage:
+
+```typescript
+function ContactList() {
+  const getContacts = useTool("getContacts");
+  // Tool inputs are fully typed
+  const contacts = await getContacts({ userId: "123" });
+}
+```
+
+2. Tool registration with context:
+
+```typescript
+function AuthToolProvider() {
+  const auth = useAuth();
+
+  useEffect(() => {
+    if (auth.isReady) {
+      toolRegistry.registerTool("getContacts", createAuthenticatedTool(auth));
+    }
+  }, [auth.isReady]);
+}
+```
+
+The registry pattern provides:
+
+- Single source of truth for tools
+- Type-safe tool usage
+- Runtime tool registration
+- Clear separation of concerns
 
 ### 3. Component Generation
 
@@ -584,3 +630,4 @@ function ThreadWithStoredProfile({ userId }: { userId: string }) {
 ## Future
 
 - memory
+- interactiveComponents/Canvas

@@ -1,32 +1,71 @@
 declare module "hydra-ai-react" {
   import { type ComponentType, type ReactNode } from "react";
+  import { z } from "zod";
 
-  export interface HydraTool {
-    name: string;
+  // Tool Registry Types
+  export interface ToolDefinition<T extends z.ZodSchema> {
     description: string;
-    func: (...args: any[]) => Promise<any>;
-    inputSchema: any;
+    inputSchema: T;
   }
 
-  export interface HydraComponent {
-    name: string;
-    description: string;
+  export type ToolImplementation<T extends z.ZodSchema> = (
+    input: z.infer<T>,
+  ) => Promise<unknown>;
+
+  export interface ToolRegistry<
+    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+  > {
+    tools: T;
+    registerTool<K extends keyof T>(
+      name: K,
+      implementation: ToolImplementation<T[K]["inputSchema"]>,
+    ): void;
+  }
+
+  export function createToolRegistry<
+    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+  >(config: T): ToolRegistry<T>;
+
+  // Component Registry Types
+  export interface ComponentDefinition<
+    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+  > {
     component: ComponentType<any>;
-    propsSchema: any;
-    associatedTools?: string[]; // Names of tools this component can use
+    propsSchema: z.ZodSchema;
+    description?: string;
+    associatedTools: Array<keyof T>;
   }
 
-  export interface HydraInitConfig {
+  export interface ComponentRegistry<
+    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+  > {
+    components: Record<string, ComponentDefinition<T>>;
+  }
+
+  export function createComponentRegistry<
+    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+  >(config: Record<string, ComponentDefinition<T>>): ComponentRegistry<T>;
+
+  // Hydra Config Types
+  export interface HydraInitConfig<
+    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+  > {
     apiKey: string;
-    components: Record<string, HydraComponent>;
-    tools: Record<string, HydraTool>;
+    toolRegistry: ToolRegistry<T>;
+    componentRegistry: ComponentRegistry<T>;
     systemMessage?: string;
     prompt?: string;
-    componentPrompts?: Record<string, string>;
   }
 
+  // Hook Types
+  export function useTool<
+    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+    K extends keyof T,
+  >(name: K): ToolImplementation<T[K]["inputSchema"]>;
+
+  // Provider Types
   export interface HydraProviderProps {
-    hydraInstance: HydraInitConfig;
+    hydraInstance: HydraInitConfig<any>;
     children: ReactNode;
   }
 
@@ -197,7 +236,7 @@ declare module "hydra-ai-react" {
   };
 
   export interface HydraContext {
-    config: HydraInitConfig;
+    config: HydraInitConfig<any>;
     updateSystemMessage: (message: string) => Promise<void>;
     updatePrompt: (prompt: string) => Promise<void>;
   }
