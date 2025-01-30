@@ -397,6 +397,190 @@ const {
 } = useSystemConfig();
 ```
 
+## 8. User Profile
+
+Hydra AI supports user profiles to provide context-aware interactions. You can attach user profile information to threads, allowing the AI to personalize its responses based on user characteristics, preferences, or other relevant information.
+
+### Usage
+
+You can provide user profile information when creating a thread:
+
+```typescript
+// Create a thread with user profile
+const threadId = await createThread("Fitness Plan", undefined, {
+  userProfile:
+    "Name: Michael Magan, Age: 32, Hobbies: Skiing, Company: Hydra AI",
+});
+```
+
+You can also update the user profile for an existing thread:
+
+```typescript
+const updateThread = useUpdateThread();
+await updateThread(threadId, {
+  userProfile: "Name: Michael Magan, Role: Developer, Interests: AI, Skiing",
+});
+```
+
+### Implementation Example
+
+```typescript
+function PersonalizedThread() {
+  const createThread = useCreateThread();
+  const { send, messages } = useThreadMessages(threadId);
+
+  const startNewThread = async () => {
+    const threadId = await createThread("Personal Assistant", undefined, {
+      userProfile: "Name: Michael, Preferences: Morning person, Diet: Vegetarian"
+    });
+
+    // The AI will now have context about the user's preferences
+    await send("Can you help me plan my day?");
+  };
+
+  return (
+    <div>
+      <button onClick={startNewThread}>Start New Thread</button>
+      {/* Thread messages */}
+    </div>
+  );
+}
+```
+
+## 9. Stored Profiles
+
+Hydra AI provides a profile storage system that allows you to persistently store and manage user profiles. This is useful for maintaining consistent user context across different threads and sessions.
+
+### Profile Hooks
+
+#### useProfile
+
+For managing a single user's profile:
+
+```typescript
+function UserProfileManager({ userId }: { userId: string }) {
+  const {
+    profile,
+    isLoading,
+    error,
+    updateProfile,
+    deleteProfile
+  } = useProfile(userId);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      {profile ? (
+        <>
+          <pre>{profile.profile}</pre>
+          <button onClick={() => updateProfile("Updated profile info...")}>
+            Update Profile
+          </button>
+          <button onClick={deleteProfile}>Delete Profile</button>
+        </>
+      ) : (
+        <button onClick={() => updateProfile("Initial profile info...")}>
+          Create Profile
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+#### useProfiles
+
+For managing multiple profiles:
+
+```typescript
+function ProfilesList() {
+  const { profiles, isLoading, error, refresh } = useProfiles();
+
+  if (isLoading) return <div>Loading profiles...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      <button onClick={refresh}>Refresh Profiles</button>
+      {profiles.map(profile => (
+        <div key={profile.userId}>
+          <h3>User: {profile.userId}</h3>
+          <pre>{profile.profile}</pre>
+          <small>Last updated: {profile.updatedAt}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+#### useProfileOperations
+
+For direct access to profile operations:
+
+```typescript
+function ProfileOperationsExample() {
+  const {
+    getProfile,
+    updateProfile,
+    deleteProfile,
+    listProfiles
+  } = useProfileOperations();
+
+  const handleBulkOperation = async () => {
+    // Get a specific profile
+    const profile = await getProfile("user123");
+
+    // Update multiple profiles
+    await Promise.all([
+      updateProfile("user1", "Profile 1"),
+      updateProfile("user2", "Profile 2")
+    ]);
+
+    // List all profiles
+    const allProfiles = await listProfiles();
+    console.log(allProfiles);
+  };
+
+  return <button onClick={handleBulkOperation}>Perform Operations</button>;
+}
+```
+
+### Integration with Threads
+
+You can easily use stored profiles when creating new threads:
+
+```typescript
+function ThreadWithStoredProfile({ userId }: { userId: string }) {
+  const { profile } = useProfile(userId);
+  const createThread = useCreateThread();
+  const { send } = useThreadMessages(threadId);
+
+  const startNewThread = async () => {
+    if (!profile) return;
+
+    const threadId = await createThread(
+      "Personal Assistant",
+      undefined,
+      { userProfile: profile.profile }
+    );
+
+    await send("Hello! Please help me with my tasks.");
+  };
+
+  return (
+    <button
+      onClick={startNewThread}
+      disabled={!profile}
+    >
+      Start Thread with Profile
+    </button>
+  );
+}
+```
+
 ## Future
 
 - memory
