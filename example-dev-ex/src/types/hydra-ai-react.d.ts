@@ -67,22 +67,50 @@ declare module "hydra-ai-react" {
     contextId?: string; // Optional user-provided context identifier
   }
 
-  // Hook types
+  // Core operations type
+  export interface ThreadOperations {
+    send: (threadId: string, message: string) => Promise<void>;
+    update: (threadId: string, updates: Partial<HydraThread>) => Promise<void>;
+    delete: (threadId: string) => Promise<void>;
+    archive: (threadId: string) => Promise<void>;
+    clear: (threadId: string) => Promise<void>;
+    create: (title?: string, contextId?: string) => Promise<string>;
+  }
+
+  // Core state type
+  export interface ThreadState {
+    threads: HydraThread[];
+    threadState: Record<string, HydraThreadState>;
+    getByContext: (contextId: string) => HydraThread[];
+  }
+
+  // Core hook return type
+  export interface ThreadCore {
+    operations: ThreadOperations;
+    state: ThreadState;
+  }
+
+  // Specialized hook return types
+  export interface ThreadMessages {
+    send: (message: string) => Promise<void>;
+    clear: () => Promise<void>;
+    messages: HydraThreadMessage[];
+  }
+
+  export interface ThreadComponent {
+    updateProps: (updates: Record<string, any>) => void;
+    component: ComponentType<any>;
+    props: Record<string, any>;
+  }
+
+  // Core hook
+  export function useThreadCore(): ThreadCore;
+
+  // Individual hooks (granular control)
   export function useThreads(): HydraThread[];
   export function useThreadState(): Record<string, HydraThreadState>;
-
-  // Component State Hook
-  export function useHydraComponentState<T extends Record<string, any>>(
-    messageId: string,
-  ): {
-    generatedProps: T;
-    interactiveProps: T;
-    updateInteractiveProps: (updates: Partial<T>) => void;
-  };
-
-  // Thread Operations
   export function useCreateThread(): (
-    title: string,
+    title?: string,
     contextId?: string,
   ) => Promise<string>;
   export function useDeleteThread(): (threadId: string) => Promise<void>;
@@ -99,4 +127,17 @@ declare module "hydra-ai-react" {
   ) => HydraThread[];
   export function useClearThreadMessages(): (threadId: string) => Promise<void>;
   export function useArchiveThread(): (threadId: string) => Promise<void>;
+
+  // Specialized hooks (common patterns)
+  export function useThreadMessages(threadId: string): ThreadMessages;
+  export function useThreadComponent(messageId: string): ThreadComponent;
+
+  // Component State Hook
+  export function useHydraComponentState<T extends Record<string, any>>(
+    messageId: string,
+  ): {
+    generatedProps: T;
+    interactiveProps: T;
+    updateInteractiveProps: (updates: Partial<T>) => void;
+  };
 }

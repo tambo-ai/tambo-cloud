@@ -1,69 +1,101 @@
 import {
-  useSendThreadMessage,
-  useThreads,
-  useThreadState,
+  useThreadCore,
+  useThreadMessages,
+  type HydraStreamingState,
+  type HydraThread,
+  type HydraThreadMessage,
 } from "hydra-ai-react";
 import { type ReactElement } from "react";
 
-export const MessageThread = (): ReactElement => {
-  const threads = useThreads();
-  const threadState = useThreadState();
-  const sendThreadMessage = useSendThreadMessage();
+// Separate message component for better organization
+const ThreadMessage = ({
+  message,
+}: {
+  message: HydraThreadMessage;
+}): ReactElement => {
+  return (
+    <div className="message">
+      <p>
+        <strong>{message.role === "user" ? "User" : "AI"}:</strong>{" "}
+        {message.message}
+      </p>
+      {message.aiStatus?.map((status, i) => (
+        <p key={i} className="status">
+          <strong>{status.state}:</strong> {status.message}
+        </p>
+      ))}
+      {message.streamingState && (
+        <div className="streaming-status">
+          <p>
+            <strong>Streaming Status:</strong>
+          </p>
+          {Object.entries(message.streamingState).map(([key, value]) => (
+            <p key={key}>
+              {key}:{" "}
+              {(value as HydraStreamingState).isStreaming
+                ? "Streaming"
+                : "Complete"}
+            </p>
+          ))}
+        </div>
+      )}
+      {message.generatedComponent?.component && (
+        <div className="generated-component">
+          <h4>Generated Component:</h4>
+          <message.generatedComponent.component
+            {...message.generatedComponent.interactiveProps}
+          />
+        </div>
+      )}
+      {message.interactedComponent?.component && (
+        <div className="interacted-component">
+          <h4>Interacted Component:</h4>
+          <message.interactedComponent.component
+            {...message.interactedComponent.interactiveProps}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Individual thread component using specialized hooks
+const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
+  const { messages, send, clear } = useThreadMessages(thread.id);
 
   return (
-    <div>
-      <h1>Message Threads</h1>
-      {threads.map((thread) => (
-        <div key={thread.id}>
-          <h2>{thread.title}</h2>
-          <div>
-            {threadState[thread.id]?.messages.map((msg, index) => (
-              <div key={index}>
-                <p>
-                  <strong>{msg.role === "user" ? "User" : "AI"}:</strong>{" "}
-                  {msg.message}
-                </p>
-                {msg.aiStatus?.map((status, i) => (
-                  <p key={i}>
-                    <strong>{status.state}:</strong> {status.message}
-                  </p>
-                ))}
-                {msg.streamingState && (
-                  <div>
-                    <p>
-                      <strong>Streaming Status:</strong>
-                    </p>
-                    {Object.entries(msg.streamingState).map(([key, value]) => (
-                      <p key={key}>
-                        {key}: {value.isStreaming ? "Streaming" : "Complete"}
-                      </p>
-                    ))}
-                  </div>
-                )}
-                {msg.generatedComponent?.component && (
-                  <div>
-                    <h4>Generated Component:</h4>
-                    <msg.generatedComponent.component
-                      {...msg.generatedComponent.interactiveProps}
-                    />
-                  </div>
-                )}
-                {msg.interactedComponent?.component && (
-                  <div>
-                    <h4>Interacted Component:</h4>
-                    <msg.interactedComponent.component
-                      {...msg.interactedComponent.interactiveProps}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <button onClick={() => sendThreadMessage(thread.id, "New message")}>
-            Send Message
-          </button>
-        </div>
-      ))}
+    <div className="thread">
+      <div className="thread-header">
+        <h2>{thread.title}</h2>
+        <button onClick={() => clear()}>Clear Messages</button>
+      </div>
+      <div className="messages">
+        {messages.map((msg, index) => (
+          <ThreadMessage key={index} message={msg} />
+        ))}
+      </div>
+      <div className="thread-actions">
+        <button onClick={() => send("New message")}>Send Message</button>
+      </div>
+    </div>
+  );
+};
+
+// Main component using core hook for global operations
+export const MessageThread = (): ReactElement => {
+  const { operations, state } = useThreadCore();
+
+  return (
+    <div className="message-thread">
+      <div className="thread-controls">
+        <h1>Message Threads</h1>
+        <button onClick={() => operations.create()}>New Thread</button>
+      </div>
+      <div className="threads">
+        {state.threads.map((thread) => (
+          <Thread key={thread.id} thread={thread} />
+        ))}
+      </div>
     </div>
   );
 };

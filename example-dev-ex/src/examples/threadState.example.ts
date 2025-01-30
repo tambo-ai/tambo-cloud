@@ -36,6 +36,7 @@ export const exampleThreadState: Record<string, HydraThreadState> = {
           },
         ],
         streamingState: {
+          // TODO: Make this V2
           subject: { isStreaming: true, isComplete: false },
           body: { isStreaming: false, isComplete: true },
           recipients: { isStreaming: false, isComplete: true },

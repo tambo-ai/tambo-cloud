@@ -43,7 +43,7 @@ Hydra is initialized with a configuration file that defines the components and t
 
 ### 2. Components and Tools Registry
 
-1. Zod is required for schemas.
+1. Zod is strongly encouraged for schemas, but we also support JSONschemas.
 2. Components and tools are decoupled, but can be "associated" with each other.
 
 Components can declare which tools they need access to:
@@ -62,6 +62,9 @@ const components = {
   },
 };
 ```
+
+[ ] TODO: Add a tools example.
+[ ] TODO: Make sure it handles callbacks to functions.
 
 This association helps Hydra understand which tools to make available to each component.
 
@@ -90,25 +93,153 @@ Components in Hydra follow a two-part pattern to separate concerns:
    - Handle interactive state updates
    - Connect to Hydra's thread system
 
-See `src/components/NoteComponent.tsx` for a complete implementation example.
+See [src/components/NoteComponent.tsx](src/components/NoteComponent.tsx) for a complete implementation example.
 
-See `src/components/EmailComponent.tsx` for state not managed by Hydra. Can still be used with Hydra, but hydra will not know updated state.
+See [src/components/EmailComponent.tsx](src/components/EmailComponent.tsx) for state not managed by Hydra. Can still be used with Hydra, but hydra will not know updated state.
 
-### 5. Useful Hooks for Thread Management
+- [ ] Can we interanlly generate the wrapper component?
+  - {message.map(m => <HydraMessage messageId={m}><MyComponent /></HydraMessage>)}
 
-1. **Thread Creation and Updates**
+### 5. Hook Patterns
 
-   - `useCreateThread()` - Create new thread with title and optional context
-   - `useUpdateThread()` - Modify thread properties
-   - `useSendThreadMessage()` - Add message to thread
+Hydra provides three patterns for managing thread state and operations, allowing you to choose the right level of abstraction for your needs:
 
-2. **Thread Querying**
+#### Core Hook Pattern
 
-   - `useThreads()` - Get all threads
-   - `useThreadState()` - Get full thread state including messages
-   - `useGetThreadsByContext()` - Filter threads by contextId
+The `useThreadCore` hook provides a centralized way to access all thread operations and state:
 
-3. **Thread Management**
+```typescript
+function ThreadManager() {
+  const { operations, state } = useThreadCore();
+
+  return (
+    <div>
+      <button onClick={() => operations.create()}>New Thread</button>
+      {state.threads.map(thread => (
+        <div key={thread.id}>
+          {thread.title}
+          <button onClick={() => operations.send(thread.id, "Hello")}>
+            Send Message
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+#### Individual Hooks Pattern
+
+For granular control and optimal performance, use individual hooks:
+
+```typescript
+function MessageSender({ threadId }) {
+  const sendMessage = useSendThreadMessage();
+  const threads = useThreads();
+
+  // Only re-renders when sendMessage changes
+  const handleSend = useCallback(() => {
+    sendMessage(threadId, "Hello");
+  }, [sendMessage, threadId]);
+
+  return <button onClick={handleSend}>Send</button>;
+}
+```
+
+#### Specialized Hooks Pattern
+
+For common use cases, specialized hooks provide simplified interfaces:
+
+```typescript
+function MessagePanel({ threadId }) {
+  const { send, clear, messages } = useThreadMessages(threadId);
+
+  return (
+    <div>
+      {messages.map(msg => (
+        <div key={msg.id}>{msg.message}</div>
+      ))}
+      <button onClick={() => send("Hello")}>Send</button>
+      <button onClick={clear}>Clear</button>
+    </div>
+  );
+}
+```
+
+#### When to Use Each Pattern
+
+1. **Use Core Hook (`useThreadCore`) when:**
+
+   - Building thread management UIs
+   - Needing access to multiple operations
+   - Managing global thread state
+
+   ```typescript
+   const { operations, state } = useThreadCore();
+   ```
+
+2. **Use Individual Hooks when:**
+
+   - Optimizing for performance
+   - Implementing specific features
+   - Need precise dependency control
+
+   ```typescript
+   const sendMessage = useSendThreadMessage();
+   const threads = useThreads();
+   ```
+
+3. **Use Specialized Hooks when:**
+   - Working with a single thread
+   - Implementing common patterns
+   - Want a simpler API
+   ```typescript
+   const { send, messages } = useThreadMessages(threadId);
+   ```
+
+#### Best Practices
+
+1. **Performance Optimization:**
+
+   ```typescript
+   // ❌ Avoid using core hook for simple components
+   const { operations } = useThreadCore();
+   useEffect(() => {
+     operations.send(threadId, msg);
+   }, [operations, threadId, msg]);
+
+   // ✅ Use individual hooks for better performance
+   const sendMessage = useSendThreadMessage();
+   useEffect(() => {
+     sendMessage(threadId, msg);
+   }, [sendMessage, threadId, msg]);
+   ```
+
+2. **Component Organization:**
+
+   ```typescript
+   // ✅ Use specialized hooks for focused components
+   function ThreadMessages({ threadId }) {
+     const { messages, send } = useThreadMessages(threadId);
+     return <MessageList messages={messages} onSend={send} />;
+   }
+
+   // ✅ Use core hook for container components
+   function ThreadDashboard() {
+     const { operations, state } = useThreadCore();
+     return <ThreadList threads={state.threads} onDelete={operations.delete} />;
+   }
+   ```
+
+3. **Type Safety:**
+   ```typescript
+   // All patterns provide full type safety
+   const { operations }: ThreadCore = useThreadCore();
+   const sendMessage: (threadId: string, msg: string) => Promise<void> =
+     useSendThreadMessage();
+   const { send }: ThreadMessages = useThreadMessages(threadId);
+   ```
+4. **Thread Management**
    - `useDeleteThread()` - Remove thread completely
    - `useClearThreadMessages()` - Clear messages but keep thread
    - `useArchiveThread()` - Archive thread for later reference
@@ -133,61 +264,10 @@ const threadId3 = await createThread("My Thread", undefined, { isAutoTitle: true
 
 ## TBD
 
-### ??? Something I can't remember but is important
+- suggestions
+- Multiple messages
+- system messages propmt
 
-### Memory & State Management
+## Future
 
-- Memory: Hooks to enable and visualize memory usage
-- State persistence and synchronization
-- Offline support with conflict resolution
-- Optimistic updates for better UX
-- Thread state inspection and debugging
-
-### Error Handling & Recovery
-
-- Error boundary patterns and fallbacks
-- Retry mechanisms and recovery strategies
-- Error logging and monitoring
-- Graceful degradation patterns
-- Useful tools for error handling and debugging
-
-### Performance Optimization
-
-- Virtualization for long thread lists
-- Lazy loading strategies
-- Component re-render optimization
-- Caching strategies for AI responses
-- Memory leak prevention
-- Performance profiling utilities
-
-### Developer Experience
-
-- Component debugging tools
-- Thread state inspection tools
-- Type generation helpers
-- Hot reload optimization
-- Component playground/storybook
-
-### Security & Validation
-
-- Input sanitization guidelines
-- Rate limiting strategies
-- Content validation patterns
-- Sensitive data handling
-- Authentication patterns
-
-### Integration & Extensibility
-
-- Third-party tool integration
-- API versioning strategy
-- WebSocket support
-- Custom tool development
-- Middleware system
-
-### Thread Management
-
-- Batch operations
-- Advanced search and filtering
-- Version control and history
-- Templates and presets
-- Export/import functionality
+- memory
