@@ -153,12 +153,12 @@ const ThreadInput = ({
 
 // Updated Thread component
 const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
-  const { messages, send, clear } = useThreadMessages(thread.id);
+  const { messages, generate, clear } = useThreadMessages(thread.id);
   const [selectedSuggestion, setSelectedSuggestion] =
     useState<HydraSuggestion>();
 
   const handleSend = async (message: string, suggestion?: HydraSuggestion) => {
-    await send(message, { suggestion });
+    await generate(message, { suggestion });
     setSelectedSuggestion(undefined);
   };
 

@@ -146,7 +146,7 @@ declare module "hydra-ai-react" {
 
   // Core operations type
   export interface ThreadOperations {
-    send: (
+    generate: (
       threadId: string,
       message: string,
       options?: ThreadMessageOptions,
@@ -180,7 +180,10 @@ declare module "hydra-ai-react" {
 
   // Specialized hook return types
   export interface ThreadMessages {
-    send: (message: string, options?: ThreadMessageOptions) => Promise<void>;
+    generate: (
+      message: string,
+      options?: ThreadMessageOptions,
+    ) => Promise<void>;
     clear: () => Promise<void>;
     messages: HydraThreadMessage[];
   }
@@ -206,7 +209,7 @@ declare module "hydra-ai-react" {
     threadId: string,
     updates: Partial<HydraThread>,
   ) => Promise<void>;
-  export function useSendThreadMessage(): (
+  export function useGenerateThreadMessage(): (
     threadId: string,
     message: string,
     options?: ThreadMessageOptions,

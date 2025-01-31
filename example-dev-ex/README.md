@@ -310,8 +310,8 @@ function ThreadManager() {
       {state.threads.map(thread => (
         <div key={thread.id}>
           {thread.title}
-          <button onClick={() => operations.send(thread.id, "Hello")}>
-            Send Message
+          <button onClick={() => operations.generate(thread.id, "Hello")}>
+            Send
           </button>
         </div>
       ))}
@@ -326,15 +326,15 @@ For granular control and optimal performance, use individual hooks:
 
 ```typescript
 function MessageSender({ threadId }) {
-  const sendMessage = useSendThreadMessage();
+  const generateMessage = useGenerateThreadMessage();
   const threads = useThreads();
 
-  // Only re-renders when sendMessage changes
-  const handleSend = useCallback(() => {
-    sendMessage(threadId, "Hello");
-  }, [sendMessage, threadId]);
+  // Only re-renders when generateMessage changes
+  const handleGenerate = useCallback(() => {
+    generateMessage(threadId, "Hello");
+  }, [generateMessage, threadId]);
 
-  return <button onClick={handleSend}>Send</button>;
+  return <button onClick={handleGenerate}>Generate</button>;
 }
 ```
 
@@ -344,14 +344,14 @@ For common use cases, specialized hooks provide simplified interfaces:
 
 ```typescript
 function MessagePanel({ threadId }) {
-  const { send, clear, messages } = useThreadMessages(threadId);
+  const { generate, clear, messages } = useThreadMessages(threadId);
 
   return (
     <div>
       {messages.map(msg => (
         <div key={msg.id}>{msg.message}</div>
       ))}
-      <button onClick={() => send("Hello")}>Send</button>
+      <button onClick={() => generate("Hello")}>Generate</button>
       <button onClick={clear}>Clear</button>
     </div>
   );
@@ -377,7 +377,7 @@ function MessagePanel({ threadId }) {
    - Need precise dependency control
 
    ```typescript
-   const sendMessage = useSendThreadMessage();
+   const generateMessage = useGenerateThreadMessage();
    const threads = useThreads();
    ```
 
@@ -386,7 +386,7 @@ function MessagePanel({ threadId }) {
    - Implementing common patterns
    - Want a simpler API
    ```typescript
-   const { send }: ThreadMessages = useThreadMessages(threadId);
+   const { generate }: ThreadMessages = useThreadMessages(threadId);
    ```
 
 #### Best Practices
@@ -397,14 +397,14 @@ function MessagePanel({ threadId }) {
    // ❌ Avoid using core hook for simple components
    const { operations } = useThreadCore();
    useEffect(() => {
-     operations.send(threadId, msg);
+     operations.generate(threadId, msg);
    }, [operations, threadId, msg]);
 
    // ✅ Use individual hooks for better performance
-   const sendMessage = useSendThreadMessage();
+   const generateMessage = useGenerateThreadMessage();
    useEffect(() => {
-     sendMessage(threadId, msg);
-   }, [sendMessage, threadId, msg]);
+     generateMessage(threadId, msg);
+   }, [generateMessage, threadId, msg]);
    ```
 
 2. **Component Organization:**
@@ -412,8 +412,8 @@ function MessagePanel({ threadId }) {
    ```typescript
    // ✅ Use specialized hooks for focused components
    function ThreadMessages({ threadId }) {
-     const { messages, send } = useThreadMessages(threadId);
-     return <MessageList messages={messages} onSend={send} />;
+     const { messages, generate } = useThreadMessages(threadId);
+     return <MessageList messages={messages} onGenerate={generate} />;
    }
 
    // ✅ Use core hook for container components
@@ -427,9 +427,9 @@ function MessagePanel({ threadId }) {
    ```typescript
    // All patterns provide full type safety
    const { operations }: ThreadCore = useThreadCore();
-   const sendMessage: (threadId: string, msg: string) => Promise<void> =
-     useSendThreadMessage();
-   const { send }: ThreadMessages = useThreadMessages(threadId);
+   const generateMessage: (threadId: string, msg: string) => Promise<void> =
+     useGenerateThreadMessage();
+   const { generate }: ThreadMessages = useThreadMessages(threadId);
    ```
 4. **Thread Management**
    - `useDeleteThread()` - Remove thread completely
@@ -489,8 +489,8 @@ const aiMessage = {
 };
 
 // Acting on a suggestion
-const { send } = useThreadMessages(threadId);
-await send("Yes, let's do that", { suggestion: selectedSuggestion });
+const { generate } = useThreadMessages(threadId);
+await generate("Yes, let's do that", { suggestion: selectedSuggestion });
 ```
 
 ### Usage Example
@@ -512,10 +512,10 @@ function ThreadMessage({ message, onSelectSuggestion }) {
 }
 
 function Thread({ threadId }) {
-  const { send, messages } = useThreadMessages(threadId);
+  const { generate, messages } = useThreadMessages(threadId);
 
   const handleSuggestion = async (suggestion) => {
-    await send("Let's try this suggestion", { suggestion });
+    await generate("Let's try this suggestion", { suggestion });
   };
 
   return (
@@ -619,7 +619,7 @@ await updateThread(threadId, {
 ```typescript
 function PersonalizedThread() {
   const createThread = useCreateThread();
-  const { send, messages } = useThreadMessages(threadId);
+  const { generate, messages } = useThreadMessages(threadId);
 
   const startNewThread = async () => {
     const threadId = await createThread("Personal Assistant", undefined, {
@@ -627,7 +627,7 @@ function PersonalizedThread() {
     });
 
     // The AI will now have context about the user's preferences
-    await send("Can you help me plan my day?");
+    await generate("Can you help me plan my day?");
   };
 
   return (
@@ -748,7 +748,7 @@ You can easily use stored profiles when creating new threads:
 function ThreadWithStoredProfile({ userId }: { userId: string }) {
   const { profile } = useProfile(userId);
   const createThread = useCreateThread();
-  const { send } = useThreadMessages(threadId);
+  const { generate } = useThreadMessages(threadId);
 
   const startNewThread = async () => {
     if (!profile) return;
@@ -759,7 +759,7 @@ function ThreadWithStoredProfile({ userId }: { userId: string }) {
       { userProfile: profile.profile }
     );
 
-    await send("Hello! Please help me with my tasks.");
+    await generate("Hello! Please help me with my tasks.");
   };
 
   return (
@@ -772,8 +772,3 @@ function ThreadWithStoredProfile({ userId }: { userId: string }) {
   );
 }
 ```
-
-## Future
-
-- memory
-- interactiveComponents/Canvas
