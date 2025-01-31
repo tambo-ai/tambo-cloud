@@ -72,6 +72,7 @@ declare module "hydra-ai-react" {
     apiKey: string;
     toolRegistry: ToolRegistry<T>;
     componentRegistry: ComponentRegistry<T>;
+    personality: Personality;
     systemMessage?: string;
     prompt?: string;
   }
@@ -248,10 +249,23 @@ declare module "hydra-ai-react" {
     dismiss: (suggestion: HydraSuggestion) => Promise<void>;
   };
 
+  // Add Personality types
+  export interface Personality {
+    role: string;
+    style: string;
+    rules: string[];
+  }
+
+  // Update HydraContext
   export interface HydraContext {
     config: HydraInitConfig<any>;
     updateSystemMessage: (message: string) => Promise<void>;
     updatePrompt: (prompt: string) => Promise<void>;
+    updatePersonality: (personality: Personality) => Promise<void>;
+    updatePersonalityField: (
+      field: keyof Personality,
+      value: string | string[],
+    ) => Promise<void>;
   }
 
   export function useHydraContext(): HydraContext | null;
@@ -286,5 +300,21 @@ declare module "hydra-ai-react" {
     isLoading: boolean;
     error: Error | null;
     refresh: () => Promise<void>;
+  };
+
+  // Add new hooks
+  export function useUpdatePersonality(): (
+    personality: Personality,
+  ) => Promise<void>;
+  export function usePersonalityField(
+    field: keyof Personality,
+  ): (value: string | string[]) => Promise<void>;
+  export function usePersonality(): {
+    personality: Personality | undefined;
+    updatePersonality: (personality: Personality) => Promise<void>;
+    updateField: (
+      field: keyof Personality,
+      value: string | string[],
+    ) => Promise<void>;
   };
 }
