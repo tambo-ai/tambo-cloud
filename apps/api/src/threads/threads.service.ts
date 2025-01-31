@@ -50,7 +50,7 @@ export class ThreadsService {
       threadId,
       role: messageDto.role,
       content: messageDto.message,
-      component: messageDto.component,
+      component: messageDto.component ?? undefined,
       metadata: messageDto.metadata,
     });
     return {
