@@ -1,4 +1,5 @@
 import {
+  HydraStateProvider,
   useThreadCore,
   useThreadMessages,
   type HydraStreamingState,
@@ -6,7 +7,7 @@ import {
   type HydraThread,
   type HydraThreadMessage,
 } from "hydra-ai-react";
-import { useState, type ReactElement } from "react";
+import { useState, type ComponentType, type ReactElement } from "react";
 
 // Suggestion component
 const Suggestions = ({
@@ -34,12 +35,30 @@ const Suggestions = ({
   );
 };
 
+const ComponentWrapper = ({
+  messageId,
+  component: Component,
+  initialProps,
+}: {
+  messageId: string;
+  component: ComponentType<any>;
+  initialProps: Record<string, any>;
+}) => {
+  return (
+    <HydraStateProvider messageId={messageId}>
+      <Component {...initialProps} />
+    </HydraStateProvider>
+  );
+};
+
 // Message component with suggestions
 const ThreadMessage = ({
   message,
+  messageId,
   onSelectSuggestion,
 }: {
   message: HydraThreadMessage;
+  messageId: string;
   onSelectSuggestion: (suggestion: HydraSuggestion) => void;
 }): ReactElement => {
   return (
@@ -71,8 +90,10 @@ const ThreadMessage = ({
       {message.generatedComponent?.component && (
         <div>
           <h4>Generated Component:</h4>
-          <message.generatedComponent.component
-            {...message.generatedComponent.interactiveProps}
+          <ComponentWrapper
+            messageId={messageId}
+            component={message.generatedComponent.component}
+            initialProps={message.generatedComponent.generatedProps}
           />
         </div>
       )}
@@ -176,6 +197,7 @@ const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
           <ThreadMessage
             key={index}
             message={msg}
+            messageId={`${thread.id}-${index}`}
             onSelectSuggestion={handleSuggestionSelect}
           />
         ))}

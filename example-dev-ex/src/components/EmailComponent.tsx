@@ -1,32 +1,60 @@
 import { type ReactElement } from "react";
-import { type EmailProps } from "../schemas/componentSchemas";
+import { type EmailData } from "../schemas/componentSchemas";
+
+interface EmailProps {
+  to: string[];
+  subject: string;
+  content: string;
+  onUpdate?: (updates: Partial<EmailData>) => void;
+}
 
 export const EmailComponent = ({
+  to,
   subject,
-  body,
-  recipients,
+  content,
+  onUpdate,
 }: Readonly<EmailProps>): ReactElement => {
+  const handleToChange = (value: string) => {
+    onUpdate?.({
+      to: value
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    });
+  };
+
+  const handleSubjectChange = (value: string) => {
+    onUpdate?.({ subject: value });
+  };
+
+  const handleContentChange = (value: string) => {
+    onUpdate?.({ content: value });
+  };
+
   return (
     <div>
       <div>
-        <div>
-          <h3>Subject</h3>
-          <p>{subject}</p>
-        </div>
+        <label>To:</label>
+        <input
+          value={to.join(", ")}
+          onChange={(e) => handleToChange(e.target.value)}
+        />
+      </div>
 
-        <div>
-          <h3>Recipients</h3>
-          <div>
-            {recipients.map((email) => (
-              <span key={email}>{email}</span>
-            ))}
-          </div>
-        </div>
+      <div>
+        <label>Subject:</label>
+        <input
+          value={subject}
+          onChange={(e) => handleSubjectChange(e.target.value)}
+        />
+      </div>
 
-        <div>
-          <h3>Message</h3>
-          <p>{body}</p>
-        </div>
+      <div>
+        <label>Message:</label>
+        <textarea
+          value={content}
+          onChange={(e) => handleContentChange(e.target.value)}
+        />
       </div>
     </div>
   );

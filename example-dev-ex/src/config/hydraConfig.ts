@@ -5,7 +5,7 @@ import {
 } from "hydra-ai-react";
 import { EmailComponent } from "../components/EmailComponent";
 import { NoteComponent } from "../components/NoteComponent";
-import { EmailPropsSchema, NotePropsSchema } from "../schemas/componentSchemas";
+import { EmailSchema, NoteSchema } from "../schemas/componentSchemas";
 import { GetCalendarSchema, GetContactsSchema } from "../schemas/toolSchemas";
 
 const systemMessage = `You are a helpful AI assistant focused on productivity and communication. Always be professional, concise, and clear in your responses.`;
@@ -38,14 +38,14 @@ export const componentRegistry = createComponentRegistry<
     component: EmailComponent,
     description:
       "Compose and edit emails with contact and calendar integration",
-    propsSchema: EmailPropsSchema,
-    associatedTools: ["getContacts", "getCalendar"],
+    propsSchema: EmailSchema,
+    associatedTools: ["getContacts", "getCalendar"] as const,
   },
   NoteComponent: {
     component: NoteComponent,
     description: "Create and edit notes with optional tags",
-    propsSchema: NotePropsSchema,
-    associatedTools: [],
+    propsSchema: NoteSchema,
+    associatedTools: [] as const,
   },
 });
 

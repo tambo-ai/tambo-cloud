@@ -127,24 +127,81 @@ The registry pattern provides:
 
 ### 4. Component State Management
 
-Components in Hydra follow a two-part pattern to separate concerns:
+Components in Hydra use a context-based pattern that provides a clean, idiomatic way to manage state:
 
-1. **Base Components**:
+```typescript
+// 1. Context and Provider
+const HydraStateContext = React.createContext<HydraState | null>(null);
 
-   - Simple props and callbacks interface
-   - Can be used independently of Hydra
+interface HydraStateProviderProps {
+  messageId: string;
+  children: React.ReactNode;
+}
 
-2. **Hydra Wrappers**
-   - Wrap base components with Hydra state management
-   - Handle interactive state updates
-   - Connect to Hydra's thread system
+export const HydraStateProvider = ({ messageId, children }: Readonly<HydraStateProviderProps>) => {
+  const { interactiveProps, updateInteractiveProps } = useHydraComponentState(messageId);
 
-See [src/components/NoteComponent.tsx](src/components/NoteComponent.tsx) for a complete implementation example.
+  return (
+    <HydraStateContext.Provider value={{ interactiveProps, updateInteractiveProps }}>
+      {children}
+    </HydraStateContext.Provider>
+  );
+};
 
-See [src/components/EmailComponent.tsx](src/components/EmailComponent.tsx) for state not managed by Hydra. Can still be used with Hydra, but hydra will not know updated state.
+// 2. Hook for components to opt-in to Hydra state
+export const useHydraState = () => {
+  const context = React.useContext(HydraStateContext);
+  if (!context) {
+    throw new Error('useHydraState must be used within a HydraStateProvider');
+  }
+  return context;
+};
 
-- [ ] Can we interanlly generate the wrapper component?
-  - {message.map(m => <HydraMessage messageId={m}><MyComponent /></HydraMessage>)}
+// 3. Base components remain pure and Hydra-agnostic
+interface NoteProps {
+  title: string;
+  content: string;
+  onUpdate?: (update: Partial<NoteProps>) => void;
+}
+
+export const NoteComponent = ({ title, content, onUpdate }: Readonly<NoteProps>) => {
+  return (
+    <div>
+      <input
+        value={title}
+        onChange={e => onUpdate?.({ title: e.target.value })}
+      />
+      <textarea
+        value={content}
+        onChange={e => onUpdate?.({ content: e.target.value })}
+      />
+    </div>
+  );
+};
+
+// 4. Usage in message threads
+const MessageThread = () => {
+  return (
+    <div>
+      {messages.map(message => (
+        <HydraStateProvider key={message.id} messageId={message.id}>
+          <NoteComponent />
+        </HydraStateProvider>
+      ))}
+    </div>
+  );
+};
+```
+
+This approach:
+
+- Keeps base components pure and reusable
+- Uses modern React patterns (context + hooks)
+- Provides clear state management boundaries
+- Maintains excellent TypeScript support
+- Avoids common pitfalls of other approaches
+
+See [src/docs/component-state.mdx](src/docs/component-state.mdx) for a detailed comparison of different approaches.
 
 ### 5. Hook Patterns
 

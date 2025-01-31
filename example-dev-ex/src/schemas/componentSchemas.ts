@@ -1,16 +1,16 @@
 import { z } from "zod";
 
-export const EmailPropsSchema = z.object({
-  subject: z.string().min(1),
-  body: z.string().min(1),
-  recipients: z.array(z.string().email()),
+export const NoteSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  content: z.string().min(1, "Content is required"),
+  tags: z.array(z.string().min(1)).default([]),
 });
 
-export const NotePropsSchema = z.object({
-  title: z.string().min(1),
-  content: z.string().min(1),
-  tags: z.array(z.string()).optional(),
+export const EmailSchema = z.object({
+  to: z.array(z.string().email()).min(1, "At least one recipient is required"),
+  subject: z.string().min(1, "Subject is required"),
+  content: z.string().min(1, "Content is required"),
 });
 
-export type EmailProps = z.infer<typeof EmailPropsSchema>;
-export type NoteProps = z.infer<typeof NotePropsSchema>;
+export type NoteData = z.infer<typeof NoteSchema>;
+export type EmailData = z.infer<typeof EmailSchema>;

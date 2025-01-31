@@ -2,6 +2,27 @@ declare module "hydra-ai-react" {
   import { type ComponentType, type ReactNode } from "react";
   import { z } from "zod";
 
+  // State Management Types
+  export interface HydraState<T = any> {
+    generatedProps: T;
+    interactiveProps: T;
+    updateInteractiveProps: (update: Partial<T>) => void;
+  }
+
+  export interface HydraProviderProps {
+    hydraInstance: ReturnType<typeof initializeHydra>;
+    children: ReactNode;
+  }
+
+  export interface HydraStateProviderProps {
+    messageId: string;
+    children: ReactNode;
+  }
+
+  export const HydraProvider: React.FC<HydraProviderProps>;
+  export const HydraStateProvider: React.FC<HydraStateProviderProps>;
+  export function useHydraState<T>(): HydraState<T>;
+
   // Tool Registry Types
   export interface ToolDefinition<T extends z.ZodSchema> {
     description: string;

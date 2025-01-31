@@ -1,5 +1,24 @@
 # Component State Management Approaches
 
+> **Selected Approach: Context-Based Auto Wrapper**
+>
+> After evaluating all options, we chose the Context-based approach because:
+>
+> - Most idiomatic React pattern (uses modern React features and patterns)
+> - Clearest mental model for component state management
+> - Avoids lifecycle issues present in cloneElement approaches
+> - No "magic" naming conventions or proxies
+> - Explicit opt-in without excessive boilerplate
+> - Better TypeScript support and type inference
+> - Easier to debug and test
+>
+> Key benefits over other approaches:
+>
+> - Unlike HOCs/Decorators: Follows modern React patterns
+> - Unlike cloneElement: Avoids double-rendering and lifecycle issues
+> - Unlike Proxy: No magic naming conventions
+> - Unlike Registry: More flexible and easier to understand
+
 This document outlines different approaches for managing Hydra component state and automatically generating wrapper components.
 
 ## Overview
