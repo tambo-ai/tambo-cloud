@@ -531,62 +531,83 @@ function Thread({ threadId }) {
 }
 ```
 
-## 7. System Messages and Prompts
+## 7. AI Personality Configuration
 
-Hydra AI allows you to configure the AI's behavior using system messages and prompts. These can be set during initialization or updated dynamically using hooks.
+Hydra AI allows you to configure the AI's behavior using a personality configuration. This defines how the AI behaves, communicates, and operates within your application.
 
 ### Initial Configuration
 
-Configure system messages and prompts in your `hydraConfig.ts`:
+Configure the AI's personality in your `hydraConfig.ts`:
+
+The personality configuration has three key fields:
+
+- `role`: Defines the AI's identity, purpose and capabilities
+- `style`: Controls how the AI communicates and presents information
+- `rules`: Sets boundaries and guidelines for the AI's behavior
 
 ```typescript
-const systemMessage = `You are a helpful AI assistant focused on productivity and communication.`;
+const personality = {
+  role: `You are a friendly personal finance assistant focused on helping users manage their money better. You specialize in budgeting, savings goals, and making financial concepts easy to understand.`,
 
-const prompt = `For all tasks:
-- Maintain consistent formatting
-- Be clear and structured
-- Focus on user's needs`;
+  style: `You communicate in a friendly and encouraging way, avoiding complex financial jargon. You celebrate user progress and provide gentle suggestions for improvement. When explaining financial concepts, you use real-world examples and analogies.`,
+
+  rules: [
+    "Never make specific investment recommendations",
+    "Always encourage responsible financial habits",
+    "Never request sensitive financial information",
+    "Keep suggestions within user's stated budget",
+    "Maintain user privacy and data security",
+    "Focus on educational guidance over direct advice",
+  ],
+};
 
 export const initializeHydra = (): HydraInitConfig => ({
   // ... other config
-  systemMessage,
-  prompt,
+  personality,
 });
 ```
 
 ### Hooks
 
-Three hooks are available for managing system configuration:
+Three hooks are available for managing personality configuration:
 
-#### useUpdateSystemMessage
+#### useUpdatePersonality
 
-Updates just the system message:
-
-```typescript
-const updateSystemMessage = useUpdateSystemMessage();
-await updateSystemMessage("New system message");
-```
-
-#### useUpdatePrompt
-
-Updates just the prompt:
+Updates the entire personality configuration:
 
 ```typescript
-const updatePrompt = useUpdatePrompt();
-await updatePrompt("New prompt");
+const updatePersonality = useUpdatePersonality();
+await updatePersonality({
+  role: "I am your personal shopping assistant, helping you find the best deals and make smart purchasing decisions.",
+  style:
+    "I'm enthusiastic and helpful, focusing on your preferences and budget while making shopping fun and stress-free.",
+  rules: [
+    "I respect your budget limits, never push for purchases, and always prioritize value over price.",
+  ],
+});
 ```
 
-#### useSystemConfig
+#### usePersonalityField
+
+Updates a single personality field:
+
+```typescript
+const updateRole = usePersonalityField("role");
+await updateRole(
+  "I am your fitness journey companion, here to help you achieve your health and wellness goals.",
+);
+```
+
+#### usePersonality
 
 Comprehensive hook that provides both current values and update functions:
 
 ```typescript
 const {
-  systemMessage, // Current system message
-  prompt, // Current prompt
-  updateSystemMessage,
-  updatePrompt,
-} = useSystemConfig();
+  personality, // Current personality config
+  updatePersonality, // Update entire config
+  updateField, // Update single field
+} = usePersonality();
 ```
 
 ## 8. User Profile
