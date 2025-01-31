@@ -3,25 +3,27 @@ declare module "hydra-ai-react" {
   import { z } from "zod";
 
   // State Management Types
-  export interface HydraState<T = any> {
-    generatedProps: T;
-    interactiveProps: T;
-    updateInteractiveProps: (update: Partial<T>) => void;
+  export interface HydraMessageState<T = any> {
+    state: T;
+    setState: (updates: Partial<T>) => void;
   }
 
-  export interface HydraProviderProps {
-    hydraInstance: ReturnType<typeof initializeHydra>;
-    children: ReactNode;
-  }
-
-  export interface HydraStateProviderProps {
+  export interface HydraMessageProviderProps {
     messageId: string;
+    initialProps?: Record<string, any>;
     children: ReactNode;
   }
 
-  export const HydraProvider: React.FC<HydraProviderProps>;
-  export const HydraStateProvider: React.FC<HydraStateProviderProps>;
-  export function useHydraState<T>(): HydraState<T>;
+  export const HydraMessageProvider: React.FC<HydraMessageProviderProps>;
+  export function useHydraCurrentMessage<T>(): HydraMessageState<T>;
+
+  // Component State Hook
+  export function useHydraMessageState<T extends Record<string, any>>(
+    messageId: string,
+  ): {
+    state: T;
+    setState: (updates: Partial<T>) => void;
+  };
 
   // Tool Registry Types
   export interface ToolDefinition<T extends z.ZodSchema> {
@@ -232,15 +234,6 @@ declare module "hydra-ai-react" {
   // Specialized hooks (common patterns)
   export function useThreadMessages(threadId: string): ThreadMessages;
   export function useThreadComponent(messageId: string): ThreadComponent;
-
-  // Component State Hook
-  export function useHydraComponentState<T extends Record<string, any>>(
-    messageId: string,
-  ): {
-    generatedProps: T;
-    interactiveProps: T;
-    updateInteractiveProps: (updates: Partial<T>) => void;
-  };
 
   // Suggestion handling types
   export interface SuggestionHandlers {

@@ -127,81 +127,98 @@ The registry pattern provides:
 
 ### 4. Component State Management
 
-Components in Hydra use a context-based pattern that provides a clean, idiomatic way to manage state:
+Components in Hydra can be implemented in two ways:
+
+#### Stateful Components (Using Hydra State)
+
+Components can use Hydra's state management through the `useHydraCurrentMessage` hook. These components must be wrapped in a `HydraMessageProvider` to access the message's state:
 
 ```typescript
-// 1. Context and Provider
-const HydraStateContext = React.createContext<HydraState | null>(null);
+import { useHydraCurrentMessage } from "hydra-ai-react";
+import { type EmailData } from "../schemas/componentSchemas";
 
-interface HydraStateProviderProps {
-  messageId: string;
-  children: React.ReactNode;
-}
+export const EmailComponent = (): ReactElement => {
+  const { state, setState } = useHydraCurrentMessage<EmailData>();
 
-export const HydraStateProvider = ({ messageId, children }: Readonly<HydraStateProviderProps>) => {
-  const { interactiveProps, updateInteractiveProps } = useHydraComponentState(messageId);
-
-  return (
-    <HydraStateContext.Provider value={{ interactiveProps, updateInteractiveProps }}>
-      {children}
-    </HydraStateContext.Provider>
-  );
-};
-
-// 2. Hook for components to opt-in to Hydra state
-export const useHydraState = () => {
-  const context = React.useContext(HydraStateContext);
-  if (!context) {
-    throw new Error('useHydraState must be used within a HydraStateProvider');
-  }
-  return context;
-};
-
-// 3. Base components remain pure and Hydra-agnostic
-interface NoteProps {
-  title: string;
-  content: string;
-  onUpdate?: (update: Partial<NoteProps>) => void;
-}
-
-export const NoteComponent = ({ title, content, onUpdate }: Readonly<NoteProps>) => {
   return (
     <div>
       <input
-        value={title}
-        onChange={e => onUpdate?.({ title: e.target.value })}
+        value={state.subject}
+        onChange={(e) => setState({ subject: e.target.value })}
       />
       <textarea
-        value={content}
-        onChange={e => onUpdate?.({ content: e.target.value })}
+        value={state.content}
+        onChange={(e) => setState({ content: e.target.value })}
       />
     </div>
   );
 };
 
-// 4. Usage in message threads
-const MessageThread = () => {
+// Usage in MessageThread:
+{message.generatedComponent?.component && (
+  <div>
+    <h4>Generated Component:</h4>
+    <HydraMessageProvider messageId={messageId} initialProps={message.generatedComponent.generatedProps}>
+      <EmailComponent />
+    </HydraMessageProvider>
+  </div>
+)}
+```
+
+#### Stateless Components (Pure Props)
+
+For simpler cases or reusable components, you can use a pure props-based approach. These components don't need the `HydraMessageProvider` since they don't use Hydra's state management:
+
+```typescript
+interface NoteProps {
+  title: string;
+  content: string;
+  tags?: string[];
+}
+
+export const NoteComponent = ({
+  title,
+  content,
+  tags = [],
+}: Readonly<NoteProps>): ReactElement => {
   return (
     <div>
-      {messages.map(message => (
-        <HydraStateProvider key={message.id} messageId={message.id}>
-          <NoteComponent />
-        </HydraStateProvider>
-      ))}
+      <input value={title} readOnly />
+      <textarea value={content} readOnly />
+      <div>
+        {tags.map((tag) => (
+          <span key={tag}>{tag}</span>
+        ))}
+      </div>
     </div>
   );
 };
+
+// Usage in MessageThread - no provider needed:
+{message.generatedComponent?.component && (
+  <div>
+    <h4>Generated Component:</h4>
+    <NoteComponent {...message.generatedComponent.generatedProps} />
+  </div>
+)}
 ```
 
-This approach:
+#### When to Use Each Pattern
 
-- Keeps base components pure and reusable
-- Uses modern React patterns (context + hooks)
-- Provides clear state management boundaries
-- Maintains excellent TypeScript support
-- Avoids common pitfalls of other approaches
+- **Stateful Components**: Use when the component needs to:
 
-See [src/docs/component-state.mdx](src/docs/component-state.mdx) for a detailed comparison of different approaches.
+  - Maintain interactive state
+  - Sync updates with Hydra's thread system
+  - Handle complex state management
+  - Must be wrapped in `HydraMessageProvider`
+
+- **Stateless Components**: Use when the component:
+  - Is purely presentational
+  - Needs to be reusable outside Hydra
+  - Has simple, immutable data display
+  - No provider needed
+
+See [src/components/EmailComponent.tsx](src/components/EmailComponent.tsx) and [src/components/NoteComponent.tsx](src/components/NoteComponent.tsx) for complete implementations.
 
 ### 5. Hook Patterns
 

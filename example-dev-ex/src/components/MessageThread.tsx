@@ -1,5 +1,5 @@
 import {
-  HydraStateProvider,
+  HydraMessageProvider,
   useThreadCore,
   useThreadMessages,
   type HydraStreamingState,
@@ -7,7 +7,7 @@ import {
   type HydraThread,
   type HydraThreadMessage,
 } from "hydra-ai-react";
-import { useState, type ComponentType, type ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 
 // Suggestion component
 const Suggestions = ({
@@ -32,22 +32,6 @@ const Suggestions = ({
         ))}
       </div>
     </div>
-  );
-};
-
-const ComponentWrapper = ({
-  messageId,
-  component: Component,
-  initialProps,
-}: {
-  messageId: string;
-  component: ComponentType<any>;
-  initialProps: Record<string, any>;
-}) => {
-  return (
-    <HydraStateProvider messageId={messageId}>
-      <Component {...initialProps} />
-    </HydraStateProvider>
   );
 };
 
@@ -87,22 +71,18 @@ const ThreadMessage = ({
           ))}
         </div>
       )}
-      {message.generatedComponent?.component && (
-        <div>
-          <h4>Generated Component:</h4>
-          <ComponentWrapper
-            messageId={messageId}
-            component={message.generatedComponent.component}
-            initialProps={message.generatedComponent.generatedProps}
-          />
-        </div>
-      )}
       {message.interactedComponent?.component && (
         <div>
           <h4>Interacted Component:</h4>
-          <message.interactedComponent.component
-            {...message.interactedComponent.interactiveProps}
-          />
+          <HydraMessageProvider
+            messageId={messageId}
+            initialProps={message.interactedComponent.interactiveProps}
+          >
+            <message.interactedComponent.component
+              // The note component doesn't use hydra for state so needs props.
+              {...message.interactedComponent.interactiveProps}
+            />
+          </HydraMessageProvider>
         </div>
       )}
       {message.role === "ai" && (
