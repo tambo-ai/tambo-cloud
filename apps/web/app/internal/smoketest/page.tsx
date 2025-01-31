@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { env } from "@/lib/env";
 import { api } from "@/trpc/react";
+import { useHydra } from "@hydra-ai/react";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { ComponentContextTool } from "@use-hydra-ai/hydra-ai-server";
@@ -26,6 +27,7 @@ export default function SmokePage() {
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
+  const { sendThreadMessage } = useHydra();
 
   const { mutateAsync: getAirQuality, isPending: isAqiPending } =
     api.demo.aqi.useMutation({
@@ -49,11 +51,8 @@ export default function SmokePage() {
     useMutation({
       mutationFn: async () => {
         try {
-          const response = await hydraClient.generateComponent(
+          const response = await sendThreadMessage(
             input,
-            (msg) => {
-              console.log(msg);
-            },
             threadId ?? undefined,
           );
           setThreadId(response.threadId ?? null);
