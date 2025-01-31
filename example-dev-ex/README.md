@@ -28,20 +28,7 @@ example-dev-ex/
 
 ## Big Changes
 
-### 1. Context Provider
-
-Hydra is initialized with a configuration file that defines the components and tools that Hydra can use, including tool associations like before, except now it's provided by a context provider.
-
-```tsx
-<HydraProvider>
-  <MessageThread />
-</HydraProvider>
-```
-
-- `hydraConfig.ts`: Configures available components and tools that Hydra can use, including tool associations
-- `HydraProvider.tsx`: Root provider that initializes Hydra with your API key and configuration
-
-### 2. Tool and Component Registries
+### 1. Tool and Component Registries
 
 Hydra uses separate registries for tools and components with Zod schemas for type safety.
 
@@ -107,12 +94,84 @@ function AuthToolProvider() {
 }
 ```
 
-The registry pattern provides:
+- [src/config/hydraConfig.ts](src/config/hydraConfig.ts) - Configuration setup
 
-- Single source of truth for tools
-- Type-safe tool usage
-- Runtime tool registration
-- Clear separation of concerns
+### 2. Context Provider
+
+Hydra uses a context-based configuration pattern that consists of two parts:
+
+#### Configuration
+
+First, initialize Hydra with your configuration:
+
+```typescript
+// Define tools
+export const toolRegistry = createToolRegistry({
+  getContacts: {
+    description: "Retrieves user contacts list",
+    inputSchema: z.object({ userId: z.string(), limit: z.number().optional() }),
+  },
+});
+
+// Define components
+export const componentRegistry = createComponentRegistry<
+  typeof toolRegistry.tools
+>({
+  EmailComponent: {
+    component: EmailComponent,
+    propsSchema: EmailPropsSchema,
+    associatedTools: ["getContacts"],
+  },
+});
+
+// Define configuration
+export const initializeHydra = (): HydraInitConfig => {
+  if (!process.env.NEXT_PUBLIC_HYDRA_API_KEY) {
+    throw new Error("NEXT_PUBLIC_HYDRA_API_KEY is not set");
+  }
+
+  return {
+    apiKey: process.env.NEXT_PUBLIC_HYDRA_API_KEY,
+    toolRegistry,
+    componentRegistry,
+    systemMessage: "You are a helpful AI assistant...",
+    prompt: "For all tasks, maintain consistent formatting...",
+  };
+};
+```
+
+Example: [src/config/hydraConfig.ts](src/config/hydraConfig.ts)
+
+#### Provider Setup
+
+Then, wrap your application with `HydraProvider` in [src/App.tsx](src/App.tsx):
+
+```tsx
+import { HydraProvider } from "hydra-ai-react";
+import { initializeHydra } from "./config/hydraConfig";
+
+export const App = (): ReactElement => {
+  const hydraInstance = initializeHydra();
+
+  return (
+    <HydraProvider hydraInstance={hydraInstance}>
+      <MessageThread />
+    </HydraProvider>
+  );
+};
+```
+
+This pattern provides:
+
+- Centralized configuration management
+- Type-safe initialization
+- Access to Hydra's features throughout your app
+- Environment-based configuration
+- Easy testing and mocking
+
+See the complete implementation in:
+
+- [src/App.tsx](src/App.tsx) - Provider implementation
 
 ### 3. Component Generation
 
