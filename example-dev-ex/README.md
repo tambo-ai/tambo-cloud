@@ -131,25 +131,38 @@ Components in Hydra can be implemented in two ways:
 
 #### Stateful Components (Using Hydra State)
 
-Components can use Hydra's state management through the `useHydraCurrentMessage` hook. These components must be wrapped in a `HydraMessageProvider` to access the message's state:
+Components can use Hydra's state management through the `useHydraMessage` hook. These components must be wrapped in a `HydraMessageProvider` to access the message's state:
 
 ```typescript
-import { useHydraCurrentMessage } from "hydra-ai-react";
+import { useHydraMessage } from "hydra-ai-react";
 import { type EmailData } from "../schemas/componentSchemas";
 
 export const EmailComponent = (): ReactElement => {
-  const { state, setState } = useHydraCurrentMessage<EmailData>();
+  // React-like state management pattern
+  const [message, setMessage] = useHydraMessage<EmailData>();
+
+  const handleToChange = (value: string) => {
+    setMessage({
+      to: value.split(",").map((s) => s.trim()).filter(Boolean)
+    });
+  };
 
   return (
     <div>
       <input
-        value={state.subject}
-        onChange={(e) => setState({ subject: e.target.value })}
+        value={message.subject}
+        onChange={(e) => setMessage({ subject: e.target.value })}
       />
       <textarea
-        value={state.content}
-        onChange={(e) => setState({ content: e.target.value })}
+        value={message.content}
+        onChange={(e) => setMessage({ content: e.target.value })}
       />
+      <div>
+        <input
+          value={message.to.join(", ")}
+          onChange={(e) => handleToChange(e.target.value)}
+        />
+      </div>
     </div>
   );
 };

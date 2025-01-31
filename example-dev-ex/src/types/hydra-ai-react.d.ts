@@ -3,10 +3,7 @@ declare module "hydra-ai-react" {
   import { z } from "zod";
 
   // State Management Types
-  export interface HydraMessageState<T = any> {
-    state: T;
-    setState: (updates: Partial<T>) => void;
-  }
+  export function useHydraMessage<T>(): [T, (updates: Partial<T>) => void];
 
   export interface HydraMessageProviderProps {
     messageId: string;
@@ -15,7 +12,6 @@ declare module "hydra-ai-react" {
   }
 
   export const HydraMessageProvider: React.FC<HydraMessageProviderProps>;
-  export function useHydraCurrentMessage<T>(): HydraMessageState<T>;
 
   // Component State Hook
   export function useHydraMessageState<T extends Record<string, any>>(

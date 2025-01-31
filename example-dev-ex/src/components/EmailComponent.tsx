@@ -1,12 +1,12 @@
-import { useHydraCurrentMessage } from "hydra-ai-react";
+import { useHydraMessage } from "hydra-ai-react";
 import { type ReactElement } from "react";
 import { type EmailData } from "../schemas/componentSchemas";
 
 export const EmailComponent = (): ReactElement => {
-  const { state, setState } = useHydraCurrentMessage<EmailData>();
+  const [message, setMessage] = useHydraMessage<EmailData>();
 
   const handleToChange = (value: string) => {
-    setState({
+    setMessage({
       to: value
         .split(",")
         .map((s) => s.trim())
@@ -19,7 +19,7 @@ export const EmailComponent = (): ReactElement => {
       <div>
         <label>To:</label>
         <input
-          value={state.to.join(", ")}
+          value={message.to.join(", ")}
           onChange={(e) => handleToChange(e.target.value)}
           placeholder="Enter email addresses..."
         />
@@ -28,8 +28,8 @@ export const EmailComponent = (): ReactElement => {
       <div>
         <label>Subject:</label>
         <input
-          value={state.subject}
-          onChange={(e) => setState({ subject: e.target.value })}
+          value={message.subject}
+          onChange={(e) => setMessage({ subject: e.target.value })}
           placeholder="Enter subject..."
         />
       </div>
@@ -37,8 +37,8 @@ export const EmailComponent = (): ReactElement => {
       <div>
         <label>Message:</label>
         <textarea
-          value={state.content}
-          onChange={(e) => setState({ content: e.target.value })}
+          value={message.content}
+          onChange={(e) => setMessage({ content: e.target.value })}
           placeholder="Enter message..."
         />
       </div>
