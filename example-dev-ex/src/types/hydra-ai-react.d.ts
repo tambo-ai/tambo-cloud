@@ -5,11 +5,20 @@ declare module "hydra-ai-react" {
   // State Management Types
   export function useHydraMessage<T>(): [T, (updates: Partial<T>) => void];
 
-  export interface HydraMessageProviderProps {
-    messageId: string;
-    initialProps?: Record<string, any>;
-    children: ReactNode;
+  // Add HydraSuggestion type
+  export interface HydraSuggestion {
+    title: string;
+    detailedSuggestion: string;
+    suggestedTools?: string[];
+    components?: string[];
   }
+
+  export interface HydraMessageProviderProps
+    extends Readonly<{
+      messageId: string;
+      initialProps?: Record<string, any>;
+      children: ReactNode;
+    }> {}
 
   export const HydraMessageProvider: React.FC<HydraMessageProviderProps>;
 
@@ -22,32 +31,32 @@ declare module "hydra-ai-react" {
   };
 
   // Tool Registry Types
-  export interface ToolDefinition<T extends z.ZodSchema> {
+  export interface HydraToolDefinition<T extends z.ZodSchema> {
     description: string;
     inputSchema: T;
   }
 
-  export type ToolImplementation<T extends z.ZodSchema> = (
+  export type HydraToolImplementation<T extends z.ZodSchema> = (
     input: z.infer<T>,
   ) => Promise<unknown>;
 
-  export interface ToolRegistry<
-    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+  export interface HydraToolRegistry<
+    T extends Record<string, HydraToolDefinition<z.ZodSchema>>,
   > {
     tools: T;
     registerTool<K extends keyof T>(
       name: K,
-      implementation: ToolImplementation<T[K]["inputSchema"]>,
+      implementation: HydraToolImplementation<T[K]["inputSchema"]>,
     ): void;
   }
 
-  export function createToolRegistry<
-    T extends Record<string, ToolDefinition<z.ZodSchema>>,
-  >(config: T): ToolRegistry<T>;
+  export function createHydraToolRegistry<
+    T extends Record<string, HydraToolDefinition<z.ZodSchema>>,
+  >(config: T): HydraToolRegistry<T>;
 
   // Component Registry Types
-  export interface ComponentDefinition<
-    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+  export interface HydraComponentDefinition<
+    T extends Record<string, HydraToolDefinition<z.ZodSchema>>,
   > {
     component: ComponentType<any>;
     propsSchema: z.ZodSchema;
@@ -55,39 +64,42 @@ declare module "hydra-ai-react" {
     associatedTools: Array<keyof T>;
   }
 
-  export interface ComponentRegistry<
-    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+  export interface HydraComponentRegistry<
+    T extends Record<string, HydraToolDefinition<z.ZodSchema>>,
   > {
-    components: Record<string, ComponentDefinition<T>>;
+    components: Record<string, HydraComponentDefinition<T>>;
   }
 
-  export function createComponentRegistry<
-    T extends Record<string, ToolDefinition<z.ZodSchema>>,
-  >(config: Record<string, ComponentDefinition<T>>): ComponentRegistry<T>;
+  export function createHydraComponentRegistry<
+    T extends Record<string, HydraToolDefinition<z.ZodSchema>>,
+  >(
+    config: Record<string, HydraComponentDefinition<T>>,
+  ): HydraComponentRegistry<T>;
 
   // Hydra Config Types
   export interface HydraInitConfig<
-    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+    T extends Record<string, HydraToolDefinition<z.ZodSchema>>,
   > {
     apiKey: string;
-    toolRegistry: ToolRegistry<T>;
-    componentRegistry: ComponentRegistry<T>;
-    personality: Personality;
+    toolRegistry: HydraToolRegistry<T>;
+    componentRegistry: HydraComponentRegistry<T>;
+    personality: HydraPersonality;
     systemMessage?: string;
     prompt?: string;
   }
 
   // Hook Types
   export function useTool<
-    T extends Record<string, ToolDefinition<z.ZodSchema>>,
+    T extends Record<string, HydraToolDefinition<z.ZodSchema>>,
     K extends keyof T,
-  >(name: K): ToolImplementation<T[K]["inputSchema"]>;
+  >(name: K): HydraToolImplementation<T[K]["inputSchema"]>;
 
   // Provider Types
-  export interface HydraProviderProps {
-    hydraInstance: HydraInitConfig<any>;
-    children: ReactNode;
-  }
+  export interface HydraProviderProps
+    extends Readonly<{
+      hydraInstance: HydraInitConfig<any>;
+      children: ReactNode;
+    }> {}
 
   export const HydraProvider: React.FC<HydraProviderProps>;
 
@@ -116,28 +128,19 @@ declare module "hydra-ai-react" {
     interactiveProps: Record<string, any>;
   }
 
-  // Simplified suggestion types
-  export interface HydraSuggestion {
-    title: string;
-    detailedSuggestion: string;
-    suggestedTools?: string[];
-    components?: string[];
-  }
-
-  export interface ThreadMessageOptions {
-    suggestion?: HydraSuggestion; // Include the suggestion being acted upon
-    autoTitle?: boolean; // Whether to auto-generate title
-  }
-
   export interface HydraThreadMessage {
-    role: "user" | "ai";
-    message: string;
-    aiStatus?: HydraAIProcessStatus[];
-    streamingState?: Record<string, HydraStreamingState>;
-    generatedComponent?: HydraComponentState;
-    interactedComponent?: HydraComponentState | null;
+    // Core required props
+    type: "user" | "hydra";
+    content: string;
+    isStreaming?: boolean;
+    hasInteraction?: boolean;
+    status?: HydraProcessStatus[];
+    streamState?: HydraStreamState;
+    generatedComponent?: HydraComponent;
+    interactiveComponent?: HydraComponent | null;
+
     suggestions?: HydraSuggestion[];
-    selectedSuggestion?: HydraSuggestion; // Track which suggestion was selected
+    selectedSuggestion?: HydraSuggestion;
   }
 
   export interface HydraThreadState {
@@ -196,35 +199,39 @@ declare module "hydra-ai-react" {
   }
 
   // Core hook
-  export function useThreadCore(): ThreadCore;
+  export function useHydraThreadCore(): HydraThreadCore;
 
   // Individual hooks (granular control)
-  export function useThreads(): HydraThread[];
-  export function useThreadState(): Record<string, HydraThreadState>;
-  export function useCreateThread(): (
+  export function useHydraThreads(): HydraThread[];
+  export function useHydraThreadState(): Record<string, HydraThreadState>;
+  export function useHydraCreateThread(): (
     title?: string,
     contextId?: string,
   ) => Promise<string>;
-  export function useDeleteThread(): (threadId: string) => Promise<void>;
-  export function useUpdateThread(): (
+  export function useHydraDeleteThread(): (threadId: string) => Promise<void>;
+  export function useHydraUpdateThread(): (
     threadId: string,
     updates: Partial<HydraThread>,
   ) => Promise<void>;
-  export function useGenerateThreadMessage(): (
+  export function useHydraGenerateThreadMessage(): (
     threadId: string,
     message: string,
-    options?: ThreadMessageOptions,
+    options?: HydraThreadMessageOptions,
   ) => Promise<void>;
-  export function useGetThreadsByContext(): (
+  export function useHydraGetThreadsByContext(): (
     contextId: string,
   ) => HydraThread[];
-  export function useClearThreadMessages(): (threadId: string) => Promise<void>;
-  export function useArchiveThread(): (threadId: string) => Promise<void>;
+  export function useHydraClearThreadMessages(): (
+    threadId: string,
+  ) => Promise<void>;
+  export function useHydraArchiveThread(): (threadId: string) => Promise<void>;
 
   // Configuration hooks
-  export function useUpdateSystemMessage(): (message: string) => Promise<void>;
-  export function useUpdatePrompt(): (prompt: string) => Promise<void>;
-  export function useSystemConfig(): {
+  export function useHydraUpdateSystemMessage(): (
+    message: string,
+  ) => Promise<void>;
+  export function useHydraUpdatePrompt(): (prompt: string) => Promise<void>;
+  export function useHydraSystemConfig(): {
     systemMessage: string | undefined;
     prompt: string | undefined;
     updateSystemMessage: (message: string) => Promise<void>;
@@ -232,8 +239,10 @@ declare module "hydra-ai-react" {
   };
 
   // Specialized hooks (common patterns)
-  export function useThreadMessages(threadId: string): ThreadMessages;
-  export function useThreadComponent(messageId: string): ThreadComponent;
+  export function useHydraThreadMessages(threadId: string): HydraThreadMessages;
+  export function useHydraThreadComponent(
+    messageId: string,
+  ): HydraThreadComponent;
 
   // Suggestion handling types
   export interface SuggestionHandlers {
@@ -250,7 +259,7 @@ declare module "hydra-ai-react" {
   };
 
   // Add Personality types
-  export interface Personality {
+  export interface HydraPersonality {
     role: string;
     style: string;
     rules: string[];
@@ -261,9 +270,9 @@ declare module "hydra-ai-react" {
     config: HydraInitConfig<any>;
     updateSystemMessage: (message: string) => Promise<void>;
     updatePrompt: (prompt: string) => Promise<void>;
-    updatePersonality: (personality: Personality) => Promise<void>;
+    updatePersonality: (personality: HydraPersonality) => Promise<void>;
     updatePersonalityField: (
-      field: keyof Personality,
+      field: keyof HydraPersonality,
       value: string | string[],
     ) => Promise<void>;
   }
@@ -271,32 +280,32 @@ declare module "hydra-ai-react" {
   export function useHydraContext(): HydraContext | null;
 
   // Profile Management
-  export interface StoredProfile {
+  export interface HydraStoredProfile {
     userId: string;
     profile: string;
     updatedAt: string;
   }
 
-  export interface ProfileOperations {
-    getProfile: (userId: string) => Promise<StoredProfile | null>;
+  export interface HydraProfileOperations {
+    getProfile: (userId: string) => Promise<HydraStoredProfile | null>;
     updateProfile: (userId: string, profile: string) => Promise<void>;
     deleteProfile: (userId: string) => Promise<void>;
-    listProfiles: () => Promise<StoredProfile[]>;
+    listProfiles: () => Promise<HydraStoredProfile[]>;
   }
 
   // Profile hooks
-  export function useProfile(userId: string): {
-    profile: StoredProfile | null;
+  export function useHydraProfile(userId: string): {
+    profile: HydraStoredProfile | null;
     isLoading: boolean;
     error: Error | null;
     updateProfile: (profile: string) => Promise<void>;
     deleteProfile: () => Promise<void>;
   };
 
-  export function useProfileOperations(): ProfileOperations;
+  export function useHydraProfileOperations(): HydraProfileOperations;
 
-  export function useProfiles(): {
-    profiles: StoredProfile[];
+  export function useHydraProfiles(): {
+    profiles: HydraStoredProfile[];
     isLoading: boolean;
     error: Error | null;
     refresh: () => Promise<void>;
@@ -304,16 +313,16 @@ declare module "hydra-ai-react" {
 
   // Add new hooks
   export function useUpdatePersonality(): (
-    personality: Personality,
+    personality: HydraPersonality,
   ) => Promise<void>;
   export function usePersonalityField(
-    field: keyof Personality,
+    field: keyof HydraPersonality,
   ): (value: string | string[]) => Promise<void>;
   export function usePersonality(): {
-    personality: Personality | undefined;
-    updatePersonality: (personality: Personality) => Promise<void>;
+    personality: HydraPersonality | undefined;
+    updatePersonality: (personality: HydraPersonality) => Promise<void>;
     updateField: (
-      field: keyof Personality,
+      field: keyof HydraPersonality,
       value: string | string[],
     ) => Promise<void>;
   };

@@ -1,7 +1,7 @@
 import {
   HydraMessageProvider,
-  useThreadCore,
-  useThreadMessages,
+  useHydraThreadCore,
+  useHydraThreadMessages,
   type HydraStreamingState,
   type HydraSuggestion,
   type HydraThread,
@@ -48,20 +48,20 @@ const ThreadMessage = ({
   return (
     <div>
       <p>
-        <strong>{message.role === "user" ? "User" : "AI"}:</strong>{" "}
-        {message.message}
+        <strong>{message.type === "user" ? "User" : "AI"}:</strong>{" "}
+        {message.content}
       </p>
-      {message.aiStatus?.map((status, i) => (
+      {message.status?.map((status, i) => (
         <p key={i}>
           <strong>{status.state}:</strong> {status.message}
         </p>
       ))}
-      {message.streamingState && (
+      {message.streamState && (
         <div>
           <p>
             <strong>Streaming Status:</strong>
           </p>
-          {Object.entries(message.streamingState).map(([key, value]) => (
+          {Object.entries(message.streamState).map(([key, value]) => (
             <p key={key}>
               {key}:{" "}
               {(value as HydraStreamingState).isStreaming
@@ -71,21 +71,21 @@ const ThreadMessage = ({
           ))}
         </div>
       )}
-      {message.interactedComponent?.component && (
+      {message.interactiveComponent?.component && (
         <div>
           <h4>Interacted Component:</h4>
           <HydraMessageProvider
             messageId={messageId}
-            initialProps={message.interactedComponent.interactiveProps}
+            initialProps={message.interactiveComponent.generatedProps}
           >
-            <message.interactedComponent.component
+            <message.interactiveComponent.component
               // The note component doesn't use hydra for state so needs props.
-              {...message.interactedComponent.interactiveProps}
+              {...message.interactiveComponent.generatedProps}
             />
           </HydraMessageProvider>
         </div>
       )}
-      {message.role === "ai" && (
+      {message.type === "hydra" && (
         <Suggestions
           suggestions={message.suggestions}
           onSelect={onSelectSuggestion}
@@ -153,7 +153,7 @@ const ThreadInput = ({
 
 // Updated Thread component
 const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
-  const { messages, generate, clear } = useThreadMessages(thread.id);
+  const { messages, generate, clear } = useHydraThreadMessages(thread.id);
   const [selectedSuggestion, setSelectedSuggestion] =
     useState<HydraSuggestion>();
 
@@ -193,7 +193,7 @@ const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
 
 // Main component using core hook for global operations
 export const MessageThread = (): ReactElement => {
-  const { operations, state } = useThreadCore();
+  const { operations, state } = useHydraThreadCore();
 
   return (
     <div>

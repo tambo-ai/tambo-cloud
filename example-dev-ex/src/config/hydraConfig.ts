@@ -1,15 +1,15 @@
 import {
-  createComponentRegistry,
-  createToolRegistry,
+  createHydraComponentRegistry,
+  createHydraToolRegistry,
   type HydraInitConfig,
-  type Personality,
+  type HydraPersonality,
 } from "hydra-ai-react";
 import { EmailComponent } from "../components/EmailComponent";
 import { NoteComponent } from "../components/NoteComponent";
 import { EmailSchema, NoteSchema } from "../schemas/componentSchemas";
 import { GetCalendarSchema, GetContactsSchema } from "../schemas/toolSchemas";
 
-const personality: Personality = {
+const personality: HydraPersonality = {
   role: `You are a friendly personal finance assistant focused on helping users manage their money better. You specialize in budgeting, savings goals, and making financial concepts easy to understand.`,
 
   style: `You communicate in a friendly and encouraging way, avoiding complex financial jargon. You celebrate user progress and provide gentle suggestions for improvement. When explaining financial concepts, you use real-world examples and analogies.`,
@@ -25,7 +25,7 @@ const personality: Personality = {
 };
 
 // Define tool registry
-export const toolRegistry = createToolRegistry({
+export const toolRegistry = createHydraToolRegistry({
   getContacts: {
     description:
       "Retrieves user contacts with optional filtering and pagination",
@@ -38,7 +38,7 @@ export const toolRegistry = createToolRegistry({
 });
 
 // Define component registry
-export const componentRegistry = createComponentRegistry<
+export const componentRegistry = createHydraComponentRegistry<
   typeof toolRegistry.tools
 >({
   EmailComponent: {
