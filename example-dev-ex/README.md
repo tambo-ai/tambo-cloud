@@ -36,7 +36,7 @@ Hydra uses separate registries for tools and components with Zod schemas for typ
 
 ```typescript
 // Define available tools with schemas
-export const toolRegistry = createToolRegistry({
+export const toolRegistry = createHydraToolRegistry({
   getContacts: {
     description: "Retrieves user contacts list",
     inputSchema: z.object({
@@ -57,12 +57,13 @@ toolRegistry.registerTool("getContacts", async (input) => {
 
 ```typescript
 // Components reference tools from the registry
-export const componentRegistry = createComponentRegistry<
+export const componentRegistry = createHydraComponentRegistry<
   typeof toolRegistry.tools
 >({
   EmailComponent: {
     component: EmailComponent,
     propsSchema: EmailPropsSchema,
+    description: "Email composition component",
     associatedTools: ["getContacts"],
   },
 });
@@ -791,5 +792,116 @@ function ThreadWithStoredProfile({ userId }: { userId: string }) {
       Start Thread with Profile
     </button>
   );
+}
+```
+
+### 2. Message State Management
+
+Hydra provides hooks for managing message state:
+
+```typescript
+// Using the message state hook
+function EmailComponent() {
+  const [message, setMessage] = useHydraMessage<EmailData>();
+
+  return (
+    <input
+      value={message.subject}
+      onChange={(e) => setMessage({ subject: e.target.value })}
+    />
+  );
+}
+
+// Wrapping with message provider
+<HydraMessageProvider messageId={messageId} initialProps={initialData}>
+  <EmailComponent />
+</HydraMessageProvider>
+```
+
+### 3. Thread Management
+
+Hydra provides comprehensive thread management capabilities:
+
+```typescript
+// Core thread operations
+const { operations, state } = useHydraThreadCore();
+
+// Individual hooks for granular control
+const threads = useHydraThreads();
+const createThread = useHydraCreateThread();
+const deleteThread = useHydraDeleteThread();
+const updateThread = useHydraUpdateThread();
+const generateMessage = useHydraGenerateThreadMessage();
+
+// Specialized hooks for common patterns
+const { messages, generate, clear } = useHydraThreadMessages(threadId);
+const { component, props, updateProps } = useHydraThreadComponent(messageId);
+```
+
+### 4. Suggestion System
+
+Hydra includes a built-in suggestion system:
+
+```typescript
+// Using suggestions in a thread
+const { suggestions, accept, dismiss } = useThreadSuggestions(threadId);
+
+// Suggestion structure
+interface HydraSuggestion {
+  title: string;
+  detailedSuggestion: string;
+  suggestedTools?: string[];
+  components?: string[];
+}
+```
+
+### 5. Personality Configuration
+
+Configure AI behavior with personality settings:
+
+```typescript
+// Using personality hooks
+const { personality, updatePersonality, updateField } = usePersonality();
+
+// Update specific aspects
+const updateRole = usePersonalityField("role");
+await updateRole("I am a helpful coding assistant");
+
+// Full personality structure
+interface HydraPersonality {
+  role: string;
+  style: string;
+  rules: string[];
+}
+```
+
+### 6. Profile Management
+
+Manage user profiles for personalized interactions:
+
+```typescript
+// Profile hooks
+const { profile, updateProfile, deleteProfile } = useHydraProfile(userId);
+const { profiles, refresh } = useHydraProfiles();
+
+// Profile operations
+const operations = useHydraProfileOperations();
+const profile = await operations.getProfile(userId);
+```
+
+### 7. System Configuration
+
+Manage system-wide settings:
+
+```typescript
+const { systemMessage, prompt, updateSystemMessage, updatePrompt } =
+  useHydraSystemConfig();
+
+// Context management
+const context = useHydraContext();
+if (context) {
+  await context.updateSystemMessage("New system message");
+  await context.updatePrompt("New prompt");
+  await context.updatePersonality(newPersonality);
 }
 ```
