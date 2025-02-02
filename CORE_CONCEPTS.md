@@ -110,10 +110,11 @@ export const MessageThread = () => {
             <div className="content">{message.content}</div>
 
             {/* Generated components */}
-            {/* Right now there are no components in the registry, so this will be undefined */}
-            {message.generatedComponent && (
-              <message.generatedComponent.component
-                {...message.generatedComponent.generatedProps}
+            {/* Right now there are no components in the registry, so this will be 
+            always undefined */}
+            {message.interactiveComponent && (
+              <message.interactiveComponent.component
+                {...message.interactiveComponent.generatedProps}
               />
             )}
           </div>
@@ -297,8 +298,8 @@ export const MessageThread = () => {
 // ChartView.tsx - Example of one component type with state management
 import { useHydraMessageState } from "hydra-ai-react";
 
-export const ChartView = () => {
-  const { state, setState } = useHydraMessageState<ChartProps>();
+export const ChartView = ({ messageId }: { messageId: string }) => {
+  const { state, setState } = useHydraMessageState<ChartProps>(messageId);
   const { data, type } = state;
 
   const toggleChartType = () => {
@@ -441,8 +442,18 @@ function ThreadView({ threadId }: { threadId: string }) {
 
   return (
     <div>
-      {messages.map((message) => (
-        <div key={message.id}>{message.content}</div>
+      {messages.map((message: HydraThreadMessage) => (
+        <div key={message.id}>
+          <div>{message.content}</div>
+          {message.status?.map((status, index) => (
+            <div key={index}>{status.message}</div>
+          ))}
+          {message.generatedComponent && (
+            <message.generatedComponent.component
+              {...message.generatedComponent.generatedProps}
+            />
+          )}
+        </div>
       ))}
       <button onClick={() => generate("Analyze this data")}>Send</button>
     </div>
@@ -451,8 +462,8 @@ function ThreadView({ threadId }: { threadId: string }) {
 
 // 3. Context Pattern - Group related threads
 function AnalysisThreads() {
-  const { getByContext } = useHydraThreadCore();
-  const threads = getByContext("data-analysis");
+  const { state } = useHydraThreadCore();
+  const threads = state.getByContext("data-analysis");
 
   return (
     <div>
