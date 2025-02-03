@@ -1,3 +1,5 @@
+"use client";
+
 import { env } from "@/lib/env";
 import { HydraProvider } from "@hydra-ai/react";
 import { FC, PropsWithChildren } from "react";

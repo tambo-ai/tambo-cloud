@@ -12,7 +12,7 @@ import { TRPCClientErrorLike } from "@trpc/client";
 import { ComponentContextTool } from "@use-hydra-ai/hydra-ai-server";
 import { HydraClient } from "hydra-ai";
 import { X } from "lucide-react";
-import { ReactElement, useMemo, useState } from "react";
+import { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
 
 interface Message {
   role: "user" | "assistant";
@@ -27,7 +27,7 @@ export default function SmokePage() {
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
-  const { sendThreadMessage } = useHydra();
+  const { sendThreadMessage, registerComponent } = useHydra();
 
   const { mutateAsync: getAirQuality, isPending: isAqiPending } =
     api.demo.aqi.useMutation({
@@ -41,6 +41,26 @@ export default function SmokePage() {
     api.demo.history.useMutation({
       onError: (error) => setErrors((prev) => [...prev, error]),
     });
+  useEffect(() => {
+    console.log("registering components");
+    registerComponent({
+      component: WeatherDay,
+      name: "WeatherDay",
+      description: "A weather day",
+      propsDefinition: {
+        data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
+      },
+    });
+    registerComponent({
+      component: AirQuality,
+      name: "AirQuality",
+      description: "Air quality",
+      propsDefinition: {
+        data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
+      },
+    });
+  }, [registerComponent]);
+
   const hydraClient = useWeatherHydra({
     getForecast,
     getHistoricalWeather,
@@ -51,6 +71,7 @@ export default function SmokePage() {
     useMutation({
       mutationFn: async () => {
         try {
+          console.log("generating component with input", input);
           const response = await sendThreadMessage(
             input,
             threadId ?? undefined,
@@ -175,7 +196,7 @@ interface WeatherDayProps {
   readonly data: WeatherDay;
 }
 
-const WeatherDay = ({ data }: WeatherDayProps): React.ReactNode => {
+const WeatherDay = ({ data }: WeatherDayProps): ReactNode => {
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
@@ -235,7 +256,7 @@ interface AirQualityProps {
   };
 }
 
-const AirQuality = ({ data }: AirQualityProps): React.ReactNode => {
+const AirQuality = ({ data }: AirQualityProps): ReactNode => {
   const getAqiLevel = (aqi: number) => {
     if (aqi <= 50) return "Good";
     if (aqi <= 100) return "Moderate";
