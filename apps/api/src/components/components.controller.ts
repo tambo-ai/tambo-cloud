@@ -148,7 +148,6 @@ export class ComponentsController {
       messageHistory,
       component,
       toolResponse,
-      {},
       resolvedThreadId,
     );
 

@@ -49,14 +49,13 @@ export default class AIService {
     messageHistory: any[],
     component: any,
     toolResponse: any,
-    availableComponents: any,
     threadId: string,
   ): Promise<ComponentDecision> {
     return this.hydrationService.hydrateComponent(
       messageHistory,
       component,
       toolResponse,
-      availableComponents,
+      undefined,
       threadId,
     );
   }

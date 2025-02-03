@@ -50,14 +50,12 @@ export default class HydraBackend {
     messageHistory: ChatMessage[],
     component: AvailableComponent,
     toolResponse: any,
-    availableComponents: AvailableComponents,
     threadId: string,
   ): Promise<ComponentDecision> {
     return this.aiService.hydrateComponent(
       messageHistory,
       component,
       toolResponse,
-      availableComponents,
       threadId,
     );
   }
