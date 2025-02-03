@@ -74,13 +74,15 @@ export class ThreadsService {
 
   async getMessages(threadId: string): Promise<Message[]> {
     const messages = await operations.getMessages(this.db, threadId);
-    return messages.map((message) => ({
-      id: message.id,
-      role: message.role,
-      content: message.content as string,
-      metadata: message.metadata ?? undefined,
-      component: message.componentDecision ?? undefined,
-    }));
+    return messages.map(
+      (message): Message => ({
+        id: message.id,
+        role: message.role,
+        content: message.content as string,
+        metadata: message.metadata ?? undefined,
+        component: message.componentDecision ?? undefined,
+      }),
+    );
   }
 
   async deleteMessage(messageId: string) {

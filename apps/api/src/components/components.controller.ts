@@ -62,16 +62,21 @@ export class ComponentsController {
     //TODO: Don't instantiate HydraBackend every request
     const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
 
+    const resolvedThreadId = await this.ensureThread(
+      projectId,
+      threadId,
+      contextKey,
+    );
+
     const component = await hydraBackend.generateComponent(
       messageHistory,
       availableComponents ?? {},
+      resolvedThreadId,
     );
 
-    const resolvedThreadId: string = await this.addDecisionToThread(
-      projectId,
-      threadId,
+    await this.addDecisionToThread(
+      resolvedThreadId,
       component,
-      contextKey,
       lastMessageEntry,
     );
 
@@ -82,33 +87,20 @@ export class ComponentsController {
   }
 
   private async addDecisionToThread(
-    projectId: string,
-    threadId: string | undefined,
+    threadId: string,
     component: ComponentDecision,
-    contextKey?: string,
     messageEntry?: ChatMessage,
   ) {
-    let resolvedThreadId: string;
-    if (threadId) {
-      resolvedThreadId = threadId;
-    } else {
-      const newThread = await this.threadsService.createThread({
-        projectId,
-        contextKey,
-      });
-      resolvedThreadId = newThread.id;
-    }
-    await this.threadsService.addMessage(resolvedThreadId, {
+    await this.threadsService.addMessage(threadId, {
       role: MessageRole.User,
       message: messageEntry?.message ?? '',
     });
-    await this.threadsService.addMessage(resolvedThreadId, {
+    await this.threadsService.addMessage(threadId, {
       role: MessageRole.Hydra,
       message: component.message,
       // HACK: for now just jam the full component decision into the content
       component: component,
     });
-    return resolvedThreadId;
   }
 
   @Post('hydrate')
@@ -146,20 +138,25 @@ export class ComponentsController {
     if (!component) {
       throw new Error('Component is required');
     }
+    const resolvedThreadId = await this.ensureThread(
+      projectId,
+      threadId,
+      contextKey,
+    );
 
     const hydratedComponent = await hydraBackend.hydrateComponentWithData(
       messageHistory,
       component,
       toolResponse,
+      {},
+      resolvedThreadId,
     );
 
     const lastMessage = messageHistory[messageHistory.length - 1];
 
-    const resolvedThreadId: string = await this.addDecisionToThread(
-      projectId,
-      threadId,
+    await this.addDecisionToThread(
+      resolvedThreadId,
       hydratedComponent,
-      contextKey,
       lastMessage,
     );
 
@@ -168,5 +165,23 @@ export class ComponentsController {
       ...hydratedComponent,
       threadId: resolvedThreadId,
     };
+  }
+
+  private async ensureThread(
+    projectId: any,
+    threadId: string | undefined,
+    contextKey: string | undefined,
+  ) {
+    let resolvedThreadId: string;
+    if (threadId) {
+      resolvedThreadId = threadId;
+    } else {
+      const newThread = await this.threadsService.createThread({
+        projectId,
+        contextKey,
+      });
+      resolvedThreadId = newThread.id;
+    }
+    return resolvedThreadId;
   }
 }
