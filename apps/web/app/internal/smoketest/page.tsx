@@ -27,7 +27,7 @@ export default function SmokePage() {
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
-  const { sendThreadMessage, registerComponent } = useHydra();
+  const { sendThreadMessage, registerComponent, generationStage } = useHydra();
 
   const { mutateAsync: getAirQuality, isPending: isAqiPending } =
     api.demo.aqi.useMutation({
@@ -130,6 +130,9 @@ export default function SmokePage() {
               ))}
             </div>
           ))}
+        </div>
+        <div>
+          <p>Generation stage: {generationStage}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex gap-2">
