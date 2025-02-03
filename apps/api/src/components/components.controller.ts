@@ -167,7 +167,7 @@ export class ComponentsController {
   }
 
   private async ensureThread(
-    projectId: any,
+    projectId: string,
     threadId: string | undefined,
     contextKey: string | undefined,
   ) {
