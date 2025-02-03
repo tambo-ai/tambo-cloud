@@ -4,27 +4,50 @@ Hydra allows developers to build AI-powered applications with ease. Developers j
 
 ## Flow:
 
-User Message/Context --> Hydra --> UI Components
+```mermaid
+graph TD
+  %% Browser Client Section
+  subgraph Browser Client
+    style A fill:#F4B400,stroke:#000,stroke-width:1px
+    style F fill:#F4B400,stroke:#000,stroke-width:1px
+    style G fill:#F4B400,stroke:#000,stroke-width:1px
 
-## Core Registries
+    A[User Message] -->|Input| B
 
-Hydra uses two main registries to manage your application's capabilities:
+    subgraph SDK
+      style B fill:#673AB7,stroke:#000,stroke-width:1px
+      style C fill:#673AB7,stroke:#000,stroke-width:1px
+      style D fill:#673AB7,stroke:#000,stroke-width:1px
+      style E fill:#673AB7,stroke:#000,stroke-width:1px
 
-### Tool Registry
+      C[Component State] --> B(generate)
+      B --> I{decision loop}
+      D[Thread State] --> C
+      E[response] --> D
+    end
 
-- Contains functions that Hydra can call (e.g., API calls, data fetching)
-- Each tool must have:
-  - Description: What the tool does
-  - InputSchema: Expected parameters (using Zod)
-  - Implementation: The actual function
+    E --> F[Render Component]
+    F -->|User Action| G[User Interaction]
+    G -->|Updates| C
+  end
 
-### Component Registry
+  %% Hydra AI Server Section
+  subgraph Hydra AI Server
+    style I fill:#673AB7,stroke:#000,stroke-width:1px,shape:diamond
+    style J fill:#673AB7,stroke:#000,stroke-width:1px
+    style K fill:#F4B400,stroke:#000,stroke-width:1px
+    style L fill:#673AB7,stroke:#000,stroke-width:1px
+    style M fill:#673AB7,stroke:#000,stroke-width:1px
 
-- Contains UI components Hydra can render
-- Each component must have:
-  - Component: The React component
-  - PropsSchema: Expected props (using Zod)
-  - AssociatedTools: Tools that help generate component props
+    I --> J[Request data]
+    J --> K[Customers APIs]
+    J --> L[Choose Component]
+    L --> M[Generate Props]
+    M -->|Output| E
+  end
+```
+
+## Use Hydra to build an AI-powered data analysis assistant
 
 Below is a quick guide to building an AI-powered data analysis assistant using Hydra AI React. This is a chat example, but Hydra can be used **anywhere you want to support your user natural language requests.**
 
@@ -44,35 +67,75 @@ The foundation of any Hydra AI application is the message thread. Think of it li
 What's happening here?
 
 - `HydraProvider` - Provides the Hydra context to your app
+- `HydraPersonality` - Configures AI behavior and communication style
 
 ```tsx
-// src/config/hydra.ts
+// src/config/hydraConfig.ts
 import {
-  createHydraToolRegistry,
   createHydraComponentRegistry,
+  createHydraToolRegistry,
+  type HydraInitConfig,
+  type HydraPersonality,
 } from "hydra-ai-react";
 
-// Start with empty registries - we'll add more later
-export const toolRegistry = createHydraToolRegistry({});
-export const componentRegistry = createHydraComponentRegistry({});
+// Define personality
+const personality: HydraPersonality = {
+  role: `You are a friendly personal finance assistant focused on helping users manage their money better. You specialize in budgeting, savings goals, and making financial concepts easy to understand.`,
+
+  style: `You communicate in a friendly and encouraging way, avoiding complex financial jargon. You celebrate user progress and provide gentle suggestions for improvement.`,
+
+  rules: [
+    "Never make specific investment recommendations",
+    "Always encourage responsible financial habits",
+    "Keep suggestions within user's stated budget",
+    "Focus on educational guidance over direct advice",
+  ],
+};
+
+// Define registries
+export const toolRegistry = createHydraToolRegistry({
+  // Tool definitions here
+});
+
+export const componentRegistry = createHydraComponentRegistry({
+  // Component definitions here
+});
+
+export const initializeHydra = (): HydraInitConfig => {
+  if (!process.env.NEXT_PUBLIC_HYDRA_API_KEY) {
+    throw new Error("NEXT_PUBLIC_HYDRA_API_KEY is not set");
+  }
+
+  return {
+    apiKey: process.env.NEXT_PUBLIC_HYDRA_API_KEY,
+    toolRegistry,
+    componentRegistry,
+    personality,
+  };
+};
 
 // src/App.tsx
 import { HydraProvider } from "hydra-ai-react";
-import { toolRegistry, componentRegistry } from "./config/hydra";
+import { type ReactElement } from "react";
 import { MessageThread } from "./components/MessageThread";
+import { initializeHydra } from "./config/hydraConfig";
 
-export const App = () => (
-  <HydraProvider
-    hydraInstance={{
-      apiKey: process.env.NEXT_PUBLIC_HYDRA_API_KEY,
-      toolRegistry,
-      componentRegistry,
-    }}
-  >
-    <MessageThread />
-  </HydraProvider>
-);
+export const App = (): ReactElement => {
+  const hydraInstance = initializeHydra();
+
+  return (
+    <HydraProvider hydraInstance={hydraInstance}>
+      <MessageThread />
+    </HydraProvider>
+  );
+};
 ```
+
+The personality configuration provides three main ways to control Hydra's behavior:
+
+- `role`: Defines the AI's expertise and purpose
+- `style`: Controls communication tone and approach
+- `rules`: Sets specific guidelines for behavior
 
 ### 1.2 Messages with Threads
 
@@ -142,58 +205,20 @@ Ok now you have a chat interface that you can use to talk to Hydra, but hydra ha
 
 Let's add a tool to fetch time series data from an API.
 
-### 2.1 Data Tool Setup
+### 2.1 Adding a Component
 
 What's happening here?
 
-- `TimeSeriesSchema` - Defines the shape of data returned by the tool
-- `toolRegistry.fetchTimeSeries` - Registers a tool that:
-  1. Takes metric, timeRange, and interval as input
-  2. Returns time series data
-  3. Can be called by Hydra when users request data
-
-```tsx
-// src/config/hydra.ts
-import { z } from "zod";
-
-// Register data fetching tool
-export const toolRegistry = createHydraToolRegistry({
-  fetchTimeSeries: {
-    description: "Fetch time series data for analysis",
-    inputSchema: z.object({
-      metric: z.string(),
-      timeRange: z.object({
-        start: z.string(),
-        end: z.string(),
-      }),
-      interval: z.enum(["1h", "1d", "1w", "1m"]),
-    }),
-  },
-});
-
-// Mock API function (replace with your actual API)
-const fetchTimeSeriesData = async (args: {
-  metric: string;
-  timeRange: { start: string; end: string };
-  interval: string;
-}) => {
-  // fetch data from a database
-};
-```
-
-### 2.2 Adding a Component
-
-What's happening here?
-
-- `ChartSchema` - Defines the props interface for the chart
+- `ChartSchema` - Defines the props interface for the chart using Zod
 - `componentRegistry.Chart` - Registers a component that:
   1. Accepts data and type props matching the schema
   2. Uses associatedTools to fetch required data
   3. Can be rendered by Hydra when visualization is needed
 
 ```tsx
-// src/config/hydra.ts
+// src/config/hydraConfig.ts
 import { z } from "zod";
+import type { HydraComponentDefinition } from "hydra-ai-react";
 
 // Define what data our chart expects
 const ChartSchema = z.object({
@@ -206,13 +231,57 @@ const ChartSchema = z.object({
   type: z.enum(["line", "bar"]),
 });
 
-// Register chart component
-export const componentRegistry = createHydraComponentRegistry({
+// Register chart component with proper typing
+export const componentRegistry = createHydraComponentRegistry<
+  typeof toolRegistry.tools
+>({
   Chart: {
     component: ChartView,
     propsSchema: ChartSchema,
-    associatedTools: ["analyzeData"],
-  },
+    description: "Interactive chart for visualizing time series data",
+    associatedTools: ["fetchTimeSeries"] as const,
+  } satisfies HydraComponentDefinition<typeof toolRegistry.tools>,
+});
+```
+
+### 2.2 Data Tool Setup
+
+What's happening here?
+
+- `TimeSeriesSchema` - Defines the shape of data returned by the tool
+- `toolRegistry.fetchTimeSeries` - Registers a tool that:
+  1. Takes metric, timeRange, and interval as input
+  2. Returns time series data
+  3. Can be called by Hydra when users request data
+
+```tsx
+// src/config/hydraConfig.ts
+import { z } from "zod";
+import type { HydraToolDefinition } from "hydra-ai-react";
+
+const TimeSeriesInputSchema = z.object({
+  metric: z.string(),
+  timeRange: z.object({
+    start: z.string(),
+    end: z.string(),
+  }),
+  interval: z.enum(["1h", "1d", "1w", "1m"]),
+});
+
+// Register data fetching tool with proper typing
+export const toolRegistry = createHydraToolRegistry({
+  fetchTimeSeries: {
+    description: "Fetch time series data for analysis",
+    inputSchema: TimeSeriesInputSchema,
+  } satisfies HydraToolDefinition<typeof TimeSeriesInputSchema>,
+});
+
+// Implementation of the tool
+toolRegistry.registerTool("fetchTimeSeries", async (input) => {
+  // Type-safe input thanks to Zod schema
+  const { metric, timeRange, interval } = input;
+  // Fetch and return data
+  return fetchTimeSeriesData({ metric, timeRange, interval });
 });
 ```
 
@@ -375,46 +444,7 @@ The status system provides three types of updates:
 - `tools`: AI is using tools
 - `generating`: AI is creating content
 
-## 5. Customize Hydra Behavior
-
-Hydra allows you to customize its behavior through personality configuration and system messages. This helps tailor the AI's responses to your application's needs.
-
-This is similar to how you might add system prompts to an LLM.
-
-### Implementation
-
-```tsx
-// src/config/hydra.ts
-import { type HydraInitConfig, type HydraPersonality } from "hydra-ai-react";
-
-// Define the AI's personality
-const personality: HydraPersonality = {
-  role: "You are a data visualization expert focused on helping users understand their metrics.",
-  style:
-    "Professional but approachable. Use clear explanations and suggest data insights.",
-  rules: [
-    "Always explain chart patterns",
-    "Suggest relevant metrics to compare",
-    "Use appropriate chart types for data",
-    "Highlight unusual data points",
-  ],
-};
-
-// Initialize Hydra with custom behavior
-export const initializeHydra = (): HydraInitConfig => ({
-  ...personality,
-});
-```
-
-The customization system provides three main ways to control Hydra's behavior:
-
-### Personality Configuration
-
-- `role`: Defines the AI's expertise and purpose
-- `style`: Controls communication tone and approach
-- `rules`: Sets specific guidelines for behavior
-
-## 6. Thread Management
+## 5. Thread Management
 
 Hydra provides thread management through three main patterns:
 
