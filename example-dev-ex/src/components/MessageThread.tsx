@@ -95,24 +95,96 @@ const ThreadMessage = ({
   );
 };
 
-// New input component with suggestion context
+// Updated Thread component
+const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    isStreaming,
+    clear,
+    abort,
+  } = useHydraThreadMessages(thread.id);
+  const [selectedSuggestion, setSelectedSuggestion] =
+    useState<HydraSuggestion>();
+
+  const handleSend = async (message: string, suggestion?: HydraSuggestion) => {
+    try {
+      await handleSubmit(message, {
+        stream: true,
+        onProgress: (partial) => {
+          console.log("Streaming progress:", partial);
+        },
+        onFinish: () => {
+          setSelectedSuggestion(undefined);
+        },
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
+
+  const handleSuggestionSelect = (suggestion: HydraSuggestion) => {
+    setSelectedSuggestion(suggestion);
+  };
+
+  return (
+    <div>
+      <div>
+        <h2>{thread.title}</h2>
+        <button onClick={() => clear()}>Clear Messages</button>
+        {isStreaming && (
+          <button onClick={() => abort()} title="Stop generating">
+            Stop
+          </button>
+        )}
+      </div>
+      <div>
+        {messages.map((msg, index) => (
+          <ThreadMessage
+            key={index}
+            message={msg}
+            messageId={`${thread.id}-${index}`}
+            onSelectSuggestion={handleSuggestionSelect}
+          />
+        ))}
+        {isLoading && <div>Loading...</div>}
+      </div>
+      <ThreadInput
+        input={input}
+        onInputChange={handleInputChange}
+        onSubmit={handleSend}
+        selectedSuggestion={selectedSuggestion}
+        onCancelSuggestion={() => setSelectedSuggestion(undefined)}
+        isLoading={isLoading}
+      />
+    </div>
+  );
+};
+
+// Updated input component with controlled input
 const ThreadInput = ({
-  onSend,
+  input,
+  onInputChange,
+  onSubmit,
   selectedSuggestion,
   onCancelSuggestion,
+  isLoading,
 }: {
-  onSend: (message: string, suggestion?: HydraSuggestion) => Promise<void>;
+  input: string;
+  onInputChange: (value: string) => void;
+  onSubmit: (message: string, suggestion?: HydraSuggestion) => Promise<void>;
   selectedSuggestion?: HydraSuggestion;
   onCancelSuggestion: () => void;
+  isLoading: boolean;
 }): ReactElement => {
-  const [message, setMessage] = useState("");
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!input.trim() || isLoading) return;
 
-    await onSend(message, selectedSuggestion);
-    setMessage("");
+    await onSubmit(input, selectedSuggestion);
   };
 
   return (
@@ -137,56 +209,19 @@ const ThreadInput = ({
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          value={input}
+          onChange={(e) => onInputChange(e.target.value)}
           placeholder={
             selectedSuggestion
               ? "Add any additional context..."
               : "Type your message..."
           }
+          disabled={isLoading}
         />
-        <button type="submit">Send</button>
+        <button type="submit" disabled={isLoading || !input.trim()}>
+          {isLoading ? "Sending..." : "Send"}
+        </button>
       </form>
-    </div>
-  );
-};
-
-// Updated Thread component
-const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
-  const { messages, generate, clear } = useHydraThreadMessages(thread.id);
-  const [selectedSuggestion, setSelectedSuggestion] =
-    useState<HydraSuggestion>();
-
-  const handleSend = async (message: string, suggestion?: HydraSuggestion) => {
-    await generate(message, { suggestion });
-    setSelectedSuggestion(undefined);
-  };
-
-  const handleSuggestionSelect = (suggestion: HydraSuggestion) => {
-    setSelectedSuggestion(suggestion);
-  };
-
-  return (
-    <div>
-      <div>
-        <h2>{thread.title}</h2>
-        <button onClick={() => clear()}>Clear Messages</button>
-      </div>
-      <div>
-        {messages.map((msg, index) => (
-          <ThreadMessage
-            key={index}
-            message={msg}
-            messageId={`${thread.id}-${index}`}
-            onSelectSuggestion={handleSuggestionSelect}
-          />
-        ))}
-      </div>
-      <ThreadInput
-        onSend={handleSend}
-        selectedSuggestion={selectedSuggestion}
-        onCancelSuggestion={() => setSelectedSuggestion(undefined)}
-      />
     </div>
   );
 };

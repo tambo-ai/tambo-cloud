@@ -182,14 +182,29 @@ declare module "hydra-ai-react" {
     state: ThreadState;
   }
 
+  export interface ThreadMessageOptions {
+    stream?: boolean;
+    abortSignal?: AbortSignal;
+    onProgress?: (message: Partial<HydraThreadMessage>) => void;
+    onError?: (error: Error) => void;
+    onFinish?: (message: HydraThreadMessage) => void;
+  }
+
   // Specialized hook return types
   export interface ThreadMessages {
-    generate: (
-      message: string,
-      options?: ThreadMessageOptions,
-    ) => Promise<void>;
-    clear: () => Promise<void>;
     messages: HydraThreadMessage[];
+    input: string;
+    isLoading: boolean;
+    isStreaming: boolean;
+    error?: Error;
+    handleInputChange: (value: string) => void;
+    handleSubmit: (
+      messageOrEvent: string | React.FormEvent,
+      options?: ThreadMessageOptions,
+    ) => Promise<HydraThreadMessage>;
+    clear: () => Promise<void>;
+    reset: () => void;
+    abort: () => void;
   }
 
   export interface ThreadComponent {

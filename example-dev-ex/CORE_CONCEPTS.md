@@ -2,51 +2,6 @@
 
 Hydra allows developers to build AI-powered applications with ease. Developers just register their data, tools, and components and Hydra translates users' natural language requests into UI components that solve their problems.
 
-## Flow:
-
-```mermaid
-graph TD
-  %% Browser Client Section
-  subgraph Browser Client
-    style A fill:#F4B400,stroke:#000,stroke-width:1px
-    style F fill:#F4B400,stroke:#000,stroke-width:1px
-    style G fill:#F4B400,stroke:#000,stroke-width:1px
-
-    A[User Message] -->|Input| B
-
-    subgraph SDK
-      style B fill:#673AB7,stroke:#000,stroke-width:1px
-      style C fill:#673AB7,stroke:#000,stroke-width:1px
-      style D fill:#673AB7,stroke:#000,stroke-width:1px
-      style E fill:#673AB7,stroke:#000,stroke-width:1px
-
-      C[Component State] --> B(generate)
-      B --> I{decision loop}
-      D[Thread State] --> C
-      E[response] --> D
-    end
-
-    E --> F[Render Component]
-    F -->|User Action| G[User Interaction]
-    G -->|Updates| C
-  end
-
-  %% Hydra AI Server Section
-  subgraph Hydra AI Server
-    style I fill:#673AB7,stroke:#000,stroke-width:1px,shape:diamond
-    style J fill:#673AB7,stroke:#000,stroke-width:1px
-    style K fill:#F4B400,stroke:#000,stroke-width:1px
-    style L fill:#673AB7,stroke:#000,stroke-width:1px
-    style M fill:#673AB7,stroke:#000,stroke-width:1px
-
-    I --> J[Request data]
-    J --> K[Customers APIs]
-    J --> L[Choose Component]
-    L --> M[Generate Props]
-    M -->|Output| E
-  end
-```
-
 ## Use Hydra to build an AI-powered data analysis assistant
 
 Below is a quick guide to building an AI-powered data analysis assistant using Hydra AI React. This is a chat example, but Hydra can be used **anywhere you want to support your user natural language requests.**
@@ -141,9 +96,9 @@ The personality configuration provides three main ways to control Hydra's behavi
 
 What's happening here?
 
-- `useHydraThreadMessages` - Creates/manages message thread
+- `useHydraThreadMessages` - Provides chat-like interface for message handling
 - `messages` - Array of all messages in thread with components
-- `generate` - Sends message to AI and gets response
+- `handleSubmit` - Sends message to AI with streaming support
 - `HydraThreadMessage` - Type with content, components, and status
 
 ```tsx
@@ -151,16 +106,36 @@ import {
   useHydraThreadMessages,
   type HydraThreadMessage,
 } from "hydra-ai-react";
-import { useState } from "react";
 
 export const MessageThread = () => {
-  const { messages, generate } = useHydraThreadMessages("my-thread");
-  const [input, setInput] = useState("");
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    isStreaming,
+    abort,
+    clear,
+  } = useHydraThreadMessages("my-thread");
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    await generate(input);
-    setInput("");
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    try {
+      await handleSubmit(input, {
+        stream: true,
+        onProgress: (partial) => {
+          console.log("Streaming progress:", partial);
+        },
+        onFinish: (message) => {
+          console.log("Complete:", message);
+        },
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
   return (
@@ -172,9 +147,14 @@ export const MessageThread = () => {
             {/* Message content */}
             <div className="content">{message.content}</div>
 
+            {/* Status updates */}
+            {message.status?.map((status, i) => (
+              <div key={i} className="status">
+                <strong>{status.state}:</strong> {status.message}
+              </div>
+            ))}
+
             {/* Generated components */}
-            {/* Right now there are no components in the registry, so this will be 
-            always undefined */}
             {message.interactiveComponent && (
               <message.interactiveComponent.component
                 {...message.interactiveComponent.generatedProps}
@@ -182,21 +162,67 @@ export const MessageThread = () => {
             )}
           </div>
         ))}
+        {isLoading && <div className="loading">Loading...</div>}
       </div>
 
       {/* Input */}
-      <div className="input">
+      <form onSubmit={handleSend}>
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           placeholder="Type a message..."
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          disabled={isLoading}
         />
-        <button onClick={handleSend}>Send</button>
-      </div>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? "Sending..." : "Send"}
+        </button>
+        {isStreaming && (
+          <button type="button" onClick={abort}>
+            Stop
+          </button>
+        )}
+      </form>
     </div>
   );
 };
+```
+
+The thread now provides:
+
+- Controlled input management
+- Loading and streaming states
+- Progress tracking
+- Error handling
+- Abort functionality
+
+### 1.3 Message Options
+
+You can configure how messages are handled using options:
+
+```typescript
+interface ThreadMessageOptions {
+  // Enable/disable streaming responses
+  stream?: boolean;
+  // Cancel ongoing generations
+  abortSignal?: AbortSignal;
+  // Streaming progress updates
+  onProgress?: (message: Partial<HydraThreadMessage>) => void;
+  // Error handling
+  onError?: (error: Error) => void;
+  // Completion callback
+  onFinish?: (message: HydraThreadMessage) => void;
+}
+
+// Usage example
+await handleSubmit(message, {
+  stream: true,
+  onProgress: (partial) => {
+    console.log("Streaming:", partial);
+  },
+  onFinish: (message) => {
+    console.log("Complete:", message);
+  },
+});
 ```
 
 Ok now you have a chat interface that you can use to talk to Hydra, but hydra has no access to your data or ui components, yet. Let's add that next.

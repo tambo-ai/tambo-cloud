@@ -797,10 +797,67 @@ function ThreadWithStoredProfile({ userId }: { userId: string }) {
 
 ### 2. Message State Management
 
-Hydra provides hooks for managing message state:
+Hydra provides two main patterns for message handling:
+
+#### Chat-Like Interface
+
+The simplest way to handle messages is using the chat-like interface:
 
 ```typescript
-// Using the message state hook
+function ChatThread({ threadId }: { threadId: string }) {
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    isStreaming,
+    abort,
+    clear
+  } = useHydraThreadMessages(threadId);
+
+  const handleSend = async () => {
+    try {
+      await handleSubmit(input, {
+        stream: true,
+        onProgress: (partial) => {
+          console.log('Streaming:', partial);
+        },
+        onFinish: (message) => {
+          console.log('Complete:', message);
+        }
+      });
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  return (
+    <div>
+      {messages.map(msg => <Message key={msg.id} message={msg} />)}
+      <form onSubmit={handleSend}>
+        <input
+          value={input}
+          onChange={(e) => handleInputChange(e.target.value)}
+          disabled={isLoading}
+        />
+        <button type="submit" disabled={isLoading}>
+          Send
+        </button>
+        {isStreaming && (
+          <button onClick={abort}>Stop</button>
+        )}
+      </form>
+    </div>
+  );
+}
+```
+
+#### Component State Management
+
+For more complex interactive components:
+
+```typescript
 function EmailComponent() {
   const [message, setMessage] = useHydraMessage<EmailData>();
 
@@ -818,7 +875,36 @@ function EmailComponent() {
 </HydraMessageProvider>
 ```
 
-### 3. Thread Management
+### 3. Message Options
+
+When sending messages, you can configure various options:
+
+```typescript
+interface ThreadMessageOptions {
+  // Enable/disable streaming responses
+  stream?: boolean;
+  // Cancel ongoing generations
+  abortSignal?: AbortSignal;
+  // Streaming progress updates
+  onProgress?: (message: Partial<HydraThreadMessage>) => void;
+  // Error handling
+  onError?: (error: Error) => void;
+  // Completion callback
+  onFinish?: (message: HydraThreadMessage) => void;
+}
+
+// Usage
+const { handleSubmit } = useHydraThreadMessages(threadId);
+
+await handleSubmit("Hello", {
+  stream: true,
+  temperature: 0.7,
+  onProgress: (partial) => console.log("Streaming:", partial),
+  onFinish: (message) => console.log("Complete:", message),
+});
+```
+
+### 4. Thread Management
 
 Hydra provides comprehensive thread management capabilities:
 
@@ -838,7 +924,7 @@ const { messages, generate, clear } = useHydraThreadMessages(threadId);
 const { component, props, updateProps } = useHydraThreadComponent(messageId);
 ```
 
-### 4. Suggestion System
+### 5. Suggestion System
 
 Hydra includes a built-in suggestion system:
 
@@ -855,7 +941,7 @@ interface HydraSuggestion {
 }
 ```
 
-### 5. Personality Configuration
+### 6. Personality Configuration
 
 Configure AI behavior with personality settings:
 
@@ -875,7 +961,7 @@ interface HydraPersonality {
 }
 ```
 
-### 6. Profile Management
+### 7. Profile Management
 
 Manage user profiles for personalized interactions:
 
@@ -889,7 +975,7 @@ const operations = useHydraProfileOperations();
 const profile = await operations.getProfile(userId);
 ```
 
-### 7. System Configuration
+### 8. System Configuration
 
 Manage system-wide settings:
 
