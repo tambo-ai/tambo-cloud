@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  NotFoundException,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiSecurity } from '@nestjs/swagger';
 import { MessageRole } from '@use-hydra-ai/db';
 import {
@@ -33,7 +41,9 @@ export class ComponentsController {
     const { messageHistory, availableComponents, threadId, contextKey } =
       generateComponentDto;
     if (!messageHistory?.length) {
-      throw new Error('Message history is required and cannot be empty');
+      throw new BadRequestException(
+        'Message history is required and cannot be empty',
+      );
     }
     // TODO: this assumes that only the last message is new - if the payload has
     // additional messages that aren't previously present in the thread, should
@@ -46,16 +56,16 @@ export class ComponentsController {
     const projectId = request.projectId;
     const project = await this.projectsService.findOneWithKeys(projectId);
     if (!project) {
-      throw new Error('Project not found');
+      throw new NotFoundException('Project not found');
     }
     const providerKeys = project.getProviderKeys();
     if (!providerKeys?.length) {
-      throw new Error('No provider keys found for project');
+      throw new NotFoundException('No provider keys found for project');
     }
     const providerKey =
       providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
     if (!providerKey) {
-      throw new Error('No provider key found for project');
+      throw new NotFoundException('No provider key found for project');
     }
     const decryptedProviderKey = decryptProviderKey(providerKey);
 
@@ -119,24 +129,24 @@ export class ComponentsController {
 
     const project = await this.projectsService.findOneWithKeys(projectId);
     if (!project) {
-      throw new Error('Project not found');
+      throw new NotFoundException('Project not found');
     }
 
     const providerKeys = project.getProviderKeys();
     if (!providerKeys?.length) {
-      throw new Error('No provider keys found for project');
+      throw new NotFoundException('No provider keys found for project');
     }
     const providerKey =
       providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
     if (!providerKey) {
-      throw new Error('No provider key found for project');
+      throw new NotFoundException('No provider key found for project');
     }
     const decryptedProviderKey = decryptProviderKey(providerKey);
 
     const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
 
     if (!component) {
-      throw new Error('Component is required');
+      throw new BadRequestException('Component is required');
     }
     const resolvedThreadId = await this.ensureThread(
       projectId,
