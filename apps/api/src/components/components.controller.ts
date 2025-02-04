@@ -171,16 +171,17 @@ export class ComponentsController {
     threadId: string | undefined,
     contextKey: string | undefined,
   ) {
-    let resolvedThreadId: string;
+    // If the threadId is provided, ensure that the thread belongs to the project
     if (threadId) {
-      resolvedThreadId = threadId;
-    } else {
-      const newThread = await this.threadsService.createThread({
-        projectId,
-        contextKey,
-      });
-      resolvedThreadId = newThread.id;
+      await this.threadsService.ensureThreadByProjectId(threadId, projectId);
+      // TODO: should we update contextKey?
+      return threadId;
     }
-    return resolvedThreadId;
+    // If the threadId is not provided, create a new thread
+    const newThread = await this.threadsService.createThread({
+      projectId,
+      contextKey,
+    });
+    return newThread.id;
   }
 }

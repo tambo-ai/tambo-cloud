@@ -26,8 +26,12 @@ export class ThreadsService {
     return operations.getThreadsByProject(this.db, projectId, { contextKey });
   }
 
-  async findOne(id: string): Promise<Thread> {
-    const thread = await operations.getThread(this.db, id);
+  async findOne(id: string, projectId: string): Promise<Thread> {
+    const thread = await operations.getThreadForProjectId(
+      this.db,
+      id,
+      projectId,
+    );
     if (!thread) {
       throw new NotFoundException('Thread not found');
     }
@@ -39,6 +43,14 @@ export class ThreadsService {
       metadata: thread.metadata ?? undefined,
       projectId: thread.projectId,
     };
+  }
+
+  async findOneByUserId(id: string, userId: string) {
+    const thread = await operations.getThreadForUserId(this.db, id, userId);
+    if (!thread) {
+      throw new NotFoundException('Thread not found');
+    }
+    return thread;
   }
 
   async update(id: string, updateThreadDto: ThreadRequest) {
@@ -87,5 +99,9 @@ export class ThreadsService {
 
   async deleteMessage(messageId: string) {
     await operations.deleteMessage(this.db, messageId);
+  }
+
+  async ensureThreadByProjectId(threadId: string, projectId: string) {
+    await operations.ensureThreadByProjectId(this.db, threadId, projectId);
   }
 }
