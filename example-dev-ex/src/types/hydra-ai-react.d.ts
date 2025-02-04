@@ -13,15 +13,6 @@ declare module "hydra-ai-react" {
     components?: string[];
   }
 
-  export interface HydraMessageProviderProps
-    extends Readonly<{
-      messageId: string;
-      initialProps?: Record<string, any>;
-      children: ReactNode;
-    }> {}
-
-  export const HydraMessageProvider: React.FC<HydraMessageProviderProps>;
-
   // Component State Hook
   export function useHydraMessageState<T extends Record<string, any>>(
     messageId: string,
@@ -122,10 +113,17 @@ declare module "hydra-ai-react" {
     isComplete: boolean;
   }
 
-  export interface HydraComponentState {
-    component: ComponentType<any>;
-    generatedProps: Record<string, any>;
-    interactiveProps: Record<string, any>;
+  // Component types
+  export interface HydraComponentCallbacks<T = any> {
+    onChange?: (updates: Partial<T>) => void;
+    onSubmit?: (data: T) => void;
+    onCancel?: () => void;
+  }
+
+  export interface HydraComponent<T = any> {
+    component: ComponentType<T>;
+    props: T;
+    callbacks?: HydraComponentCallbacks<T>;
   }
 
   export interface HydraThreadMessage {
@@ -136,8 +134,7 @@ declare module "hydra-ai-react" {
     hasInteraction?: boolean;
     status?: HydraProcessStatus[];
     streamState?: HydraStreamState;
-    generatedComponent?: HydraComponent;
-    interactiveComponent?: HydraComponent | null;
+    component?: HydraComponent;
 
     suggestions?: HydraSuggestion[];
     selectedSuggestion?: HydraSuggestion;
@@ -188,6 +185,7 @@ declare module "hydra-ai-react" {
     onProgress?: (message: Partial<HydraThreadMessage>) => void;
     onError?: (error: Error) => void;
     onFinish?: (message: HydraThreadMessage) => void;
+    suggestion?: HydraSuggestion;
   }
 
   // Specialized hook return types
@@ -341,4 +339,81 @@ declare module "hydra-ai-react" {
       value: string | string[],
     ) => Promise<void>;
   };
+
+  // Unified Context Types
+  export interface HydraContextValue {
+    // Thread Management
+    threads: HydraThread[];
+    threadState: Record<string, HydraThreadState>;
+    createThread: (
+      title?: string,
+      contextId?: string,
+      options?: { isAutoTitle?: boolean; userProfile?: string },
+    ) => Promise<string>;
+    deleteThread: (threadId: string) => Promise<void>;
+    updateThread: (
+      threadId: string,
+      updates: Partial<HydraThread>,
+    ) => Promise<void>;
+    generateThreadMessage: (
+      threadId: string,
+      message: string,
+      options?: ThreadMessageOptions,
+    ) => Promise<void>;
+    getThreadsByContext: (contextId: string) => HydraThread[];
+    clearThreadMessages: (threadId: string) => Promise<void>;
+    archiveThread: (threadId: string) => Promise<void>;
+
+    // Message Management
+    messages: Record<string, HydraThreadMessage[]>;
+    input: string;
+    isLoading: boolean;
+    isStreaming: boolean;
+    error?: Error;
+    handleInputChange: (value: string) => void;
+    handleSubmit: (
+      messageOrEvent: string | React.FormEvent,
+      options?: ThreadMessageOptions,
+    ) => Promise<HydraThreadMessage>;
+    clear: () => Promise<void>;
+    reset: () => void;
+    abort: () => void;
+
+    // Component Management
+    updateProps: (updates: Record<string, any>) => void;
+    component: ComponentType<any> | null;
+    props: Record<string, any>;
+
+    // Suggestion Management
+    suggestions: HydraSuggestion[];
+    acceptSuggestion: (suggestion: HydraSuggestion) => Promise<void>;
+    dismissSuggestion: (suggestion: HydraSuggestion) => Promise<void>;
+
+    // System Configuration
+    systemMessage?: string;
+    prompt?: string;
+    updateSystemMessage: (message: string) => Promise<void>;
+    updatePrompt: (prompt: string) => Promise<void>;
+
+    // Personality Management
+    personality?: HydraPersonality;
+    updatePersonality: (personality: HydraPersonality) => Promise<void>;
+    updatePersonalityField: (
+      field: keyof HydraPersonality,
+      value: string | string[],
+    ) => Promise<void>;
+
+    // Profile Management
+    profiles: HydraStoredProfile[];
+    profilesLoading: boolean;
+    profileError: Error | null;
+    getProfile: (userId: string) => Promise<HydraStoredProfile | null>;
+    updateProfile: (userId: string, profile: string) => Promise<void>;
+    deleteProfile: (userId: string) => Promise<void>;
+    listProfiles: () => Promise<HydraStoredProfile[]>;
+    refreshProfiles: () => Promise<void>;
+  }
+
+  // Unified Context Hook
+  export function useHydraContext(): HydraContextValue;
 }

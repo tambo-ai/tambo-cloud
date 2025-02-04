@@ -1,5 +1,4 @@
 import {
-  HydraMessageProvider,
   useHydraThreadCore,
   useHydraThreadMessages,
   type HydraStreamingState,
@@ -38,7 +37,6 @@ const Suggestions = ({
 // Message component with suggestions
 const ThreadMessage = ({
   message,
-  messageId,
   onSelectSuggestion,
 }: {
   message: HydraThreadMessage;
@@ -71,18 +69,12 @@ const ThreadMessage = ({
           ))}
         </div>
       )}
-      {message.interactiveComponent?.component && (
+      {message.component?.component && (
         <div>
-          <h4>Interacted Component:</h4>
-          <HydraMessageProvider
-            messageId={messageId}
-            initialProps={message.interactiveComponent.generatedProps}
-          >
-            <message.interactiveComponent.component
-              // The note component doesn't use hydra for state so needs props.
-              {...message.interactiveComponent.generatedProps}
-            />
-          </HydraMessageProvider>
+          <message.component.component
+            {...message.component.props}
+            {...message.component.callbacks}
+          />
         </div>
       )}
       {message.type === "hydra" && (
@@ -120,6 +112,7 @@ const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
         onFinish: () => {
           setSelectedSuggestion(undefined);
         },
+        suggestion,
       });
     } catch (error) {
       console.error("Error sending message:", error);
