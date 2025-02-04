@@ -41,6 +41,12 @@ export default function SmokePage() {
     api.demo.history.useMutation({
       onError: (error) => setErrors((prev) => [...prev, error]),
     });
+
+  const tools: Record<string, ComponentContextTool> = useMemo(
+    () => makeWeatherTools(getForecast, getHistoricalWeather, getAirQuality),
+    [getForecast, getHistoricalWeather, getAirQuality],
+  );
+
   useEffect(() => {
     console.log("registering components");
     registerComponent({
@@ -50,6 +56,7 @@ export default function SmokePage() {
       propsDefinition: {
         data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
       },
+      contextTools: [tools.forecast, tools.history],
     });
     registerComponent({
       component: AirQuality,
@@ -58,14 +65,15 @@ export default function SmokePage() {
       propsDefinition: {
         data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
       },
+      contextTools: [tools.aqi],
     });
-  }, [registerComponent]);
+  }, [registerComponent, tools]);
 
-  const hydraClient = useWeatherHydra({
-    getForecast,
-    getHistoricalWeather,
-    getAirQuality,
-  });
+  // const hydraClient = useWeatherHydra({
+  //   getForecast,
+  //   getHistoricalWeather,
+  //   getAirQuality,
+  // });
 
   const { mutateAsync: generateComponent, isPending: isGenerating } =
     useMutation({
@@ -320,77 +328,89 @@ function useWeatherHydra({
       hydraApiKey: env.NEXT_PUBLIC_HYDRA_API_KEY,
       hydraApiUrl: env.NEXT_PUBLIC_HYDRA_API_URL,
     });
-    const tools: Record<string, ComponentContextTool> = {
-      forecast: {
-        definition: {
-          name: "getWeatherForecast",
-          description: "Get the weather forecast",
-          parameters: [
-            {
-              name: "params",
-              type: "object",
-              description:
-                "The parameters to get the weather forecast for, as an object with just one key, 'location', e.g. '{location: \"New York\"}'",
-              isRequired: true,
-              schema: {
-                type: "object",
-                properties: {
-                  location: { type: "string" },
-                },
-              },
-            },
-          ],
-        },
-        getComponentContext: getForecast,
-      },
-      history: {
-        definition: {
-          name: "getHistoricalWeather",
-          description: "Get the historical weather",
-          parameters: [
-            {
-              name: "params",
-              type: "object",
-              description: `The parameters to get the historical weather for, as an object with two keys, 
-                'location' and 'datetime', e.g. '{location: "New York", datetime: "2024-01-01"}'`,
-              isRequired: true,
-              schema: {
-                type: "object",
-                properties: {
-                  location: { type: "string" },
-                  datetime: { type: "string" },
-                },
-              },
-            },
-          ],
-        },
-        getComponentContext: getHistoricalWeather,
-      },
-      aqi: {
-        definition: {
-          name: "getAirQuality",
-          description: "Get the air quality",
-          parameters: [
-            {
-              name: "params",
-              type: "object",
-              description: `The parameters to get the air quality for, as an object with just one key, 'location', e.g. '{location: "New York"}'`,
-              isRequired: true,
-              schema: {
-                type: "object",
-                properties: {
-                  location: { type: "string" },
-                },
-              },
-            },
-          ],
-        },
-        getComponentContext: getAirQuality,
-      },
-    };
+    const tools: Record<string, ComponentContextTool> = makeWeatherTools(
+      getForecast,
+      getHistoricalWeather,
+      getAirQuality,
+    );
     registerComponents(client, tools);
     return client;
   }, [getAirQuality, getForecast, getHistoricalWeather]);
+}
+
+function makeWeatherTools(
+  getForecast: (...args: any[]) => Promise<any>,
+  getHistoricalWeather: (...args: any[]) => Promise<any>,
+  getAirQuality: (...args: any[]) => Promise<any>,
+): Record<string, ComponentContextTool> {
+  return {
+    forecast: {
+      definition: {
+        name: "getWeatherForecast",
+        description: "Get the weather forecast",
+        parameters: [
+          {
+            name: "params",
+            type: "object",
+            description:
+              "The parameters to get the weather forecast for, as an object with just one key, 'location', e.g. '{location: \"New York\"}'",
+            isRequired: true,
+            schema: {
+              type: "object",
+              properties: {
+                location: { type: "string" },
+              },
+            },
+          },
+        ],
+      },
+      getComponentContext: getForecast,
+    },
+    history: {
+      definition: {
+        name: "getHistoricalWeather",
+        description: "Get the historical weather",
+        parameters: [
+          {
+            name: "params",
+            type: "object",
+            description: `The parameters to get the historical weather for, as an object with two keys, 
+                'location' and 'datetime', e.g. '{location: "New York", datetime: "2024-01-01"}'`,
+            isRequired: true,
+            schema: {
+              type: "object",
+              properties: {
+                location: { type: "string" },
+                datetime: { type: "string" },
+              },
+            },
+          },
+        ],
+      },
+      getComponentContext: getHistoricalWeather,
+    },
+    aqi: {
+      definition: {
+        name: "getAirQuality",
+        description: "Get the air quality",
+        parameters: [
+          {
+            name: "params",
+            type: "object",
+            description: `The parameters to get the air quality for, as an object with just one key, 'location', e.g. '{location: "New York"}'`,
+            isRequired: true,
+            schema: {
+              type: "object",
+              properties: {
+                location: { type: "string" },
+              },
+            },
+          },
+        ],
+      },
+      getComponentContext: getAirQuality,
+    },
+  };
 }
 
 function registerComponents(
