@@ -346,71 +346,86 @@ Now Hydra has 1 component and 1 tool in its registries. The chart component is s
 
 ## 3. State Management
 
-Now the user may want to edit the chart configuration to visualize the data in a different way. We want to update hydra state to reflect the new chart configuration.
+Components in Hydra can be implemented in two ways:
 
-#### Benefits
+### 3.1 Props-Based Components (Recommended)
 
-1. State is managed by Hydra (woo hoo)
-2. State is automatically saved to the message thread
-3. State is automatically passed to hydra upon future message generation
-
-To acomplish this you need:
-
-1. `useHydraMessageState` hook to manage state
-2. `HydraMessageProvider` to pass state to the component
-
-Here's how to wrap the message with context and manage state:
+The simplest way is to create components that receive props and callbacks:
 
 ```tsx
-// MessageThread.tsx - Where messages are rendered
-import { HydraMessageProvider } from "hydra-ai-react";
-import type { HydraThreadMessage } from "hydra-ai-react";
+interface NoteProps = Readonly<{
+  title: string;
+  content: string;
+  tags?: string[];
+  onChange?: (updates: Partial<NoteProps>) => void;
+}>;
 
-export const MessageThread = () => {
-  return (
-    <div className="message-thread">
-      {messages.map((message: HydraThreadMessage) => (
-        <div key={message.id} className="message">
-          {/* Text content */}
-          <div className="content">{message.content}</div>
-
-          {/* Generated components (can be Chart, Table, Form etc) */}
-          {message.generatedComponents?.map((component, index) => (
-            <HydraMessageProvider
-              key={`${message.id}-${index}`}
-              messageId={message.id}
-              initialProps={component.initialProps}
-            >
-              <component.Component />
-            </HydraMessageProvider>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// ChartView.tsx - Example of one component type with state management
-import { useHydraMessageState } from "hydra-ai-react";
-
-export const ChartView = ({ messageId }: { messageId: string }) => {
-  const { state, setState } = useHydraMessageState<ChartProps>(messageId);
-  const { data, type } = state;
-
-  const toggleChartType = () => {
-    setState({ type: type === "line" ? "bar" : "line" });
-  };
+export const NoteComponent = ({ title, content, tags = [], onChange }: NoteProps) => {
+  const isEditable = !!onChange;
 
   return (
     <div>
-      <button onClick={toggleChartType}>Toggle Chart Type</button>
-      <Chart data={data} type={type} />
+      <input
+        value={title}
+        readOnly={!isEditable}
+        onChange={isEditable ? (e) => onChange({ title: e.target.value }) : undefined}
+      />
+      {/* ... */}
     </div>
   );
 };
 ```
 
-This pattern ensures that component state is properly managed and preserved within the message thread context, regardless of how many or what type of components Hydra generates.
+### 3.2 Message Thread Integration
+
+The MessageThread component handles component rendering and state:
+
+```tsx
+const ThreadMessage = ({ message }: { message: HydraThreadMessage }) => {
+  return (
+    <div>
+      {/* Message content */}
+      <div>{message.content}</div>
+
+      {/* Component rendering */}
+      {message.component?.component && (
+        <div>
+          <message.component.component
+            {...message.component.props}
+            {...message.component.callbacks}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+Key Benefits:
+
+- Components are reusable outside Hydra
+- Clear separation of concerns
+- Type-safe props and callbacks
+- Optional interactivity through callbacks
+- No external state management needed
+
+### 3.3 Component Types
+
+Hydra provides type definitions for components:
+
+```typescript
+interface HydraComponentCallbacks<T = any> {
+  onChange?: (updates: Partial<T>) => void;
+  onSubmit?: (data: T) => void;
+  onCancel?: () => void;
+}
+
+interface HydraComponent<T = any> {
+  component: ComponentType<T>;
+  props: T;
+  callbacks?: HydraComponentCallbacks<T>;
+}
+```
 
 ## 4. Hydra Status
 
