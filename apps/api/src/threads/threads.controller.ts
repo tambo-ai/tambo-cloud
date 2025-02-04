@@ -51,7 +51,7 @@ export class ThreadsController {
     if (!request.projectId) {
       // TODO: this is probably because the endpoint is using bearer auth
       // and not apiKey auth
-      throw new Error('Project ID is required');
+      throw new BadRequestException('Project ID is required');
     }
     return this.threadsService.findOne(id, request.projectId);
   }
