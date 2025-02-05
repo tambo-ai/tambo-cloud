@@ -1,168 +1,147 @@
 ---
 title: Making Components Interactive
-description: Learn how to add user interactions and dynamic behavior to your Hydra AI components.
+description: Learn how to add AI-powered UI components to your chat interface.
 ---
 
-Now that you can create basic components, let's make them interactive by adding callbacks and data handling.
+Now that we have our basic note and email components, let's make them interactive so users can edit notes and send emails we created in the previous section [Adding Components](/vnext/ai-assistant-quickstart/adding-components).
 
-## Understanding Component Interactions
+## Creating Interactive Components
 
-Interactive components can:
+```tsx title="src/components/InteractiveNote.tsx"
+import React, { useState } from "react";
+import type { CustomerNoteProps } from "../schemas/crm-components";
 
-- Accept user input
-- Handle form submissions
-- Trigger actions
-- Update their state
-- Communicate with the AI
-
-## Adding Callbacks
-
-Let's create a form component that can collect user data:
-
-```tsx
-// src/components/DataForm.tsx
-interface DataFormProps {
-  fields: Array<{
-    name: string;
-    type: "text" | "number" | "date";
-    label: string;
-  }>;
-  onSubmit: (data: Record<string, unknown>) => Promise<void>;
-}
-
-export const DataForm = ({ fields, onSubmit }: Readonly<DataFormProps>) => {
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
-    await onSubmit(data);
-  };
+export const InteractiveNote = ({
+  title,
+  content,
+  associatedLeadId,
+  syncProp,
+}: CustomerNoteProps & { syncProp: (value: string) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
 
   return (
-    <form onSubmit={handleSubmit}>
-      {fields.map((field) => (
-        <div key={field.name}>
-          <label htmlFor={field.name}>{field.label}</label>
-          <input type={field.type} name={field.name} id={field.name} />
+    <div>
+      <div>
+        <span>Lead ID: {associatedLeadId}</span>
+        <h3>{title}</h3>
+        <button onClick={() => setIsEditing(!isEditing)}>
+          {isEditing ? "Cancel" : "Edit"}
+        </button>
+      </div>
+      {isEditing ? (
+        <div>
+          <textarea
+            value={content}
+            onChange={(e) => syncProp(e.target.value)}
+          />
+          <button onClick={() => setIsEditing(false)}>Save</button>
+        </div>
+      ) : (
+        <div>{content}</div>
+      )}
+    </div>
+  );
+};
+
+export const InteractiveEmail = ({
+  to,
+  subject,
+  content,
+  syncProp,
+}: EmailPreviewProps & { syncProp: (value: string) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  return (
+    <div>
+      <div>
+        <span>To: {to}</span>
+        <h3>{subject}</h3>
+        <button onClick={() => setIsEditing(!isEditing)}>
+          {isEditing ? "Cancel" : "Edit"}
+        </button>
+      </div>
+      {isEditing ? (
+        <div>
+          <textarea
+            value={content}
+            onChange={(e) => syncProp(e.target.value)}
+          />
+          <button onClick={() => setIsEditing(false)}>Done</button>
+        </div>
+      ) : (
+        <div>{content}</div>
+      )}
+    </div>
+  );
+};
+```
+
+## Registering Components
+
+Register the components in your Hydra configuration:
+
+```tsx title="src/config/hydraConfig.ts"
+import { InteractiveNote } from "../components/InteractiveNote";
+import { InteractiveEmail } from "../components/InteractiveEmail";
+import {
+  customerNoteSchema,
+  emailPreviewSchema,
+} from "../schemas/crm-components";
+
+export const componentRegistry = createHydraComponentRegistry({
+  CustomerNote: {
+    component: InteractiveNote,
+    description: "Displays an editable customer note",
+    propsSchema: customerNoteSchema,
+  },
+  EmailPreview: {
+    component: InteractiveEmail,
+    description: "Displays an editable email",
+    propsSchema: emailPreviewSchema,
+  },
+});
+```
+
+## Using in Message Thread
+
+The components work automatically in the message thread:
+
+```tsx title="src/components/CrmChatThread.tsx"
+export const CrmChatThread = () => {
+  const { messages } = useHydraThread("thread-id");
+
+  return (
+    <div>
+      {messages.map((message) => (
+        <div key={message.id}>
+          <div>{message.content}</div>
+          {message.component && (
+            <message.component.Component
+              {...message.component.props}
+              syncProp={(value) => {
+                // Update content in the message thread
+                message.component.props.content = value;
+              }}
+            />
+          )}
         </div>
       ))}
-      <button type="submit">Submit</button>
-    </form>
+    </div>
   );
 };
 ```
-
-What's happening here:
-
-- Define props for form fields and submission
-- Handle form submission with FormData
-- Pass collected data to the callback
-- Use async/await for handling responses
-
-## Registering Interactive Components
-
-Register the component with its callback schema:
-
-```tsx
-// src/config/hydraConfig.ts
-import { z } from "zod";
-import { DataForm } from "../components/DataForm";
-
-export const componentRegistry = createHydraComponentRegistry({
-  DataForm: {
-    component: DataForm,
-    description: "A dynamic form for collecting user input",
-    propsSchema: z.object({
-      fields: z.array(
-        z.object({
-          name: z.string(),
-          type: z.enum(["text", "number", "date"]),
-          label: z.string(),
-        })
-      ),
-      onSubmit: z
-        .function()
-        .args(z.record(z.unknown()))
-        .returns(z.promise(z.void()))
-        .describe("Callback function called with form data"),
-    }),
-  },
-});
-```
-
-What's happening here:
-
-- Define schema for form fields
-- Specify the callback function type
-- Ensure type safety for the callback
-- Document the callback behavior
-
-## Using Context Tools
-
-Components often need to interact with your application's data. Let's add a context tool:
-
-```tsx
-export const componentRegistry = createHydraComponentRegistry({
-  UserProfile: {
-    component: UserProfile,
-    description: "Display and edit user profile information",
-    propsSchema: z.object({
-      userId: z.string(),
-      onUpdate: z
-        .function()
-        .args(z.object({ name: z.string(), email: z.string() }))
-        .returns(z.promise(z.void())),
-    }),
-    contextTools: [
-      {
-        name: "fetchUserData",
-        description: "Fetch user data from the API",
-        handler: async (userId: string) => {
-          const data = await getUserData(userId);
-          return data;
-        },
-      },
-    ],
-  },
-});
-```
-
-What's happening here:
-
-- Define tools the component needs
-- Specify tool parameters and return types
-- Handle data fetching and updates
-- Maintain type safety throughout
 
 <Callout>
-  Context tools help components access data and services while keeping the
-  component logic clean and focused.
+  By keeping state in the message thread and components simple, we get automatic
+  state persistence and synchronization.
 </Callout>
 
-## Handling State Updates
+What's happening here:
 
-When components update state, they should notify the thread:
+- Components only manage UI state (isEditing)
+- Content state lives in the message thread
+- Simple syncProp function updates content directly
+- No need for complex state management
+- Components are pure UI with minimal logic
 
-```tsx
-const UserProfile = ({
-  userId,
-  onUpdate
-}: Readonly<UserProfileProps>) => {
-  const handleSave = async (updates: UserUpdates) => {
-    try {
-      await onUpdate(updates);
-      // AI will automatically get notified of the update
-    } catch (error) {
-      console.error("Failed to update user:", error);
-    }
-  };
-
-  return (
-    // ... component JSX
-  );
-};
-```
-
-<Callout title="Next Steps">
-  We'll see some advanved features like streaming, suggestions, and AI Status!
-</Callout>
+<Callout title="Next Steps">We'll see how to add advnaced features.</Callout>
