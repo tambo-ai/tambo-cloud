@@ -147,9 +147,18 @@ export const messages = pgTable("messages", ({ text, timestamp, jsonb }) => ({
   }).notNull(),
   content: jsonb("content").notNull(),
   componentDecision: customJsonb<ComponentDecision>("component_decision"),
+  actionType: text("action_type", {
+    enum: Object.values<string>(ActionType) as [ActionType],
+  }),
   metadata: customJsonb<Record<string, unknown>>("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }));
+
+export enum ActionType {
+  ToolCall = "tool_call",
+  ToolResponse = "tool_response",
+}
+
 export type DBMessage = typeof messages.$inferSelect;
 
 export const threadRelations = relations(threads, ({ one, many }) => ({
