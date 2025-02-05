@@ -22,8 +22,11 @@ export default async function Page(props: {
     <DocsPage toc={page.data.toc} full={page.data.full}>
       <Callout type="warn" title="Active Development for 0.1.0">
         This documentation is under active development. Content and contracts
-        may change without notice. Have a question? Send us a message at{" "}
-        <a href="mailto:magan@usehydra.ai">magan@usehydra.ai</a>
+        may change without notice. Have a question? Send us a{" "}
+        <a href="mailto:magan@usehydra.ai" className="underline bold">
+          message
+        </a>
+        .
       </Callout>
       <DocsTitle>{page.data.title}</DocsTitle>
       {page.data.description && (
