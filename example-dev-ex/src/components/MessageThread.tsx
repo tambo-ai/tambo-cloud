@@ -1,7 +1,8 @@
 import {
-  useHydraThreadCore,
-  useHydraThreadMessages,
-  type HydraStreamingState,
+  useHydraContext,
+  useHydraThread,
+  type HydraComponent,
+  type HydraComponentInjectedProps,
   type HydraSuggestion,
   type HydraThread,
   type HydraThreadMessage,
@@ -37,12 +38,47 @@ const Suggestions = ({
 // Message component with suggestions
 const ThreadMessage = ({
   message,
+  messageId,
+  threadId,
   onSelectSuggestion,
 }: {
   message: HydraThreadMessage;
   messageId: string;
+  threadId: string;
   onSelectSuggestion: (suggestion: HydraSuggestion) => void;
 }): ReactElement => {
+  const renderComponent = (component: {
+    type: string;
+    Component: React.ComponentType<any>;
+    props: Record<string, unknown>;
+    state?: Record<string, unknown>;
+  }) => {
+    const Component = component.Component;
+    const injectedProps: HydraComponentInjectedProps = {
+      syncProp: <T,>(
+        propName: keyof T,
+        value: T[keyof T],
+        metadata?: Record<string, unknown>,
+      ) => {
+        console.log("Syncing prop:", propName, value, metadata);
+      },
+      threadId,
+      messageId,
+    };
+
+    // Create a properly typed HydraComponent
+    const hydraComponent: HydraComponent = {
+      type: component.type,
+      Component: component.Component,
+      props: {
+        ...component.props,
+        ...injectedProps,
+      },
+    };
+
+    return <Component {...hydraComponent.props} />;
+  };
+
   return (
     <div>
       <p>
@@ -61,22 +97,14 @@ const ThreadMessage = ({
           </p>
           {Object.entries(message.streamState).map(([key, value]) => (
             <p key={key}>
-              {key}:{" "}
-              {(value as HydraStreamingState).isStreaming
-                ? "Streaming"
-                : "Complete"}
+              {key}: {value.isStreaming ? "Streaming" : "Complete"}
+              {value.progress && ` (${Math.round(value.progress * 100)}%)`}
+              {value.error && <span className="error">{value.error}</span>}
             </p>
           ))}
         </div>
       )}
-      {message.component?.component && (
-        <div>
-          <message.component.component
-            {...message.component.props}
-            {...message.component.callbacks}
-          />
-        </div>
-      )}
+      {message.component && <div>{renderComponent(message.component)}</div>}
       {message.type === "hydra" && (
         <Suggestions
           suggestions={message.suggestions}
@@ -87,32 +115,25 @@ const ThreadMessage = ({
   );
 };
 
-// Updated Thread component
+// Updated Thread component using new hooks
 const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    isStreaming,
-    clear,
-    abort,
-  } = useHydraThreadMessages(thread.id);
+  const { messages, operations } = useHydraThread(thread.id);
+  const { messages: messageManager } = useHydraContext();
   const [selectedSuggestion, setSelectedSuggestion] =
     useState<HydraSuggestion>();
+  const [input, setInput] = useState("");
 
-  const handleSend = async (message: string, suggestion?: HydraSuggestion) => {
+  const handleSend = async (message: string) => {
     try {
-      await handleSubmit(message, {
+      await messageManager.generate(thread.id, message, {
         stream: true,
         onProgress: (partial) => {
           console.log("Streaming progress:", partial);
         },
         onFinish: () => {
           setSelectedSuggestion(undefined);
+          setInput("");
         },
-        suggestion,
       });
     } catch (error) {
       console.error("Error sending message:", error);
@@ -127,9 +148,14 @@ const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
     <div>
       <div>
         <h2>{thread.title}</h2>
-        <button onClick={() => clear()}>Clear Messages</button>
-        {isStreaming && (
-          <button onClick={() => abort()} title="Stop generating">
+        <button onClick={() => operations.delete(thread.id)}>
+          Clear Messages
+        </button>
+        {messageManager.status.isStreaming && (
+          <button
+            onClick={() => operations.delete(thread.id)}
+            title="Stop generating"
+          >
             Stop
           </button>
         )}
@@ -140,18 +166,19 @@ const Thread = ({ thread }: { thread: HydraThread }): ReactElement => {
             key={index}
             message={msg}
             messageId={`${thread.id}-${index}`}
+            threadId={thread.id}
             onSelectSuggestion={handleSuggestionSelect}
           />
         ))}
-        {isLoading && <div>Loading...</div>}
+        {messageManager.status.isLoading && <div>Loading...</div>}
       </div>
       <ThreadInput
         input={input}
-        onInputChange={handleInputChange}
+        onInputChange={setInput}
         onSubmit={handleSend}
         selectedSuggestion={selectedSuggestion}
         onCancelSuggestion={() => setSelectedSuggestion(undefined)}
-        isLoading={isLoading}
+        isLoading={messageManager.status.isLoading}
       />
     </div>
   );
@@ -168,7 +195,7 @@ const ThreadInput = ({
 }: {
   input: string;
   onInputChange: (value: string) => void;
-  onSubmit: (message: string, suggestion?: HydraSuggestion) => Promise<void>;
+  onSubmit: (message: string) => Promise<void>;
   selectedSuggestion?: HydraSuggestion;
   onCancelSuggestion: () => void;
   isLoading: boolean;
@@ -177,7 +204,8 @@ const ThreadInput = ({
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    await onSubmit(input, selectedSuggestion);
+    await onSubmit(input);
+    onInputChange("");
   };
 
   return (
@@ -191,12 +219,6 @@ const ThreadInput = ({
             </button>
           </div>
           <p>{selectedSuggestion.detailedSuggestion}</p>
-          {(selectedSuggestion.suggestedTools?.length ?? 0) > 0 && (
-            <div>
-              <span>Using: </span>
-              {selectedSuggestion.suggestedTools?.join(", ")}
-            </div>
-          )}
         </div>
       )}
       <form onSubmit={handleSubmit}>
@@ -219,18 +241,18 @@ const ThreadInput = ({
   );
 };
 
-// Main component using core hook for global operations
+// Main component using unified context
 export const MessageThread = (): ReactElement => {
-  const { operations, state } = useHydraThreadCore();
+  const { threads } = useHydraContext();
 
   return (
     <div>
       <div>
         <h1>Message Threads</h1>
-        <button onClick={() => operations.create()}>New Thread</button>
+        <button onClick={() => threads.operations.create()}>New Thread</button>
       </div>
       <div>
-        {state.threads.map((thread) => (
+        {threads.all.map((thread) => (
           <Thread key={thread.id} thread={thread} />
         ))}
       </div>

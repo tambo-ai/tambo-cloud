@@ -1,7 +1,7 @@
 import {
   createHydraComponentRegistry,
   createHydraToolRegistry,
-  type HydraInitConfig,
+  type HydraConfig,
   type HydraPersonality,
 } from "hydra-ai-react";
 import { EmailComponent } from "../components/EmailComponent";
@@ -38,9 +38,7 @@ export const toolRegistry = createHydraToolRegistry({
 });
 
 // Define component registry
-export const componentRegistry = createHydraComponentRegistry<
-  typeof toolRegistry.tools
->({
+export const componentRegistry = createHydraComponentRegistry({
   EmailComponent: {
     component: EmailComponent,
     description:
@@ -56,9 +54,7 @@ export const componentRegistry = createHydraComponentRegistry<
   },
 });
 
-export const initializeHydra = (): HydraInitConfig<
-  typeof toolRegistry.tools
-> => {
+export const initializeHydra = (): HydraConfig => {
   if (!process.env.NEXT_PUBLIC_HYDRA_API_KEY) {
     throw new Error("NEXT_PUBLIC_HYDRA_API_KEY is not set");
   }

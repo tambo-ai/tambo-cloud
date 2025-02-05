@@ -1,0 +1,201 @@
+---
+title: Streaming
+description: Implementing real-time updates and streaming responses.
+---
+
+Streaming in Hydra AI enables real-time updates and progressive rendering of AI responses, creating more responsive and engaging user experiences.
+
+## Core Concepts
+
+- **Streaming State**: Track the progress of AI responses
+- **Partial Updates**: Handle incremental content updates
+- **Progress Tracking**: Monitor and display generation progress
+- **Abort Control**: Cancel ongoing operations
+
+## Implementation
+
+### Basic Streaming
+
+```tsx title="Basic Streaming Setup"
+function StreamingThread() {
+  const {
+    messages,
+    isStreaming, // [!code highlight]
+    handleSubmit,
+  } = useHydraThreadMessages(threadId);
+
+  const sendMessage = async (content: string) => {
+    await handleSubmit(content, {
+      stream: true, // Enable streaming // [!code highlight]
+      onProgress: (partial) => {
+        console.log("Received partial:", partial);
+      },
+    });
+  };
+}
+```
+
+### Progress Tracking
+
+```tsx title="Streaming Progress Handler"
+const streamingOptions = {
+  stream: true,
+  onProgress: (partial: Partial<HydraThreadMessage>) => {
+    // [!code highlight]
+    // Handle partial updates
+    if (partial.content) {
+      // Update UI with new content
+    }
+    if (partial.status) {
+      // Update status indicators
+    }
+  },
+  onFinish: (message: HydraThreadMessage) => {
+    // [!code highlight]
+    // Handle complete message
+  },
+  onError: (error: Error) => {
+    // Handle streaming errors
+  },
+};
+```
+
+### Streaming States
+
+```tsx title="Streaming State Management"
+function StreamingStatus() {
+  const { streamState } = useHydraThreadMessages(threadId);
+
+  return (
+    <div>
+      {Object.entries(streamState || {}).map(([key, value]) => (
+        <div key={key}>
+          <span>{key}:</span>
+          <span>
+            {value.isStreaming ? "Streaming" : "Complete"} // [!code highlight]
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Abort Control
+
+```tsx title="Streaming Control"
+function StreamingControls() {
+  const {
+    isStreaming,
+    abort, // [!code highlight]
+    handleSubmit,
+  } = useHydraThreadMessages(threadId);
+
+  return (
+    <div>
+      {isStreaming && (
+        <button onClick={() => abort()}>
+          {" "}
+          // [!code highlight] Stop Generating
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Advanced Features
+
+### Partial Updates
+
+```tsx title="Handling Partial Updates"
+function ProgressiveMessage() {
+  const [content, setContent] = useState("");
+
+  const handleProgress = (partial: Partial<HydraThreadMessage>) => {
+    if (partial.content) {
+      setContent((current) => current + partial.content); // [!code highlight]
+    }
+  };
+}
+```
+
+### Component Streaming
+
+```tsx title="Streaming Components"
+const streamingComponent = {
+  component: ProgressiveView,
+  props: {
+    onPartialUpdate: (data: unknown) => void, // [!code highlight]
+    streamingState: HydraStreamingState // [!code highlight]
+  }
+};
+```
+
+## Best Practices
+
+1. **Performance**
+
+```tsx title="Optimized Streaming"
+function OptimizedStream() {
+  // Debounce UI updates for better performance
+  const handleProgress = useMemo(
+    () =>
+      debounce((partial: Partial<HydraThreadMessage>) => {
+        // Update UI
+      }, 100), // [!code highlight]
+    []
+  );
+}
+```
+
+2. **Error Handling**
+
+```tsx title="Robust Error Handling"
+const robustStreamingSetup = {
+  stream: true,
+  onProgress: (partial) => {
+    try {
+      // Handle partial
+    } catch (error) {
+      // Graceful degradation
+      console.error("Streaming error:", error); // [!code highlight]
+    }
+  },
+  abortSignal: new AbortController().signal, // [!code highlight]
+};
+```
+
+3. **User Feedback**
+
+```tsx title="User Feedback"
+function StreamingFeedback() {
+  const { isStreaming, streamState } = useHydraThreadMessages(threadId);
+
+  return (
+    <div>
+      {isStreaming && (
+        <div className="streaming-indicator">
+          <Spinner />
+          <span>AI is thinking...</span> // [!code highlight]
+          <ProgressBar value={streamState?.progress} /> // [!code highlight]
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## What's Next?
+
+<Cards>
+  <Card href="/vnext/overview/generative-ux" title="Generative UX">
+    Learn how to create dynamic UIs with streaming data
+  </Card>
+  <Card href="/vnext/overview/tools" title="Tool Integration">
+    Add real-time tool execution to your streams
+  </Card>
+  <Card href="/vnext/overview/suggestions" title="Smart Suggestions">
+    Stream contextual suggestions to users
+  </Card>
+</Cards>

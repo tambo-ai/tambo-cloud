@@ -1,0 +1,168 @@
+---
+title: Making Components Interactive
+description: Learn how to add user interactions and dynamic behavior to your Hydra AI components.
+---
+
+Now that you can create basic components, let's make them interactive by adding callbacks and data handling.
+
+## Understanding Component Interactions
+
+Interactive components can:
+
+- Accept user input
+- Handle form submissions
+- Trigger actions
+- Update their state
+- Communicate with the AI
+
+## Adding Callbacks
+
+Let's create a form component that can collect user data:
+
+```tsx
+// src/components/DataForm.tsx
+interface DataFormProps {
+  fields: Array<{
+    name: string;
+    type: "text" | "number" | "date";
+    label: string;
+  }>;
+  onSubmit: (data: Record<string, unknown>) => Promise<void>;
+}
+
+export const DataForm = ({ fields, onSubmit }: Readonly<DataFormProps>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    await onSubmit(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {fields.map((field) => (
+        <div key={field.name}>
+          <label htmlFor={field.name}>{field.label}</label>
+          <input type={field.type} name={field.name} id={field.name} />
+        </div>
+      ))}
+      <button type="submit">Submit</button>
+    </form>
+  );
+};
+```
+
+What's happening here:
+
+- Define props for form fields and submission
+- Handle form submission with FormData
+- Pass collected data to the callback
+- Use async/await for handling responses
+
+## Registering Interactive Components
+
+Register the component with its callback schema:
+
+```tsx
+// src/config/hydraConfig.ts
+import { z } from "zod";
+import { DataForm } from "../components/DataForm";
+
+export const componentRegistry = createHydraComponentRegistry({
+  DataForm: {
+    component: DataForm,
+    description: "A dynamic form for collecting user input",
+    propsSchema: z.object({
+      fields: z.array(
+        z.object({
+          name: z.string(),
+          type: z.enum(["text", "number", "date"]),
+          label: z.string(),
+        })
+      ),
+      onSubmit: z
+        .function()
+        .args(z.record(z.unknown()))
+        .returns(z.promise(z.void()))
+        .describe("Callback function called with form data"),
+    }),
+  },
+});
+```
+
+What's happening here:
+
+- Define schema for form fields
+- Specify the callback function type
+- Ensure type safety for the callback
+- Document the callback behavior
+
+## Using Context Tools
+
+Components often need to interact with your application's data. Let's add a context tool:
+
+```tsx
+export const componentRegistry = createHydraComponentRegistry({
+  UserProfile: {
+    component: UserProfile,
+    description: "Display and edit user profile information",
+    propsSchema: z.object({
+      userId: z.string(),
+      onUpdate: z
+        .function()
+        .args(z.object({ name: z.string(), email: z.string() }))
+        .returns(z.promise(z.void())),
+    }),
+    contextTools: [
+      {
+        name: "fetchUserData",
+        description: "Fetch user data from the API",
+        handler: async (userId: string) => {
+          const data = await getUserData(userId);
+          return data;
+        },
+      },
+    ],
+  },
+});
+```
+
+What's happening here:
+
+- Define tools the component needs
+- Specify tool parameters and return types
+- Handle data fetching and updates
+- Maintain type safety throughout
+
+<Callout>
+  Context tools help components access data and services while keeping the
+  component logic clean and focused.
+</Callout>
+
+## Handling State Updates
+
+When components update state, they should notify the thread:
+
+```tsx
+const UserProfile = ({
+  userId,
+  onUpdate
+}: Readonly<UserProfileProps>) => {
+  const handleSave = async (updates: UserUpdates) => {
+    try {
+      await onUpdate(updates);
+      // AI will automatically get notified of the update
+    } catch (error) {
+      console.error("Failed to update user:", error);
+    }
+  };
+
+  return (
+    // ... component JSX
+  );
+};
+```
+
+<Callout title="Next Steps">
+  We'll see some advanved features like streaming, suggestions, and AI Status!
+</Callout>

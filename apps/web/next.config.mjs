@@ -6,10 +6,12 @@ const jiti = createJiti(fileURLToPath(import.meta.url));
 // Import env here to validate during build. Using jiti we can import .ts files :)
 jiti.import("./lib/env");
 
-const withMDX = createMDX();
+// Import Fumadocs config
+const config = jiti.import("./fumadocs.config");
+const withMDX = createMDX(config.default);
 
 /** @type {import('next').NextConfig} */
-const config = {
+const nextConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
@@ -33,4 +35,4 @@ const config = {
   },
 };
 
-export default withMDX(config);
+export default withMDX(nextConfig);

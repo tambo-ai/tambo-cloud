@@ -1,0 +1,266 @@
+---
+title: Generative UX
+description: Building dynamic interfaces with Hydra AI components.
+---
+
+Hydra AI uses your predefined components to create dynamic interfaces. Hydra orchestrates your components based on context.
+
+- Uses your predefined components
+- Maintains full type safety
+- Provides predictable behavior
+- Enables easy debugging
+- Integrates with your existing UI
+
+## Component Types
+
+### HydraComponent Interface
+
+```tsx title="Core Component Interface"
+interface HydraComponent<T = any> {
+  component: ComponentType<T>; // Your React component // [!code highlight]
+  props: T; // Type-safe props // [!code highlight]
+  callbacks?: HydraComponentCallbacks<T>; // Optional interaction handlers // [!code highlight]
+}
+```
+
+### Component Definitions
+
+```tsx title="Component Definition"
+const DataGrid = {
+  component: GridComponent,
+  propsSchema: z.object({
+    data: z.array(z.unknown()),
+    columns: z.array(z.string()),
+    sortable: z.boolean().default(true), // [!code highlight]
+  }),
+  description: "Interactive data grid with sorting",
+  associatedTools: ["fetchData", "sortData"], // [!code highlight]
+};
+```
+
+### Component Callbacks
+
+```tsx title="Callback Handling"
+interface HydraComponentCallbacks<T> {
+  onChange?: (updates: Partial<T>) => void; // [!code highlight]
+  onSubmit?: (data: T) => void; // [!code highlight]
+  onCancel?: () => void; // [!code highlight]
+}
+
+// Usage example
+const SearchBox = {
+  component: Search,
+  propsSchema: z.object({
+    query: z.string(),
+    filters: z.array(z.string())
+  }),
+  callbacks: {
+    onChange: (updates) => void,
+    onSubmit: (searchData) => void
+  }
+};
+```
+
+## State Management
+
+### Message State
+
+```tsx title="Message-Level State"
+function DataVisualizer() {
+  const { state, setState } = useHydraMessageState<{
+    selectedItems: string[];
+    viewMode: "table" | "chart";
+  }>(messageId); // [!code highlight]
+
+  return (
+    <div>
+      <ViewToggle
+        mode={state.viewMode}
+        onChange={(mode) => setState({ viewMode: mode })} // [!code highlight]
+      />
+      <SelectionList
+        items={state.selectedItems}
+        onSelect={(items) => setState({ selectedItems: items })} // [!code highlight]
+      />
+    </div>
+  );
+}
+```
+
+### Thread Components
+
+```tsx title="Thread Component Management"
+function DynamicView() {
+  const {
+    component,
+    props,
+    updateProps, // [!code highlight]
+  } = useHydraThreadComponent(messageId);
+
+  if (!component) return null;
+
+  return (
+    <component.component
+      {...props}
+      onUpdate={(updates) => updateProps(updates)} // [!code highlight]
+    />
+  );
+}
+```
+
+## Common Patterns
+
+### Props-Based Components (Recommended)
+
+```tsx title="Props-Based Pattern"
+// Define a type-safe, props-based component
+interface DataViewProps {
+  data: unknown[];
+  view: "table" | "chart";
+  onViewChange?: (view: "table" | "chart") => void;
+}
+
+const DataView = ({ data, view, onViewChange }: Readonly<DataViewProps>) => {
+  // [!code highlight]
+  return (
+    <div>
+      {onViewChange && ( // Optional interactivity // [!code highlight]
+        <ViewSelector value={view} onChange={onViewChange} />
+      )}
+      {view === "table" ? <Table data={data} /> : <Chart data={data} />}
+    </div>
+  );
+};
+```
+
+### State-Managed Components
+
+```tsx title="State Management Pattern"
+function SmartDataView() {
+  // Type-safe state management
+  const { state, setState } = useHydraMessageState<{
+    view: "table" | "chart";
+    filters: string[];
+  }>(messageId); // [!code highlight]
+
+  // Batch updates for better performance
+  const updateState = (updates: Partial<typeof state>) => {
+    setState((current) => ({ ...current, ...updates })); // [!code highlight]
+  };
+
+  return (
+    <DataView
+      view={state.view}
+      filters={state.filters}
+      onViewChange={(view) => updateState({ view })}
+      onFilterChange={(filters) => updateState({ filters })}
+    />
+  );
+}
+```
+
+## Real-World Examples
+
+### Data Visualization
+
+```tsx title="Interactive Chart Component"
+const ChartComponent = {
+  component: Chart,
+  propsSchema: z.object({
+    data: z.array(z.number()),
+    type: z.enum(["line", "bar"]),
+    interactive: z.boolean().default(true), // [!code highlight]
+  }),
+  description: "Interactive data visualization",
+  associatedTools: ["fetchData", "transformData"], // [!code highlight]
+};
+```
+
+### Interactive Forms
+
+```tsx title="Smart Form Component"
+const FormComponent = {
+  component: Form,
+  propsSchema: z.object({
+    fields: z.array(z.object({
+      name: z.string(),
+      type: z.enum(["text", "number", "date"])
+    })),
+    validation: z.record(z.function()) // [!code highlight]
+  }),
+  callbacks: {
+    onSubmit: (data) => void,
+    onChange: (updates) => void
+  }
+};
+```
+
+### Settings Panel
+
+```tsx title="Settings Component"
+const SettingsComponent = {
+  component: Settings,
+  propsSchema: z.object({
+    sections: z.array(
+      z.object({
+        title: z.string(),
+        settings: z.array(z.unknown()),
+      })
+    ),
+    currentSection: z.string().optional(), // [!code highlight]
+  }),
+  associatedTools: ["updateSettings", "fetchPreferences"], // [!code highlight]
+};
+```
+
+## Best Practices
+
+### Type Safety
+
+```tsx title="Type-Safe Components"
+// Define strict interfaces
+interface ChartData {
+  labels: string[];
+  values: number[];
+}
+
+// Use with components
+const Chart = {
+  component: ChartView,
+  propsSchema: z.object({
+    data: z.custom<ChartData>(), // [!code highlight]
+    options: z.record(z.unknown()),
+  }),
+};
+```
+
+### Component Design
+
+```tsx title="Well-Designed Component"
+const UserProfile = {
+  component: ProfileView,
+  propsSchema: z.object({
+    userId: z.string().describe("User ID to display"), // [!code highlight]
+    editable: z.boolean().describe("Allow editing"), // [!code highlight]
+    theme: z.enum(["light", "dark"]).default("dark"), // [!code highlight]
+  }),
+  description: "Display and edit user profiles with theme support",
+  associatedTools: ["fetchUser", "updateUser"],
+};
+```
+
+### Tool Association
+
+```tsx title="Tool Integration"
+const SearchInterface = {
+  component: Search,
+  propsSchema: searchSchema,
+  description: "Advanced search interface with filters",
+  associatedTools: [
+    // [!code highlight]
+    "performSearch", // Main search functionality
+    "fetchFilters", // Get available filters
+    "saveSearch", // Save search preferences
+  ], // [!code highlight]
+};
+```

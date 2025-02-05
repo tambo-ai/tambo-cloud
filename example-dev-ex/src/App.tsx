@@ -7,7 +7,7 @@ export const App = (): ReactElement => {
   const hydraInstance = initializeHydra();
 
   return (
-    <HydraProvider hydraInstance={hydraInstance}>
+    <HydraProvider config={hydraInstance}>
       <div>
         <h1>Hydra AI Demo</h1>
         <MessageThread />

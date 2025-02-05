@@ -1,0 +1,154 @@
+---
+title: Message Threads
+description: Understanding message threads as the foundation of Hydra AI applications.
+---
+
+Message threads are the core building block for creating interactive AI experiences with Hydra. They provide a structured way to manage conversations between users and AI, complete with status tracking, streaming responses, and interactive components.
+
+## Core Concepts
+
+A message thread consists of:
+
+- Messages from both user and AI
+- Status indicators for ongoing operations
+- Streaming state management
+- Interactive components
+- Suggestions for next actions
+
+## Available Hooks
+
+### Core Thread Management
+
+```tsx title="Thread Core Hooks"
+// Access thread state and operations
+const { messages, operations, suggestions, components } = useHydraThread(threadId);
+
+// Access global thread state
+const { threads } = useHydraContext();
+
+// Thread lifecycle operations
+const {
+  create,    // Create new thread
+  delete,    // Remove thread
+  update,    // Update thread
+  archive,   // Archive thread
+  clear      // Clear messages
+} = useHydraContext().threads.operations;
+```
+
+### Message Management
+
+```tsx title="Message Management Hooks"
+// Main hook for message interactions
+const {
+  input: { value, onChange, submit },
+  status: { isLoading, isStreaming, error },
+  controls: { clear, reset, abort },
+} = useHydraContext().messages;
+
+// Direct message generation
+const { generate } = useHydraContext().messages;
+```
+
+### Thread Operations
+
+```tsx title="Specialized Thread Operations"
+// Thread filtering
+const threadsByContext = useHydraContext().threads.getByContext(contextId);
+
+// Thread state access
+const allThreads = useHydraContext().threads.all;
+const threadStates = useHydraContext().threads.state;
+```
+
+## Implementation Examples
+
+### Basic Message Thread
+
+```tsx title="Basic Message Thread Component"
+import {
+  useHydraThread,
+  useHydraContext,
+  type HydraThreadMessage,
+} from "hydra-ai-react";
+import { type FormEvent } from "react";
+
+function BasicMessageThread({ threadId }: { threadId: string }) {
+  const { messages, suggestions } = useHydraThread(threadId);
+  const {
+    input: { value, onChange, submit },
+    status: { isLoading },
+  } = useHydraContext().messages;
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!value.trim() || isLoading) return;
+
+    try {
+      await submit(value);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
+  };
+
+  return (
+    <div className="message-thread">
+      {/* Message List */}
+      <div className="flex flex-col gap-4">
+        {messages.map((message: HydraThreadMessage, index: number) => (
+          <div
+            key={`${message.type}-${index}`}
+            className={`${message.type === "user" ? "ml-auto" : "mr-auto"}`}
+          >
+            <div>{message.content}</div>
+            {message.component && (
+              <div className="mt-2">{message.component}</div>
+            )}
+            {message.suggestions && message.suggestions.length > 0 && (
+              <div className="mt-2">
+                {message.suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion.title}
+                    onClick={() => suggestions.accept(suggestion)}
+                  >
+                    {suggestion.title}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Input Form */}
+      <form onSubmit={handleSubmit}>
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Type your message..."
+          disabled={isLoading}
+          className="w-full p-2 border rounded"
+        />
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          {isLoading ? "Sending..." : "Send"}
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+## Advanced Features
+
+<Cards>
+  <Card href="/vnext/overview/status" title="Thread Hooks for Status">
+    Learn how to use the thread hooks for status updates.
+  </Card>
+  <Card href="/vnext/overview/suggestions" title="Thread Hooks for Suggestions">
+    Learn how to use the thread hooks for suggestions.
+  </Card>
+</Cards>

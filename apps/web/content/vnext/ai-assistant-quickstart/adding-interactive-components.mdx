@@ -1,0 +1,147 @@
+---
+title: Adding Interactive Components
+description: Learn how to add AI-powered UI components to your chat interface.
+---
+
+Now that we have our basic note and email components, let's make them interactive so users can edit notes and send emails.
+
+## Creating Interactive Components
+
+```tsx title="src/components/InteractiveNote.tsx"
+import React, { useState } from "react";
+import type { CustomerNoteProps } from "../schemas/crm-components";
+
+export const InteractiveNote = ({
+  title,
+  content,
+  associatedLeadId,
+  syncProp,
+}: CustomerNoteProps & { syncProp: (value: string) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  return (
+    <div>
+      <div>
+        <span>Lead ID: {associatedLeadId}</span>
+        <h3>{title}</h3>
+        <button onClick={() => setIsEditing(!isEditing)}>
+          {isEditing ? "Cancel" : "Edit"}
+        </button>
+      </div>
+      {isEditing ? (
+        <div>
+          <textarea
+            value={content}
+            onChange={(e) => syncProp(e.target.value)}
+          />
+          <button onClick={() => setIsEditing(false)}>Save</button>
+        </div>
+      ) : (
+        <div>{content}</div>
+      )}
+    </div>
+  );
+};
+
+export const InteractiveEmail = ({
+  to,
+  subject,
+  content,
+  syncProp,
+}: EmailPreviewProps & { syncProp: (value: string) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  return (
+    <div>
+      <div>
+        <span>To: {to}</span>
+        <h3>{subject}</h3>
+        <button onClick={() => setIsEditing(!isEditing)}>
+          {isEditing ? "Cancel" : "Edit"}
+        </button>
+      </div>
+      {isEditing ? (
+        <div>
+          <textarea
+            value={content}
+            onChange={(e) => syncProp(e.target.value)}
+          />
+          <button onClick={() => setIsEditing(false)}>Done</button>
+        </div>
+      ) : (
+        <div>{content}</div>
+      )}
+    </div>
+  );
+};
+```
+
+## Registering Components
+
+Register the components in your Hydra configuration:
+
+```tsx title="src/config/hydraConfig.ts"
+import { InteractiveNote } from "../components/InteractiveNote";
+import { InteractiveEmail } from "../components/InteractiveEmail";
+import {
+  customerNoteSchema,
+  emailPreviewSchema,
+} from "../schemas/crm-components";
+
+export const componentRegistry = createHydraComponentRegistry({
+  CustomerNote: {
+    component: InteractiveNote,
+    description: "Displays an editable customer note",
+    propsSchema: customerNoteSchema,
+  },
+  EmailPreview: {
+    component: InteractiveEmail,
+    description: "Displays an editable email",
+    propsSchema: emailPreviewSchema,
+  },
+});
+```
+
+## Using in Message Thread
+
+The components work automatically in the message thread:
+
+```tsx title="src/components/CrmChatThread.tsx"
+export const CrmChatThread = () => {
+  const { messages } = useHydraThread("thread-id");
+
+  return (
+    <div>
+      {messages.map((message) => (
+        <div key={message.id}>
+          <div>{message.content}</div>
+          {message.component && (
+            <message.component.Component
+              {...message.component.props}
+              syncProp={(value) => {
+                // Update content in the message thread
+                message.component.props.content = value;
+              }}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+<Callout>
+  By keeping state in the message thread and components simple, we get automatic
+  state persistence and synchronization.
+</Callout>
+
+What's happening here:
+
+- Components only manage UI state (isEditing)
+- Content state lives in the message thread
+- Simple syncProp function updates content directly
+- No need for complex state management
+- Components are pure UI with minimal logic
+
+<Callout title="Next Steps">We'll see how to add advnaced features.</Callout>

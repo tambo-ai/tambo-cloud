@@ -10,7 +10,7 @@ const HydraProvider = ({
   children,
 }: Readonly<HydraProviderProps>): JSX.Element => {
   return (
-    <HydraContextProvider hydraInstance={initializeHydra()}>
+    <HydraContextProvider config={initializeHydra()}>
       {children}
     </HydraContextProvider>
   );
