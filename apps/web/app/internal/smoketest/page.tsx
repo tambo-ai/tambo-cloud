@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,12 +22,12 @@ interface Message {
 export default function SmokePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [threadId, setThreadId] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
-  const { sendThreadMessage, registerComponent, generationStage } = useHydra();
+  const { sendThreadMessage, registerComponent, generationStage, thread } =
+    useHydra();
 
   const { mutateAsync: getAirQuality, isPending: isAqiPending } =
     api.demo.aqi.useMutation({
@@ -74,17 +74,16 @@ export default function SmokePage() {
   //   getHistoricalWeather,
   //   getAirQuality,
   // });
+  useEffect(() => {
+    console.log("thread update", thread);
+  }, [thread]);
 
   const { mutateAsync: generateComponent, isPending: isGenerating } =
     useMutation({
       mutationFn: async () => {
         try {
           console.log("generating component with input", input);
-          const response = await sendThreadMessage(
-            input,
-            threadId ?? undefined,
-          );
-          setThreadId(response.threadId ?? null);
+          const response = await sendThreadMessage(input, thread.id);
           return response;
         } catch (error) {
           setErrors((prev) => [...prev, error as Error]);
@@ -183,6 +182,12 @@ export default function SmokePage() {
           </div>
         </Card>
       )}
+      <div>
+        <p>Thread ID: &apos;{thread.id}&apos;</p>
+      </div>
+      <div>
+        <pre>Thread: {JSON.stringify(thread, null, 2)}</pre>
+      </div>
     </div>
   );
 }
