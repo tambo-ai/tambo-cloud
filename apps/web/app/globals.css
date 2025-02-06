@@ -1,9 +1,9 @@
+/* Fumadocs required styles */
+@import "fumadocs-ui/style.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Fumadocs required styles */
-@import "fumadocs-ui/style.css";
 
 html {
   scroll-behavior: smooth;
