@@ -1,7 +1,8 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { HydraDatabase } from '@use-hydra-ai/db';
 import { operations } from '@use-hydra-ai/db';
-import { Message, MessageRequest } from './dto/message.dto';
+import { ChatCompletionContentPart } from 'openai/resources';
+import { MessageRequest, ThreadMessage } from './dto/message.dto';
 import { Thread, ThreadRequest } from './dto/thread.dto';
 
 @Injectable()
@@ -67,11 +68,11 @@ export class ThreadsService {
   async addMessage(
     threadId: string,
     messageDto: MessageRequest,
-  ): Promise<Message> {
+  ): Promise<ThreadMessage> {
     const message = await operations.addMessage(this.db, {
       threadId,
       role: messageDto.role,
-      content: messageDto.message,
+      content: convertToCompletionArray(messageDto.content),
       componentDecision: messageDto.component ?? undefined,
       metadata: messageDto.metadata,
       actionType: messageDto.actionType ?? undefined,
@@ -79,20 +80,20 @@ export class ThreadsService {
     return {
       id: message.id,
       role: message.role,
-      content: message.content as string,
+      content: convertToCompletionArray(message.content),
       metadata: message.metadata ?? undefined,
       component: message.componentDecision ?? undefined,
       actionType: message.actionType ?? undefined,
     };
   }
 
-  async getMessages(threadId: string): Promise<Message[]> {
+  async getMessages(threadId: string): Promise<ThreadMessage[]> {
     const messages = await operations.getMessages(this.db, threadId);
     return messages.map(
-      (message): Message => ({
+      (message): ThreadMessage => ({
         id: message.id,
         role: message.role,
-        content: message.content as string,
+        content: convertToCompletionArray(message.content),
         metadata: message.metadata ?? undefined,
         component: message.componentDecision ?? undefined,
         actionType: message.actionType ?? undefined,
@@ -107,4 +108,12 @@ export class ThreadsService {
   async ensureThreadByProjectId(threadId: string, projectId: string) {
     await operations.ensureThreadByProjectId(this.db, threadId, projectId);
   }
+}
+function convertToCompletionArray(
+  content: string | ChatCompletionContentPart[],
+): ChatCompletionContentPart[] {
+  if (!Array.isArray(content)) {
+    return [{ type: 'text', text: content }];
+  }
+  return content;
 }
