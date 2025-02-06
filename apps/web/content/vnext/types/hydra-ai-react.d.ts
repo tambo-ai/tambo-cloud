@@ -7,20 +7,76 @@ declare module "hydra-ai-react" {
   // ===============================
 
   /**
-   * Hook for state that Hydra should know about
-   * Handles both user updates and streaming updates from Hydra
+   * Hook for state that Hydra should know about.
+   * This hook automatically connects to the current message and thread context when used within a Hydra component.
+   * State is automatically persisted and synchronized across the thread.
+   *
+   * @example
+   * ```tsx
+   * // Within a Hydra component (automatically receives threadId and messageId)
+   * const { value, setValue } = useHydraState<{
+   *   content: string;
+   *   isEditing: boolean;
+   * }>();
+   * ```
+   *
+   * The hook automatically:
+   * - Connects to the current message context
+   * - Persists state changes
+   * - Syncs state across thread updates
+   * - Handles component state initialization
+   *
+   * @template T - The type of state to manage
+   * @returns {Object} State management object
+   * @property {T} value - The current state value
+   * @property {(value: T) => void} setValue - Function to update the state
+   * @property {boolean} isStreaming - Whether the state is currently streaming
+   * @property {Partial<T>} [partial] - Partial updates during streaming
+   * @property {string[]} [activePaths] - Active paths during streaming
+   * @property {() => void} [abort] - Function to abort streaming
    */
   export function useHydraState<T>(): {
-    // Complete state
     value: T;
     setValue: (value: T) => void;
-
-    // Streaming
     isStreaming: boolean;
     partial?: Partial<T>;
     activePaths?: string[];
     abort?: () => void;
   };
+
+  // ===============================
+  // Component Types
+  // ===============================
+
+  /**
+   * Props injected by the Hydra wrapper into components.
+   * These props are automatically provided to any component rendered through the Hydra system.
+   * Components using useHydraState will automatically have access to this context.
+   *
+   * @property {string} threadId - Unique thread identifier, automatically provided
+   * @property {string} messageId - Unique message identifier, automatically provided
+   */
+  export interface HydraComponentInjectedProps {
+    threadId: string;
+    messageId: string;
+  }
+
+  /**
+   * Component definition with schema.
+   * Components defined in the registry automatically receive thread and message context,
+   * enabling hooks like useHydraState to work without explicit configuration.
+   *
+   * @property {ComponentType<any>} component - The React component to render
+   * @property {z.ZodSchema} propsSchema - Schema for validating props and state
+   * @property {string} [description] - Optional description for AI context
+   * @property {string[]} [associatedTools] - Optional tools this component can use
+   */
+  export interface HydraComponentDefinition {
+    component: ComponentType<any>;
+    propsSchema: z.ZodSchema;
+    description?: string;
+    associatedTools?: string[];
+  }
 
   // ===============================
   // Component Types
@@ -85,6 +141,18 @@ declare module "hydra-ai-react" {
     message: string;
     isLoading: boolean;
     isThinking?: boolean;
+  }
+
+  /**
+   * Validation state for streaming and data validation
+   * @property completedPaths - Array of paths that have been validated
+   * @property errors - Map of validation errors by path
+   * @property isComplete - Whether all paths have been validated
+   */
+  export interface ValidationState {
+    completedPaths: string[];
+    errors: Record<string, string>;
+    isComplete: boolean;
   }
 
   // ===============================
@@ -248,16 +316,6 @@ declare module "hydra-ai-react" {
     components: Record<string, HydraComponentDefinition>;
   }
 
-  /**
-   * Props injected by the Hydra wrapper into components
-   * @property threadId - Unique thread identifier
-   * @property messageId - Unique message identifier
-   */
-  export interface HydraComponentInjectedProps {
-    threadId: string;
-    messageId: string;
-  }
-
   // ===============================
   // Configuration Types
   //  System initialization
@@ -270,12 +328,23 @@ declare module "hydra-ai-react" {
    * @property toolRegistry - Tool registry instance
    * @property componentRegistry - Component registry instance
    * @property personality - AI personality configuration
+   * @template TTools - Type of tool definitions
+   * @template TComponents - Type of component definitions
    */
-  export interface HydraConfig {
+  export interface HydraConfig<
+    TTools extends Record<string, HydraToolDefinition<z.ZodSchema>> = Record<
+      string,
+      HydraToolDefinition<z.ZodSchema>
+    >,
+    TComponents extends Record<string, HydraComponentDefinition> = Record<
+      string,
+      HydraComponentDefinition
+    >,
+  > {
     apiKey: string;
     debug?: boolean;
-    toolRegistry: HydraToolRegistry<any>;
-    componentRegistry: HydraComponentRegistry<any>;
+    toolRegistry: HydraToolRegistry<TTools>;
+    componentRegistry: HydraComponentRegistry<TComponents>;
     personality?: HydraPersonality;
   }
 
@@ -283,14 +352,23 @@ declare module "hydra-ai-react" {
    * Provider component props
    * @property config - Hydra configuration
    * @property children - React nodes to render
+   * @template TTools - Type of tool definitions
+   * @template TComponents - Type of component definitions
    */
-  export interface HydraProviderProps
-    extends Readonly<{
-      config: HydraConfig;
+  export interface HydraProviderProps<
+    TTools extends Record<string, HydraToolDefinition<z.ZodSchema>>,
+    TComponents extends Record<string, HydraComponentDefinition>,
+  > extends Readonly<{
+      config: HydraConfig<TTools, TComponents>;
       children: ReactNode;
     }> {}
 
-  export const HydraProvider: React.FC<HydraProviderProps>;
+  export const HydraProvider: <
+    TTools extends Record<string, HydraToolDefinition<z.ZodSchema>>,
+    TComponents extends Record<string, HydraComponentDefinition>,
+  >(
+    props: HydraProviderProps<TTools, TComponents>,
+  ) => React.ReactElement;
 
   // ===============================
   // Unified Context & Hooks System
@@ -299,7 +377,7 @@ declare module "hydra-ai-react" {
 
   /**
    * Main context interface
-   *  Provides access to all  functionality
+   *  Provides access to all functionality
    * @property config - Hydra configuration
    * @property personality - AI personality configuration
    * @property updateConfig - Function to update configuration
@@ -307,9 +385,14 @@ declare module "hydra-ai-react" {
    * @property messages - Message management
    * @property suggestions - Suggestion management
    * @property profiles - Profile management
+   * @template TTools - Type of tool definitions
+   * @template TComponents - Type of component definitions
    */
-  export interface HydraContext {
-    config: HydraConfig;
+  export interface HydraContext<
+    TTools extends Record<string, HydraToolDefinition<z.ZodSchema>>,
+    TComponents extends Record<string, HydraComponentDefinition>,
+  > {
+    config: HydraConfig<TTools, TComponents>;
     personality?: HydraPersonality;
 
     // Core Operations
@@ -401,8 +484,19 @@ declare module "hydra-ai-react" {
   /**
    * Main hook for accessing all Hydra functionality
    * @returns Hydra context with all functionality
+   * @template TTools - Type of tool definitions
+   * @template TComponents - Type of component definitions
    */
-  export function useHydraContext(): HydraContext;
+  export function useHydraContext<
+    TTools extends Record<string, HydraToolDefinition<z.ZodSchema>> = Record<
+      string,
+      HydraToolDefinition<z.ZodSchema>
+    >,
+    TComponents extends Record<string, HydraComponentDefinition> = Record<
+      string,
+      HydraComponentDefinition
+    >,
+  >(): HydraContext<TTools, TComponents>;
 
   // Convenience hooks for common operations
   // Simplified access to specific features

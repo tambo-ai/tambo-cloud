@@ -70,7 +70,7 @@ This component works great for displaying data, but what if you need to add sort
 
 ### Adding State Management
 
-As your components become more interactive, you'll need to manage state. Hydra provides the `syncProp` pattern for this purpose. Let's enhance our data table with sorting and filtering:
+For interactive components, Hydra provides the `useHydraState` hook which automatically connects to the thread context. Let's enhance our data table with sorting and filtering:
 
 ```tsx title="Interactive Data Table"
 // Extend props with Hydra's injected props
@@ -78,9 +78,6 @@ interface InteractiveDataTableProps extends HydraComponentInjectedProps {
   data: unknown[];
   columns: string[];
   title?: string;
-  sortColumn?: string;
-  sortDirection?: "asc" | "desc";
-  filters?: Record<string, unknown>;
 }
 
 // Enhanced version with state management
@@ -88,24 +85,38 @@ const InteractiveDataTable = ({
   data,
   columns,
   title,
-  sortColumn,
-  sortDirection,
-  filters,
-  syncProp,
-  threadId,
-  messageId,
+  ...injectedProps // Hydra automatically injects threadId and messageId
 }: Readonly<InteractiveDataTableProps>) => {
+  const { value, setValue } = useHydraState<{
+    sortColumn?: string;
+    sortDirection?: "asc" | "desc";
+    filters: Record<string, unknown>;
+  }>();
+
+  // Initialize state if needed
+  const currentFilters = value?.filters ?? {};
+  const currentSort = {
+    column: value?.sortColumn,
+    direction: value?.sortDirection,
+  };
+
   // Handle sorting
   const handleSort = (column: string) => {
-    syncProp("sortColumn", column);
-    syncProp("sortDirection", sortDirection === "asc" ? "desc" : "asc");
+    setValue({
+      ...value,
+      sortColumn: column,
+      sortDirection: currentSort.direction === "asc" ? "desc" : "asc",
+    });
   };
 
   // Handle filtering
-  const handleFilter = (column: string, value: unknown) => {
-    syncProp("filters", {
-      ...filters,
-      [column]: value,
+  const handleFilter = (column: string, filterValue: unknown) => {
+    setValue({
+      ...value,
+      filters: {
+        ...currentFilters,
+        [column]: filterValue,
+      },
     });
   };
 
@@ -120,7 +131,7 @@ const InteractiveDataTable = ({
             key={`filter-${column}`}
             placeholder={`Filter ${column}...`}
             onChange={(e) => handleFilter(column, e.target.value)}
-            value={filters?.[column] || ""}
+            value={currentFilters[column] || ""}
           />
         ))}
       </div>
@@ -132,7 +143,11 @@ const InteractiveDataTable = ({
               <th
                 key={column}
                 onClick={() => handleSort(column)}
-                className={sortColumn === column ? `sort-${sortDirection}` : ""}
+                className={
+                  currentSort.column === column
+                    ? `sort-${currentSort.direction}`
+                    : ""
+                }
               >
                 {column}
               </th>
@@ -153,16 +168,13 @@ const InteractiveDataTable = ({
   );
 };
 
-// Updated definition with state management
+// Updated definition with state schema
 const InteractiveDataTableDefinition: HydraComponentDefinition = {
   component: InteractiveDataTable,
   propsSchema: z.object({
     data: z.array(z.unknown()),
     columns: z.array(z.string()),
     title: z.string().optional(),
-    sortColumn: z.string().optional(),
-    sortDirection: z.enum(["asc", "desc"]).optional(),
-    filters: z.record(z.unknown()).optional(),
   }),
   description: "Interactive data table with sorting and filtering",
 };
@@ -170,9 +182,10 @@ const InteractiveDataTableDefinition: HydraComponentDefinition = {
 
 The key differences in the interactive version:
 
-1. Props extend `HydraComponentInjectedProps` to get `syncProp`
-2. Added state-related props (`sortColumn`, `sortDirection`, `filters`)
-3. Added user interaction handlers that use `syncProp`
+1. Props extend `HydraComponentInjectedProps` for automatic context
+2. Uses `useHydraState` for state management
+3. State is automatically persisted and synced
+4. No manual context or state management needed
 
 ## Real-World Examples
 
@@ -216,20 +229,31 @@ Interactive version with validation and submission:
 const InteractiveForm: HydraComponentDefinition = {
   component: ({
     fields,
-    values,
-    errors,
-    syncProp,
+    ...injectedProps
   }: HydraComponentInjectedProps & {
     fields: Array<{ name: string; type: string }>;
-    values: Record<string, unknown>;
-    errors?: Record<string, string>;
   }) => {
-    const handleChange = (name: string, value: unknown) => {
-      syncProp("values", { ...values, [name]: value });
+    const { value, setValue } = useHydraState<{
+      values: Record<string, unknown>;
+      errors?: Record<string, string>;
+      submitted?: boolean;
+    }>();
+
+    const currentValues = value?.values ?? {};
+    const currentErrors = value?.errors;
+
+    const handleChange = (name: string, fieldValue: unknown) => {
+      setValue({
+        ...value,
+        values: { ...currentValues, [name]: fieldValue },
+      });
     };
 
     const handleSubmit = () => {
-      syncProp("submitted", true, { action: "submit" });
+      setValue({
+        ...value,
+        submitted: true,
+      });
     };
 
     return (
@@ -244,11 +268,11 @@ const InteractiveForm: HydraComponentDefinition = {
             <label>{field.name}</label>
             <input
               type={field.type}
-              value={values[field.name] || ""}
+              value={currentValues[field.name] || ""}
               onChange={(e) => handleChange(field.name, e.target.value)}
             />
-            {errors?.[field.name] && (
-              <span className="error">{errors[field.name]}</span>
+            {currentErrors?.[field.name] && (
+              <span className="error">{currentErrors[field.name]}</span>
             )}
           </div>
         ))}
@@ -263,9 +287,6 @@ const InteractiveForm: HydraComponentDefinition = {
         type: z.string(),
       })
     ),
-    values: z.record(z.unknown()),
-    errors: z.record(z.string()).optional(),
-    submitted: z.boolean().optional(),
   }),
   description: "Interactive form with validation and submission",
 };
@@ -297,9 +318,9 @@ Use interactive components when:
 
 2. **State Management**
 
-   - Use `syncProp` for all state updates
-   - Include metadata when it helps the AI understand the change
+   - Use `useHydraState` for all interactive state
    - Keep state minimal and necessary
+   - Let Hydra handle persistence and synchronization
 
 3. **Type Safety**
 
@@ -329,11 +350,6 @@ interface HydraComponentDefinition {
 
 ```tsx title="Interactive Component Interface"
 interface HydraComponentInjectedProps {
-  syncProp: <T>(
-    propName: keyof T,
-    value: T[keyof T],
-    metadata?: Record<string, unknown>
-  ) => void;
   threadId: string;
   messageId: string;
 }
