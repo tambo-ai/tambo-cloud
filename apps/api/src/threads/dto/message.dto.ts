@@ -1,9 +1,4 @@
-import {
-  ActionType,
-  ChatCompletionContentPart as ChatCompletionContentPartInterface,
-  ContentPartType,
-  MessageRole,
-} from '@use-hydra-ai/core';
+import { ActionType, ContentPartType, MessageRole } from '@use-hydra-ai/core';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 import { type OpenAI } from 'openai';
 import { ComponentDecision } from '../../components/dto/component-decision.dto';
@@ -85,7 +80,7 @@ export class ChatCompletionContentPart {
 /** Internal type to make sure that subclasses are aligned on types */
 interface InternalThreadMessage {
   role: MessageRole;
-  content: ChatCompletionContentPartInterface[];
+  content: ChatCompletionContentPart[];
   metadata?: Record<string, unknown>;
   component?: ComponentDecision;
   actionType?: ActionType;
@@ -96,7 +91,7 @@ export class ThreadMessage implements InternalThreadMessage {
   id!: string;
   @IsEnum(MessageRole)
   role!: MessageRole;
-  content!: ChatCompletionContentPartInterface[];
+  content!: ChatCompletionContentPart[];
   metadata?: Record<string, unknown>;
   component?: ComponentDecision;
   @IsEnum(ActionType)
@@ -111,7 +106,7 @@ export class MessageRequest implements InternalThreadMessage {
   role!: MessageRole;
 
   @IsNotEmpty()
-  content!: ChatCompletionContentPartInterface[];
+  content!: ChatCompletionContentPart[];
 
   @IsOptional()
   metadata?: Record<string, unknown>;

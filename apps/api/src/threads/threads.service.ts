@@ -1,8 +1,15 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ChatCompletionContentPart as ChatCompletionContentPartInterface,
+  ContentPartType,
+} from '@use-hydra-ai/core';
 import type { HydraDatabase } from '@use-hydra-ai/db';
 import { operations } from '@use-hydra-ai/db';
-import { ChatCompletionContentPart } from 'openai/resources';
-import { MessageRequest, ThreadMessage } from './dto/message.dto';
+import {
+  ChatCompletionContentPart,
+  MessageRequest,
+  ThreadMessage,
+} from './dto/message.dto';
 import { Thread, ThreadRequest } from './dto/thread.dto';
 
 @Injectable()
@@ -72,7 +79,7 @@ export class ThreadsService {
     const message = await operations.addMessage(this.db, {
       threadId,
       role: messageDto.role,
-      content: convertToCompletionArray(messageDto.content),
+      content: convertContentDtoToContentPart(messageDto.content),
       componentDecision: messageDto.component ?? undefined,
       metadata: messageDto.metadata,
       actionType: messageDto.actionType ?? undefined,
@@ -80,7 +87,7 @@ export class ThreadsService {
     return {
       id: message.id,
       role: message.role,
-      content: convertToCompletionArray(message.content),
+      content: convertContentPartToDto(message.content),
       metadata: message.metadata ?? undefined,
       component: message.componentDecision ?? undefined,
       actionType: message.actionType ?? undefined,
@@ -93,7 +100,7 @@ export class ThreadsService {
       (message): ThreadMessage => ({
         id: message.id,
         role: message.role,
-        content: convertToCompletionArray(message.content),
+        content: convertContentPartToDto(message.content),
         metadata: message.metadata ?? undefined,
         component: message.componentDecision ?? undefined,
         actionType: message.actionType ?? undefined,
@@ -109,11 +116,70 @@ export class ThreadsService {
     await operations.ensureThreadByProjectId(this.db, threadId, projectId);
   }
 }
-function convertToCompletionArray(
+
+function convertContentDtoToContentPart(
   content: string | ChatCompletionContentPart[],
-): ChatCompletionContentPart[] {
+): ChatCompletionContentPartInterface[] {
   if (!Array.isArray(content)) {
-    return [{ type: 'text', text: content }];
+    return [{ type: ContentPartType.Text, text: content }];
   }
-  return content;
+  return content.map((part): ChatCompletionContentPartInterface => {
+    switch (part.type) {
+      case ContentPartType.Text:
+        return {
+          type: ContentPartType.Text,
+          text: part.text ?? '',
+        };
+      case ContentPartType.ImageUrl:
+        return {
+          type: ContentPartType.ImageUrl,
+          image_url: part.image_url ?? {
+            url: '',
+            detail: 'auto',
+          },
+        };
+      case ContentPartType.InputAudio:
+        return {
+          type: ContentPartType.InputAudio,
+          input_audio: part.input_audio ?? {
+            data: '',
+            format: 'wav',
+          },
+        };
+      default:
+        throw new Error(`Unknown content part type: ${part.type}`);
+    }
+  });
+}
+
+function convertContentPartToDto(
+  part: ChatCompletionContentPartInterface[] | string,
+): ChatCompletionContentPart[] {
+  if (typeof part === 'string') {
+    return [{ type: ContentPartType.Text, text: part }];
+  }
+  return part.map((part): ChatCompletionContentPart => {
+    switch (part.type) {
+      case ContentPartType.Text:
+        return { type: ContentPartType.Text, text: part.text ?? '' };
+      case ContentPartType.ImageUrl:
+        return {
+          type: ContentPartType.ImageUrl,
+          image_url: part.image_url ?? {
+            url: '',
+            detail: 'auto',
+          },
+        };
+      case ContentPartType.InputAudio:
+        return {
+          type: ContentPartType.InputAudio,
+          input_audio: part.input_audio ?? {
+            data: '',
+            format: 'wav',
+          },
+        };
+      default:
+        throw new Error(`Unknown content part type: ${part.type}`);
+    }
+  });
 }

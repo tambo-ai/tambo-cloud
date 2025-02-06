@@ -8,7 +8,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiSecurity } from '@nestjs/swagger';
-import { ActionType, ComponentDecision, MessageRole } from '@use-hydra-ai/core';
+import {
+  ActionType,
+  ComponentDecision,
+  ContentPartType,
+  MessageRole,
+} from '@use-hydra-ai/core';
 import { HydraBackend } from '@use-hydra-ai/hydra-ai-server';
 import { decryptProviderKey } from '../common/key.utils';
 import { CorrelationLoggerService } from '../common/services/logger.service';
@@ -74,7 +79,9 @@ export class ComponentsController {
     );
     await this.threadsService.addMessage(resolvedThreadId, {
       role: MessageRole.User,
-      content: [{ type: 'text', text: lastMessageEntry?.message ?? '' }],
+      content: [
+        { type: ContentPartType.Text, text: lastMessageEntry?.message ?? '' },
+      ],
     });
 
     const component = await hydraBackend.generateComponent(
@@ -96,7 +103,7 @@ export class ComponentsController {
   ) {
     await this.threadsService.addMessage(threadId, {
       role: MessageRole.Hydra,
-      content: [{ type: 'text', text: component.message }],
+      content: [{ type: ContentPartType.Text, text: component.message }],
       // HACK: for now just jam the full component decision into the content
       component: component,
       actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
@@ -145,7 +152,9 @@ export class ComponentsController {
     );
     await this.threadsService.addMessage(resolvedThreadId, {
       role: MessageRole.Tool,
-      content: [{ type: 'text', text: JSON.stringify(toolResponse) }],
+      content: [
+        { type: ContentPartType.Text, text: JSON.stringify(toolResponse) },
+      ],
       actionType: ActionType.ToolResponse,
     });
 
