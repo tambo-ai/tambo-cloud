@@ -72,7 +72,7 @@ export class ThreadsService {
       threadId,
       role: messageDto.role,
       content: messageDto.message,
-      component: messageDto.component ?? undefined,
+      componentDecision: messageDto.component ?? undefined,
       metadata: messageDto.metadata,
       actionType: messageDto.actionType ?? undefined,
     });
