@@ -50,9 +50,6 @@ function ThreadWithSuggestions() {
           title={suggestion.detailedSuggestion} // Show full description on hover
         >
           {suggestion.title}
-          {suggestion.suggestedTools?.length > 0 && (
-            <small>Using: {suggestion.suggestedTools.join(", ")}</small>
-          )}
         </button>
       ))}
     </div>
@@ -77,9 +74,6 @@ function SuggestionOptions({ suggestions, onAccept }) {
           title={suggestion.detailedSuggestion}
         >
           {suggestion.title}
-          {suggestion.suggestedTools?.length > 0 && (
-            <small>Using: {suggestion.suggestedTools.join(", ")}</small>
-          )}
         </button>
       ))}
     </div>
@@ -101,9 +95,6 @@ function SuggestionMenu({ suggestions, onAccept }) {
           title={suggestion.detailedSuggestion}
         >
           <span>{suggestion.title}</span>
-          {suggestion.suggestedTools?.length > 0 && (
-            <small>Using: {suggestion.suggestedTools.join(", ")}</small>
-          )}
         </button>
       ))}
     </div>
