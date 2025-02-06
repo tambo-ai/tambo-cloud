@@ -1,5 +1,6 @@
 import type { ComponentDecision } from "@use-hydra-ai/hydra-ai-server";
 import { and, eq } from "drizzle-orm";
+import { ActionType } from "../ActionType";
 import { MessageRole } from "../MessageRole";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
@@ -148,6 +149,7 @@ export async function addMessage(
     content: MessageContent;
     component?: ComponentDecision;
     metadata?: MessageMetadata;
+    actionType?: ActionType;
   },
 ) {
   const [message] = await db

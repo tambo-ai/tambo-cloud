@@ -1,4 +1,4 @@
-import { MessageRole } from '@use-hydra-ai/db';
+import { ActionType, MessageRole } from '@use-hydra-ai/db';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 import { ComponentDecision } from '../../components/dto/component-decision.dto';
 
@@ -14,6 +14,9 @@ export class MessageRequest {
 
   @IsOptional()
   component?: ComponentDecision;
+
+  @IsOptional()
+  actionType?: ActionType;
 }
 
 export class Message {
@@ -22,4 +25,5 @@ export class Message {
   content!: string;
   metadata?: Record<string, unknown>;
   component?: ComponentDecision;
+  actionType?: ActionType;
 }
