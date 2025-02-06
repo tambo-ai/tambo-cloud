@@ -16,14 +16,17 @@ export class MessageRequest {
   component?: ComponentDecision;
 
   @IsOptional()
+  @IsEnum(ActionType)
   actionType?: ActionType;
 }
 
 export class Message {
   id!: string;
+  @IsEnum(MessageRole)
   role!: MessageRole;
   content!: string;
   metadata?: Record<string, unknown>;
   component?: ComponentDecision;
+  @IsEnum(ActionType)
   actionType?: ActionType;
 }
