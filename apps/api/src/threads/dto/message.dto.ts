@@ -63,18 +63,36 @@ export class ChatCompletionSystemMessage
   content!: ChatCompletionSystemMessageParam['content'];
   name?: ChatCompletionSystemMessageParam['name'];
 }
+
+export enum AudioFormat {
+  WAV = 'wav',
+  MP3 = 'mp3',
+}
+
+export class InputAudio {
+  data!: string;
+  @IsEnum(AudioFormat)
+  format!: AudioFormat;
+}
+
+export enum AudioDetail {
+  Auto = 'auto',
+  High = 'high',
+  Low = 'low',
+}
+
+export class ImageUrl {
+  url!: string;
+  @IsEnum(AudioDetail)
+  detail?: AudioDetail;
+}
+
 export class ChatCompletionContentPart {
   @IsEnum(ContentPartType)
   type!: ContentPartType;
   text?: string;
-  image_url?: {
-    url: string;
-    detail?: 'auto' | 'high' | 'low';
-  };
-  input_audio?: {
-    data: string;
-    format: 'wav' | 'mp3';
-  };
+  image_url?: ImageUrl;
+  input_audio?: InputAudio;
 }
 
 /** Internal type to make sure that subclasses are aligned on types */

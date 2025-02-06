@@ -6,6 +6,8 @@ import {
 import type { HydraDatabase } from '@use-hydra-ai/db';
 import { operations } from '@use-hydra-ai/db';
 import {
+  AudioDetail,
+  AudioFormat,
   ChatCompletionContentPart,
   MessageRequest,
   ThreadMessage,
@@ -165,18 +167,22 @@ function convertContentPartToDto(
       case ContentPartType.ImageUrl:
         return {
           type: ContentPartType.ImageUrl,
-          image_url: part.image_url ?? {
-            url: '',
-            detail: 'auto',
-          },
+          image_url: part.image_url
+            ? {
+                url: part.image_url.url,
+                detail: part.image_url.detail as AudioDetail,
+              }
+            : undefined,
         };
       case ContentPartType.InputAudio:
         return {
           type: ContentPartType.InputAudio,
-          input_audio: part.input_audio ?? {
-            data: '',
-            format: 'wav',
-          },
+          input_audio: part.input_audio
+            ? {
+                data: part.input_audio.data,
+                format: part.input_audio.format as AudioFormat,
+              }
+            : undefined,
         };
       default:
         throw new Error(`Unknown content part type: ${part.type}`);
