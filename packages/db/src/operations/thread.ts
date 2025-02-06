@@ -143,6 +143,7 @@ export async function addMessage(
     content,
     component,
     metadata,
+    actionType,
   }: {
     threadId: string;
     role: MessageRole;
@@ -160,6 +161,7 @@ export async function addMessage(
       content,
       metadata,
       componentDecision: component,
+      actionType,
     })
     .returning();
 

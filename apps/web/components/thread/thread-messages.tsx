@@ -32,6 +32,11 @@ export function ThreadMessages({ thread }: Readonly<ThreadMessagesProps>) {
                 `${message.content}`
               )}
             </div>
+            {message.actionType && (
+              <p className="text-xs text-muted-foreground">
+                Action Type: {message.actionType}
+              </p>
+            )}
             {message.componentDecision && (
               <div className="mt-2 text-sm text-muted-foreground">
                 <div>
