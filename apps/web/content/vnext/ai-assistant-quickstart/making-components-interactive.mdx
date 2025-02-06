@@ -7,69 +7,115 @@ Now that we have our basic note and email components, let's make them interactiv
 
 ## Creating Interactive Components
 
-```tsx title="src/components/InteractiveNote.tsx"
-import React, { useState } from "react";
-import type { CustomerNoteProps } from "../schemas/crm-components";
+First, let's define our types:
 
-export const InteractiveNote = ({
+```tsx title="src/schemas/crm-components.ts"
+import { z } from "zod";
+
+export const customerNoteSchema = z.object({
+  title: z.string(),
+  content: z.string(),
+  associatedLeadId: z.string(),
+});
+
+export const emailPreviewSchema = z.object({
+  to: z.string(),
+  subject: z.string(),
+  content: z.string(),
+});
+
+export type CustomerNoteProps = z.infer<typeof customerNoteSchema>;
+export type EmailPreviewProps = z.infer<typeof emailPreviewSchema>;
+```
+
+Now let's create our interactive components:
+
+```tsx title="src/components/InteractiveNote.tsx"
+import React from "react";
+import type { CustomerNoteProps } from "../schemas/crm-components";
+import { useHydraState } from "hydra-ai-react";
+
+interface InteractiveNoteProps extends Readonly<CustomerNoteProps> {
+  threadId: string;
+  messageId: string;
+}
+
+export const InteractiveNote: React.FC<InteractiveNoteProps> = ({
   title,
-  content,
+  content: initialContent,
   associatedLeadId,
-  syncProp,
-}: CustomerNoteProps & { syncProp: (value: string) => void }) => {
-  const [isEditing, setIsEditing] = useState(false);
+}) => {
+  const { value, setValue } = useHydraState({
+    content: initialContent,
+    isEditing: false,
+  });
 
   return (
     <div>
       <div>
         <span>Lead ID: {associatedLeadId}</span>
         <h3>{title}</h3>
-        <button onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? "Cancel" : "Edit"}
+        <button
+          onClick={() => setValue({ ...value, isEditing: !value.isEditing })}
+        >
+          {value.isEditing ? "Cancel" : "Edit"}
         </button>
       </div>
-      {isEditing ? (
+      {value.isEditing ? (
         <div>
           <textarea
-            value={content}
-            onChange={(e) => syncProp(e.target.value)}
+            value={value.content}
+            onChange={(e) => setValue({ ...value, content: e.target.value })}
           />
-          <button onClick={() => setIsEditing(false)}>Save</button>
+          <button onClick={() => setValue({ ...value, isEditing: false })}>
+            Save
+          </button>
         </div>
       ) : (
-        <div>{content}</div>
+        <div>{value.content}</div>
       )}
     </div>
   );
 };
 
-export const InteractiveEmail = ({
+interface InteractiveEmailProps extends Readonly<EmailPreviewProps> {
+  threadId: string;
+  messageId: string;
+}
+
+export const InteractiveEmail: React.FC<InteractiveEmailProps> = ({
   to,
   subject,
-  content,
-  syncProp,
-}: EmailPreviewProps & { syncProp: (value: string) => void }) => {
-  const [isEditing, setIsEditing] = useState(false);
+  content: initialContent,
+}) => {
+  const { value, setValue } = useHydraState({
+    content: initialContent,
+    isEditing: false,
+  });
 
   return (
     <div>
       <div>
         <span>To: {to}</span>
         <h3>{subject}</h3>
-        <button onClick={() => setIsEditing(!isEditing)}>
-          {isEditing ? "Cancel" : "Edit"}
+        <button
+          onClick={() => setValue({ ...value, isEditing: !value.isEditing })}
+        >
+          {value.isEditing ? "Cancel" : "Edit"}
         </button>
       </div>
-      {isEditing ? (
+      {value.isEditing ? (
         <div>
           <textarea
-            value={content}
-            onChange={(e) => syncProp(e.target.value)}
+            value={value.content}
+            onChange={(e) => setValue({ ...value, content: e.target.value })}
           />
-          <button onClick={() => setIsEditing(false)}>Done</button>
+          <button onClick={() => setValue({ ...value, isEditing: false })}>
+            Done
+          </button>
         </div>
       ) : (
-        <div>{content}</div>
+        <div>{value.content}</div>
       )}
     </div>
   );
@@ -81,8 +127,11 @@ export const InteractiveEmail = ({
 Register the components in your Hydra configuration:
 
 ```tsx title="src/config/hydraConfig.ts"
-import { InteractiveNote } from "../components/InteractiveNote";
-import { InteractiveEmail } from "../components/InteractiveEmail";
+import { createHydraComponentRegistry } from "hydra-ai-react";
+import {
+  InteractiveNote,
+  InteractiveEmail,
+} from "../components/InteractiveNote";
 import {
   customerNoteSchema,
   emailPreviewSchema,
@@ -107,6 +156,8 @@ export const componentRegistry = createHydraComponentRegistry({
 The components work automatically in the message thread:
 
 ```tsx title="src/components/CrmChatThread.tsx"
+import { useHydraThread } from "hydra-ai-react";
+
 export const CrmChatThread = () => {
   const { messages } = useHydraThread("thread-id");
 
@@ -118,10 +169,8 @@ export const CrmChatThread = () => {
           {message.component && (
             <message.component.Component
               {...message.component.props}
-              syncProp={(value) => {
-                // Update content in the message thread
-                message.component.props.content = value;
-              }}
+              threadId={message.id}
+              messageId={message.id}
             />
           )}
         </div>
@@ -131,17 +180,24 @@ export const CrmChatThread = () => {
 };
 ```
 
-<Callout>
-  By keeping state in the message thread and components simple, we get automatic
-  state persistence and synchronization.
-</Callout>
-
 What's happening here:
 
-- Components only manage UI state (isEditing)
-- Content state lives in the message thread
-- Simple syncProp function updates content directly
-- No need for complex state management
-- Components are pure UI with minimal logic
+- Components use `useHydraState` for automatic state management
+- State updates are synced with the AI backend automatically
+- Props are properly typed with `Readonly<T>`
 
-<Callout title="Next Steps">We'll see how to add advnaced features.</Callout>
+<Callout>
+  The Hydra framework manages state synchronization between components and the
+  AI backend through useHydraState. All state updates are automatically synced
+  with no additional code needed.
+</Callout>
+
+<Cards>
+  <Card title="Generative UX" href="/vnext/overview/generating-ux">
+    <p>Learn how to use Hydra to generate user experiences.</p>
+  </Card>
+  <Card title="Streaming" href="/vnext/overview/streaming">
+    <p>Learn how to use Hydra to stream data to the component.</p>
+  </Card>
+</Cards>
+<Callout title="Next Steps">We'll see how to add advanced features.</Callout>
