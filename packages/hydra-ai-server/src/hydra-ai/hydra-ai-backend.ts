@@ -1,6 +1,6 @@
+import { ComponentDecision } from "@use-hydra-ai/core";
 import AIService from "./ai-service";
 import { ChatMessage } from "./model/chat-message";
-import { ComponentDecision } from "./model/component-choice";
 import {
   AvailableComponent,
   AvailableComponents,
