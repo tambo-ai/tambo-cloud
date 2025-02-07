@@ -2,14 +2,14 @@ import { ComponentDecision } from "@use-hydra-ai/core";
 import { InputContext } from "../../model/input-context";
 import { LLMClient } from "../llm/llm-client";
 import { chatHistoryToParams } from "../llm/utils";
-import { PromptService } from "../prompt/prompt-service";
-import { ComponentHydrationService } from "./component-hydration-service";
+import {
+  generateAvailableComponentsPrompt,
+  generateDecisionPrompt,
+  generateNoComponentPrompt,
+} from "../prompt/prompt-service";
+import { hydrateComponent } from "./component-hydration-service";
 export class ComponentDecisionService {
-  constructor(
-    private llmClient: LLMClient,
-    private promptService: PromptService,
-    private hydrationService: ComponentHydrationService,
-  ) {}
+  constructor(private llmClient: LLMClient) {}
 
   async decideComponent(
     context: InputContext,
@@ -18,12 +18,12 @@ export class ComponentDecisionService {
     const decisionResponse = await this.llmClient.complete([
       {
         role: "system",
-        content: this.promptService.generateDecisionPrompt(),
+        content: generateDecisionPrompt(),
       },
       {
         role: "user",
         content: `<availableComponents>
-        ${this.promptService.generateAvailableComponentsPrompt(context.availableComponents)}
+        ${generateAvailableComponentsPrompt(context.availableComponents)}
         </availableComponents>`,
       },
       ...chatHistoryToParams(context.messageHistory),
@@ -44,7 +44,8 @@ export class ComponentDecisionService {
       if (!component) {
         throw new Error(`Component ${componentName} not found`);
       }
-      return this.hydrationService.hydrateComponent(
+      return hydrateComponent(
+        this.llmClient,
         context.messageHistory,
         component,
         undefined,
@@ -68,7 +69,7 @@ export class ComponentDecisionService {
     const noComponentResponse = await this.llmClient.complete([
       {
         role: "system",
-        content: this.promptService.generateNoComponentPrompt(
+        content: generateNoComponentPrompt(
           reasoning,
           context.availableComponents,
         ),
