@@ -59,6 +59,36 @@ registerTool(myTool1); // register a single tool
 registerTools([myTool1, myTool2]); // register multiple tools at once
 ```
 
+## Associating Tools with Components
+
+Once Hydra has decided on a component to use in response to a message, it will use the registered tools if it has decided that extra external data is needed to fill the component properly. To tell Hydra which tools to consider for a given component, we need to associate the tools with the component. A tool can be associated with multiple components.
+
+During component definition:
+
+```tsx
+const myWeatherTool: HydraTool = {
+  // tool definition
+};
+
+hydraClient.registerComponent({
+  name: "MyWeatherComponent",
+  //other component definition fields...
+  associatedTools: [myWeatherTool],
+});
+```
+
+Using React Hooks:
+
+```tsx
+const { addToolAssociation } = useHydra();
+
+const myTool1: HydraTool = {
+  //tool definition
+};
+
+addToolAssociation("MyWeatherComponent", myTool1); // will fail if there is no registered component with the name 'MyWeatherComponent'
+```
+
 ## Core Concepts
 
 Tools in Hydra consist of three main parts:
