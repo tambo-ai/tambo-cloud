@@ -6,9 +6,9 @@ import {
 import type { HydraDatabase } from '@use-hydra-ai/db';
 import { operations } from '@use-hydra-ai/db';
 import {
-  AudioDetail,
   AudioFormat,
   ChatCompletionContentPart,
+  ImageDetail,
   MessageRequest,
   ThreadMessage,
 } from './dto/message.dto';
@@ -170,7 +170,7 @@ function convertContentPartToDto(
           image_url: part.image_url
             ? {
                 url: part.image_url.url,
-                detail: part.image_url.detail as AudioDetail,
+                detail: part.image_url.detail as ImageDetail,
               }
             : undefined,
         };

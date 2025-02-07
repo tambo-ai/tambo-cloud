@@ -79,9 +79,7 @@ export class ComponentsController {
     );
     await this.threadsService.addMessage(resolvedThreadId, {
       role: MessageRole.User,
-      content: [
-        { type: ContentPartType.Text, text: lastMessageEntry?.message ?? '' },
-      ],
+      content: [{ type: ContentPartType.Text, text: lastMessageEntry.message }],
     });
 
     const component = await hydraBackend.generateComponent(
@@ -150,11 +148,13 @@ export class ComponentsController {
       threadId,
       contextKey,
     );
+    const toolResponseString =
+      typeof toolResponse === 'string'
+        ? toolResponse
+        : JSON.stringify(toolResponse);
     await this.threadsService.addMessage(resolvedThreadId, {
       role: MessageRole.Tool,
-      content: [
-        { type: ContentPartType.Text, text: JSON.stringify(toolResponse) },
-      ],
+      content: [{ type: ContentPartType.Text, text: toolResponseString }],
       actionType: ActionType.ToolResponse,
     });
 

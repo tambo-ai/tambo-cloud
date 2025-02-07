@@ -2,67 +2,6 @@ import { ActionType, ContentPartType, MessageRole } from '@use-hydra-ai/core';
 import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 import { type OpenAI } from 'openai';
 import { ComponentDecision } from '../../components/dto/component-decision.dto';
-type ChatCompletionAssistantMessageParam = Omit<
-  OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam,
-  'role'
->;
-type ChatCompletionUserMessageParam = Omit<
-  OpenAI.Chat.Completions.ChatCompletionUserMessageParam,
-  'role'
->;
-
-type ChatCompletionToolMessageParam = Omit<
-  OpenAI.Chat.Completions.ChatCompletionToolMessageParam,
-  'role'
->;
-
-type ChatCompletionDeveloperMessageParam = Omit<
-  OpenAI.Chat.Completions.ChatCompletionDeveloperMessageParam,
-  'role'
->;
-
-type ChatCompletionSystemMessageParam = Omit<
-  OpenAI.Chat.Completions.ChatCompletionSystemMessageParam,
-  'role'
->;
-
-export class ChatCompletionAssistantMessage
-  implements Partial<ChatCompletionAssistantMessageParam>
-{
-  content!: ChatCompletionAssistantMessageParam['content'];
-  name?: ChatCompletionAssistantMessageParam['name'];
-  refusal?: ChatCompletionAssistantMessageParam['refusal'];
-  tool_calls?: ChatCompletionAssistantMessageParam['tool_calls'];
-  audio?: ChatCompletionAssistantMessageParam['audio'];
-}
-
-export class ChatCompletionUserMessage
-  implements Partial<ChatCompletionUserMessageParam>
-{
-  content!: ChatCompletionUserMessageParam['content'];
-  name?: ChatCompletionUserMessageParam['name'];
-}
-
-export class ChatCompletionToolMessage
-  implements Partial<ChatCompletionToolMessageParam>
-{
-  content!: ChatCompletionToolMessageParam['content'];
-  tool_call_id?: ChatCompletionToolMessageParam['tool_call_id'];
-}
-
-export class ChatCompletionDeveloperMessage
-  implements ChatCompletionDeveloperMessageParam
-{
-  content!: ChatCompletionDeveloperMessageParam['content'];
-  name?: ChatCompletionDeveloperMessageParam['name'];
-}
-
-export class ChatCompletionSystemMessage
-  implements ChatCompletionSystemMessageParam
-{
-  content!: ChatCompletionSystemMessageParam['content'];
-  name?: ChatCompletionSystemMessageParam['name'];
-}
 
 export enum AudioFormat {
   WAV = 'wav',
@@ -75,7 +14,7 @@ export class InputAudio {
   format!: AudioFormat;
 }
 
-export enum AudioDetail {
+export enum ImageDetail {
   Auto = 'auto',
   High = 'high',
   Low = 'low',
@@ -83,8 +22,8 @@ export enum AudioDetail {
 
 export class ImageUrl {
   url!: string;
-  @IsEnum(AudioDetail)
-  detail?: AudioDetail;
+  @IsEnum(ImageDetail)
+  detail?: ImageDetail;
 }
 
 export class ChatCompletionContentPart {
