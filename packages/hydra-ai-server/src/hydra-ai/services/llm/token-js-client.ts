@@ -24,7 +24,7 @@ export class TokenJSClient implements LLMClient {
     tools?: ChatCompletionTool[],
     jsonMode: boolean = false,
   ): Promise<OpenAIResponse> {
-    let componentTools = tools?.length ? tools : undefined;
+    const componentTools = tools?.length ? tools : undefined;
 
     const response = await this.client.chat.completions.create({
       provider: this.provider,
@@ -41,10 +41,17 @@ export class TokenJSClient implements LLMClient {
 
     if (
       response.choices[0].finish_reason === "function_call" ||
-      response.choices[0].finish_reason === "tool_calls"
+      response.choices[0].finish_reason === "tool_calls" ||
+      response.choices[0].finish_reason === "stop"
     ) {
       openAIResponse.toolCallRequest = this.toolCallRequestFromResponse(
         response as ChatCompletion,
+      );
+    }
+    if (!openAIResponse.message && !openAIResponse.toolCallRequest) {
+      console.error(
+        "No message or tool call request found in response: ",
+        response.choices[0],
       );
     }
 
