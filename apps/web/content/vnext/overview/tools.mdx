@@ -1,9 +1,47 @@
 ---
 title: Tools
-description: Extending Hydra AI with custom tools and capabilities.
 ---
 
-Tools enable Hydra to interact with your application's data and functionality. They provide a type-safe way to extend the AI's capabilities with custom business logic.
+Tools enable Hydra to interact with your application's data and functionality. They provide a type-safe way to extend the AI's capabilities with custom business logic. Hydra will call these tools and use their outputs to information to help decide how to respond to a message, what component to choose, and what data to fill the component with.
+
+```tsx
+interface HydraTool {
+  name: string;
+  description: string; // What is this tool for and when should Hydra use it?
+  tool: (input: z.infer<ZodTypeAny>) => any; // The function that Hydra will call when using this tool
+  inputSchema: ZodTypeAny; // The parameter type that Hydra will use when calling the tool.
+}
+```
+
+## Adding a Tool
+
+```tsx
+//define the function's input schema
+const weatherSchema = z.object({
+  city: z.string().optional(),
+});
+
+//define the tool function
+const getWeather = async (city?: string) => {
+  try {
+    const weather = await fetch(`https://api.weatherapi.com/&city=${city}`); //mock weather api
+    return weather;
+  } catch (error) {
+    throw new Error(`Failed to fetch weather for ${city}`);
+  }
+};
+
+//define the tool
+const tool: HydraTool = {
+  name: "get_weather",
+  description: "Fetch current weather information for a specified city",
+  tool: getWeather,
+  inputSchema: weatherSchema,
+};
+
+//register the tool
+hydraClient.registerTool(tool);
+```
 
 ## Core Concepts
 
