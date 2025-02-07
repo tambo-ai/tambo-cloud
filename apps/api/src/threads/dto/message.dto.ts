@@ -1,5 +1,5 @@
 import { ActionType, ContentPartType, MessageRole } from '@use-hydra-ai/core';
-import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from 'class-validator';
 import { type OpenAI } from 'openai';
 import { ComponentDecision } from '../../components/dto/component-decision.dto';
 
@@ -29,8 +29,11 @@ export class ImageUrl {
 export class ChatCompletionContentPart {
   @IsEnum(ContentPartType)
   type!: ContentPartType;
+  @ValidateIf((o) => o.type === ContentPartType.Text)
   text?: string;
+  @ValidateIf((o) => o.type === ContentPartType.ImageUrl)
   image_url?: ImageUrl;
+  @ValidateIf((o) => o.type === ContentPartType.InputAudio)
   input_audio?: InputAudio;
 }
 

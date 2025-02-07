@@ -58,7 +58,7 @@ export interface ThreadMessage {
   /** The role of who sent the message */
   role: MessageRole;
   /** Array of content parts making up the message */
-  content: ChatCompletionContentPartText[];
+  content: ChatCompletionContentPart[];
   /** Component decision for this message */
   componentDecision?: ComponentDecision;
   /** Type of action performed */

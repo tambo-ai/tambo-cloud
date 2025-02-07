@@ -128,9 +128,12 @@ function convertContentDtoToContentPart(
   return content.map((part): ChatCompletionContentPartInterface => {
     switch (part.type) {
       case ContentPartType.Text:
+        if (!part.text) {
+          throw new Error('Text content is required for text type');
+        }
         return {
           type: ContentPartType.Text,
-          text: part.text ?? '',
+          text: part.text,
         };
       case ContentPartType.ImageUrl:
         return {
