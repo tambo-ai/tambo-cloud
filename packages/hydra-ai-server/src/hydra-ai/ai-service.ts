@@ -1,13 +1,12 @@
 import { ComponentDecision } from "@use-hydra-ai/core";
 import { InputContext } from "./model/input-context";
 import { Provider } from "./model/providers";
-import { ComponentDecisionService } from "./services/component/component-decision-service";
+import { decideComponent } from "./services/component/component-decision-service";
 import { hydrateComponent } from "./services/component/component-hydration-service";
 import { TokenJSClient } from "./services/llm/token-js-client";
 
 export default class AIService {
   private llmClient: TokenJSClient;
-  private decisionService: ComponentDecisionService;
 
   constructor(
     openAiKey: string,
@@ -15,14 +14,13 @@ export default class AIService {
     provider: Provider = "openai",
   ) {
     this.llmClient = new TokenJSClient(openAiKey, model, provider);
-    this.decisionService = new ComponentDecisionService(this.llmClient);
   }
 
   async chooseComponent(
     context: InputContext,
     threadId: string,
   ): Promise<ComponentDecision> {
-    return this.decisionService.decideComponent(context, threadId);
+    return decideComponent(this.llmClient, context, threadId);
   }
 
   async hydrateComponent(
