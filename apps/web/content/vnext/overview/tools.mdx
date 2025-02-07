@@ -43,6 +43,8 @@ const tool: HydraTool = {
 hydraClient.registerTool(tool);
 ```
 
+##
+
 ## Core Concepts
 
 Tools in Hydra consist of three main parts:
@@ -78,23 +80,6 @@ const searchImplementation = async (input: z.infer<typeof searchSchema>) => {
   // Your search logic here
   return results;
 };
-```
-
-### 3. Register Tools
-
-```tsx title="Tool Registry Setup"
-import { createHydraToolRegistry } from "hydra-ai-react";
-
-// Create registry with tool definitions
-const toolRegistry = createHydraToolRegistry({
-  // [!code highlight]
-  search: searchToolDefinition,
-  createUser: createUserDefinition,
-  updateProfile: updateProfileDefinition,
-}); // [!code highlight]
-
-// Register implementations
-toolRegistry.registerTool("search", searchImplementation); // [!code highlight]
 ```
 
 ## Using Tools in Components
