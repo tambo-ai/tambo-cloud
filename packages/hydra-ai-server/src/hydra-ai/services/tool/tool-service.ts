@@ -1,5 +1,3 @@
-import { ToolCallRequest } from "@use-hydra-ai/core";
-import { ChatCompletion } from "openai/resources/chat/completions";
 import { ChatCompletionTool } from "token.js";
 import { ComponentContextToolMetadata } from "../../model/component-metadata";
 
@@ -51,24 +49,4 @@ export function convertMetadataToTools(
       },
     },
   }));
-}
-
-export function parseToolCallResponse(
-  response: ChatCompletion,
-): ToolCallRequest {
-  if (!response.choices[0].message.tool_calls) {
-    throw new Error("No tool calls found in response");
-  }
-
-  const toolArgs = JSON.parse(
-    response.choices[0].message.tool_calls[0].function.arguments,
-  );
-
-  return {
-    toolName: response.choices[0].message.tool_calls[0].function.name,
-    parameters: Object.entries(toolArgs).map(([key, value]) => ({
-      parameterName: key,
-      parameterValue: value,
-    })),
-  };
 }
