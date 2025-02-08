@@ -1,18 +1,12 @@
 import {
   AvailableComponent as AvailableComponentInterface,
   AvailableComponents as AvailableComponentsInterface,
-  ChatMessage as ChatMessageInterface,
   ComponentContextToolMetadata as ComponentContextToolMetadataInterface,
   ComponentPropsMetadata as ComponentPropsMetadataInterface,
 } from '@use-hydra-ai/hydra-ai-server';
 import { JSONSchema7 } from 'json-schema';
 import { ComponentParameter } from './component-decision.dto';
-
-export class LegacyChatMessage implements ChatMessageInterface {
-  sender!: 'hydra' | 'user';
-  message!: string;
-  additionalContext?: string;
-}
+import { LegacyChatMessage } from './legacy-chat-history.dto';
 
 export class ComponentPropsMetadata
   implements ComponentPropsMetadataInterface {}
