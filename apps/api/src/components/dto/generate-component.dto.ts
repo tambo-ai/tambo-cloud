@@ -46,8 +46,8 @@ export class ComponentContextToolMetadata
 }
 
 export class GenerateComponentRequest {
-  messageHistory?: LegacyChatMessage[];
-  availableComponents?: AvailableComponents;
+  messageHistory!: LegacyChatMessage[];
+  availableComponents!: AvailableComponents;
   /** Optional threadId to generate a component for */
   threadId?: string;
   /** Optional contextKey to generate a component for */
