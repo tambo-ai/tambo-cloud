@@ -1,6 +1,7 @@
 {
   "name": "@use-hydra-ai/repo",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
@@ -10,14 +11,16 @@
     "prettier-check": "prettier --check \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo check-types",
     "hydra-api:start": "turbo run start --filter=hydra-api",
-    "prepare": "husky"
+    "prepare": "husky",
+    "rename-to-tambo": "ts-node scripts/update-content.ts && ts-node scripts/rename-files.ts"
   },
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
     "prettier": "^3.2.5",
     "turbo": "^2.4.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "ts-node": "^10.9.2"
   },
   "engines": {
     "node": "20.x",
