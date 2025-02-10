@@ -316,7 +316,7 @@ function convertThreadMessagesToLegacyThreadMessages(
   return currentThreadMessages.map(
     (message): ChatMessage => ({
       sender: message.role === MessageRole.User ? 'user' : 'hydra',
-      message: message.content.map((part) => part.text).join(''),
+      message: message.content.map((part) => part.text ?? '').join(''),
     }),
   );
 }
