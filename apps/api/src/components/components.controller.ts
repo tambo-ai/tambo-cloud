@@ -41,6 +41,23 @@ export class ComponentsController {
     private logger: CorrelationLoggerService,
   ) {}
 
+  private async validateProjectAndProviderKeys(projectId: string) {
+    const project = await this.projectsService.findOneWithKeys(projectId);
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+    const providerKeys = project.getProviderKeys();
+    if (!providerKeys?.length) {
+      throw new NotFoundException('No provider keys found for project');
+    }
+    const providerKey =
+      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+    if (!providerKey) {
+      throw new NotFoundException('No provider key found for project');
+    }
+    return decryptProviderKey(providerKey);
+  }
+
   @Post('generate')
   async generateComponent(
     @Body() generateComponentDto: GenerateComponentRequest,
@@ -62,20 +79,8 @@ export class ComponentsController {
       `generating component for project ${request.projectId}, with message: ${lastMessageEntry.message}`,
     );
     const projectId = request.projectId;
-    const project = await this.projectsService.findOneWithKeys(projectId);
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-    const providerKeys = project.getProviderKeys();
-    if (!providerKeys?.length) {
-      throw new NotFoundException('No provider keys found for project');
-    }
-    const providerKey =
-      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
-    if (!providerKey) {
-      throw new NotFoundException('No provider key found for project');
-    }
-    const decryptedProviderKey = decryptProviderKey(providerKey);
+    const decryptedProviderKey =
+      await this.validateProjectAndProviderKeys(projectId);
 
     //TODO: Don't instantiate HydraBackend every request
     const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
@@ -115,26 +120,13 @@ export class ComponentsController {
       );
     }
     const projectId = request.projectId;
-    const project = await this.projectsService.findOneWithKeys(projectId);
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-    const providerKeys = project.getProviderKeys();
-    if (!providerKeys?.length) {
-      throw new NotFoundException('No provider keys found for project');
-    }
-    const providerKey =
-      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
-    if (!providerKey) {
-      throw new NotFoundException('No provider key found for project');
-    }
+    const decryptedProviderKey =
+      await this.validateProjectAndProviderKeys(projectId);
 
     const contentText = content.map((part) => part.text).join('');
     this.logger.log(
       `generating component for project ${projectId}, with message: ${contentText}`,
     );
-
-    const decryptedProviderKey = decryptProviderKey(providerKey);
 
     //TODO: Don't instantiate HydraBackend every request
     const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
@@ -202,22 +194,8 @@ export class ComponentsController {
       contextKey,
     } = hydrateComponentDto;
     const projectId = request.projectId;
-
-    const project = await this.projectsService.findOneWithKeys(projectId);
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-
-    const providerKeys = project.getProviderKeys();
-    if (!providerKeys?.length) {
-      throw new NotFoundException('No provider keys found for project');
-    }
-    const providerKey =
-      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
-    if (!providerKey) {
-      throw new NotFoundException('No provider key found for project');
-    }
-    const decryptedProviderKey = decryptProviderKey(providerKey);
+    const decryptedProviderKey =
+      await this.validateProjectAndProviderKeys(projectId);
 
     const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
 
@@ -263,22 +241,8 @@ export class ComponentsController {
     const { component, toolResponse, threadId, contextKey } =
       hydrateComponentDto;
     const projectId = request.projectId;
-
-    const project = await this.projectsService.findOneWithKeys(projectId);
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-
-    const providerKeys = project.getProviderKeys();
-    if (!providerKeys?.length) {
-      throw new NotFoundException('No provider keys found for project');
-    }
-    const providerKey =
-      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
-    if (!providerKey) {
-      throw new NotFoundException('No provider key found for project');
-    }
-    const decryptedProviderKey = decryptProviderKey(providerKey);
+    const decryptedProviderKey =
+      await this.validateProjectAndProviderKeys(projectId);
 
     const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
 
