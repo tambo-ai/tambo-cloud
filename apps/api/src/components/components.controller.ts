@@ -25,7 +25,10 @@ import {
   GenerateComponentRequest,
   GenerateComponentRequest2,
 } from './dto/generate-component.dto';
-import { HydrateComponentRequest } from './dto/hydrate-component.dto';
+import {
+  HydrateComponentRequest,
+  HydrateComponentRequest2,
+} from './dto/hydrate-component.dto';
 import { ApiKeyGuard } from './guards/apikey.guard';
 
 @ApiSecurity('apiKey')
@@ -252,16 +255,93 @@ export class ComponentsController {
     };
   }
 
+  @Post('hydrate2')
+  async hydrateComponent2(
+    @Body() hydrateComponentDto: HydrateComponentRequest2,
+    @Req() request, // Assumes the request object has the projectId
+  ): Promise<ComponentDecisionDto> {
+    const { component, toolResponse, threadId, contextKey } =
+      hydrateComponentDto;
+    const projectId = request.projectId;
+
+    const project = await this.projectsService.findOneWithKeys(projectId);
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const providerKeys = project.getProviderKeys();
+    if (!providerKeys?.length) {
+      throw new NotFoundException('No provider keys found for project');
+    }
+    const providerKey =
+      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+    if (!providerKey) {
+      throw new NotFoundException('No provider key found for project');
+    }
+    const decryptedProviderKey = decryptProviderKey(providerKey);
+
+    const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
+
+    if (!component) {
+      throw new BadRequestException('Component is required');
+    }
+    const resolvedThreadId = await this.ensureThread(
+      projectId,
+      threadId,
+      contextKey,
+      true,
+    );
+    const toolResponseString =
+      typeof toolResponse === 'string'
+        ? toolResponse
+        : JSON.stringify(toolResponse);
+    await this.threadsService.addMessage(resolvedThreadId, {
+      role: MessageRole.Tool,
+      content: [{ type: ContentPartType.Text, text: toolResponseString }],
+      actionType: ActionType.ToolResponse,
+    });
+
+    const currentThreadMessages =
+      await this.threadsService.getMessages(resolvedThreadId);
+    const messageHistory = currentThreadMessages.map(
+      (message): ChatMessage => ({
+        sender: message.role === MessageRole.User ? 'user' : 'hydra',
+        message: message.content.map((part) => part.text).join(''),
+      }),
+    );
+    const hydratedComponent = await hydraBackend.hydrateComponentWithData(
+      messageHistory,
+      component,
+      toolResponse,
+      resolvedThreadId,
+    );
+
+    await this.addDecisionToThread(resolvedThreadId, hydratedComponent);
+
+    this.logger.log(`hydrated component: ${JSON.stringify(hydratedComponent)}`);
+    return {
+      ...hydratedComponent,
+      threadId: resolvedThreadId,
+    };
+  }
+
   private async ensureThread(
     projectId: string,
     threadId: string | undefined,
     contextKey: string | undefined,
+    preventCreate: boolean = false,
   ) {
     // If the threadId is provided, ensure that the thread belongs to the project
     if (threadId) {
       await this.threadsService.ensureThreadByProjectId(threadId, projectId);
       // TODO: should we update contextKey?
       return threadId;
+    }
+
+    if (preventCreate) {
+      throw new BadRequestException(
+        'Thread ID is required, and cannot be created',
+      );
     }
     // If the threadId is not provided, create a new thread
     const newThread = await this.threadsService.createThread({
