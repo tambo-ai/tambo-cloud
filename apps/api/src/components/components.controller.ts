@@ -18,6 +18,7 @@ import { ChatMessage, HydraBackend } from '@use-hydra-ai/hydra-ai-server';
 import { decryptProviderKey } from '../common/key.utils';
 import { CorrelationLoggerService } from '../common/services/logger.service';
 import { ProjectsService } from '../projects/projects.service';
+import { ThreadMessage } from '../threads/dto/message.dto';
 import { ThreadsService } from '../threads/threads.service';
 import { ComponentDecision as ComponentDecisionDto } from './dto/component-decision.dto';
 import {
@@ -144,11 +145,8 @@ export class ComponentsController {
     // Now refetch the whole thread to get the entire message history
     const currentThreadMessages =
       await this.threadsService.getMessages(resolvedThreadId);
-    const messageHistory = currentThreadMessages.map(
-      (message): ChatMessage => ({
-        sender: message.role === MessageRole.User ? 'user' : 'hydra',
-        message: message.content.map((part) => part.text).join(''),
-      }),
+    const messageHistory = convertThreadMessagesToLegacyThreadMessages(
+      currentThreadMessages,
     );
     const availableComponentMap: Record<string, AvailableComponent> =
       availableComponents.reduce((acc, component) => {
@@ -267,11 +265,8 @@ export class ComponentsController {
 
     const currentThreadMessages =
       await this.threadsService.getMessages(resolvedThreadId);
-    const messageHistory = currentThreadMessages.map(
-      (message): ChatMessage => ({
-        sender: message.role === MessageRole.User ? 'user' : 'hydra',
-        message: message.content.map((part) => part.text).join(''),
-      }),
+    const messageHistory = convertThreadMessagesToLegacyThreadMessages(
+      currentThreadMessages,
     );
     const hydratedComponent = await hydraBackend.hydrateComponentWithData(
       messageHistory,
@@ -314,4 +309,14 @@ export class ComponentsController {
     });
     return newThread.id;
   }
+}
+function convertThreadMessagesToLegacyThreadMessages(
+  currentThreadMessages: ThreadMessage[],
+) {
+  return currentThreadMessages.map(
+    (message): ChatMessage => ({
+      sender: message.role === MessageRole.User ? 'user' : 'hydra',
+      message: message.content.map((part) => part.text).join(''),
+    }),
+  );
 }

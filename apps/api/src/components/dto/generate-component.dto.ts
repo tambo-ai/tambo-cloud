@@ -6,7 +6,7 @@ import {
 } from '@use-hydra-ai/hydra-ai-server';
 import { MinLength } from 'class-validator';
 import { JSONSchema7 } from 'json-schema';
-import { ChatCompletionContentPart } from 'src/threads/dto/message.dto';
+import { ChatCompletionContentPart } from '../../threads/dto/message.dto';
 import { ComponentParameter } from './component-decision.dto';
 import { LegacyChatMessage } from './legacy-chat-history.dto';
 
