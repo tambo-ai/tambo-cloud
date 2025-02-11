@@ -49,7 +49,7 @@ globs: app/api/*
    - Centralize error handling at boundaries
 
 
-## Core Principles
+## Naming Conventions
 - Use PascalCase for classes.
 - Use camelCase for variables, functions, and methods.
 - Use kebab-case for file and directory names.
