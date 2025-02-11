@@ -4,15 +4,16 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { env } from "@/lib/env";
 import { api } from "@/trpc/react";
 import { useHydra } from "@hydra-ai/react";
+import { HydraTool } from "@hydra-ai/react/dist/model/component-metadata";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { ComponentContextTool } from "@use-hydra-ai/hydra-ai-server";
 import { HydraClient } from "hydra-ai";
 import { X } from "lucide-react";
 import { ReactElement, ReactNode, useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 
 interface Message {
   role: "user" | "assistant";
@@ -42,7 +43,7 @@ export default function SmokePage() {
       onError: (error) => setErrors((prev) => [...prev, error]),
     });
 
-  const tools: Record<string, ComponentContextTool> = useMemo(
+  const tools: Record<string, HydraTool> = useMemo(
     () => makeWeatherTools(getForecast, getHistoricalWeather, getAirQuality),
     [getForecast, getHistoricalWeather, getAirQuality],
   );
@@ -56,7 +57,7 @@ export default function SmokePage() {
       propsDefinition: {
         data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
       },
-      contextTools: [tools.forecast, tools.history],
+      associatedTools: [tools.forecast, tools.history],
     });
     registerComponent({
       component: AirQuality,
@@ -65,7 +66,7 @@ export default function SmokePage() {
       propsDefinition: {
         data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
       },
-      contextTools: [tools.aqi],
+      associatedTools: [tools.aqi],
     });
   }, [registerComponent, tools]);
 
@@ -319,101 +320,59 @@ const AirQuality = ({ data }: AirQualityProps): ReactNode => {
   );
 };
 
-function useWeatherHydra({
-  getForecast,
-  getHistoricalWeather,
-  getAirQuality,
-}: {
-  getForecast: (...args: any[]) => Promise<any>;
-  getHistoricalWeather: (...args: any[]) => Promise<any>;
-  getAirQuality: (...args: any[]) => Promise<any>;
-}) {
-  return useMemo(() => {
-    const client = new HydraClient({
-      hydraApiKey: env.NEXT_PUBLIC_HYDRA_API_KEY,
-      hydraApiUrl: env.NEXT_PUBLIC_HYDRA_API_URL,
-    });
-    const tools: Record<string, ComponentContextTool> = makeWeatherTools(
-      getForecast,
-      getHistoricalWeather,
-      getAirQuality,
-    );
-    registerComponents(client, tools);
-    return client;
-  }, [getAirQuality, getForecast, getHistoricalWeather]);
-}
-
 function makeWeatherTools(
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
   getAirQuality: (...args: any[]) => Promise<any>,
-): Record<string, ComponentContextTool> {
+): Record<string, HydraTool> {
   return {
     forecast: {
-      definition: {
-        name: "getWeatherForecast",
-        description: "Get the weather forecast",
-        parameters: [
-          {
-            name: "params",
-            type: "object",
-            description:
-              "The parameters to get the weather forecast for, as an object with just one key, 'location', e.g. '{location: \"New York\"}'",
-            isRequired: true,
-            schema: {
-              type: "object",
-              properties: {
-                location: { type: "string" },
-              },
-            },
-          },
-        ],
-      },
-      getComponentContext: getForecast,
+      name: "getWeatherForecast",
+      description: "Get the weather forecast",
+      tool: getForecast,
+      toolSchema: z.function().args(
+        z
+          .object({
+            location: z
+              .string()
+              .describe("The location to get the weather forecast for"),
+          })
+          .describe("The parameters to get the weather forecast for"),
+      ),
     },
     history: {
-      definition: {
-        name: "getHistoricalWeather",
-        description: "Get the historical weather",
-        parameters: [
-          {
-            name: "params",
-            type: "object",
-            description: `The parameters to get the historical weather for, as an object with two keys, 
-                'location' and 'datetime', e.g. '{location: "New York", datetime: "2024-01-01"}'`,
-            isRequired: true,
-            schema: {
-              type: "object",
-              properties: {
-                location: { type: "string" },
-                datetime: { type: "string" },
-              },
-            },
-          },
-        ],
-      },
-      getComponentContext: getHistoricalWeather,
+      name: "getHistoricalWeather",
+      description: "Get the historical weather",
+      tool: getHistoricalWeather,
+      toolSchema: z
+        .function()
+        .args(
+          z
+            .object({
+              location: z
+                .string()
+                .describe("The location to get the historical weather for"),
+              datetime: z
+                .string()
+                .describe("The datetime to get the historical weather for"),
+            })
+            .describe("The parameters to get the historical weather for"),
+        )
+        .returns(z.any()),
     },
     aqi: {
-      definition: {
-        name: "getAirQuality",
-        description: "Get the air quality",
-        parameters: [
-          {
-            name: "params",
-            type: "object",
-            description: `The parameters to get the air quality for, as an object with just one key, 'location', e.g. '{location: "New York"}'`,
-            isRequired: true,
-            schema: {
-              type: "object",
-              properties: {
-                location: { type: "string" },
-              },
-            },
-          },
-        ],
-      },
-      getComponentContext: getAirQuality,
+      name: "getAirQuality",
+      description: "Get the air quality",
+      tool: getAirQuality,
+      toolSchema: z.function().args(
+        z
+          .object({
+            location: z
+              .string()
+              .describe("The location to get the air quality for"),
+          })
+          .describe("The parameters to get the air quality for"),
+      ),
     },
   };
 }
