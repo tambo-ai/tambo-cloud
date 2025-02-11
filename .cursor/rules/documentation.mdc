@@ -80,7 +80,7 @@ Use for feature highlights or navigation:
 ```
 
 ### Tabs
-Group related content like N
+Group related content like NPM and Yarn examples
 ```markdown
 <Tabs>
   <Tab title="Option 1">Content</Tab>
