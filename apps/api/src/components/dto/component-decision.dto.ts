@@ -3,6 +3,7 @@ import {
   ToolCallRequest as ToolCallRequestInterface,
 } from '@use-hydra-ai/core';
 
+/** Legacy - for v1 of generate/hydrate */
 export class ComponentDecision {
   componentName!: string | null;
   props!: Record<string, any>;
@@ -10,6 +11,12 @@ export class ComponentDecision {
   suggestedActions?: SuggestedAction[];
   toolCallRequest?: ToolCallRequest;
   threadId!: string;
+}
+
+export class ComponentDecisionV2 {
+  componentName!: string | null;
+  props!: Record<string, any>;
+  message!: string;
 }
 
 export class ToolParameter {
