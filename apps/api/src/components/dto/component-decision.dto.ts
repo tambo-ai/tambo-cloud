@@ -2,7 +2,6 @@ import {
   SuggestedAction as SuggestedActionInterface,
   ToolCallRequest as ToolCallRequestInterface,
 } from '@use-hydra-ai/core';
-import { IsBoolean, IsOptional } from 'class-validator';
 
 export class ComponentDecision {
   componentName!: string | null;
@@ -11,10 +10,6 @@ export class ComponentDecision {
   suggestedActions?: SuggestedAction[];
   toolCallRequest?: ToolCallRequest;
   threadId!: string;
-
-  @IsOptional()
-  @IsBoolean()
-  generateSuggestedActions?: boolean;
 }
 
 export class ToolParameter {
