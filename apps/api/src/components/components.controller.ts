@@ -20,7 +20,10 @@ import { CorrelationLoggerService } from '../common/services/logger.service';
 import { ProjectsService } from '../projects/projects.service';
 import { ThreadMessage } from '../threads/dto/message.dto';
 import { ThreadsService } from '../threads/threads.service';
-import { ComponentDecision as ComponentDecisionDto } from './dto/component-decision.dto';
+import {
+  ComponentDecision as ComponentDecisionDto,
+  GenerateComponentResponse,
+} from './dto/component-decision.dto';
 import {
   AvailableComponent,
   GenerateComponentRequest,
@@ -112,7 +115,7 @@ export class ComponentsController {
   async generateComponent2(
     @Body() generateComponentDto: GenerateComponentRequest2,
     @Req() request, // Assumes the request object has the projectId
-  ): Promise<ComponentDecisionDto> {
+  ): Promise<GenerateComponentResponse> {
     const { content, availableComponents, threadId, contextKey } =
       generateComponentDto;
     if (!content?.length) {
@@ -158,11 +161,10 @@ export class ComponentsController {
       availableComponentMap,
       resolvedThreadId,
     );
-    await this.addDecisionToThread(resolvedThreadId, component);
+    const message = await this.addDecisionToThread(resolvedThreadId, component);
 
     return {
-      ...component,
-      threadId: resolvedThreadId,
+      message,
     };
   }
 
@@ -170,7 +172,7 @@ export class ComponentsController {
     threadId: string,
     component: ComponentDecision,
   ) {
-    await this.threadsService.addMessage(threadId, {
+    return this.threadsService.addMessage(threadId, {
       role: MessageRole.Hydra,
       content: [{ type: ContentPartType.Text, text: component.message }],
       // HACK: for now just jam the full component decision into the content
@@ -235,7 +237,7 @@ export class ComponentsController {
   async hydrateComponent2(
     @Body() hydrateComponentDto: HydrateComponentRequest2,
     @Req() request, // Assumes the request object has the projectId
-  ): Promise<ComponentDecisionDto> {
+  ): Promise<GenerateComponentResponse> {
     const { component, toolResponse, threadId, contextKey } =
       hydrateComponentDto;
     const projectId = request.projectId;
@@ -275,12 +277,14 @@ export class ComponentsController {
       resolvedThreadId,
     );
 
-    await this.addDecisionToThread(resolvedThreadId, hydratedComponent);
+    const message = await this.addDecisionToThread(
+      resolvedThreadId,
+      hydratedComponent,
+    );
 
     this.logger.log(`hydrated component: ${JSON.stringify(hydratedComponent)}`);
     return {
-      ...hydratedComponent,
-      threadId: resolvedThreadId,
+      message,
     };
   }
 
