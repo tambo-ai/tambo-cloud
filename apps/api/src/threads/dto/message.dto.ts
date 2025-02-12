@@ -61,7 +61,7 @@ export class ThreadMessage implements InternalThreadMessage {
   metadata?: Record<string, unknown>;
   component?: ComponentDecisionV2;
   toolCallRequest?: ToolCallRequest;
-  suggestedActions?: SuggestedAction[];
+  suggestions?: SuggestedAction[];
   @IsEnum(ActionType)
   actionType?: ActionType;
 
