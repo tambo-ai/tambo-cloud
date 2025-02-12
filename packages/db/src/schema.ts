@@ -177,30 +177,4 @@ export const messageRelations = relations(messages, ({ one, many }) => ({
     fields: [messages.threadId],
     references: [threads.id],
   }),
-  suggestions: many(suggestions),
-}));
-
-// New suggestions table
-export const suggestions = pgTable("suggestions", ({ text, timestamp }) => ({
-  id: text("id")
-    .primaryKey()
-    .notNull()
-    .unique()
-    .default(sql`generate_custom_id('sug_')`),
-  messageId: text("message_id")
-    .references(() => messages.id)
-    .notNull(),
-  title: text("title").notNull(),
-  detailedSuggestion: text("detailed_suggestion").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}));
-
-export type DBSuggestion = typeof suggestions.$inferSelect;
-
-export const suggestionRelations = relations(suggestions, ({ one }) => ({
-  message: one(messages, {
-    fields: [suggestions.messageId],
-    references: [messages.id],
-  }),
 }));
