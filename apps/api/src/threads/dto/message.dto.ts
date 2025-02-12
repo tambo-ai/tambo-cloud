@@ -67,6 +67,7 @@ export class ThreadMessage implements InternalThreadMessage {
 
   @IsOptional()
   tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
+  createdAt!: Date;
 }
 
 export class MessageRequest implements InternalThreadMessage {
