@@ -36,11 +36,13 @@ export default class HydraBackend {
     messageHistory: ChatMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
+    generateSuggestedActions?: boolean,
   ): Promise<ComponentDecision> {
     const context: InputContext = {
       messageHistory,
       availableComponents,
       threadId: threadId,
+      generateSuggestedActions,
     };
 
     return this.aiService.chooseComponent(context, threadId);

@@ -4,7 +4,7 @@ import {
   ComponentContextToolMetadata as ComponentContextToolMetadataInterface,
   ComponentPropsMetadata as ComponentPropsMetadataInterface,
 } from '@use-hydra-ai/hydra-ai-server';
-import { MinLength } from 'class-validator';
+import { IsBoolean, IsOptional, MinLength } from 'class-validator';
 import { JSONSchema7 } from 'json-schema';
 import { ChatCompletionContentPart } from '../../threads/dto/message.dto';
 import { LegacyChatMessage } from './legacy-chat-history.dto';
@@ -46,6 +46,13 @@ export class GenerateComponentRequest {
   threadId?: string;
   /** Optional contextKey to generate a component for */
   contextKey?: string;
+  /**
+   * Flag to control whether suggestedActions should be generated.
+   * @default true
+   */
+  @IsOptional()
+  @IsBoolean()
+  generateSuggestedActions: boolean = true;
 }
 export class GenerateComponentRequest2 {
   /**
@@ -60,4 +67,11 @@ export class GenerateComponentRequest2 {
   threadId?: string;
   /** Optional contextKey to generate a component for */
   contextKey?: string;
+  /**
+   * Flag to control whether suggestedActions should be generated.
+   * @default false
+   */
+  @IsOptional()
+  @IsBoolean()
+  generateSuggestedActions: boolean = false;
 }

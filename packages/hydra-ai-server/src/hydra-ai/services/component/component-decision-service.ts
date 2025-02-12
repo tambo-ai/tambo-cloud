@@ -56,6 +56,7 @@ export async function decideComponent(
       undefined,
       context.availableComponents,
       threadId,
+      context.generateSuggestedActions,
     );
   }
 

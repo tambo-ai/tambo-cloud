@@ -64,8 +64,13 @@ export class ComponentsController {
     @Body() generateComponentDto: GenerateComponentRequest,
     @Req() request, // Assumes the request object has the projectId
   ): Promise<ComponentDecisionDto> {
-    const { messageHistory, availableComponents, threadId, contextKey } =
-      generateComponentDto;
+    const {
+      messageHistory,
+      availableComponents,
+      threadId,
+      contextKey,
+      generateSuggestedActions,
+    } = generateComponentDto;
     if (!messageHistory?.length) {
       throw new BadRequestException(
         'Message history is required and cannot be empty',
@@ -99,6 +104,7 @@ export class ComponentsController {
       messageHistory,
       availableComponents ?? {},
       resolvedThreadId,
+      generateSuggestedActions,
     );
     await this.addDecisionToThread(resolvedThreadId, component);
 
@@ -113,8 +119,13 @@ export class ComponentsController {
     @Body() generateComponentDto: GenerateComponentRequest2,
     @Req() request, // Assumes the request object has the projectId
   ): Promise<ComponentDecisionDto> {
-    const { content, availableComponents, threadId, contextKey } =
-      generateComponentDto;
+    const {
+      content,
+      availableComponents,
+      threadId,
+      contextKey,
+      generateSuggestedActions,
+    } = generateComponentDto;
     if (!content?.length) {
       throw new BadRequestException(
         'Message history is required and cannot be empty',
@@ -157,6 +168,7 @@ export class ComponentsController {
       messageHistory,
       availableComponentMap,
       resolvedThreadId,
+      generateSuggestedActions,
     );
     await this.addDecisionToThread(resolvedThreadId, component);
 

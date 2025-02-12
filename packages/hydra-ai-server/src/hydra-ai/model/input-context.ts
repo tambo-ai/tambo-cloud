@@ -5,4 +5,6 @@ export type InputContext = {
   messageHistory: ChatMessage[];
   availableComponents: AvailableComponents;
   threadId: string;
+  /** Flag to control whether suggestedActions should be generated */
+  generateSuggestedActions?: boolean;
 };
