@@ -172,6 +172,7 @@ export const threadRelations = relations(threads, ({ one, many }) => ({
 }));
 
 export const messageRelations = relations(messages, ({ one, many }) => ({
+export const messageRelations = relations(messages, ({ one, many }) => ({
   thread: one(threads, {
     fields: [messages.threadId],
     references: [threads.id],
@@ -179,6 +180,7 @@ export const messageRelations = relations(messages, ({ one, many }) => ({
   suggestions: many(suggestions),
 }));
 
+// New suggestions table
 export const suggestions = pgTable("suggestions", ({ text, timestamp }) => ({
   id: text("id")
     .primaryKey()
