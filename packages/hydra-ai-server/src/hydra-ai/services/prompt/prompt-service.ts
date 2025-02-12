@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { AvailableComponents } from "../../model/component-metadata";
-import { schema } from "./schemas";
+import { schema, schemaWithoutSuggestions } from "./schemas";
 
 // Public functions
 export function generateDecisionPrompt(): string {
@@ -25,9 +25,11 @@ Respond to the user's latest query to the best of your ability. If they have req
 This response should be short and concise.`;
 }
 
+// TODO: Simplify this when we remove the deprecated SuggestedAction interface
 export function generateComponentHydrationPrompt(
   toolResponse: any | undefined,
   availableComponents: AvailableComponents,
+  generateSuggestedActions: boolean = true,
 ): string {
   return `You are an AI assistant that interacts with users and helps them perform tasks.
 To help the user perform these tasks, you are able to generate UI components. You are able to display components and decide what props to pass in. However, you can not interact with, or control 'state' data.
@@ -38,17 +40,24 @@ ${
     ? `You have received a response from a tool. Use this data to help determine what props to pass in: ${JSON.stringify(toolResponse)}`
     : `You can also use any of the provided tools to fetch data needed to pass into the component.`
 }
+${
+  generateSuggestedActions
+    ? `\nWhen generating components, also suggest 1-3 follow-up actions that would make sense given the current context. Each suggestion should be a natural follow-up action that would help the user progress in their current task.
 
 When generating suggestedActions, consider the following:
 1. Each suggestion should be a natural follow-up action that would make use of an available components
 2. The actionText should be phrased as a user message that would trigger the use of a specific component
 3. Suggestions should be contextually relevant to what the user is trying to accomplish
 4. Include 1-3 suggestions that would help the user progress in their current task
-5. The label should be a clear, concise button text, while the actionText can be more detailed
+5. The label should be a clear, concise button text, while the actionText can be more detailed`
+    : ""
+}
 
+<availableComponents>
 ${generateAvailableComponentsPrompt(availableComponents)}
+</availableComponents>
 
-${generateZodTypePrompt(schema)}`;
+${generateZodTypePrompt(generateSuggestedActions ? schema : schemaWithoutSuggestions)}`;
 }
 
 // Private functions

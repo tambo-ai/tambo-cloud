@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-export const schema = z.object({
+// TODO: Simplify interface when we remove the deprecated SuggestedAction interface
+
+// Base schema without suggestions
+const baseSchema = {
   componentName: z.string().describe("The name of the chosen component"),
   props: z
     .object({})
@@ -14,6 +17,22 @@ export const schema = z.object({
       "The message to be displayed to the user alongside the chosen component. Depending on the component type, and the user message, this message might include a description of why a given component was chosen, and what can be seen within it, or what it does.",
     ),
   reasoning: z.string().describe("The reasoning behind the decision"),
+  toolCallRequest: z
+    .object({
+      toolName: z.string(),
+      parameters: z.array(
+        z.object({
+          parameterName: z.string(),
+          parameterValue: z.any(),
+        }),
+      ),
+    })
+    .optional(),
+};
+
+// Schema with suggestions
+export const schema = z.object({
+  ...baseSchema,
   suggestedActions: z
     .array(
       z.object({
@@ -35,3 +54,6 @@ export const schema = z.object({
     )
     .optional(),
 });
+
+// Schema without suggestions
+export const schemaWithoutSuggestions = z.object(baseSchema);

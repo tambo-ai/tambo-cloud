@@ -1,4 +1,4 @@
-import { ComponentDecision } from "@use-hydra-ai/core";
+import { ComponentDecision, SuggestedAction } from "@use-hydra-ai/core";
 import { ChatMessage } from "../../model/chat-message";
 import {
   AvailableComponent,
@@ -8,7 +8,7 @@ import { LLMClient } from "../llm/llm-client";
 import { chatHistoryToParams } from "../llm/utils";
 import { parseAndValidate } from "../parser/response-parser-service";
 import { generateComponentHydrationPrompt } from "../prompt/prompt-service";
-import { schema as promptSchema } from "../prompt/schemas";
+import { schema, schemaWithoutSuggestions } from "../prompt/schemas";
 import { convertMetadataToTools } from "../tool/tool-service";
 
 // Public function
@@ -19,6 +19,7 @@ export async function hydrateComponent(
   toolResponse: any | undefined,
   availableComponents: AvailableComponents | undefined,
   threadId: string,
+  generateSuggestedActions: boolean = true,
 ): Promise<ComponentDecision> {
   //only define tools if we don't have a tool response
   const tools = toolResponse
@@ -32,6 +33,7 @@ export async function hydrateComponent(
         content: generateComponentHydrationPrompt(
           toolResponse,
           availableComponents || { [chosenComponent.name]: chosenComponent },
+          generateSuggestedActions,
         ),
       },
       ...chatHistoryToParams(messageHistory),
@@ -47,25 +49,38 @@ export async function hydrateComponent(
     true,
   );
 
+  const initialSuggestedActions = generateSuggestedActions ? [] : undefined;
   const componentDecision: ComponentDecision = {
     message: "Fetching additional data",
     componentName: chosenComponent.name,
     props: null,
-    suggestedActions: [],
+    suggestedActions: initialSuggestedActions as SuggestedAction[] | undefined,
     toolCallRequest: generateComponentResponse.toolCallRequest,
     threadId,
+    generateSuggestedActions, // TODO: Remove this when we remove the deprecated SuggestedAction interface
   };
 
   if (!componentDecision.toolCallRequest) {
-    const parsedData = await parseAndValidate(
-      promptSchema,
-      generateComponentResponse.message,
-    );
-
-    componentDecision.componentName = parsedData.componentName;
-    componentDecision.props = parsedData.props;
-    componentDecision.message = parsedData.message;
-    componentDecision.suggestedActions = parsedData.suggestedActions || [];
+    // TODO: Remove this when we remove the deprecated SuggestedAction interface
+    if (generateSuggestedActions) {
+      const parsedData = await parseAndValidate(
+        schema,
+        generateComponentResponse.message,
+      );
+      componentDecision.suggestedActions =
+        parsedData.suggestedActions || ([] as SuggestedAction[]);
+      componentDecision.componentName = parsedData.componentName;
+      componentDecision.props = parsedData.props;
+      componentDecision.message = parsedData.message;
+    } else {
+      const parsedData = await parseAndValidate(
+        schemaWithoutSuggestions,
+        generateComponentResponse.message,
+      );
+      componentDecision.componentName = parsedData.componentName;
+      componentDecision.props = parsedData.props;
+      componentDecision.message = parsedData.message;
+    }
   }
 
   return componentDecision;
