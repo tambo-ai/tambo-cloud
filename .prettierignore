@@ -3,3 +3,7 @@ apps/web/.source/
 apps/web/.next/
 apps/*/dist/
 packages/*/dist/
+# Managed by release-please
+CHANGELOG.md
+packages/db/migrations/
+.vscode/

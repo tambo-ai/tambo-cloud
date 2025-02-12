@@ -7,7 +7,7 @@
     "lint": "turbo lint",
     "lint:fix": "turbo lint -- --fix",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "prettier-check": "prettier --check \"**/*.{ts,tsx,md}\"",
+    "prettier-check": "prettier --check .",
     "check-types": "turbo check-types",
     "hydra-api:start": "turbo run start --filter=hydra-api",
     "prepare": "husky"
@@ -15,8 +15,8 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
-    "prettier": "^3.2.5",
-    "turbo": "^2.4.0",
+    "prettier": "^3.5.0",
+    "turbo": "^2.4.1",
     "typescript": "^5.7.3"
   },
   "engines": {
@@ -35,5 +35,6 @@
   "dependencies": {
     "posthog-js": "^1.216.1",
     "resend": "^4.1.2"
-  }
+  },
+  "version": "0.0.2"
 }
