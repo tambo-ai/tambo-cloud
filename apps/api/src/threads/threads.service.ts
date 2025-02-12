@@ -106,11 +106,13 @@ export class ThreadsService {
     });
     return {
       id: message.id,
+      threadId,
       role: message.role,
       content: convertContentPartToDto(message.content),
       metadata: message.metadata ?? undefined,
       component: message.componentDecision ?? undefined,
       actionType: message.actionType ?? undefined,
+      createdAt: message.createdAt,
     };
   }
 
@@ -119,11 +121,13 @@ export class ThreadsService {
     return messages.map(
       (message): ThreadMessage => ({
         id: message.id,
+        threadId,
         role: message.role,
         content: convertContentPartToDto(message.content),
         metadata: message.metadata ?? undefined,
         component: message.componentDecision ?? undefined,
         actionType: message.actionType ?? undefined,
+        createdAt: message.createdAt,
       }),
     );
   }

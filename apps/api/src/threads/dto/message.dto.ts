@@ -1,7 +1,11 @@
 import { ActionType, ContentPartType, MessageRole } from '@use-hydra-ai/core';
 import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from 'class-validator';
 import { type OpenAI } from 'openai';
-import { ComponentDecision } from '../../components/dto/component-decision.dto';
+import {
+  ComponentDecisionV2,
+  SuggestedAction,
+  ToolCallRequest,
+} from '../../components/dto/component-decision.dto';
 
 export enum AudioFormat {
   WAV = 'wav',
@@ -42,23 +46,29 @@ interface InternalThreadMessage {
   role: MessageRole;
   content: ChatCompletionContentPart[];
   metadata?: Record<string, unknown>;
-  component?: ComponentDecision;
+  component?: ComponentDecisionV2;
   actionType?: ActionType;
+  toolCallRequest?: ToolCallRequest;
+  suggestedActions?: SuggestedAction[];
 
   tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
 }
 export class ThreadMessage implements InternalThreadMessage {
   id!: string;
+  threadId!: string;
   @IsEnum(MessageRole)
   role!: MessageRole;
   content!: ChatCompletionContentPart[];
   metadata?: Record<string, unknown>;
-  component?: ComponentDecision;
+  component?: ComponentDecisionV2;
+  toolCallRequest?: ToolCallRequest;
+  suggestions?: SuggestedAction[];
   @IsEnum(ActionType)
   actionType?: ActionType;
 
   @IsOptional()
   tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
+  createdAt!: Date;
 }
 
 export class MessageRequest implements InternalThreadMessage {
@@ -72,7 +82,13 @@ export class MessageRequest implements InternalThreadMessage {
   metadata?: Record<string, unknown>;
 
   @IsOptional()
-  component?: ComponentDecision;
+  component?: ComponentDecisionV2;
+
+  @IsOptional()
+  suggestedActions?: SuggestedAction[];
+
+  @IsOptional()
+  toolCallRequest?: ToolCallRequest;
 
   @IsOptional()
   @IsEnum(ActionType)
