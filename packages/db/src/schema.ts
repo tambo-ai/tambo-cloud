@@ -1,4 +1,4 @@
-import type { ComponentDecision } from "@use-hydra-ai/core";
+import type { ComponentDecisionV2, ToolCallRequest } from "@use-hydra-ai/core";
 import {
   ActionType,
   ChatCompletionContentPart,
@@ -152,7 +152,8 @@ export const messages = pgTable("messages", ({ text, timestamp }) => ({
   content: customJsonb<string | ChatCompletionContentPart[]>(
     "content",
   ).notNull(),
-  componentDecision: customJsonb<ComponentDecision>("component_decision"),
+  componentDecision: customJsonb<ComponentDecisionV2>("component_decision"),
+  toolCallRequest: customJsonb<ToolCallRequest>("tool_call_request"),
   actionType: text("action_type", {
     enum: Object.values<string>(ActionType) as [ActionType],
   }),
