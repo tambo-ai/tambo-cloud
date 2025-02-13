@@ -12,43 +12,99 @@ Then you will output a boolean flag (true or false) between <decision></decision
 Finally, if you decide that a component should be generated, you will output the name of the component between <component></component> tags.`;
 }
 
+export const noComponentPrompt = `You are an AI assistant that interacts with users and helps them perform tasks. You have determined that you cannot generate any components to help the user with their latest query for the following reason:
+<reasoning>{reasoning}</reasoning>.
+<availableComponents>
+{availableComponents}
+</availableComponents>
+Respond to the user's latest query to the best of your ability. If they have requested a task that you cannot help with, tell them so and recommend something you can help with.
+This response should be short and concise.`;
+
 export function generateNoComponentPrompt(
   reasoning: string,
   availableComponents: AvailableComponents,
 ): string {
-  return `You are an AI assistant that interacts with users and helps them perform tasks. You have determined that you cannot generate any components to help the user with their latest query for the following reason:
-<reasoning>${reasoning}</reasoning>.
-<availableComponents>
-${generateAvailableComponentsPrompt(availableComponents)}
-</availableComponents>
-Respond to the user's latest query to the best of your ability. If they have requested a task that you cannot help with, tell them so and recommend something you can help with.
-This response should be short and concise.`;
+  return noComponentPrompt
+    .replace("{reasoning}", reasoning)
+    .replace(
+      "{availableComponents}",
+      generateAvailableComponentsPrompt(availableComponents),
+    );
+}
+
+const basePrompt = `You are an AI assistant that interacts with users and helps them perform tasks.
+To help the user perform these tasks, you are able to generate UI components. You are able to display components and decide what props to pass in. However, you can not interact with, or control 'state' data.
+When prompted, you will be given the existing conversation history, followed by the component to display, its description provided by the user, the shape of any props to pass in, and any other related context.
+Use the conversation history and other provided context to determine what props to pass in.`;
+
+const suggestedActionsGuidelines = `When generating suggestedActions, consider the following:
+1. Each suggestion should be a natural follow-up action that would make use of an available components
+2. The actionText should be phrased as a user message that would trigger the use of a specific component
+3. Suggestions should be contextually relevant to what the user is trying to accomplish
+4. Include 1-3 suggestions that would help the user progress in their current task
+5. The label should be a clear, concise button text, while the actionText can be more detailed`;
+
+export const componentHydrationPromptWithToolResponse = `${basePrompt}
+You have received a response from a tool. Use this data to help determine what props to pass in: {toolResponseString}
+
+${suggestedActionsGuidelines}
+
+{availableComponentsPrompt}
+
+{zodTypePrompt}`;
+
+export const componentHydrationPromptWithoutToolResponse = `${basePrompt}
+You can also use any of the provided tools to fetch data needed to pass into the component.
+
+${suggestedActionsGuidelines}
+
+{availableComponentsPrompt}
+
+{zodTypePrompt}`;
+
+function generateComponentHydrationPromptWithToolResponse(
+  toolResponseString: string,
+  availableComponentsPrompt: string,
+  zodTypePrompt: string,
+): string {
+  return componentHydrationPromptWithToolResponse
+    .replace("{toolResponseString}", toolResponseString)
+    .replace("{availableComponentsPrompt}", availableComponentsPrompt)
+    .replace("{zodTypePrompt}", zodTypePrompt);
+}
+
+function generateComponentHydrationPromptWithoutToolResponse(
+  availableComponentsPrompt: string,
+  zodTypePrompt: string,
+): string {
+  return componentHydrationPromptWithoutToolResponse
+    .replace("{availableComponentsPrompt}", availableComponentsPrompt)
+    .replace("{zodTypePrompt}", zodTypePrompt);
 }
 
 export function generateComponentHydrationPrompt(
   toolResponse: any | undefined,
   availableComponents: AvailableComponents,
 ): string {
-  return `You are an AI assistant that interacts with users and helps them perform tasks.
-To help the user perform these tasks, you are able to generate UI components. You are able to display components and decide what props to pass in. However, you can not interact with, or control 'state' data.
-When prompted, you will be given the existing conversation history, followed by the component to display, its description provided by the user, the shape of any props to pass in, and any other related context.
-Use the conversation history and other provided context to determine what props to pass in.
-${
-  toolResponse
-    ? `You have received a response from a tool. Use this data to help determine what props to pass in: ${JSON.stringify(toolResponse)}`
-    : `You can also use any of the provided tools to fetch data needed to pass into the component.`
-}
+  const toolResponseString = toolResponse
+    ? JSON.stringify(toolResponse)
+    : undefined;
+  const availableComponentsPrompt =
+    generateAvailableComponentsPrompt(availableComponents);
+  const zodTypePrompt = generateZodTypePrompt(schema);
 
-When generating suggestedActions, consider the following:
-1. Each suggestion should be a natural follow-up action that would make use of an available components
-2. The actionText should be phrased as a user message that would trigger the use of a specific component
-3. Suggestions should be contextually relevant to what the user is trying to accomplish
-4. Include 1-3 suggestions that would help the user progress in their current task
-5. The label should be a clear, concise button text, while the actionText can be more detailed
+  if (toolResponseString) {
+    return generateComponentHydrationPromptWithToolResponse(
+      toolResponseString,
+      availableComponentsPrompt,
+      zodTypePrompt,
+    );
+  }
 
-${generateAvailableComponentsPrompt(availableComponents)}
-
-${generateZodTypePrompt(schema)}`;
+  return generateComponentHydrationPromptWithoutToolResponse(
+    availableComponentsPrompt,
+    zodTypePrompt,
+  );
 }
 
 // Private functions
