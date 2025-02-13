@@ -22,6 +22,7 @@ export class TokenJSClient implements LLMClient {
   async complete(
     messages: ChatCompletionMessageParam[],
     promptTemplateName: string,
+    promptTemplateParams: Record<string, any>,
     tools?: ChatCompletionTool[],
     jsonMode: boolean = false,
   ): Promise<OpenAIResponse> {
@@ -34,9 +35,7 @@ export class TokenJSClient implements LLMClient {
       temperature: 0,
       response_format: jsonMode ? { type: "json_object" } : undefined,
       tools: componentTools,
-      libretto: {
-        promptTemplateName,
-      },
+      libretto: { promptTemplateName, templateParams: promptTemplateParams },
     });
 
     const openAIResponse: OpenAIResponse = {
