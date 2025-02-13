@@ -46,6 +46,10 @@ jobs:
         uses: slackapi/slack-github-action@v2.0.0
         with:
           payload: |
-            text: "Beginning deploy to production\nRelease PR: https://github.com/${{ github.repository }}/pull/${{ fromJson(steps.release.outputs.pr).number }}"
+            text: |
+              :rocket: *Production Deployment Started*
+              • Version: ${{ steps.release.outputs.tag_name }}
+              • Release PR: https://github.com/${{ github.repository }}/pull/${{ fromJson(steps.release.outputs.pr).number }}"
+              • Triggered by: ${{ github.actor }}
         env:
           SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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"
