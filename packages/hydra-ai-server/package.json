@@ -18,6 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@libretto/token.js": "^0.1.0",
     "@use-hydra-ai/core": "*",
     "openai": "^4.83.0",
     "token.js": "^0.5.3",
