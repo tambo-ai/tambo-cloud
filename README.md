@@ -106,6 +106,35 @@ cd packages/db
 npm run db:migrate
 ```
 
+### Hydra API Key Setup
+
+After setting up your local environment, you'll need to configure your Hydra API key:
+
+1. Start your local environment:
+
+```bash
+npm run dev
+```
+
+2. Get your Hydra API key:
+
+   - Visit: `http://localhost:3000/dashboard`
+   - Login with your credentials
+   - Create a new Project The key
+   - Generate your API key
+   - [ ] replace this with the CLI :)
+
+3. Configure the API key:
+
+   - Add the key to `apps/web/.env.local`:
+
+   ```bash
+   NEXT_PUBLIC_HYDRA_API_KEY=your_generated_key_here
+   ```
+
+4. Verify your setup:
+   - Visit: `http://localhost:3000/internal/smoketest`
+
 # Shadcn Landing Page Template
 
 The landing page comes from a [Shadcn Landing Page Template](https://github.com/nobruf/shadcn-landing-page) and is built with [Shadcn](https://ui.shadcn.com/), [Next.js](https://nextjs.org/), [TypeScript](https://www.typescriptlang.org/), and [Tailwind](https://tailwindcss.com/).
