@@ -15,19 +15,22 @@ export async function decideComponent(
   context: InputContext,
   threadId: string,
 ): Promise<ComponentDecision> {
-  const decisionResponse = await llmClient.complete([
-    {
-      role: "system",
-      content: generateDecisionPrompt(),
-    },
-    {
-      role: "user",
-      content: `<availableComponents>
+  const decisionResponse = await llmClient.complete(
+    [
+      {
+        role: "system",
+        content: generateDecisionPrompt(),
+      },
+      {
+        role: "user",
+        content: `<availableComponents>
       ${generateAvailableComponentsPrompt(context.availableComponents)}
       </availableComponents>`,
-    },
-    ...chatHistoryToParams(context.messageHistory),
-  ]);
+      },
+      ...chatHistoryToParams(context.messageHistory),
+    ],
+    "component-decision",
+  );
 
   const shouldGenerate = decisionResponse.message.match(
     /<decision>(.*?)<\/decision>/,
@@ -73,16 +76,19 @@ async function handleNoComponentCase(
     /<reasoning>(.*?)<\/reasoning>/,
   )?.[1];
 
-  const noComponentResponse = await llmClient.complete([
-    {
-      role: "system",
-      content: generateNoComponentPrompt(
-        reasoning,
-        context.availableComponents,
-      ),
-    },
-    ...chatHistoryToParams(context.messageHistory),
-  ]);
+  const noComponentResponse = await llmClient.complete(
+    [
+      {
+        role: "system",
+        content: generateNoComponentPrompt(
+          reasoning,
+          context.availableComponents,
+        ),
+      },
+      ...chatHistoryToParams(context.messageHistory),
+    ],
+    "no-component-decision",
+  );
 
   return {
     componentName: null,
