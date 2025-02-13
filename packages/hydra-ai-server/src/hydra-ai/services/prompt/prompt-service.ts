@@ -20,16 +20,26 @@ export const noComponentPrompt = `You are an AI assistant that interacts with us
 Respond to the user's latest query to the best of your ability. If they have requested a task that you cannot help with, tell them so and recommend something you can help with.
 This response should be short and concise.`;
 
+function replaceTemplateVariables(
+  template: string,
+  variables: Record<string, string>,
+): string {
+  return Object.entries(variables).reduce(
+    (result, [key, value]) => result.replace(`{${key}}`, value),
+    template,
+  );
+}
+
 export function generateNoComponentPrompt(
   reasoning: string,
   availableComponents: AvailableComponents,
 ): string {
-  return noComponentPrompt
-    .replace("{reasoning}", reasoning)
-    .replace(
-      "{availableComponents}",
-      generateAvailableComponentsPrompt(availableComponents),
-    );
+  const availableComponentsStr =
+    generateAvailableComponentsPrompt(availableComponents);
+  return replaceTemplateVariables(noComponentPrompt, {
+    reasoning,
+    availableComponents: availableComponentsStr,
+  });
 }
 
 const basePrompt = `You are an AI assistant that interacts with users and helps them perform tasks.
@@ -67,19 +77,21 @@ function generateComponentHydrationPromptWithToolResponse(
   availableComponentsPrompt: string,
   zodTypePrompt: string,
 ): string {
-  return componentHydrationPromptWithToolResponse
-    .replace("{toolResponseString}", toolResponseString)
-    .replace("{availableComponentsPrompt}", availableComponentsPrompt)
-    .replace("{zodTypePrompt}", zodTypePrompt);
+  return replaceTemplateVariables(componentHydrationPromptWithToolResponse, {
+    toolResponseString,
+    availableComponentsPrompt,
+    zodTypePrompt,
+  });
 }
 
 function generateComponentHydrationPromptWithoutToolResponse(
   availableComponentsPrompt: string,
   zodTypePrompt: string,
 ): string {
-  return componentHydrationPromptWithoutToolResponse
-    .replace("{availableComponentsPrompt}", availableComponentsPrompt)
-    .replace("{zodTypePrompt}", zodTypePrompt);
+  return replaceTemplateVariables(componentHydrationPromptWithoutToolResponse, {
+    availableComponentsPrompt,
+    zodTypePrompt,
+  });
 }
 
 export function generateComponentHydrationPrompt(
@@ -107,7 +119,6 @@ export function generateComponentHydrationPrompt(
   );
 }
 
-// Private functions
 export function generateAvailableComponentsPrompt(
   availableComponents: AvailableComponents,
 ): string {
