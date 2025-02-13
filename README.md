@@ -95,7 +95,6 @@ npx supabase start
 Configure the database in the `apps/api/.env` and `apps/web/.env` files:
 
 ```bash
-SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_ANON_KEY=xxxxxx # get from `supabase start` output
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
 ```
