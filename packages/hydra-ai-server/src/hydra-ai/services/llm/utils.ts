@@ -1,4 +1,4 @@
-import { ChatCompletionMessageParam } from "token.js";
+import { ChatCompletionMessageParam } from "@libretto/token.js";
 import { ChatMessage } from "../../model/chat-message";
 
 export function chatHistoryToParams(

@@ -1,7 +1,7 @@
 import {
   type ChatCompletionMessageParam,
   type ChatCompletionTool,
-} from "token.js";
+} from "@libretto/token.js";
 import { OpenAIResponse } from "../../model/openai-response";
 
 export interface LLMClient {

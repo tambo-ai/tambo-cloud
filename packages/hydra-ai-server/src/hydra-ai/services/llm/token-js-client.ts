@@ -1,9 +1,9 @@
-import { ChatCompletion } from "openai/resources/chat/completions";
 import {
   ChatCompletionMessageParam,
   ChatCompletionTool,
   TokenJS,
-} from "token.js";
+} from "@libretto/token.js";
+import { ChatCompletion } from "openai/resources/chat/completions";
 import { OpenAIResponse } from "../../model/openai-response";
 import { Provider } from "../../model/providers";
 import { LLMClient } from "./llm-client";
