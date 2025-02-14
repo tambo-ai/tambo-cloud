@@ -36,6 +36,18 @@ export default class HydraBackend {
     messageHistory: ChatMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
+    stream: true,
+  ): Promise<AsyncIterableIterator<ComponentDecision>>;
+  public async generateComponent(
+    messageHistory: ChatMessage[],
+    availableComponents: AvailableComponents,
+    threadId: string,
+    stream?: false | undefined,
+  ): Promise<ComponentDecision>;
+  public async generateComponent(
+    messageHistory: ChatMessage[],
+    availableComponents: AvailableComponents,
+    threadId: string,
     stream?: boolean,
   ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
     const context: InputContext = {
