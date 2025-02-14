@@ -14,7 +14,11 @@ import {
   ContentPartType,
   MessageRole,
 } from '@use-hydra-ai/core';
-import { ChatMessage, HydraBackend } from '@use-hydra-ai/hydra-ai-server';
+import {
+  ChatMessage,
+  HydraBackend,
+  generateChainId,
+} from '@use-hydra-ai/hydra-ai-server';
 import { decryptProviderKey } from '../common/key.utils';
 import { CorrelationLoggerService } from '../common/services/logger.service';
 import { ProjectsService } from '../projects/projects.service';
@@ -95,7 +99,7 @@ export class ComponentsController {
     //TODO: Don't instantiate HydraBackend every request
     const hydraBackend = new HydraBackend(
       decryptedProviderKey.providerKey,
-      resolvedThreadId,
+      await generateChainId(resolvedThreadId),
     );
     await this.threadsService.addMessage(resolvedThreadId, {
       role: MessageRole.User,
@@ -141,7 +145,7 @@ export class ComponentsController {
     //TODO: Don't instantiate HydraBackend every request
     const hydraBackend = new HydraBackend(
       decryptedProviderKey.providerKey,
-      resolvedThreadId,
+      await generateChainId(resolvedThreadId),
     );
 
     await this.threadsService.addMessage(resolvedThreadId, {
@@ -212,7 +216,7 @@ export class ComponentsController {
 
     const hydraBackend = new HydraBackend(
       decryptedProviderKey.providerKey,
-      resolvedThreadId,
+      await generateChainId(resolvedThreadId),
     );
 
     const toolResponseString =
@@ -261,7 +265,7 @@ export class ComponentsController {
 
     const hydraBackend = new HydraBackend(
       decryptedProviderKey.providerKey,
-      resolvedThreadId,
+      await generateChainId(resolvedThreadId),
     );
 
     const toolResponseString =
@@ -321,6 +325,7 @@ export class ComponentsController {
     return newThread.id;
   }
 }
+
 function convertThreadMessagesToLegacyThreadMessages(
   currentThreadMessages: ThreadMessage[],
 ) {
