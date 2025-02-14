@@ -35,3 +35,5 @@ export const schema = z.object({
     )
     .optional(),
 });
+
+export const streamDecisionSchema = schema.partial();
