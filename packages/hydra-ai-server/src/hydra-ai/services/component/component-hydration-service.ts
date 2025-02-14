@@ -1,4 +1,5 @@
 import { objectTemplate } from "@libretto/openai";
+import { ChatCompletionMessageParam } from "@libretto/token.js";
 import { ComponentDecision } from "@use-hydra-ai/core";
 import { ChatMessage } from "../../model/chat-message";
 import {
@@ -39,6 +40,7 @@ export async function hydrateComponent(
       toolResponse,
       availableComponents || { [chosenComponent.name]: chosenComponent },
     );
+  const chatHistory = chatHistoryToParams(messageHistory);
   const {
     template: availableComponentsTemplate,
     args: availableComponentsArgs,
@@ -48,7 +50,7 @@ export async function hydrateComponent(
   const generateComponentResponse = await llmClient.complete(
     objectTemplate([
       { role: "system", content: template },
-      ...chatHistoryToParams(messageHistory),
+      { role: "chat_history", content: "{chatHistory}" },
       {
         role: "user",
         content: `<componentName>{chosenComponentName}</componentName>
@@ -56,12 +58,13 @@ export async function hydrateComponent(
         <expectedProps>{chosenComponentProps}</expectedProps>
         ${toolResponseString ? `<toolResponse>{toolResponseString}</toolResponse>` : ""}`,
       },
-    ]),
+    ] as ChatCompletionMessageParam[]),
     toolResponseString
       ? "component-hydration-with-tool-response"
       : "component-hydration",
     {
       toolResponse,
+      chatHistory,
       chosenComponentName: chosenComponent.name,
       chosenComponentDescription,
       chosenComponentProps,
