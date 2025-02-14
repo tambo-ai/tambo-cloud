@@ -19,7 +19,8 @@ export async function hydrateComponent(
   toolResponse: any | undefined,
   availableComponents: AvailableComponents | undefined,
   threadId: string,
-): Promise<ComponentDecision> {
+  stream?: boolean,
+): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
   //only define tools if we don't have a tool response
   const tools = toolResponse
     ? undefined
