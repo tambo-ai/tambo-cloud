@@ -43,6 +43,7 @@ export async function hydrateComponent(
         ${toolResponse ? `<toolResponse>${JSON.stringify(toolResponse)}</toolResponse>` : ""}`,
       },
     ],
+    false,
     tools,
     true,
   );

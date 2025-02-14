@@ -1,7 +1,9 @@
+import { ToolCallRequest } from "@use-hydra-ai/core";
 import { ChatCompletion } from "openai/resources/chat/completions";
 import {
   ChatCompletionMessageParam,
   ChatCompletionTool,
+  StreamCompletionResponse,
   TokenJS,
 } from "token.js";
 import { OpenAIResponse } from "../../model/openai-response";
@@ -21,10 +23,37 @@ export class TokenJSClient implements LLMClient {
 
   async complete(
     messages: ChatCompletionMessageParam[],
+    stream: true,
     tools?: ChatCompletionTool[],
-    jsonMode: boolean = false,
-  ): Promise<OpenAIResponse> {
+    jsonMode?: boolean,
+  ): Promise<AsyncIterableIterator<OpenAIResponse>>;
+  async complete(
+    messages: ChatCompletionMessageParam[],
+    stream?: false,
+    tools?: ChatCompletionTool[],
+    jsonMode?: boolean,
+  ): Promise<OpenAIResponse>;
+  async complete(
+    messages: ChatCompletionMessageParam[],
+    stream = false,
+    tools?: ChatCompletionTool[],
+    jsonMode = false,
+  ): Promise<OpenAIResponse | AsyncIterableIterator<OpenAIResponse>> {
     const componentTools = tools?.length ? tools : undefined;
+
+    if (stream) {
+      const stream = await this.client.chat.completions.create({
+        provider: this.provider,
+        model: this.model,
+        messages: messages,
+        temperature: 0,
+        response_format: jsonMode ? { type: "json_object" } : undefined,
+        tools: componentTools,
+        stream: true,
+      });
+
+      return this.handleStreamingResponse(stream);
+    }
 
     const response = await this.client.chat.completions.create({
       provider: this.provider,
@@ -57,6 +86,24 @@ export class TokenJSClient implements LLMClient {
     }
 
     return openAIResponse;
+  }
+
+  private async *handleStreamingResponse(
+    stream: StreamCompletionResponse,
+  ): AsyncIterableIterator<OpenAIResponse> {
+    //TODO: Handle tool calls
+    let accumulatedMessage = "";
+    let accumulatedToolCallRequest: ToolCallRequest | undefined;
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      const toolCalls = chunk.choices[0]?.delta?.tool_calls;
+
+      if (content) {
+        accumulatedMessage += content;
+      }
+
+      yield { message: accumulatedMessage };
+    }
   }
 
   private toolCallRequestFromResponse(response: ChatCompletion) {

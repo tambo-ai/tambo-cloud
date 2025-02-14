@@ -36,14 +36,15 @@ export default class HydraBackend {
     messageHistory: ChatMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
-  ): Promise<ComponentDecision> {
+    stream?: boolean,
+  ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
     const context: InputContext = {
       messageHistory,
       availableComponents,
       threadId: threadId,
     };
 
-    return this.aiService.chooseComponent(context, threadId);
+    return this.aiService.chooseComponent(context, threadId, stream);
   }
 
   public async hydrateComponentWithData(

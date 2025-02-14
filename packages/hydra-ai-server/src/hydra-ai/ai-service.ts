@@ -19,8 +19,9 @@ export default class AIService {
   async chooseComponent(
     context: InputContext,
     threadId: string,
-  ): Promise<ComponentDecision> {
-    return decideComponent(this.llmClient, context, threadId);
+    stream?: boolean,
+  ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
+    return decideComponent(this.llmClient, context, threadId, stream);
   }
 
   async hydrateComponent(
