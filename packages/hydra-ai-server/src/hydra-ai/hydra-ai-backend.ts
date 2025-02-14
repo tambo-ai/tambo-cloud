@@ -15,10 +15,11 @@ export default class HydraBackend {
 
   constructor(
     openAIKey: string,
+    chainId: string,
     openAIModel = "gpt-4o",
     provider: Provider = "openai",
   ) {
-    this.aiService = new AIService(openAIKey, openAIModel, provider);
+    this.aiService = new AIService(openAIKey, openAIModel, provider, chainId);
   }
 
   public async registerComponent(

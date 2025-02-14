@@ -16,6 +16,7 @@ export class TokenJSClient implements LLMClient {
     private apiKey: string,
     private model: string,
     private provider: Provider,
+    private chainId: string,
   ) {
     this.client = new TokenJS({ apiKey });
   }
@@ -60,6 +61,7 @@ export class TokenJSClient implements LLMClient {
         promptTemplateName,
         templateParams: promptTemplateParams,
         templateChat: messages as any[],
+        chainId: this.chainId,
       },
     });
 
