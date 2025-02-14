@@ -46,10 +46,6 @@ export class TokenJSClient implements LLMClient {
       messages as any,
       promptTemplateParams,
     );
-    console.log(
-      "formatted messages: ",
-      JSON.stringify(messagesFormatted, null, 2),
-    );
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,

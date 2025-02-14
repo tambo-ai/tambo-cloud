@@ -63,7 +63,6 @@ export async function hydrateComponent(
       ? "component-hydration-with-tool-response"
       : "component-hydration",
     {
-      toolResponse,
       chatHistory,
       chosenComponentName: chosenComponent.name,
       chosenComponentDescription,
