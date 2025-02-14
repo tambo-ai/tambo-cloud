@@ -129,7 +129,7 @@ async function* handleNoComponentStream(
   };
 
   for await (const chunk of responseStream) {
-    accumulatedDecision.message += chunk.message;
+    accumulatedDecision.message = chunk.message;
     yield accumulatedDecision;
   }
 }
