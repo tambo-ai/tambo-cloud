@@ -17,16 +17,18 @@ export async function decideComponent(
   threadId: string,
   stream?: boolean,
 ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
-  const decisionResponse = await llmClient.complete([
-    { role: "system", content: generateDecisionPrompt() },
-    {
-      role: "user",
-      content: `<availableComponents>
+  const decisionResponse = await llmClient.complete({
+    messages: [
+      { role: "system", content: generateDecisionPrompt() },
+      {
+        role: "user",
+        content: `<availableComponents>
       ${generateAvailableComponentsPrompt(context.availableComponents)}
       </availableComponents>`,
-    },
-    ...chatHistoryToParams(context.messageHistory),
-  ]);
+      },
+      ...chatHistoryToParams(context.messageHistory),
+    ],
+  });
 
   const shouldGenerate = decisionResponse.message.match(
     /<decision>(.*?)<\/decision>/,
@@ -75,8 +77,8 @@ async function handleNoComponentCase(
   )?.[1];
 
   if (stream) {
-    const responseStream = await llmClient.complete(
-      [
+    const responseStream = await llmClient.complete({
+      messages: [
         {
           role: "system",
           content: generateNoComponentPrompt(
@@ -86,22 +88,24 @@ async function handleNoComponentCase(
         },
         ...chatHistoryToParams(context.messageHistory),
       ],
-      true,
-    );
+      stream: true,
+    });
 
     return handleNoComponentStream(responseStream, threadId);
   }
 
-  const noComponentResponse = await llmClient.complete([
-    {
-      role: "system",
-      content: generateNoComponentPrompt(
-        reasoning,
-        context.availableComponents,
-      ),
-    },
-    ...chatHistoryToParams(context.messageHistory),
-  ]);
+  const noComponentResponse = await llmClient.complete({
+    messages: [
+      {
+        role: "system",
+        content: generateNoComponentPrompt(
+          reasoning,
+          context.availableComponents,
+        ),
+      },
+      ...chatHistoryToParams(context.messageHistory),
+    ],
+  });
 
   return {
     componentName: null,

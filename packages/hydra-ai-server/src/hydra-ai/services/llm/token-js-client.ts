@@ -21,33 +21,33 @@ export class TokenJSClient implements LLMClient {
     this.client = new TokenJS({ apiKey });
   }
 
-  async complete(
-    messages: ChatCompletionMessageParam[],
-    stream: true,
-    tools?: ChatCompletionTool[],
-    jsonMode?: boolean,
-  ): Promise<AsyncIterableIterator<OpenAIResponse>>;
-  async complete(
-    messages: ChatCompletionMessageParam[],
-    stream?: false,
-    tools?: ChatCompletionTool[],
-    jsonMode?: boolean,
-  ): Promise<OpenAIResponse>;
-  async complete(
-    messages: ChatCompletionMessageParam[],
-    stream = false,
-    tools?: ChatCompletionTool[],
-    jsonMode = false,
-  ): Promise<OpenAIResponse | AsyncIterableIterator<OpenAIResponse>> {
-    const componentTools = tools?.length ? tools : undefined;
+  async complete(params: {
+    messages: ChatCompletionMessageParam[];
+    stream: true;
+    tools?: ChatCompletionTool[];
+    jsonMode?: boolean;
+  }): Promise<AsyncIterableIterator<OpenAIResponse>>;
+  async complete(params: {
+    messages: ChatCompletionMessageParam[];
+    stream?: false | undefined;
+    tools?: ChatCompletionTool[];
+    jsonMode?: boolean;
+  }): Promise<OpenAIResponse>;
+  async complete(params: {
+    messages: ChatCompletionMessageParam[];
+    stream?: boolean;
+    tools?: ChatCompletionTool[];
+    jsonMode?: boolean;
+  }): Promise<OpenAIResponse | AsyncIterableIterator<OpenAIResponse>> {
+    const componentTools = params.tools?.length ? params.tools : undefined;
 
-    if (stream) {
+    if (params.stream) {
       const stream = await this.client.chat.completions.create({
         provider: this.provider,
         model: this.model,
-        messages: messages,
+        messages: params.messages,
         temperature: 0,
-        response_format: jsonMode ? { type: "json_object" } : undefined,
+        response_format: params.jsonMode ? { type: "json_object" } : undefined,
         tools: componentTools,
         stream: true,
       });
@@ -58,9 +58,9 @@ export class TokenJSClient implements LLMClient {
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,
-      messages: messages,
+      messages: params.messages,
       temperature: 0,
-      response_format: jsonMode ? { type: "json_object" } : undefined,
+      response_format: params.jsonMode ? { type: "json_object" } : undefined,
       tools: componentTools,
     });
 

@@ -25,8 +25,8 @@ export async function hydrateComponent(
     ? undefined
     : convertMetadataToTools(chosenComponent.contextTools);
 
-  const generateComponentResponse = await llmClient.complete(
-    [
+  const generateComponentResponse = await llmClient.complete({
+    messages: [
       {
         role: "system",
         content: generateComponentHydrationPrompt(
@@ -43,10 +43,9 @@ export async function hydrateComponent(
         ${toolResponse ? `<toolResponse>${JSON.stringify(toolResponse)}</toolResponse>` : ""}`,
       },
     ],
-    false,
     tools,
-    true,
-  );
+    jsonMode: true,
+  });
 
   const componentDecision: ComponentDecision = {
     message: "Fetching additional data",
