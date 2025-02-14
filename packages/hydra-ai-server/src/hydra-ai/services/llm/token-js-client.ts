@@ -1,3 +1,4 @@
+import { formatTemplate } from "@libretto/openai/lib/src/template";
 import {
   ChatCompletionMessageParam,
   ChatCompletionTool,
@@ -28,14 +29,38 @@ export class TokenJSClient implements LLMClient {
   ): Promise<OpenAIResponse> {
     const componentTools = tools?.length ? tools : undefined;
 
+    const nonStringParams = Object.entries(promptTemplateParams).filter(
+      ([key, value]) =>
+        typeof value !== "string" &&
+        !Array.isArray(value) &&
+        typeof value !== "undefined",
+    );
+    if (nonStringParams.length > 0) {
+      console.trace(
+        "All prompt template params must be strings, came from....",
+        nonStringParams,
+      );
+    }
+    const messagesFormatted = tryFormatTemplate(
+      messages as any,
+      promptTemplateParams,
+    );
+    console.log(
+      "formatted messages: ",
+      JSON.stringify(messagesFormatted, null, 2),
+    );
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,
-      messages: messages,
+      messages: messagesFormatted,
       temperature: 0,
       response_format: jsonMode ? { type: "json_object" } : undefined,
       tools: componentTools,
-      libretto: { promptTemplateName, templateParams: promptTemplateParams },
+      libretto: {
+        promptTemplateName,
+        templateParams: promptTemplateParams,
+        templateChat: messages as any[],
+      },
     });
 
     const openAIResponse: OpenAIResponse = {
@@ -77,5 +102,17 @@ export class TokenJSClient implements LLMClient {
         parameterValue: value,
       })),
     };
+  }
+}
+
+/** We have to manually format this because objectTemplate doesn't seem to support chat_history */
+function tryFormatTemplate(
+  messages: ChatCompletionMessageParam[],
+  promptTemplateParams: Record<string, any>,
+) {
+  try {
+    return formatTemplate(messages as any, promptTemplateParams);
+  } catch (e) {
+    return messages;
   }
 }
