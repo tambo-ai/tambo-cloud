@@ -22,7 +22,7 @@ export class TokenJSClient implements LLMClient {
   async complete(
     messages: ChatCompletionMessageParam[],
     promptTemplateName: string,
-    promptTemplateParams: Record<string, any>,
+    promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>,
     tools?: ChatCompletionTool[],
     jsonMode: boolean = false,
   ): Promise<OpenAIResponse> {

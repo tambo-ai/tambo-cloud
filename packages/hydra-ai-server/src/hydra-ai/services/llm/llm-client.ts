@@ -8,7 +8,7 @@ export interface LLMClient {
   complete(
     messages: ChatCompletionMessageParam[],
     promptTemplateName: string,
-    promptTemplateParams: Record<string, any>,
+    promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>,
     tools?: ChatCompletionTool[],
     jsonMode?: boolean,
   ): Promise<OpenAIResponse>;
