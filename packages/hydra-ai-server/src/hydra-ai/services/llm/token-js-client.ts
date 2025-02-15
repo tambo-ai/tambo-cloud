@@ -91,31 +91,56 @@ export class TokenJSClient implements LLMClient {
   private async *handleStreamingResponse(
     stream: StreamCompletionResponse,
   ): AsyncIterableIterator<OpenAIResponse> {
-    //TODO: Handle tool calls
     let accumulatedMessage = "";
-    let accumulatedToolCallRequest: ToolCallRequest | undefined;
+    const accumulatedToolCall: { name?: string; arguments?: string } = {};
+
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
-      const toolCalls = chunk.choices[0]?.delta?.tool_calls;
+      const toolCall = chunk.choices[0]?.delta?.tool_calls?.[0]?.function;
 
       if (content) {
         accumulatedMessage += content;
       }
 
-      yield { message: accumulatedMessage };
+      if (toolCall) {
+        if (toolCall.name) {
+          accumulatedToolCall.name = toolCall.name;
+        }
+        if (toolCall.arguments) {
+          accumulatedToolCall.arguments =
+            (accumulatedToolCall.arguments || "") + toolCall.arguments;
+        }
+      }
+
+      let toolCallRequest: ToolCallRequest | undefined;
+      if (accumulatedToolCall.name && accumulatedToolCall.arguments) {
+        try {
+          const toolArgs = JSON.parse(accumulatedToolCall.arguments);
+          toolCallRequest = {
+            toolName: accumulatedToolCall.name,
+            parameters: Object.entries(toolArgs).map(([key, value]) => ({
+              parameterName: key,
+              parameterValue: value,
+            })),
+          };
+        } catch (e) {
+          // Skip if JSON parsing fails (incomplete JSON)
+        }
+      }
+
+      yield { message: accumulatedMessage, toolCallRequest };
     }
   }
 
   private toolCallRequestFromResponse(response: ChatCompletion) {
-    if (!response.choices[0].message.tool_calls) {
+    const toolCall = response.choices[0].message.tool_calls?.[0];
+    if (!toolCall) {
       throw new Error("No tool calls found in response");
     }
-    const toolArgs = JSON.parse(
-      response.choices[0].message.tool_calls[0].function.arguments,
-    );
+    const toolArgs = JSON.parse(toolCall.function.arguments);
 
     return {
-      toolName: response.choices[0].message.tool_calls[0].function.name,
+      toolName: toolCall.function.name,
       parameters: Object.entries(toolArgs).map(([key, value]) => ({
         parameterName: key,
         parameterValue: value,
