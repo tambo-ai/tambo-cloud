@@ -14,7 +14,11 @@ import {
   ContentPartType,
   MessageRole,
 } from '@use-hydra-ai/core';
-import { ChatMessage, HydraBackend } from '@use-hydra-ai/hydra-ai-server';
+import {
+  ChatMessage,
+  HydraBackend,
+  generateChainId,
+} from '@use-hydra-ai/hydra-ai-server';
 import { decryptProviderKey } from '../common/key.utils';
 import { CorrelationLoggerService } from '../common/services/logger.service';
 import { ProjectsService } from '../projects/projects.service';
@@ -86,12 +90,16 @@ export class ComponentsController {
     const decryptedProviderKey =
       await this.validateProjectAndProviderKeys(projectId);
 
-    //TODO: Don't instantiate HydraBackend every request
-    const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
     const resolvedThreadId = await this.ensureThread(
       projectId,
       threadId,
       contextKey,
+    );
+
+    //TODO: Don't instantiate HydraBackend every request
+    const hydraBackend = new HydraBackend(
+      decryptedProviderKey.providerKey,
+      await generateChainId(resolvedThreadId),
     );
     await this.threadsService.addMessage(resolvedThreadId, {
       role: MessageRole.User,
@@ -128,15 +136,18 @@ export class ComponentsController {
     this.logger.log(
       `generating component for project ${projectId}, with message: ${contentText}`,
     );
-
-    //TODO: Don't instantiate HydraBackend every request
-    const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
-
     const resolvedThreadId = await this.ensureThread(
       projectId,
       threadId,
       contextKey,
     );
+
+    //TODO: Don't instantiate HydraBackend every request
+    const hydraBackend = new HydraBackend(
+      decryptedProviderKey.providerKey,
+      await generateChainId(resolvedThreadId),
+    );
+
     await this.threadsService.addMessage(resolvedThreadId, {
       role: MessageRole.User,
       content,
@@ -175,6 +186,7 @@ export class ComponentsController {
       component: component,
       actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
       toolCallRequest: component.toolCallRequest,
+      suggestedActions: component.suggestedActions,
     });
   }
 
@@ -194,8 +206,6 @@ export class ComponentsController {
     const decryptedProviderKey =
       await this.validateProjectAndProviderKeys(projectId);
 
-    const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
-
     if (!component) {
       throw new BadRequestException('Component is required');
     }
@@ -204,6 +214,12 @@ export class ComponentsController {
       threadId,
       contextKey,
     );
+
+    const hydraBackend = new HydraBackend(
+      decryptedProviderKey.providerKey,
+      await generateChainId(resolvedThreadId),
+    );
+
     const toolResponseString =
       typeof toolResponse === 'string'
         ? toolResponse
@@ -238,8 +254,6 @@ export class ComponentsController {
     const decryptedProviderKey =
       await this.validateProjectAndProviderKeys(projectId);
 
-    const hydraBackend = new HydraBackend(decryptedProviderKey.providerKey);
-
     if (!component) {
       throw new BadRequestException('Component is required');
     }
@@ -249,6 +263,12 @@ export class ComponentsController {
       contextKey,
       true,
     );
+
+    const hydraBackend = new HydraBackend(
+      decryptedProviderKey.providerKey,
+      await generateChainId(resolvedThreadId),
+    );
+
     const toolResponseString =
       typeof toolResponse === 'string'
         ? toolResponse
@@ -306,6 +326,7 @@ export class ComponentsController {
     return newThread.id;
   }
 }
+
 function convertThreadMessagesToLegacyThreadMessages(
   currentThreadMessages: ThreadMessage[],
 ) {
