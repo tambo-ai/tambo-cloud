@@ -94,28 +94,25 @@ async function handleNoComponentCase(
     context.availableComponents,
   );
 
-  if (stream) {
-    const responseStream = await llmClient.complete({
-      messages: objectTemplate<ChatCompletionMessageParam[]>([
-        { role: "system", content: template },
-        { role: "chat_history" as "user", content: "{chat_history}" },
-      ]),
-      promptTemplateName: "no-component-decision",
-      promptTemplateParams: { chat_history: chatHistory, ...args },
-      stream: true,
-    });
-
-    return handleNoComponentStream(responseStream, threadId);
-  }
-
-  const noComponentResponse = await llmClient.complete({
+  const completeOptions = {
     messages: objectTemplate<ChatCompletionMessageParam[]>([
       { role: "system", content: template },
       { role: "chat_history" as "user", content: "{chat_history}" },
     ]),
     promptTemplateName: "no-component-decision",
     promptTemplateParams: { chat_history: chatHistory, ...args },
-  });
+  };
+
+  if (stream) {
+    const responseStream = await llmClient.complete({
+      ...completeOptions,
+      stream: true,
+    });
+
+    return handleNoComponentStream(responseStream, threadId);
+  }
+
+  const noComponentResponse = await llmClient.complete(completeOptions);
 
   return {
     componentName: null,

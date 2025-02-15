@@ -53,40 +53,7 @@ export async function hydrateComponent(
     availableComponents || { [chosenComponent.name]: chosenComponent },
   );
 
-  if (stream) {
-    const responseStream = await llmClient.complete({
-      messages: objectTemplate([
-        { role: "system", content: template },
-        { role: "chat_history", content: "{chatHistory}" },
-        {
-          role: "user",
-          content: `<componentName>{chosenComponentName}</componentName>
-        <componentDescription>{chosenComponentDescription}</componentDescription>
-        <expectedProps>{chosenComponentProps}</expectedProps>
-        ${toolResponseString ? `<toolResponse>{toolResponseString}</toolResponse>` : ""}`,
-        },
-      ] as ChatCompletionMessageParam[]),
-      promptTemplateName: toolResponseString
-        ? "component-hydration-with-tool-response"
-        : "component-hydration",
-      promptTemplateParams: {
-        chatHistory,
-        chosenComponentName: chosenComponent.name,
-        chosenComponentDescription,
-        chosenComponentProps,
-        toolResponseString,
-        ...componentHydrationArgs,
-        ...availableComponentsArgs,
-      },
-      tools,
-      jsonMode: true,
-      stream: true,
-    });
-
-    return handleComponentHydrationStream(responseStream, threadId);
-  }
-
-  const generateComponentResponse = await llmClient.complete({
+  const completeOptions = {
     messages: objectTemplate([
       { role: "system", content: template },
       { role: "chat_history", content: "{chatHistory}" },
@@ -112,7 +79,18 @@ export async function hydrateComponent(
     },
     tools,
     jsonMode: true,
-  });
+  };
+
+  if (stream) {
+    const responseStream = await llmClient.complete({
+      ...completeOptions,
+      stream: true,
+    });
+
+    return handleComponentHydrationStream(responseStream, threadId);
+  }
+
+  const generateComponentResponse = await llmClient.complete(completeOptions);
 
   const componentDecision: ComponentDecision = {
     message: "Fetching additional data",
