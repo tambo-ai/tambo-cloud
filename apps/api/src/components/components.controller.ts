@@ -146,6 +146,7 @@ export class ComponentsController {
     const hydraBackend = new HydraBackend(
       decryptedProviderKey.providerKey,
       await generateChainId(resolvedThreadId),
+      { version: 'v2' },
     );
 
     await this.threadsService.addMessage(resolvedThreadId, {
@@ -171,7 +172,7 @@ export class ComponentsController {
     );
     const message = await this.addDecisionToThread(resolvedThreadId, component);
 
-    return { message: message };
+    return { message };
   }
 
   private async addDecisionToThread(
@@ -218,6 +219,7 @@ export class ComponentsController {
     const hydraBackend = new HydraBackend(
       decryptedProviderKey.providerKey,
       await generateChainId(resolvedThreadId),
+      { version: 'v1' },
     );
 
     const toolResponseString =
@@ -267,6 +269,7 @@ export class ComponentsController {
     const hydraBackend = new HydraBackend(
       decryptedProviderKey.providerKey,
       await generateChainId(resolvedThreadId),
+      { version: 'v2' },
     );
 
     const toolResponseString =
