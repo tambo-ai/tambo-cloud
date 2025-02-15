@@ -118,7 +118,7 @@ async function* handleComponentHydrationStream(
 
   for await (const chunk of responseStream) {
     try {
-      //TODO: handle 'fixing JSON' of decision object here. Currently fails until the full response is received.
+      // //TODO: handle 'fixing JSON' of decision object here. Currently fails until the full response is received.
       const parsedData = await parseAndValidate(
         streamDecisionSchema,
         chunk.message,
@@ -127,6 +127,7 @@ async function* handleComponentHydrationStream(
       accumulatedDecision.props = parsedData.props;
       accumulatedDecision.message = parsedData.message || "";
       accumulatedDecision.suggestedActions = parsedData.suggestedActions || [];
+      accumulatedDecision.toolCallRequest = chunk.toolCallRequest;
       yield accumulatedDecision;
     } catch (e) {
       console.error("Error parsing chunk", e);
