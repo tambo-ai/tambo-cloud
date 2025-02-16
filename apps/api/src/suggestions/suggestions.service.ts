@@ -74,6 +74,7 @@ export class SuggestionsService {
     this.logger.log(`Generating suggestions for message: ${messageId}`);
 
     const message = await this.getMessage(messageId);
+    this.logger.log(`Generating suggestions for message: ${message.id}`);
     const count = generateSuggestionsDto.maxSuggestions ?? 3;
 
     try {
