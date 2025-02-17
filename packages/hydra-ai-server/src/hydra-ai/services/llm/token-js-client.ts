@@ -49,20 +49,6 @@ export class TokenJSClient implements LLMClient {
   }): Promise<OpenAIResponse | AsyncIterableIterator<OpenAIResponse>> {
     const componentTools = params.tools?.length ? params.tools : undefined;
 
-    if (params.stream) {
-      const stream = await this.client.chat.completions.create({
-        provider: this.provider,
-        model: this.model,
-        messages: params.messages,
-        temperature: 0,
-        response_format: params.jsonMode ? { type: "json_object" } : undefined,
-        tools: componentTools,
-        stream: true,
-      });
-
-      return this.handleStreamingResponse(stream);
-    }
-
     const nonStringParams = Object.entries(params.promptTemplateParams).filter(
       ([key, value]) =>
         typeof value !== "string" &&
@@ -79,6 +65,7 @@ export class TokenJSClient implements LLMClient {
       params.messages as any,
       params.promptTemplateParams,
     );
+
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,
@@ -93,6 +80,26 @@ export class TokenJSClient implements LLMClient {
         chainId: this.chainId,
       },
     });
+
+    if (params.stream) {
+      const stream = await this.client.chat.completions.create({
+        provider: this.provider,
+        model: this.model,
+        messages: messagesFormatted,
+        temperature: 0,
+        response_format: params.jsonMode ? { type: "json_object" } : undefined,
+        tools: componentTools,
+        libretto: {
+          promptTemplateName: params.promptTemplateName,
+          templateParams: params.promptTemplateParams,
+          templateChat: params.messages as any[],
+          chainId: this.chainId,
+        },
+        stream: true,
+      });
+
+      return this.handleStreamingResponse(stream);
+    }
 
     const openAIResponse: OpenAIResponse = {
       message: response.choices[0].message.content || "",
