@@ -47,10 +47,35 @@ async function testEndpointWithoutApiKey(
   }
 }
 
+async function testEndpointWithoutProjectId(
+  baseUrl: string,
+  endpoint: string,
+  headers: Record<string, string>,
+  method = "GET",
+  body?: object,
+) {
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    method,
+    headers,
+    ...(body && { body: JSON.stringify(body) }),
+  });
+
+  if (response.status === 400 || response.status === 403) {
+    console.log(
+      `✓ ${method} ${endpoint} correctly validates project ID (${response.status})`,
+    );
+  } else {
+    throw new Error(
+      `${method} ${endpoint} does not properly validate project ID. Status: ${response.status}`,
+    );
+  }
+}
+
 async function testSuggestions(): Promise<void> {
   try {
     const baseUrl = process.env.HYDRA_API_URL || "http://localhost:3001";
     const apiKey = process.env.HYDRA_API_KEY;
+    const projectId = process.env.TEST_PROJECT_ID || "test-project-id";
 
     if (!apiKey) {
       throw new Error("HYDRA_API_KEY environment variable is required");
@@ -61,8 +86,12 @@ async function testSuggestions(): Promise<void> {
     await testEndpointWithoutApiKey(baseUrl, "/threads", "POST", {
       contextKey: "test-context",
     });
-    await testEndpointWithoutApiKey(baseUrl, "/threads/project");
+    await testEndpointWithoutApiKey(baseUrl, `/threads/project/${projectId}`);
     await testEndpointWithoutApiKey(baseUrl, "/threads/some-id");
+    await testEndpointWithoutApiKey(baseUrl, "/threads/some-id", "PUT", {
+      contextKey: "updated-context",
+    });
+    await testEndpointWithoutApiKey(baseUrl, "/threads/some-id", "DELETE");
     await testEndpointWithoutApiKey(
       baseUrl,
       "/threads/some-id/messages",
@@ -73,6 +102,11 @@ async function testSuggestions(): Promise<void> {
       },
     );
     await testEndpointWithoutApiKey(baseUrl, "/threads/some-id/messages");
+    await testEndpointWithoutApiKey(
+      baseUrl,
+      "/threads/some-id/messages/some-message-id",
+      "DELETE",
+    );
     await testEndpointWithoutApiKey(
       baseUrl,
       "/threads/some-id/messages/some-message-id/suggestions",
@@ -86,11 +120,32 @@ async function testSuggestions(): Promise<void> {
 
     console.log("\nAll endpoints properly validate API key");
 
-    // Happy path testing
     const headers = {
       "Content-Type": "application/json",
       "x-api-key": apiKey,
     };
+
+    // Test endpoints without project ID
+    console.log("\nTesting project ID validation...");
+    await testEndpointWithoutProjectId(baseUrl, "/threads/some-id", headers);
+    await testEndpointWithoutProjectId(
+      baseUrl,
+      "/threads/some-id",
+      headers,
+      "PUT",
+      { contextKey: "test" },
+    );
+    await testEndpointWithoutProjectId(
+      baseUrl,
+      "/threads/some-id",
+      headers,
+      "DELETE",
+    );
+
+    console.log("\nAll endpoints properly validate project ID");
+
+    // Happy path testing with project ID
+    console.log("\nStarting happy path testing...");
 
     // Create a thread
     console.log("\nCreating thread...");
@@ -99,6 +154,7 @@ async function testSuggestions(): Promise<void> {
       headers,
       body: JSON.stringify({
         contextKey: "test-context",
+        projectId,
       }),
     }).then(async (res) => {
       if (!res.ok) {
@@ -107,6 +163,21 @@ async function testSuggestions(): Promise<void> {
       return res.json();
     })) as ThreadResponse;
     console.log("Thread created:", threadData);
+
+    // Get threads for project
+    console.log("\nGetting threads for project...");
+    const projectThreads = await fetch(
+      `${baseUrl}/threads/project/${projectId}`,
+      {
+        headers,
+      },
+    ).then(async (res) => {
+      if (!res.ok) {
+        throw new Error(`Failed to get project threads: ${await res.text()}`);
+      }
+      return res.json();
+    });
+    console.log("Project threads:", projectThreads);
 
     // Add a message to the thread
     console.log("\nAdding message to thread...");

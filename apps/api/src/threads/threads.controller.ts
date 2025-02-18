@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -19,6 +20,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ApiKeyGuard } from '../components/guards/apikey.guard';
+import {
+  ProjectAccessOwnGuard,
+  ProjectIdParameterKey,
+} from '../projects/guards/project-access-own.guard';
 import { ErrorDto } from './dto/error.dto';
 import { MessageRequest, ThreadMessage } from './dto/message.dto';
 import { SuggestionDto } from './dto/suggestion.dto';
@@ -33,38 +38,40 @@ import { ThreadsService } from './threads.service';
 export class ThreadsController {
   constructor(private readonly threadsService: ThreadsService) {}
 
+  @ProjectIdParameterKey('projectId')
+  @UseGuards(ProjectAccessOwnGuard)
   @Post()
-  create(@Body() createThreadDto: ThreadRequest, @Req() req): Promise<Thread> {
-    return this.threadsService.createThread({
-      ...createThreadDto,
-      projectId: req.projectId,
-    });
+  create(@Body() createThreadDto: ThreadRequest): Promise<Thread> {
+    return this.threadsService.createThread(createThreadDto);
   }
 
-  @Get('project')
+  @ProjectIdParameterKey('projectId')
+  @UseGuards(ProjectAccessOwnGuard)
+  @Get('project/:projectId')
   @ApiQuery({ name: 'contextKey', required: false })
   findAllForProject(
-    @Req() req,
+    @Param('projectId') projectId: string,
     @Query('contextKey') contextKey?: string,
   ): Promise<Thread[]> {
-    return this.threadsService.findAllForProject(req.projectId, { contextKey });
+    return this.threadsService.findAllForProject(projectId, { contextKey });
   }
 
+  @UseGuards(ProjectAccessOwnGuard)
   @Get(':id')
-  findOne(@Param('id') id: string, @Req() req): Promise<Thread> {
-    return this.threadsService.findOne(id, req.projectId);
+  findOne(@Param('id') id: string, @Req() request): Promise<Thread> {
+    if (!request.projectId) {
+      throw new BadRequestException('Project ID is required');
+    }
+    return this.threadsService.findOne(id, request.projectId);
   }
 
+  @UseGuards(ProjectAccessOwnGuard)
   @Put(':id')
   async update(
     @Param('id') id: string,
     @Body() updateThreadDto: ThreadRequest,
-    @Req() req,
   ): Promise<Thread> {
-    const thread = await this.threadsService.update(id, {
-      ...updateThreadDto,
-      projectId: req.projectId,
-    });
+    const thread = await this.threadsService.update(id, updateThreadDto);
     return {
       ...thread,
       contextKey: thread.contextKey ?? undefined,
@@ -72,11 +79,14 @@ export class ThreadsController {
     };
   }
 
+  @UseGuards(ProjectAccessOwnGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req) {
+  remove(@Param('id') id: string) {
     return this.threadsService.remove(id);
   }
 
+  // @UseGuards(ProjectAccessOwnGuard)
+  // TODO: Not protected by project access guard
   @Post(':id/messages')
   addMessage(
     @Param('id') threadId: string,
@@ -85,11 +95,15 @@ export class ThreadsController {
     return this.threadsService.addMessage(threadId, messageDto);
   }
 
+  // @UseGuards(ProjectAccessOwnGuard)
+  // TODO: Not protected by project access guard
   @Get(':id/messages')
   getMessages(@Param('id') threadId: string): Promise<ThreadMessage[]> {
     return this.threadsService.getMessages(threadId);
   }
 
+  // @UseGuards(ProjectAccessOwnGuard)
+  // TODO: Not protected by project access guard
   @Delete(':id/messages/:messageId')
   deleteMessage(
     @Param('id') threadId: string,
@@ -98,6 +112,8 @@ export class ThreadsController {
     return this.threadsService.deleteMessage(messageId);
   }
 
+  // @UseGuards(ProjectAccessOwnGuard)
+  // TODO: Not protected by project access guard
   @Get(':id/messages/:messageId/suggestions')
   @ApiOperation({
     summary: 'Get suggestions for a message',
@@ -124,6 +140,8 @@ export class ThreadsController {
     return this.threadsService.getSuggestions(messageId);
   }
 
+  // @UseGuards(ProjectAccessOwnGuard)
+  // TODO: Not protected by project access guard
   @Post(':id/messages/:messageId/suggestions')
   @ApiOperation({
     summary: 'Generate new suggestions',
