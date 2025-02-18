@@ -87,7 +87,7 @@ export async function hydrateComponent(
       stream: true,
     });
 
-    return handleComponentHydrationStream(responseStream, threadId);
+    return handleComponentHydrationStream(responseStream, threadId, version);
   }
 
   const generateComponentResponse = await llmClient.complete(completeOptions);
@@ -121,12 +121,13 @@ export async function hydrateComponent(
 async function* handleComponentHydrationStream(
   responseStream: AsyncIterableIterator<OpenAIResponse>,
   threadId: string,
+  version: "v1" | "v2" = "v1",
 ): AsyncIterableIterator<ComponentDecision> {
   let accumulatedDecision: ComponentDecision = {
     componentName: null,
     props: null,
     message: "",
-    suggestedActions: [],
+    ...(version === "v1" ? { suggestedActions: [] } : {}),
     toolCallRequest: undefined,
     threadId,
   };

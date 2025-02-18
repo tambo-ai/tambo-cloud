@@ -110,7 +110,7 @@ async function handleNoComponentCase(
       stream: true,
     });
 
-    return handleNoComponentStream(responseStream, threadId);
+    return handleNoComponentStream(responseStream, threadId, version);
   }
 
   const noComponentResponse = await llmClient.complete(completeOptions);
@@ -127,12 +127,13 @@ async function handleNoComponentCase(
 async function* handleNoComponentStream(
   responseStream: AsyncIterableIterator<OpenAIResponse>,
   threadId: string,
+  version: "v1" | "v2" = "v1",
 ): AsyncIterableIterator<ComponentDecision> {
   const accumulatedDecision: ComponentDecision = {
     componentName: null,
     props: null,
     message: "",
-    suggestedActions: [],
+    ...(version === "v1" ? { suggestedActions: [] } : {}),
     threadId,
   };
 
