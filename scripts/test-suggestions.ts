@@ -24,6 +24,29 @@ interface SuggestionResponse {
   detailedSuggestion: string;
 }
 
+async function testEndpointWithoutApiKey(
+  baseUrl: string,
+  endpoint: string,
+  method = "GET",
+  body?: object,
+) {
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    ...(body && { body: JSON.stringify(body) }),
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    console.log(`✓ ${method} ${endpoint} correctly requires API key`);
+  } else {
+    throw new Error(
+      `${method} ${endpoint} does not properly validate API key. Status: ${response.status}`,
+    );
+  }
+}
+
 async function testSuggestions(): Promise<void> {
   try {
     const baseUrl = process.env.HYDRA_API_URL || "http://localhost:3001";
@@ -33,6 +56,37 @@ async function testSuggestions(): Promise<void> {
       throw new Error("HYDRA_API_KEY environment variable is required");
     }
 
+    // Test endpoints without API key
+    console.log("\nTesting API key validation...");
+    await testEndpointWithoutApiKey(baseUrl, "/threads", "POST", {
+      contextKey: "test-context",
+    });
+    await testEndpointWithoutApiKey(baseUrl, "/threads/project");
+    await testEndpointWithoutApiKey(baseUrl, "/threads/some-id");
+    await testEndpointWithoutApiKey(
+      baseUrl,
+      "/threads/some-id/messages",
+      "POST",
+      {
+        role: "user",
+        content: [{ type: "text", text: "test" }],
+      },
+    );
+    await testEndpointWithoutApiKey(baseUrl, "/threads/some-id/messages");
+    await testEndpointWithoutApiKey(
+      baseUrl,
+      "/threads/some-id/messages/some-message-id/suggestions",
+    );
+    await testEndpointWithoutApiKey(
+      baseUrl,
+      "/threads/some-id/messages/some-message-id/suggestions",
+      "POST",
+      { maxSuggestions: 5 },
+    );
+
+    console.log("\nAll endpoints properly validate API key");
+
+    // Happy path testing
     const headers = {
       "Content-Type": "application/json",
       "x-api-key": apiKey,
@@ -111,6 +165,8 @@ async function testSuggestions(): Promise<void> {
       return res.json();
     })) as SuggestionResponse[];
     console.log("Retrieved suggestions:", getSuggestionsData);
+
+    console.log("\n✓ All tests completed successfully!");
   } catch (error) {
     if (error instanceof Error) {
       console.error("Error:", error.message);
