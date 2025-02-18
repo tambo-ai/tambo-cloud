@@ -151,6 +151,7 @@ export class TokenJSClient implements LLMClient {
 
       let toolCallRequest: ToolCallRequest | undefined;
       if (accumulatedToolCall.name && accumulatedToolCall.arguments) {
+        //don't return tool calls until they are complete
         try {
           const toolArgs = JSON.parse(accumulatedToolCall.arguments);
           toolCallRequest = {
