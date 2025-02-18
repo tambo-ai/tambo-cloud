@@ -2,6 +2,7 @@ import { objectTemplate } from "@libretto/openai";
 import { ChatCompletionMessageParam } from "@libretto/token.js";
 import { ComponentDecision } from "@use-hydra-ai/core";
 import { parse } from "partial-json";
+import { z } from "zod";
 import { ChatMessage } from "../../model/chat-message";
 import {
   AvailableComponent,
@@ -15,7 +16,7 @@ import {
   getAvailableComponentsPromptTemplate,
   getComponentHydrationPromptTemplate,
 } from "../prompt/prompt-service";
-import { schema as promptSchema } from "../prompt/schemas";
+import { schemaV1, schemaV2 } from "../prompt/schemas";
 import { convertMetadataToTools } from "../tool/tool-service";
 
 // Public function
@@ -27,6 +28,7 @@ export async function hydrateComponent(
   availableComponents: AvailableComponents | undefined,
   threadId: string,
   stream?: boolean,
+  version: "v1" | "v2" = "v1",
 ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
   //only define tools if we don't have a tool response
   const tools = toolResponse
@@ -94,21 +96,23 @@ export async function hydrateComponent(
     message: "Fetching additional data",
     componentName: chosenComponent.name,
     props: null,
-    suggestedActions: [],
+    ...(version === "v1" ? { suggestedActions: [] } : {}),
     toolCallRequest: generateComponentResponse.toolCallRequest,
     threadId,
   };
 
   if (!componentDecision.toolCallRequest) {
-    const parsedData = await parseAndValidate(
-      promptSchema,
+    const parsedData = (await parseAndValidate(
+      version === "v1" ? schemaV1 : schemaV2,
       generateComponentResponse.message,
-    );
+    )) as z.infer<typeof schemaV1> | z.infer<typeof schemaV2>;
 
     componentDecision.componentName = parsedData.componentName;
     componentDecision.props = parsedData.props;
     componentDecision.message = parsedData.message;
-    componentDecision.suggestedActions = parsedData.suggestedActions || [];
+    if (version === "v1" && "suggestedActions" in parsedData) {
+      componentDecision.suggestedActions = parsedData.suggestedActions || [];
+    }
   }
 
   return componentDecision;

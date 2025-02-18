@@ -7,14 +7,17 @@ import { TokenJSClient } from "./services/llm/token-js-client";
 
 export default class AIService {
   private llmClient: TokenJSClient;
+  private version: "v1" | "v2";
 
   constructor(
     openAiKey: string,
-    model: string = "gpt-4o",
+    model: string = "gpt-4o-mini",
     provider: Provider = "openai",
     chainId: string,
+    version: "v1" | "v2" = "v1",
   ) {
     this.llmClient = new TokenJSClient(openAiKey, model, provider, chainId);
+    this.version = version;
   }
 
   async chooseComponent(
@@ -40,6 +43,7 @@ export default class AIService {
       undefined,
       threadId,
       stream,
+      this.version,
     );
   }
 }

@@ -83,6 +83,7 @@ async function handleNoComponentCase(
   context: InputContext,
   threadId: string,
   stream?: boolean,
+  version: "v1" | "v2" = "v1",
 ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
   const reasoning = decisionResponse.message.match(
     /<reasoning>(.*?)<\/reasoning>/,
@@ -118,7 +119,7 @@ async function handleNoComponentCase(
     componentName: null,
     props: null,
     message: noComponentResponse.message,
-    suggestedActions: [],
+    ...(version === "v1" ? { suggestedActions: [] } : {}),
     threadId,
   };
 }
