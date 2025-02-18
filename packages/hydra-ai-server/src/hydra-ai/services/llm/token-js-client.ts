@@ -66,21 +66,6 @@ export class TokenJSClient implements LLMClient {
       params.promptTemplateParams,
     );
 
-    const response = await this.client.chat.completions.create({
-      provider: this.provider,
-      model: this.model,
-      messages: messagesFormatted,
-      temperature: 0,
-      response_format: params.jsonMode ? { type: "json_object" } : undefined,
-      tools: componentTools,
-      libretto: {
-        promptTemplateName: params.promptTemplateName,
-        templateParams: params.promptTemplateParams,
-        templateChat: params.messages as any[],
-        chainId: this.chainId,
-      },
-    });
-
     if (params.stream) {
       const stream = await this.client.chat.completions.create({
         provider: this.provider,
@@ -100,6 +85,21 @@ export class TokenJSClient implements LLMClient {
 
       return this.handleStreamingResponse(stream);
     }
+
+    const response = await this.client.chat.completions.create({
+      provider: this.provider,
+      model: this.model,
+      messages: messagesFormatted,
+      temperature: 0,
+      response_format: params.jsonMode ? { type: "json_object" } : undefined,
+      tools: componentTools,
+      libretto: {
+        promptTemplateName: params.promptTemplateName,
+        templateParams: params.promptTemplateParams,
+        templateChat: params.messages as any[],
+        chainId: this.chainId,
+      },
+    });
 
     const openAIResponse: OpenAIResponse = {
       message: response.choices[0].message.content || "",
