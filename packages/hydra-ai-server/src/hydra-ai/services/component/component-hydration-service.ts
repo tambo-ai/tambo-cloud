@@ -1,6 +1,7 @@
 import { objectTemplate } from "@libretto/openai";
 import { ChatCompletionMessageParam } from "@libretto/token.js";
 import { ComponentDecision } from "@use-hydra-ai/core";
+import { parse } from "partial-json";
 import { ChatMessage } from "../../model/chat-message";
 import {
   AvailableComponent,
@@ -14,10 +15,7 @@ import {
   getAvailableComponentsPromptTemplate,
   getComponentHydrationPromptTemplate,
 } from "../prompt/prompt-service";
-import {
-  schema as promptSchema,
-  streamDecisionSchema,
-} from "../prompt/schemas";
+import { schema as promptSchema } from "../prompt/schemas";
 import { convertMetadataToTools } from "../tool/tool-service";
 
 // Public function
@@ -120,7 +118,7 @@ async function* handleComponentHydrationStream(
   responseStream: AsyncIterableIterator<OpenAIResponse>,
   threadId: string,
 ): AsyncIterableIterator<ComponentDecision> {
-  const accumulatedDecision: ComponentDecision = {
+  let accumulatedDecision: ComponentDecision = {
     componentName: null,
     props: null,
     message: "",
@@ -131,16 +129,11 @@ async function* handleComponentHydrationStream(
 
   for await (const chunk of responseStream) {
     try {
-      // //TODO: handle 'fixing JSON' of decision object here. Currently fails until the full response is received.
-      const parsedData = await parseAndValidate(
-        streamDecisionSchema,
-        chunk.message,
-      );
-      accumulatedDecision.componentName = parsedData.componentName || null;
-      accumulatedDecision.props = parsedData.props;
-      accumulatedDecision.message = parsedData.message || "";
-      accumulatedDecision.suggestedActions = parsedData.suggestedActions || [];
-      accumulatedDecision.toolCallRequest = chunk.toolCallRequest;
+      const fixedJson = parse(chunk.message);
+      accumulatedDecision = {
+        ...accumulatedDecision,
+        ...fixedJson,
+      };
       yield accumulatedDecision;
     } catch (e) {
       console.error("Error parsing chunk", e);
