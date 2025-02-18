@@ -123,7 +123,7 @@ async function* handleComponentHydrationStream(
   threadId: string,
   version: "v1" | "v2" = "v1",
 ): AsyncIterableIterator<ComponentDecision> {
-  let accumulatedDecision: ComponentDecision = {
+  const initialDecision: ComponentDecision = {
     componentName: null,
     props: null,
     message: "",
@@ -132,18 +132,24 @@ async function* handleComponentHydrationStream(
     threadId,
   };
 
+  let accumulatedDecision = initialDecision;
+
   for await (const chunk of responseStream) {
     try {
-      const toolCallRequest = chunk.toolCallRequest;
-      const fixedJson = parse(chunk.message.length > 0 ? chunk.message : "{}");
+      const message = chunk.message.length > 0 ? chunk.message : "{}";
+      const parsedChunk = {
+        ...parse(message),
+        toolCallRequest: chunk.toolCallRequest,
+      };
+
       accumulatedDecision = {
         ...accumulatedDecision,
-        ...fixedJson,
-        toolCallRequest,
+        ...parsedChunk,
       };
+
       yield accumulatedDecision;
     } catch (e) {
-      console.error("Error parsing chunk", e);
+      console.error("Error parsing stream chunk:", e);
     }
   }
 }
