@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -12,7 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -20,14 +18,7 @@ import {
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
-import {
-  MessageIdParameterKey,
-  MessageProjectAccessGuard,
-} from '../messages/guards/message-project-access.guard';
-import {
-  ProjectAccessOwnGuard,
-  ProjectIdParameterKey,
-} from '../projects/guards/project-access-own.guard';
+import { ApiKeyGuard } from '../components/guards/apikey.guard';
 import { ErrorDto } from './dto/error.dto';
 import { MessageRequest, ThreadMessage } from './dto/message.dto';
 import { SuggestionDto } from './dto/suggestion.dto';
@@ -36,48 +27,44 @@ import { Thread, ThreadRequest } from './dto/thread.dto';
 import { ThreadsService } from './threads.service';
 
 @ApiTags('threads')
-@ApiBearerAuth()
 @ApiSecurity('apiKey')
+@UseGuards(ApiKeyGuard)
 @Controller('threads')
 export class ThreadsController {
   constructor(private readonly threadsService: ThreadsService) {}
 
-  @ProjectIdParameterKey('projectId')
-  @UseGuards(ProjectAccessOwnGuard)
   @Post()
-  create(@Body() createThreadDto: ThreadRequest): Promise<Thread> {
-    return this.threadsService.createThread(createThreadDto);
+  create(@Body() createThreadDto: ThreadRequest, @Req() req): Promise<Thread> {
+    return this.threadsService.createThread({
+      ...createThreadDto,
+      projectId: req.projectId,
+    });
   }
 
-  @ProjectIdParameterKey('projectId')
-  @UseGuards(ProjectAccessOwnGuard)
-  @Get('project/:projectId')
+  @Get('project')
   @ApiQuery({ name: 'contextKey', required: false })
   findAllForProject(
-    @Param('projectId') projectId: string,
+    @Req() req,
     @Query('contextKey') contextKey?: string,
   ): Promise<Thread[]> {
-    return this.threadsService.findAllForProject(projectId, { contextKey });
+    return this.threadsService.findAllForProject(req.projectId, { contextKey });
   }
 
-  //   @UseGuards(ProjectAccessOwnGuard)
   @Get(':id')
-  findOne(@Param('id') id: string, @Req() request): Promise<Thread> {
-    if (!request.projectId) {
-      // TODO: this is probably because the endpoint is using bearer auth
-      // and not apiKey auth
-      throw new BadRequestException('Project ID is required');
-    }
-    return this.threadsService.findOne(id, request.projectId);
+  findOne(@Param('id') id: string, @Req() req): Promise<Thread> {
+    return this.threadsService.findOne(id, req.projectId);
   }
 
-  //   @UseGuards(ProjectAccessOwnGuard)
   @Put(':id')
   async update(
     @Param('id') id: string,
     @Body() updateThreadDto: ThreadRequest,
+    @Req() req,
   ): Promise<Thread> {
-    const thread = await this.threadsService.update(id, updateThreadDto);
+    const thread = await this.threadsService.update(id, {
+      ...updateThreadDto,
+      projectId: req.projectId,
+    });
     return {
       ...thread,
       contextKey: thread.contextKey ?? undefined,
@@ -85,32 +72,33 @@ export class ThreadsController {
     };
   }
 
-  //   @UseGuards(ProjectAccessOwnGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string, @Req() req) {
     return this.threadsService.remove(id);
   }
 
-  //   @UseGuards(ProjectAccessOwnGuard)
   @Post(':id/messages')
   addMessage(
     @Param('id') threadId: string,
     @Body() messageDto: MessageRequest,
+    @Req() req,
   ) {
     return this.threadsService.addMessage(threadId, messageDto);
   }
 
-  //   @UseGuards(ProjectAccessOwnGuard)
   @Get(':id/messages')
-  getMessages(@Param('id') threadId: string): Promise<ThreadMessage[]> {
+  getMessages(
+    @Param('id') threadId: string,
+    @Req() req,
+  ): Promise<ThreadMessage[]> {
     return this.threadsService.getMessages(threadId);
   }
 
-  //   @UseGuards(ProjectAccessOwnGuard)
   @Delete(':id/messages/:messageId')
   deleteMessage(
     @Param('id') threadId: string,
     @Param('messageId') messageId: string,
+    @Req() req,
   ) {
     return this.threadsService.deleteMessage(messageId);
   }
@@ -135,8 +123,6 @@ export class ThreadsController {
     description: 'Message not found or has no suggestions',
     type: ErrorDto,
   })
-  @UseGuards(MessageProjectAccessGuard)
-  @MessageIdParameterKey('messageId')
   getSuggestions(
     @Param('messageId') messageId: string,
   ): Promise<SuggestionDto[]> {
@@ -173,8 +159,6 @@ export class ThreadsController {
     description: 'Failed to generate suggestions',
     type: ErrorDto,
   })
-  @UseGuards(MessageProjectAccessGuard)
-  @MessageIdParameterKey('messageId')
   generateSuggestions(
     @Param('messageId') messageId: string,
     @Body() generateSuggestionsDto: SuggestionsGenerateDto,

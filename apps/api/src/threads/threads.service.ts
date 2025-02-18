@@ -159,8 +159,7 @@ export class ThreadsService {
 
   private async getMessage(messageId: string) {
     try {
-      const messages = await operations.getMessages(this.db, messageId);
-      const message = messages.find((m) => m.id === messageId);
+      const message = await operations.getMessageWithAccess(this.db, messageId);
       if (!message) {
         this.logger.warn(`Message not found: ${messageId}`);
         throw new InvalidSuggestionRequestError('Message not found');
