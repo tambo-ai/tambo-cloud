@@ -129,10 +129,12 @@ async function* handleComponentHydrationStream(
 
   for await (const chunk of responseStream) {
     try {
-      const fixedJson = parse(chunk.message);
+      const toolCallRequest = chunk.toolCallRequest;
+      const fixedJson = parse(chunk.message.length > 0 ? chunk.message : "{}");
       accumulatedDecision = {
         ...accumulatedDecision,
         ...fixedJson,
+        toolCallRequest,
       };
       yield accumulatedDecision;
     } catch (e) {
