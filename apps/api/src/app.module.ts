@@ -10,7 +10,6 @@ import { ExtractorModule } from './extractor/extractor.module';
 import { ProjectsModule } from './projects/projects.module';
 import { RegistryModule } from './registry/registry.module';
 import { ThreadsModule } from './threads/threads.module';
-import { SuggestionsModule } from './suggestions/suggestions.module';
 
 @Module({
   imports: [
@@ -21,7 +20,6 @@ import { SuggestionsModule } from './suggestions/suggestions.module';
     RegistryModule,
     ExtractorModule,
     ThreadsModule,
-    SuggestionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
