@@ -238,16 +238,18 @@ export class ComponentsController {
         true,
       );
 
+      //TODO: add 'in-progress' message to thread and update on each chunk
       for await (const chunk of stream) {
         response.write(`data: ${JSON.stringify(chunk)}\n\n`);
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('Error in generateComponentStream:', error);
       response.write(
         `event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`,
       );
     } finally {
       response.write('data: DONE\n\n');
+      return;
     }
   }
 
@@ -376,6 +378,77 @@ export class ComponentsController {
 
     this.logger.log(`hydrated component: ${JSON.stringify(hydratedComponent)}`);
     return { message };
+  }
+
+  @Post('hydratestream')
+  async hydrateComponentStream(
+    @Body() hydrateComponentDto: HydrateComponentRequest2,
+    @Req() request, // Assumes the request object has the projectId
+    @Res() response,
+  ): Promise<void> {
+    response.setHeader('Content-Type', 'text/event-stream');
+    response.setHeader('Cache-Control', 'no-cache');
+    response.setHeader('Connection', 'keep-alive');
+
+    const { component, toolResponse, threadId, contextKey } =
+      hydrateComponentDto;
+    const projectId = request.projectId;
+    const decryptedProviderKey =
+      await this.validateProjectAndProviderKeys(projectId);
+
+    if (!component) {
+      throw new BadRequestException('Component is required');
+    }
+    const resolvedThreadId = await this.ensureThread(
+      projectId,
+      threadId,
+      contextKey,
+      true,
+    );
+
+    const hydraBackend = new HydraBackend(
+      decryptedProviderKey.providerKey,
+      await generateChainId(resolvedThreadId),
+      { version: 'v2' },
+    );
+
+    const toolResponseString =
+      typeof toolResponse === 'string'
+        ? toolResponse
+        : JSON.stringify(toolResponse);
+    await this.threadsService.addMessage(resolvedThreadId, {
+      role: MessageRole.Tool,
+      content: [{ type: ContentPartType.Text, text: toolResponseString }],
+      actionType: ActionType.ToolResponse,
+    });
+
+    const currentThreadMessages =
+      await this.threadsService.getMessages(resolvedThreadId);
+    const messageHistory = convertThreadMessagesToLegacyThreadMessages(
+      currentThreadMessages,
+    );
+    const stream = await hydraBackend.hydrateComponentWithData(
+      messageHistory,
+      component,
+      toolResponse,
+      resolvedThreadId,
+      true,
+    );
+
+    try {
+      //TODO: add 'in-progress' message to thread and update on each chunk
+      for await (const chunk of stream) {
+        response.write(`data: ${JSON.stringify(chunk)}\n\n`);
+      }
+    } catch (error: any) {
+      this.logger.error('Error in hydrateComponentStream:', error);
+      response.write(
+        `event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`,
+      );
+    } finally {
+      response.write('data: DONE\n\n');
+      return;
+    }
   }
 
   private async ensureThread(
