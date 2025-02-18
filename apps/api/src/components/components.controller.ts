@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Post,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiSecurity } from '@nestjs/swagger';
@@ -173,6 +174,81 @@ export class ComponentsController {
     const message = await this.addDecisionToThread(resolvedThreadId, component);
 
     return { message };
+  }
+
+  @Post('generatestream')
+  async generateComponentStream(
+    @Body() generateComponentDto: GenerateComponentRequest2,
+    @Req() request,
+    @Res() response,
+  ): Promise<void> {
+    response.setHeader('Content-Type', 'text/event-stream');
+    response.setHeader('Cache-Control', 'no-cache');
+    response.setHeader('Connection', 'keep-alive');
+
+    const { content, availableComponents, threadId, contextKey } =
+      generateComponentDto;
+    if (!content?.length) {
+      throw new BadRequestException(
+        'Message history is required and cannot be empty',
+      );
+    }
+
+    const projectId = request.projectId;
+    const decryptedProviderKey =
+      await this.validateProjectAndProviderKeys(projectId);
+
+    const contentText = content.map((part) => part.text).join('');
+    this.logger.log(
+      `generating component for project ${projectId}, with message: ${contentText}`,
+    );
+    const resolvedThreadId = await this.ensureThread(
+      projectId,
+      threadId,
+      contextKey,
+    );
+
+    const hydraBackend = new HydraBackend(
+      decryptedProviderKey.providerKey,
+      await generateChainId(resolvedThreadId),
+      { version: 'v2' },
+    );
+
+    await this.threadsService.addMessage(resolvedThreadId, {
+      role: MessageRole.User,
+      content,
+    });
+
+    const currentThreadMessages =
+      await this.threadsService.getMessages(resolvedThreadId);
+    const messageHistory = convertThreadMessagesToLegacyThreadMessages(
+      currentThreadMessages,
+    );
+    const availableComponentMap: Record<string, AvailableComponent> =
+      availableComponents.reduce((acc, component) => {
+        acc[component.name] = component;
+        return acc;
+      }, {});
+
+    try {
+      const stream = await hydraBackend.generateComponent(
+        messageHistory,
+        availableComponentMap,
+        resolvedThreadId,
+        true,
+      );
+
+      for await (const chunk of stream) {
+        response.write(`data: ${JSON.stringify(chunk)}\n\n`);
+      }
+    } catch (error) {
+      this.logger.error('Error in generateComponentStream:', error);
+      response.write(
+        `event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`,
+      );
+    } finally {
+      response.write('data: DONE\n\n');
+    }
   }
 
   private async addDecisionToThread(
