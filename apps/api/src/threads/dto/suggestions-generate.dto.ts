@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsNumber, IsOptional, Max, Min } from 'class-validator';
 
-export class GenerateSuggestionsDto {
+export class SuggestionsGenerateDto {
   @ApiProperty({
     description: 'Maximum number of suggestions to generate',
     minimum: 1,

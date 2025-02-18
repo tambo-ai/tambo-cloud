@@ -219,7 +219,6 @@ export class ComponentsController {
     const hydraBackend = new HydraBackend(
       decryptedProviderKey.providerKey,
       await generateChainId(resolvedThreadId),
-      { version: 'v1' },
     );
 
     const toolResponseString =

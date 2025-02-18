@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
 
-export class SuggestionResponseDto {
+export class SuggestionDto {
   @ApiProperty({
     description: 'Unique identifier for the suggestion',
     example: 'sug_123456789',
@@ -11,7 +11,15 @@ export class SuggestionResponseDto {
   id!: string;
 
   @ApiProperty({
-    description: 'Short title describing the suggestion',
+    description: 'ID of the message this suggestion is for',
+    example: 'msg_123456789',
+  })
+  @IsString()
+  @IsNotEmpty()
+  messageId!: string;
+
+  @ApiProperty({
+    description: 'Short title or summary of the suggestion',
     example: 'Add error handling',
   })
   @IsString()
@@ -20,8 +28,7 @@ export class SuggestionResponseDto {
 
   @ApiProperty({
     description: 'Detailed explanation of the suggestion',
-    example:
-      'Add try-catch blocks to handle potential errors in the async operations',
+    example: 'Add try-catch block to handle potential API errors',
   })
   @IsString()
   @IsNotEmpty()
@@ -36,12 +43,4 @@ export class SuggestionResponseDto {
   @IsObject()
   @IsOptional()
   metadata?: Record<string, unknown>;
-
-  @ApiProperty({
-    description: 'ID of the message this suggestion is for',
-    example: 'msg_123456789',
-  })
-  @IsString()
-  @IsNotEmpty()
-  messageId!: string;
 }
