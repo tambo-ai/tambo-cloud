@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { operations } from '@use-hydra-ai/db';
 import { CorrelationLoggerService } from '../../common/services/logger.service';
+import { AuthUser } from '../../users/entities/authuser.entity';
 
 /**
  * Decorator key for specifying a custom message ID parameter name.
@@ -24,6 +25,7 @@ export const MessageIdParameterKey = Reflector.createDecorator<string>({});
  *
  * The guard enriches the request object with:
  * - request.projectId: The ID of the project owning the message
+ * - request.userId: The ID of the authenticated user
  *
  * @security This guard should be used on all routes that access message data
  *
@@ -59,7 +61,15 @@ export class MessageProjectAccessGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const correlationId = request['correlationId'];
-    const userId = request.userId;
+    const authUser: AuthUser = request.authUser;
+
+    if (!authUser?.id) {
+      this.logger.warn(`[${correlationId}] No authenticated user found`);
+      return false;
+    }
+
+    // Set userId from authUser - this replaces the need for ValidUserGuard
+    request.userId = authUser.id;
 
     try {
       const messageId = this.getMessageId(request, context);
@@ -72,19 +82,19 @@ export class MessageProjectAccessGuard implements CanActivate {
         await operations.checkMessageProjectAccess(
           request.db,
           messageId,
-          userId,
+          request.userId,
         );
 
       if (!hasAccess) {
         this.logger.warn(
-          `[${correlationId}] User ${userId} attempted to access message ${messageId} without permission`,
+          `[${correlationId}] User ${request.userId} attempted to access message ${messageId} without permission`,
         );
         return false;
       }
 
       request.projectId = projectId;
       this.logger.log(
-        `[${correlationId}] User ${userId} accessed message ${messageId} in project ${projectId}`,
+        `[${correlationId}] User ${request.userId} accessed message ${messageId} in project ${projectId}`,
       );
       return true;
     } catch (e) {
