@@ -81,16 +81,12 @@ export class ThreadsController {
   addMessage(
     @Param('id') threadId: string,
     @Body() messageDto: MessageRequest,
-    @Req() req,
   ) {
     return this.threadsService.addMessage(threadId, messageDto);
   }
 
   @Get(':id/messages')
-  getMessages(
-    @Param('id') threadId: string,
-    @Req() req,
-  ): Promise<ThreadMessage[]> {
+  getMessages(@Param('id') threadId: string): Promise<ThreadMessage[]> {
     return this.threadsService.getMessages(threadId);
   }
 
@@ -98,7 +94,6 @@ export class ThreadsController {
   deleteMessage(
     @Param('id') threadId: string,
     @Param('messageId') messageId: string,
-    @Req() req,
   ) {
     return this.threadsService.deleteMessage(messageId);
   }
