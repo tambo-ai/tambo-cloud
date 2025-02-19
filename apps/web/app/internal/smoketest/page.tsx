@@ -450,47 +450,63 @@ function useWrappedApis(
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
 ) {
-  return useMemo(() => {
-    console.warn("Regenerating wrapped apis");
-    return {
-      aqi: wrapApiCall(
-        getAirQuality,
-        (isRunning, startTime, duration, tokens) =>
-          setApiStates((prev) => ({
-            ...prev,
-            aqi: { ...prev.aqi, isRunning, startTime, duration, tokens },
-          })),
-      ),
-      forecast: wrapApiCall(
-        getForecast,
-        (isRunning, startTime, duration, tokens) =>
-          setApiStates((prev) => ({
-            ...prev,
-            forecast: {
-              ...prev.forecast,
-              isRunning,
-              startTime,
-              duration,
-              tokens,
-            },
-          })),
-      ),
-      history: wrapApiCall(
-        getHistoricalWeather,
-        (isRunning, startTime, duration, tokens) =>
-          setApiStates((prev) => ({
-            ...prev,
-            history: {
-              ...prev.history,
-              isRunning,
-              startTime,
-              duration,
-              tokens,
-            },
-          })),
-      ),
-    };
-  }, [getAirQuality, getForecast, getHistoricalWeather, setApiStates]);
+  const updateAqiState = useCallback(
+    (
+      isRunning: boolean,
+      startTime: number | null,
+      duration: number | null,
+      tokens: number | null,
+    ) =>
+      setApiStates((prev) => ({
+        ...prev,
+        aqi: { ...prev.aqi, isRunning, startTime, duration, tokens },
+      })),
+    [setApiStates],
+  );
+
+  const updateForecastState = useCallback(
+    (
+      isRunning: boolean,
+      startTime: number | null,
+      duration: number | null,
+      tokens: number | null,
+    ) =>
+      setApiStates((prev) => ({
+        ...prev,
+        forecast: { ...prev.forecast, isRunning, startTime, duration, tokens },
+      })),
+    [setApiStates],
+  );
+
+  const updateHistoryState = useCallback(
+    (
+      isRunning: boolean,
+      startTime: number | null,
+      duration: number | null,
+      tokens: number | null,
+    ) =>
+      setApiStates((prev) => ({
+        ...prev,
+        history: { ...prev.history, isRunning, startTime, duration, tokens },
+      })),
+    [setApiStates],
+  );
+
+  return useMemo(
+    () => ({
+      aqi: wrapApiCall(getAirQuality, updateAqiState),
+      forecast: wrapApiCall(getForecast, updateForecastState),
+      history: wrapApiCall(getHistoricalWeather, updateHistoryState),
+    }),
+    [
+      getAirQuality,
+      getForecast,
+      getHistoricalWeather,
+      updateAqiState,
+      updateForecastState,
+      updateHistoryState,
+    ],
+  );
 }
 
 function makeWeatherTools(
@@ -498,54 +514,49 @@ function makeWeatherTools(
   getHistoricalWeather: (...args: any[]) => Promise<any>,
   getAirQuality: (...args: any[]) => Promise<any>,
 ): Record<string, HydraTool> {
+  const forecastSchema = z
+    .object({
+      location: z
+        .string()
+        .describe("The location to get the weather forecast for"),
+    })
+    .describe("The parameters to get the weather forecast for");
+
+  const historySchema = z
+    .object({
+      location: z
+        .string()
+        .describe("The location to get the historical weather for"),
+      datetime: z
+        .string()
+        .describe("The datetime to get the historical weather for"),
+    })
+    .describe("The parameters to get the historical weather for");
+
+  const aqiSchema = z
+    .object({
+      location: z.string().describe("The location to get the air quality for"),
+    })
+    .describe("The parameters to get the air quality for");
+
   return {
     forecast: {
       name: "getWeatherForecast",
       description: "Get the weather forecast",
       tool: getForecast,
-      toolSchema: z.function().args(
-        z
-          .object({
-            location: z
-              .string()
-              .describe("The location to get the weather forecast for"),
-          })
-          .describe("The parameters to get the weather forecast for"),
-      ),
+      toolSchema: z.function().args(forecastSchema).returns(z.any()),
     },
     history: {
       name: "getHistoricalWeather",
       description: "Get the historical weather",
       tool: getHistoricalWeather,
-      toolSchema: z
-        .function()
-        .args(
-          z
-            .object({
-              location: z
-                .string()
-                .describe("The location to get the historical weather for"),
-              datetime: z
-                .string()
-                .describe("The datetime to get the historical weather for"),
-            })
-            .describe("The parameters to get the historical weather for"),
-        )
-        .returns(z.any()),
+      toolSchema: z.function().args(historySchema).returns(z.any()),
     },
     aqi: {
       name: "getAirQuality",
       description: "Get the air quality",
       tool: getAirQuality,
-      toolSchema: z.function().args(
-        z
-          .object({
-            location: z
-              .string()
-              .describe("The location to get the air quality for"),
-          })
-          .describe("The parameters to get the air quality for"),
-      ),
+      toolSchema: z.function().args(aqiSchema).returns(z.any()),
     },
   };
 }
