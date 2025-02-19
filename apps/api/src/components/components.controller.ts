@@ -249,6 +249,7 @@ export class ComponentsController {
       );
     } finally {
       response.write('data: DONE\n\n');
+      response.end();
       return;
     }
   }
@@ -447,6 +448,7 @@ export class ComponentsController {
       );
     } finally {
       response.write('data: DONE\n\n');
+      response.end();
       return;
     }
   }
