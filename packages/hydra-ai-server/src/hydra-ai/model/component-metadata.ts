@@ -22,6 +22,7 @@ export interface ComponentContextToolMetadata {
 }
 
 export interface ComponentContextTool<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Args extends unknown[] = any[],
   Response extends ToolResponseBody = ToolResponseBody,
 > {
@@ -34,7 +35,7 @@ export interface AvailableComponent extends ComponentMetadata {
 }
 
 export interface ComponentWithContext extends ComponentMetadata {
-  context: any;
+  context: ToolResponseBody;
 }
 
 export interface AvailableComponents {
