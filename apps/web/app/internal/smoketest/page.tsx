@@ -27,7 +27,7 @@ import { wrapApiCall } from "./utils/apiWrapper";
 
 export default function SmokePage() {
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
-    [],
+    []
   );
   const { registerComponent, generationStage, thread } = useHydra();
   const messages = thread?.messages ?? [];
@@ -78,10 +78,10 @@ export default function SmokePage() {
     setApiStates,
     getAirQuality,
     getForecast,
-    getHistoricalWeather,
+    getHistoricalWeather
   );
   const isAnyApiRunning = Object.values(apiStates).some(
-    (state) => state.isRunning,
+    (state) => state.isRunning
   );
 
   const updateApiStates = useCallback(() => {
@@ -119,9 +119,9 @@ export default function SmokePage() {
       makeWeatherTools(
         wrappedApis.forecast.call,
         wrappedApis.history.call,
-        wrappedApis.aqi.call,
+        wrappedApis.aqi.call
       ),
-    [wrappedApis],
+    [wrappedApis]
   );
 
   useEffect(() => {
@@ -409,14 +409,14 @@ type UpdateStateCallback = (
   isRunning: boolean,
   startTime: number | null,
   duration: number | null,
-  tokens: number | null,
+  tokens: number | null
 ) => void;
 
 function useWrappedApis(
   setApiStates: (value: SetStateAction<Record<string, ApiState>>) => void,
   getAirQuality: (...args: any[]) => Promise<any>,
   getForecast: (...args: any[]) => Promise<any>,
-  getHistoricalWeather: (...args: any[]) => Promise<any>,
+  getHistoricalWeather: (...args: any[]) => Promise<any>
 ) {
   const updateAqiState: UpdateStateCallback = useCallback(
     (isRunning, startTime, duration, tokens) =>
@@ -424,7 +424,7 @@ function useWrappedApis(
         ...prev,
         aqi: { ...prev.aqi, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates],
+    [setApiStates]
   );
 
   const updateForecastState: UpdateStateCallback = useCallback(
@@ -433,7 +433,7 @@ function useWrappedApis(
         ...prev,
         forecast: { ...prev.forecast, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates],
+    [setApiStates]
   );
 
   const updateHistoryState: UpdateStateCallback = useCallback(
@@ -442,7 +442,7 @@ function useWrappedApis(
         ...prev,
         history: { ...prev.history, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates],
+    [setApiStates]
   );
 
   return useMemo(
@@ -458,14 +458,14 @@ function useWrappedApis(
       updateAqiState,
       updateForecastState,
       updateHistoryState,
-    ],
+    ]
   );
 }
 
 function makeWeatherTools(
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
-  getAirQuality: (...args: any[]) => Promise<any>,
+  getAirQuality: (...args: any[]) => Promise<any>
 ): Record<string, HydraTool> {
   const forecastSchema = z
     .object({
