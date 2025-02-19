@@ -1,12 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { useHydraSuggestions } from "@hydra-ai/react";
 import { cn } from "@/lib/utils";
-import { useCallback, useState } from "react";
-import type { Suggestion } from "@hydra-ai/client/resources/beta/threads/suggestions";
+import { useCallback } from "react";
+import type { Suggestion } from "@hydra-ai/react";
 
-interface MessageSuggestionsProps {}
+interface MessageSuggestionsProps {
+  maxSuggestions?: number;
+}
 
-export function MessageSuggestions({}: MessageSuggestionsProps) {
+export function MessageSuggestions({
+  maxSuggestions = 3,
+}: MessageSuggestionsProps) {
   const {
     suggestions,
     isLoading,
@@ -14,7 +18,7 @@ export function MessageSuggestions({}: MessageSuggestionsProps) {
     error,
     accept,
     selectedSuggestionId,
-  } = useHydraSuggestions({ maxSuggestions: 3 });
+  } = useHydraSuggestions({ maxSuggestions });
 
   const handleAccept = useCallback(
     async (suggestion: Suggestion) => {
