@@ -404,19 +404,22 @@ const AirQuality = ({ data }: AirQualityProps): JSX.Element => {
   );
 };
 
+// Add type definitions
+type UpdateStateCallback = (
+  isRunning: boolean,
+  startTime: number | null,
+  duration: number | null,
+  tokens: number | null,
+) => void;
+
 function useWrappedApis(
   setApiStates: (value: SetStateAction<Record<string, ApiState>>) => void,
   getAirQuality: (...args: any[]) => Promise<any>,
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
 ) {
-  const updateAqiState = useCallback(
-    (
-      isRunning: boolean,
-      startTime: number | null,
-      duration: number | null,
-      tokens: number | null,
-    ) =>
+  const updateAqiState: UpdateStateCallback = useCallback(
+    (isRunning, startTime, duration, tokens) =>
       setApiStates((prev) => ({
         ...prev,
         aqi: { ...prev.aqi, isRunning, startTime, duration, tokens },
@@ -424,13 +427,8 @@ function useWrappedApis(
     [setApiStates],
   );
 
-  const updateForecastState = useCallback(
-    (
-      isRunning: boolean,
-      startTime: number | null,
-      duration: number | null,
-      tokens: number | null,
-    ) =>
+  const updateForecastState: UpdateStateCallback = useCallback(
+    (isRunning, startTime, duration, tokens) =>
       setApiStates((prev) => ({
         ...prev,
         forecast: { ...prev.forecast, isRunning, startTime, duration, tokens },
@@ -438,13 +436,8 @@ function useWrappedApis(
     [setApiStates],
   );
 
-  const updateHistoryState = useCallback(
-    (
-      isRunning: boolean,
-      startTime: number | null,
-      duration: number | null,
-      tokens: number | null,
-    ) =>
+  const updateHistoryState: UpdateStateCallback = useCallback(
+    (isRunning, startTime, duration, tokens) =>
       setApiStates((prev) => ({
         ...prev,
         history: { ...prev.history, isRunning, startTime, duration, tokens },
@@ -519,28 +512,4 @@ function makeWeatherTools(
       toolSchema: z.function().args(aqiSchema).returns(z.any()),
     },
   };
-}
-
-function registerComponents(
-  client: HydraClient,
-  tools: Record<string, ComponentContextTool>,
-) {
-  client.registerComponent({
-    component: WeatherDay,
-    name: "WeatherDay",
-    description: "A weather day",
-    propsDefinition: {
-      data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
-    },
-    contextTools: [tools.forecast, tools.history],
-  });
-  client.registerComponent({
-    component: AirQuality,
-    name: "AirQuality",
-    description: "Air quality",
-    propsDefinition: {
-      data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
-    },
-    contextTools: [tools.aqi],
-  });
 }
