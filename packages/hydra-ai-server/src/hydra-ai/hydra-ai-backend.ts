@@ -4,6 +4,7 @@ import { ChatMessage } from "./model/chat-message";
 import {
   AvailableComponent,
   AvailableComponents,
+  ToolResponseBody,
 } from "./model/component-metadata";
 import { InputContext } from "./model/input-context";
 import { Provider } from "./model/providers";
@@ -66,21 +67,21 @@ export default class HydraBackend {
   public async hydrateComponentWithData(
     messageHistory: ChatMessage[],
     component: AvailableComponent,
-    toolResponse: any,
+    toolResponse: ToolResponseBody,
     threadId: string,
     stream: true,
   ): Promise<AsyncIterableIterator<ComponentDecision>>;
   public async hydrateComponentWithData(
     messageHistory: ChatMessage[],
     component: AvailableComponent,
-    toolResponse: any,
+    toolResponse: ToolResponseBody,
     threadId: string,
     stream?: false | undefined,
   ): Promise<ComponentDecision>;
   public async hydrateComponentWithData(
     messageHistory: ChatMessage[],
     component: AvailableComponent,
-    toolResponse: any,
+    toolResponse: ToolResponseBody,
     threadId: string,
     stream?: boolean,
   ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {

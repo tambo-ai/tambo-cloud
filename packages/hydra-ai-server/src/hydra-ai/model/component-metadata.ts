@@ -21,8 +21,11 @@ export interface ComponentContextToolMetadata {
   }[];
 }
 
-export interface ComponentContextTool {
-  getComponentContext: (...args: any[]) => Promise<any>;
+export interface ComponentContextTool<
+  Args extends unknown[] = any[],
+  Response extends ToolResponseBody = ToolResponseBody,
+> {
+  getComponentContext: (...args: Args) => Promise<Response>;
   definition: ComponentContextToolMetadata;
 }
 
