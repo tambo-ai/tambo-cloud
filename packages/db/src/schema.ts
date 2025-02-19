@@ -6,10 +6,17 @@ import {
   MessageRole,
 } from "@use-hydra-ai/core";
 import { relations, sql } from "drizzle-orm";
-import { index, pgPolicy, pgTable } from "drizzle-orm/pg-core";
+import { index, pgPolicy, pgRole, pgTable } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { customJsonb } from "./drizzleUtil";
 export { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
+
+const projectApiKeyVariable = sql`current_setting('request.apikey.project_id')`;
+export const projectApiKeyRole = pgRole("project_api_key", {
+  createRole: true,
+  createDb: true,
+  inherit: true,
+});
 
 export const projects = pgTable("projects", ({ text, timestamp }) => ({
   id: text("id")
@@ -45,6 +52,12 @@ export const projectMembers = pgTable(
         to: authenticatedRole,
         for: "select",
         using: sql`${table.userId} = ${authUid}`,
+      }),
+      pgPolicy("project_api_key_policy", {
+        as: "permissive",
+        to: projectApiKeyRole,
+        for: "select",
+        using: sql`${table.projectId} = ${projectApiKeyVariable}`,
       }),
     ];
   },
