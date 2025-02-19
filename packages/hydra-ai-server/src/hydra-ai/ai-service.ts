@@ -1,4 +1,5 @@
 import { ComponentDecision } from "@use-hydra-ai/core";
+import { AvailableComponent, ChatMessage, ToolResponseBody } from "./model";
 import { InputContext } from "./model/input-context";
 import { Provider } from "./model/providers";
 import { decideComponent } from "./services/component/component-decision-service";
@@ -23,16 +24,18 @@ export default class AIService {
   async chooseComponent(
     context: InputContext,
     threadId: string,
-  ): Promise<ComponentDecision> {
-    return decideComponent(this.llmClient, context, threadId, this.version);
+    stream?: boolean,
+  ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
+    return decideComponent(this.llmClient, context, threadId, stream);
   }
 
   async hydrateComponent(
-    messageHistory: any[],
-    component: any,
-    toolResponse: any,
+    messageHistory: ChatMessage[],
+    component: AvailableComponent,
+    toolResponse: ToolResponseBody,
     threadId: string,
-  ): Promise<ComponentDecision> {
+    stream?: boolean,
+  ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
     return hydrateComponent(
       this.llmClient,
       messageHistory,
@@ -40,6 +43,7 @@ export default class AIService {
       toolResponse,
       undefined,
       threadId,
+      stream,
       this.version,
     );
   }

@@ -98,8 +98,17 @@ export class ThreadsController {
   // @UseGuards(ProjectAccessOwnGuard)
   // TODO: Not protected by project access guard
   @Get(':id/messages')
-  getMessages(@Param('id') threadId: string): Promise<ThreadMessage[]> {
-    return this.threadsService.getMessages(threadId);
+  @ApiParam({
+    name: 'includeInternal',
+    description: 'Whether to include internal messages',
+    required: false,
+    type: Boolean,
+  })
+  getMessages(
+    @Param('id') threadId: string,
+    @Query('includeInternal') includeInternal?: boolean,
+  ): Promise<ThreadMessage[]> {
+    return this.threadsService.getMessages(threadId, includeInternal);
   }
 
   // @UseGuards(ProjectAccessOwnGuard)
@@ -118,6 +127,11 @@ export class ThreadsController {
   @ApiOperation({
     summary: 'Get suggestions for a message',
     description: 'Retrieves all suggestions generated for a specific message',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID of the thread to get suggestions for',
+    example: 'thread_123456789',
   })
   @ApiParam({
     name: 'messageId',
@@ -146,6 +160,11 @@ export class ThreadsController {
   @ApiOperation({
     summary: 'Generate new suggestions',
     description: 'Generates and stores new suggestions for a specific message',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID of the thread to generate suggestions for',
+    example: 'thread_123456789',
   })
   @ApiParam({
     name: 'messageId',
