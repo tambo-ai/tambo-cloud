@@ -21,13 +21,11 @@ import {
   ApiActivityMonitor,
   type ApiState,
 } from "./components/ApiActivityMonitor";
-import { SuggestedActions } from "./components/SuggestedActions";
-import { ThreadInput } from "./components/ThreadInput";
 import { wrapApiCall } from "./utils/apiWrapper";
 
 export default function SmokePage() {
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
-    []
+    [],
   );
   const { registerComponent, generationStage, thread } = useHydra();
   const messages = thread?.messages ?? [];
@@ -78,10 +76,10 @@ export default function SmokePage() {
     setApiStates,
     getAirQuality,
     getForecast,
-    getHistoricalWeather
+    getHistoricalWeather,
   );
   const isAnyApiRunning = Object.values(apiStates).some(
-    (state) => state.isRunning
+    (state) => state.isRunning,
   );
 
   const updateApiStates = useCallback(() => {
@@ -119,9 +117,9 @@ export default function SmokePage() {
       makeWeatherTools(
         wrappedApis.forecast.call,
         wrappedApis.history.call,
-        wrappedApis.aqi.call
+        wrappedApis.aqi.call,
       ),
-    [wrappedApis]
+    [wrappedApis],
   );
 
   useEffect(() => {
@@ -149,6 +147,32 @@ export default function SmokePage() {
   useEffect(() => {
     console.log("thread updated", thread);
   }, [thread]);
+
+  const { mutateAsync: generateComponent, isPending: isGenerating } =
+    useMutation({
+      mutationFn: async () => {
+        try {
+          console.log("generating component with input", input);
+          const response = await sendThreadMessage(input, thread.id);
+          return response;
+        } catch (error) {
+          setErrors((prev) => [...prev, error as Error]);
+          throw error;
+        }
+      },
+    });
+
+  const isLoading =
+    isAqiPending || isForecastPending || isHistoryPending || isGenerating;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    await generateComponent();
+
+    setInput("");
+  };
 
   return (
     <div className="container max-w-2xl py-8 space-y-4">
@@ -178,7 +202,6 @@ export default function SmokePage() {
             </div>
           ))}
         </div>
-        <SuggestedActions maxSuggestions={3} />
         <div>
           <p className="text-sm text-muted-foreground p-2">
             Generation stage: {generationStage}
@@ -410,14 +433,14 @@ type UpdateStateCallback = (
   isRunning: boolean,
   startTime: number | null,
   duration: number | null,
-  tokens: number | null
+  tokens: number | null,
 ) => void;
 
 function useWrappedApis(
   setApiStates: (value: SetStateAction<Record<string, ApiState>>) => void,
   getAirQuality: (...args: any[]) => Promise<any>,
   getForecast: (...args: any[]) => Promise<any>,
-  getHistoricalWeather: (...args: any[]) => Promise<any>
+  getHistoricalWeather: (...args: any[]) => Promise<any>,
 ) {
   const updateAqiState: UpdateStateCallback = useCallback(
     (isRunning, startTime, duration, tokens) =>
@@ -425,7 +448,7 @@ function useWrappedApis(
         ...prev,
         aqi: { ...prev.aqi, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates]
+    [setApiStates],
   );
 
   const updateForecastState: UpdateStateCallback = useCallback(
@@ -434,7 +457,7 @@ function useWrappedApis(
         ...prev,
         forecast: { ...prev.forecast, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates]
+    [setApiStates],
   );
 
   const updateHistoryState: UpdateStateCallback = useCallback(
@@ -443,7 +466,7 @@ function useWrappedApis(
         ...prev,
         history: { ...prev.history, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates]
+    [setApiStates],
   );
 
   return useMemo(
@@ -459,14 +482,14 @@ function useWrappedApis(
       updateAqiState,
       updateForecastState,
       updateHistoryState,
-    ]
+    ],
   );
 }
 
 function makeWeatherTools(
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
-  getAirQuality: (...args: any[]) => Promise<any>
+  getAirQuality: (...args: any[]) => Promise<any>,
 ): Record<string, HydraTool> {
   const forecastSchema = z
     .object({
