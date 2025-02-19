@@ -27,7 +27,7 @@ import { wrapApiCall } from "./utils/apiWrapper";
 
 export default function SmokePage() {
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
-    [],
+    []
   );
   const { registerComponent, generationStage, thread } = useHydra();
   const messages = thread?.messages ?? [];
@@ -78,10 +78,10 @@ export default function SmokePage() {
     setApiStates,
     getAirQuality,
     getForecast,
-    getHistoricalWeather,
+    getHistoricalWeather
   );
   const isAnyApiRunning = Object.values(apiStates).some(
-    (state) => state.isRunning,
+    (state) => state.isRunning
   );
 
   const updateApiStates = useCallback(() => {
@@ -119,9 +119,9 @@ export default function SmokePage() {
       makeWeatherTools(
         wrappedApis.forecast.call,
         wrappedApis.history.call,
-        wrappedApis.aqi.call,
+        wrappedApis.aqi.call
       ),
-    [wrappedApis],
+    [wrappedApis]
   );
 
   useEffect(() => {
@@ -178,9 +178,7 @@ export default function SmokePage() {
             </div>
           ))}
         </div>
-
         <SuggestedActions maxSuggestions={3} />
-
         <div>
           <p className="text-sm text-muted-foreground p-2">
             Generation stage: {generationStage}
@@ -308,7 +306,6 @@ const WeatherDay = ({ data }: WeatherDayProps): JSX.Element => {
             {new Date(data.date).toLocaleDateString()}
           </p>
           <div className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={data.day.condition.icon}
               alt={data.day.condition.text}
@@ -411,7 +408,7 @@ function useWrappedApis(
   setApiStates: (value: SetStateAction<Record<string, ApiState>>) => void,
   getAirQuality: (...args: any[]) => Promise<any>,
   getForecast: (...args: any[]) => Promise<any>,
-  getHistoricalWeather: (...args: any[]) => Promise<any>,
+  getHistoricalWeather: (...args: any[]) => Promise<any>
 ) {
   return useMemo(() => {
     console.warn("Regenerating wrapped apis");
@@ -422,7 +419,7 @@ function useWrappedApis(
           setApiStates((prev) => ({
             ...prev,
             aqi: { ...prev.aqi, isRunning, startTime, duration, tokens },
-          })),
+          }))
       ),
       forecast: wrapApiCall(
         getForecast,
@@ -436,7 +433,7 @@ function useWrappedApis(
               duration,
               tokens,
             },
-          })),
+          }))
       ),
       history: wrapApiCall(
         getHistoricalWeather,
@@ -450,7 +447,7 @@ function useWrappedApis(
               duration,
               tokens,
             },
-          })),
+          }))
       ),
     };
   }, [getAirQuality, getForecast, getHistoricalWeather, setApiStates]);
@@ -459,7 +456,7 @@ function useWrappedApis(
 function makeWeatherTools(
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
-  getAirQuality: (...args: any[]) => Promise<any>,
+  getAirQuality: (...args: any[]) => Promise<any>
 ): Record<string, HydraTool> {
   return {
     forecast: {
@@ -473,7 +470,7 @@ function makeWeatherTools(
               .string()
               .describe("The location to get the weather forecast for"),
           })
-          .describe("The parameters to get the weather forecast for"),
+          .describe("The parameters to get the weather forecast for")
       ),
     },
     history: {
@@ -492,7 +489,7 @@ function makeWeatherTools(
                 .string()
                 .describe("The datetime to get the historical weather for"),
             })
-            .describe("The parameters to get the historical weather for"),
+            .describe("The parameters to get the historical weather for")
         )
         .returns(z.any()),
     },
@@ -507,8 +504,32 @@ function makeWeatherTools(
               .string()
               .describe("The location to get the air quality for"),
           })
-          .describe("The parameters to get the air quality for"),
+          .describe("The parameters to get the air quality for")
       ),
     },
   };
+}
+
+function registerComponents(
+  client: HydraClient,
+  tools: Record<string, ComponentContextTool>
+) {
+  client.registerComponent({
+    component: WeatherDay,
+    name: "WeatherDay",
+    description: "A weather day",
+    propsDefinition: {
+      data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
+    },
+    contextTools: [tools.forecast, tools.history],
+  });
+  client.registerComponent({
+    component: AirQuality,
+    name: "AirQuality",
+    description: "Air quality",
+    propsDefinition: {
+      data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
+    },
+    contextTools: [tools.aqi],
+  });
 }
