@@ -347,6 +347,7 @@ const WeatherDay = ({ data }: WeatherDayProps): ReactNode => {
             {new Date(data.date).toLocaleDateString()}
           </p>
           <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={data.day.condition.icon}
               alt={data.day.condition.text}
