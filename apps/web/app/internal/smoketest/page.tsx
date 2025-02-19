@@ -3,22 +3,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { api } from "@/trpc/react";
 import { useHydra } from "@hydra-ai/react";
 import { HydraTool } from "@hydra-ai/react/dist/model/component-metadata";
-import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { ComponentContextTool } from "@use-hydra-ai/hydra-ai-server";
 import { HydraClient } from "hydra-ai";
 import { X } from "lucide-react";
 import {
-  ReactNode,
   SetStateAction,
   useCallback,
   useEffect,
   useMemo,
   useState,
+  type ReactNode,
 } from "react";
 import { z } from "zod";
 import {
@@ -26,16 +24,14 @@ import {
   type ApiState,
 } from "./components/ApiActivityMonitor";
 import { SuggestedActions } from "./components/SuggestedActions";
+import { ThreadInput } from "./components/ThreadInput";
 import { wrapApiCall } from "./utils/apiWrapper";
 
 export default function SmokePage() {
-  const [input, setInput] = useState("");
-
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
-  const { sendThreadMessage, registerComponent, generationStage, thread } =
-    useHydra();
+  const { registerComponent, generationStage, thread } = useHydra();
   const messages = thread?.messages ?? [];
 
   const { mutateAsync: getAirQuality, isPending: isAqiPending } =
@@ -156,35 +152,6 @@ export default function SmokePage() {
     console.log("thread updated", thread);
   }, [thread]);
 
-  const { mutateAsync: generateComponent, isPending: isGenerating } =
-    useMutation({
-      mutationFn: async () => {
-        try {
-          console.log("generating component with input", input);
-          const response = await sendThreadMessage(input, thread.id);
-          return response;
-        } catch (error) {
-          setErrors((prev) => [...prev, error as Error]);
-          throw error;
-        }
-      },
-    });
-
-  const isLoading =
-    isAqiPending || isForecastPending || isHistoryPending || isGenerating;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    await generateComponent();
-
-    setInput("");
-  };
-
-  const lastMessage = messages[messages.length - 1];
-  const suggestedActions = lastMessage?.suggestions ?? [];
-
   return (
     <div className="container max-w-2xl py-8 space-y-4">
       <Card className="p-4 min-h-[500px] flex flex-col">
@@ -206,39 +173,25 @@ export default function SmokePage() {
                 </div>
               ))}
               {message.renderedComponent && (
-                <div className="mt-2">{message.renderedComponent}</div>
+                <div className="mt-2">
+                  {message.renderedComponent as ReactNode}
+                </div>
               )}
             </div>
           ))}
         </div>
-        {suggestedActions.length > 0 && (
-          <SuggestedActions
-            actions={suggestedActions}
-            onActionClick={(actionText) => setInput(actionText)}
-          />
-        )}
+
+        <SuggestedActions maxSuggestions={3} />
+
         <div>
           <p className="text-sm text-muted-foreground p-2">
             Generation stage: {generationStage}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1"
-            disabled={isLoading}
-          />
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? (
-              <span className="inline-block animate-spin">⟳</span>
-            ) : (
-              "Send"
-            )}
-          </Button>
-        </form>
+        <ThreadInput
+          onError={(error) => setErrors((prev) => [...prev, error])}
+        />
       </Card>
 
       {errors.length > 0 && (
@@ -348,7 +301,7 @@ interface WeatherDayProps {
   readonly data: WeatherDay;
 }
 
-const WeatherDay = ({ data }: WeatherDayProps): ReactNode => {
+const WeatherDay = ({ data }: WeatherDayProps): JSX.Element => {
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
@@ -408,7 +361,7 @@ interface AirQualityProps {
   };
 }
 
-const AirQuality = ({ data }: AirQualityProps): ReactNode => {
+const AirQuality = ({ data }: AirQualityProps): JSX.Element => {
   const getAqiLevel = (aqi: number) => {
     if (aqi <= 50) return "Good";
     if (aqi <= 100) return "Moderate";
