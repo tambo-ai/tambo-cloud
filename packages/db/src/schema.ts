@@ -6,10 +6,10 @@ import {
   MessageRole,
 } from "@use-hydra-ai/core";
 import { relations, sql } from "drizzle-orm";
-import { index, pgTable } from "drizzle-orm/pg-core";
-import { authUsers } from "drizzle-orm/supabase";
+import { index, pgPolicy, pgTable } from "drizzle-orm/pg-core";
+import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { customJsonb } from "./drizzleUtil";
-export { authUsers } from "drizzle-orm/supabase";
+export { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
 export const projects = pgTable("projects", ({ text, timestamp }) => ({
   id: text("id")
@@ -22,6 +22,7 @@ export const projects = pgTable("projects", ({ text, timestamp }) => ({
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }));
+
 export type DBProject = typeof projects.$inferSelect;
 export const projectMembers = pgTable(
   "project_members",
@@ -37,6 +38,16 @@ export const projectMembers = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   }),
+  (table) => {
+    return [
+      pgPolicy("project_members_policy", {
+        as: "permissive",
+        to: authenticatedRole,
+        for: "select",
+        using: sql`${table.userId} = ${authUid}`,
+      }),
+    ];
+  },
 );
 export type DBProjectMember = typeof projectMembers.$inferSelect;
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
