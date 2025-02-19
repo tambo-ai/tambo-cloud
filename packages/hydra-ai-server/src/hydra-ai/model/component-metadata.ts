@@ -37,3 +37,10 @@ export interface ComponentWithContext extends ComponentMetadata {
 export interface AvailableComponents {
   [key: string]: AvailableComponent;
 }
+
+/**
+ * The body of a tool response.
+ * This is the data returned by the tool.
+ * This is not the tool response, which is the entire message from the tool.
+ */
+export type ToolResponseBody = unknown;
