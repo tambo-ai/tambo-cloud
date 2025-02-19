@@ -1,13 +1,11 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
 import { useHydra } from "@hydra-ai/react";
 import { HydraTool } from "@hydra-ai/react/dist/model/component-metadata";
-import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { X } from "lucide-react";
 import {
@@ -23,16 +21,15 @@ import {
   ApiActivityMonitor,
   type ApiState,
 } from "./components/ApiActivityMonitor";
+import { MessageSuggestions } from "./components/MessageSuggestions";
+import { ThreadMessageInput } from "./components/ThreadMessageInput";
 import { wrapApiCall } from "./utils/apiWrapper";
 
 export default function SmokePage() {
-  const [input, setInput] = useState("");
-
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
-  const { sendThreadMessage, registerComponent, generationStage, thread } =
-    useHydra();
+  const { registerComponent, generationStage, thread } = useHydra();
   const messages = thread?.messages ?? [];
 
   const { mutateAsync: getAirQuality, isPending: isAqiPending } =
@@ -94,6 +91,7 @@ export default function SmokePage() {
       history: wrappedApis.history.getState(),
     });
   }, [wrappedApis]);
+
   useEffect(() => {
     if (isAnyApiRunning && !pollInterval) {
       const interval = setInterval(() => {
@@ -149,35 +147,7 @@ export default function SmokePage() {
     });
   }, [registerComponent, tools]);
 
-  useEffect(() => {
-    console.log("thread updated", thread);
-  }, [thread]);
-
-  const { mutateAsync: generateComponent, isPending: isGenerating } =
-    useMutation({
-      mutationFn: async () => {
-        try {
-          console.log("generating component with input", input);
-          const response = await sendThreadMessage(input, thread.id);
-          return response;
-        } catch (error) {
-          setErrors((prev) => [...prev, error as Error]);
-          throw error;
-        }
-      },
-    });
-
-  const isLoading =
-    isAqiPending || isForecastPending || isHistoryPending || isGenerating;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    await generateComponent();
-
-    setInput("");
-  };
+  const isLoading = isAqiPending || isForecastPending || isHistoryPending;
 
   return (
     <div className="container max-w-2xl py-8 space-y-4">
@@ -205,29 +175,13 @@ export default function SmokePage() {
             </div>
           ))}
         </div>
-        <SuggestedActions maxSuggestions={3} />
+        <MessageSuggestions maxSuggestions={3} />
         <div>
           <p className="text-sm text-muted-foreground p-2">
             Generation stage: {generationStage}
           </p>
         </div>
-
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1"
-            disabled={isLoading}
-          />
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? (
-              <span className="inline-block animate-spin">⟳</span>
-            ) : (
-              "Send"
-            )}
-          </Button>
-        </form>
+        <ThreadMessageInput />
       </Card>
 
       {errors.length > 0 && (
@@ -559,28 +513,4 @@ function makeWeatherTools(
       toolSchema: z.function().args(aqiSchema).returns(z.any()),
     },
   };
-}
-
-function registerComponents(
-  client: HydraClient,
-  tools: Record<string, ComponentContextTool>,
-) {
-  client.registerComponent({
-    component: WeatherDay,
-    name: "WeatherDay",
-    description: "A weather day",
-    propsDefinition: {
-      data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
-    },
-    contextTools: [tools.forecast, tools.history],
-  });
-  client.registerComponent({
-    component: AirQuality,
-    name: "AirQuality",
-    description: "Air quality",
-    propsDefinition: {
-      data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
-    },
-    contextTools: [tools.aqi],
-  });
 }
