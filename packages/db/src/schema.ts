@@ -48,13 +48,11 @@ export const projectMembers = pgTable(
   (table) => {
     return [
       pgPolicy("project_members_policy", {
-        as: "permissive",
         to: authenticatedRole,
         for: "select",
         using: sql`${table.userId} = ${authUid}`,
       }),
       pgPolicy("project_api_key_policy", {
-        as: "permissive",
         to: projectApiKeyRole,
         for: "select",
         using: sql`${table.projectId} = ${projectApiKeyVariable}`,
