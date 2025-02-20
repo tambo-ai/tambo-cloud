@@ -23,7 +23,7 @@ import { ProjectAccessOwnGuard } from './guards/project-access-own.guard';
 import { ProjectsService } from './projects.service';
 
 @ApiSecurity('apiKey')
-// @UseGuards(AdminKeyGuard)
+@UseGuards(ApiKeyGuard)
 @Controller('projects')
 @UseGuards(ApiKeyGuard)
 export class ProjectsController {
@@ -51,10 +51,15 @@ export class ProjectsController {
     return await this.projectsService.findAllForUser(request.userId);
   }
 
-  @UseGuards(ProjectAccessOwnGuard)
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<ProjectResponse | undefined> {
-    return await this.projectsService.findOne(id);
+    console.log('findOne', id);
+    const project = await await this.projectsService.findOne(id);
+    console.log('project', project);
+    if (!project) {
+      throw new Error('Project not found');
+    }
+    return project;
   }
 
   @UseGuards(ProjectAccessOwnGuard)

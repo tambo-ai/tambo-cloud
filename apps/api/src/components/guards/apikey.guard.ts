@@ -32,6 +32,7 @@ export class ApiKeyGuard implements CanActivate {
         apiKey,
         projectIdOrLegacyId,
       );
+      console.log('ApiKeyGuard got projectId', projectId);
       if (!projectId) {
         this.logger.error(`Invalid API key for project ${projectIdOrLegacyId}`);
         throw new UnauthorizedException('Invalid API key');
