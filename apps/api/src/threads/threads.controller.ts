@@ -98,7 +98,7 @@ export class ThreadsController {
   // @UseGuards(ProjectAccessOwnGuard)
   // TODO: Not protected by project access guard
   @Get(':id/messages')
-  @ApiParam({
+  @ApiQuery({
     name: 'includeInternal',
     description: 'Whether to include internal messages',
     required: false,
@@ -149,6 +149,7 @@ export class ThreadsController {
     type: ErrorDto,
   })
   getSuggestions(
+    @Param('id') threadId: string,
     @Param('messageId') messageId: string,
   ): Promise<SuggestionDto[]> {
     return this.threadsService.getSuggestions(messageId);
@@ -192,6 +193,7 @@ export class ThreadsController {
     type: ErrorDto,
   })
   generateSuggestions(
+    @Param('id') threadId: string,
     @Param('messageId') messageId: string,
     @Body() generateSuggestionsDto: SuggestionsGenerateDto,
   ): Promise<SuggestionDto[]> {
