@@ -38,6 +38,16 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
         },
       ],
+      "@typescript-eslint/return-await": "error",
+    },
+  },
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ["*.mjs"],
+        },
+      },
     },
   },
 );
