@@ -131,7 +131,7 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 });
 
 const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
-  return ctx.db.transaction(async (tx) => {
+  return await ctx.db.transaction(async (tx) => {
     const token: SupabaseToken = jwt.decode(ctx.session?.access_token);
     try {
       await tx.execute(sql`
