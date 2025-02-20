@@ -11,10 +11,9 @@ import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { customJsonb } from "./drizzleUtil";
 export { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 
-const projectApiKeyVariable = sql`current_setting('request.apikey.project_id')`;
+/** Use this to get the project id from the api key */
+export const projectApiKeyVariable = sql`current_setting('request.apikey.project_id')`;
 export const projectApiKeyRole = pgRole("project_api_key", {
-  createRole: true,
-  createDb: true,
   inherit: true,
 });
 
@@ -47,7 +46,7 @@ export const projectMembers = pgTable(
   }),
   (table) => {
     return [
-      pgPolicy("project_members_policy", {
+      pgPolicy("project_members_user_policy", {
         to: authenticatedRole,
         for: "select",
         using: sql`${table.userId} = ${authUid}`,
