@@ -34,12 +34,10 @@ export const projects = pgTable(
     return [
       pgPolicy("project_user_policy", {
         to: authenticatedRole,
-        for: "select",
         using: sql`exists (select 1 from project_members where project_members.project_id = ${table.id} and project_members.user_id = ${authUid})`,
       }),
       pgPolicy("project_api_key_policy", {
         to: projectApiKeyRole,
-        for: "select",
         using: sql`${table.id} = ${projectApiKeyVariable}`,
       }),
     ];
@@ -65,12 +63,10 @@ export const projectMembers = pgTable(
     return [
       pgPolicy("project_members_user_policy", {
         to: authenticatedRole,
-        for: "select",
         using: sql`${table.userId} = ${authUid}`,
       }),
       pgPolicy("project_members_api_key_policy", {
         to: projectApiKeyRole,
-        for: "select",
         using: sql`${table.projectId} = ${projectApiKeyVariable}`,
       }),
     ];
