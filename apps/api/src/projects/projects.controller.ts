@@ -4,14 +4,17 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Put,
   Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiSecurity } from '@nestjs/swagger';
+import { TransactionInterceptor } from 'src/common/middleware/db-transaction-middleware';
 import { ApiKeyGuard } from 'src/components/guards/apikey.guard';
 import { AddProviderKeyRequest } from './dto/add-provider-key.dto';
 import {
@@ -24,6 +27,7 @@ import { ProjectsService } from './projects.service';
 
 @ApiSecurity('apiKey')
 @UseGuards(ApiKeyGuard)
+@UseInterceptors(TransactionInterceptor)
 @Controller('projects')
 @UseGuards(ApiKeyGuard)
 export class ProjectsController {
@@ -57,7 +61,7 @@ export class ProjectsController {
     const project = await await this.projectsService.findOne(id);
     console.log('project', project);
     if (!project) {
-      throw new Error('Project not found');
+      throw new NotFoundException('Project not found');
     }
     return project;
   }

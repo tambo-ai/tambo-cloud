@@ -1,39 +1,44 @@
-import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
-import { HydraDb } from '@use-hydra-ai/db';
-import { NextFunction, Request, Response } from 'express';
+import {
+  CallHandler,
+  ExecutionContext,
+  HttpException,
+  Inject,
+  Injectable,
+  NestInterceptor,
+} from '@nestjs/common';
+import { HydraDb, HydraTransaction } from '@use-hydra-ai/db';
+import { Request } from 'express';
+import { from } from 'rxjs';
 
-interface MyRequest extends Request {
-  transaction: HydraDb;
+interface HydraRequest extends Request {
+  tx: HydraTransaction;
 }
 
 @Injectable()
-export class TransactionMiddleware implements NestMiddleware<MyRequest> {
+export class TransactionInterceptor implements NestInterceptor<HydraRequest> {
   constructor(
     @Inject('DbRepository')
     private readonly db: HydraDb,
   ) {}
 
-  async use(req: MyRequest, res: Response, next: NextFunction) {
-    await this.db.transaction(async (tx) => {
-      console.log('beginning transaction...');
-      req.transaction = tx; // Attach transaction to request
+  intercept(context: ExecutionContext, next: CallHandler) {
+    const request: HydraRequest = context.switchToHttp().getRequest();
+    return from(
+      this.db.transaction(async (tx) => {
+        request.tx = tx; // Attach transaction to request
 
-      const p = new Promise<void>((resolve, reject) => {
-        res.on('finish', () => {
-          console.log('finishing transaction...', res.status);
-          resolve();
-        }); // Commit transaction on success
-        res.on('close', () => {
-          console.log('closing transaction...', res.status);
-          resolve();
-        });
-        res.on('error', (err) => {
-          console.log('rolling back transaction...', err);
-          reject(err);
-        }); // Rollback transaction on error
-      });
-      next();
-      await p;
-    });
+        try {
+          const result = await next.handle().toPromise();
+          return result;
+          // Commit transaction automatically
+        } catch (error) {
+          // automatically rollback on unrecognized errors
+          if (!(error instanceof HttpException) || error.getStatus() >= 500) {
+            tx.rollback(); // Rollback transaction manually on error
+          }
+          throw error;
+        }
+      }),
+    );
   }
 }

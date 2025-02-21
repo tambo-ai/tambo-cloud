@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getDb } from '@use-hydra-ai/db';
 import { AppService } from './app.service';
 import { LoggerModule } from './common/logger.module';
-import { TransactionMiddleware } from './common/middleware/db-transaction-middleware';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 import { ComponentsModule } from './components/components.module';
 import { ConfigServiceSingleton } from './config.service';
@@ -41,6 +40,5 @@ export class AppModule implements OnModuleInit {
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(RequestLoggerMiddleware).forRoutes('*');
-    consumer.apply(TransactionMiddleware).forRoutes('*');
   }
 }
