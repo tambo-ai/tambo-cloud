@@ -1,8 +1,15 @@
 import { ChatMessage } from "./chat-message";
-import { AvailableComponents } from "./component-metadata";
+import { AvailableComponent, AvailableComponents } from "./component-metadata";
 
-export type InputContext = {
+export type InputContextCore = {
   messageHistory: ChatMessage[];
-  availableComponents: AvailableComponents;
   threadId: string;
+};
+
+export type InputContext = InputContextCore & {
+  availableComponents: AvailableComponents;
+};
+
+export type InputContextAsArray = InputContextCore & {
+  availableComponents: AvailableComponent[];
 };

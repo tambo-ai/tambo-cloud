@@ -6,8 +6,9 @@ import {
   AvailableComponents,
   ToolResponseBody,
 } from "./model/component-metadata";
-import { InputContext } from "./model/input-context";
+import { InputContext, InputContextAsArray } from "./model/input-context";
 import { Provider } from "./model/providers";
+import { SuggestionDecision } from "./services/suggestion/suggestion.types";
 
 interface HydraBackendOptions {
   version?: "v1" | "v2";
@@ -37,6 +38,36 @@ export default class HydraBackend {
     );
   }
 
+  public async generateSuggestions(
+    messageHistory: ChatMessage[],
+    count: number,
+    availableComponents: AvailableComponent[],
+    threadId: string,
+    stream: true,
+  ): Promise<AsyncIterableIterator<SuggestionDecision>>;
+  public async generateSuggestions(
+    messageHistory: ChatMessage[],
+    count: number,
+    availableComponents: AvailableComponent[],
+    threadId: string,
+    stream?: false | undefined,
+  ): Promise<SuggestionDecision>;
+  public async generateSuggestions(
+    messageHistory: ChatMessage[],
+    count: number,
+    availableComponents: AvailableComponent[],
+    threadId: string,
+    stream?: boolean,
+  ): Promise<SuggestionDecision | AsyncIterableIterator<SuggestionDecision>> {
+    const context: InputContextAsArray = {
+      messageHistory: messageHistory ?? [],
+      availableComponents: availableComponents ?? [],
+      threadId,
+    };
+
+    return await this.aiService.generateSuggestions(context, count, threadId, stream);
+  }
+
   public async generateComponent(
     messageHistory: ChatMessage[],
     availableComponents: AvailableComponents,
@@ -58,7 +89,7 @@ export default class HydraBackend {
     const context: InputContext = {
       messageHistory,
       availableComponents,
-      threadId: threadId,
+      threadId,
     };
 
     return await this.aiService.chooseComponent(context, threadId, stream);
@@ -94,6 +125,7 @@ export default class HydraBackend {
     );
   }
 }
+
 /**
  * Generate a consistent, valid UUID from a string using SHA-256
  * This is used to ensure that the same string will always generate the same UUID

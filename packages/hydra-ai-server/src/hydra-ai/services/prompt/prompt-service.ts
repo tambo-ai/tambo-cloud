@@ -1,15 +1,19 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import {
+  AvailableComponent,
   AvailableComponents,
   ToolResponseBody,
 } from "../../model/component-metadata";
 import { schemaV1, schemaV2 } from "./schemas";
-
 export interface PromptTemplate {
   template: string;
   args: Record<string, string>;
   version?: "v1" | "v2";
+}
+
+export function getBasePrompt(version: "v1" | "v2" = "v1"): string {
+  return version === "v1" ? basePromptV1 : basePromptV2;
 }
 
 // Public functions
@@ -160,6 +164,7 @@ function generateAvailableComponentsPrompt(
   return replaceTemplateVariables(template.template, template.args);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function generateZodTypePrompt(schema: z.ZodSchema<any>): string {
   return `
       Return a JSON object that matches the given Zod schema.
@@ -169,7 +174,8 @@ function generateZodTypePrompt(schema: z.ZodSchema<any>): string {
     `;
 }
 
-function generateFormatInstructions(schema: z.ZodSchema<any>): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function generateFormatInstructions(schema: z.ZodSchema<any>): string {
   return `You must format your output as a JSON value that adheres to a given "JSON Schema" instance.
 
     "JSON Schema" is a declarative language that allows you to annotate and validate JSON documents.
@@ -184,4 +190,62 @@ function generateFormatInstructions(schema: z.ZodSchema<any>): string {
     ${JSON.stringify(zodToJsonSchema(schema))}
     \`\`\`
     `;
+}
+
+/**
+ * @param components List of available components
+ * @param suggestionCount Number of suggestions to generate
+ * @param schema JSON schema for validation
+ * @returns Array of system and user messages
+ */
+export function buildSuggestionPrompt(
+  components: AvailableComponent[],
+  suggestionCount: number,
+  schema: string,
+): Array<{ role: "system" | "user"; content: string }> {
+  const hasComponents = components.length > 0;
+
+  const systemMessage = [
+    "You analyze conversations and suggest actions.",
+    hasComponents
+      ? [
+          "Available components:",
+          components.map((c) => `- ${c.name}: ${c.description}`).join("\n"),
+        ].join("\n")
+      : "No components are available. Generate suggestions for tasks that can be handled without specialized tools.",
+    "Your response must include a brief reflection of the user's intent and actionable suggestions.",
+  ].join("\n\n");
+
+  const userMessage = [
+    `Generate ${suggestionCount} specific actions that would help explore and use the available features.`,
+    "Format each suggestion as:",
+    "title: A clear, concise action title",
+    "detailedSuggestion: A specific action using an available component",
+    "",
+    hasComponents
+      ? [
+          "Examples:",
+          'title: "Today\'s Apple Stock Price"',
+          'detailedSuggestion: "Show todays stock price for ticker AAPL using the StockPrice component."',
+          "",
+          'title: "Compare Tech Stocks"',
+          'detailedSuggestion: "Display a comparison chart for AAPL, GOOGL, and MSFT using the StockComparison component."',
+        ].join("\n")
+      : [
+          "Examples:",
+          'title: "Answer a Question"',
+          'detailedSuggestion: "Help me understand how to structure my data better."',
+          "",
+          'title: "Explain a Concept"',
+          'detailedSuggestion: "Explain the differences between REST and GraphQL APIs."',
+        ].join("\n"),
+    "",
+    "Schema for validation:",
+    schema,
+  ].join("\n");
+
+  return [
+    { role: "system", content: systemMessage },
+    { role: "user", content: userMessage },
+  ];
 }

@@ -6,6 +6,11 @@ import {
 import type { HydraDatabase } from '@use-hydra-ai/db';
 import { operations } from '@use-hydra-ai/db';
 import type { DBSuggestion } from '@use-hydra-ai/db/src/schema';
+import {
+  ChatMessage,
+  HydraBackend,
+  generateChainId,
+} from '@use-hydra-ai/hydra-ai-server';
 import { CorrelationLoggerService } from '../common/services/logger.service';
 import {
   AudioFormat,
@@ -29,7 +34,22 @@ export class ThreadsService {
     @Inject('DbRepository')
     private readonly db: HydraDatabase,
     private readonly logger: CorrelationLoggerService,
+    @Inject('OPENAI_API_KEY') private readonly openAiKey: string,
   ) {}
+
+  private async getHydraBackend(threadId: string): Promise<HydraBackend> {
+    const chainId = await generateChainId(threadId);
+    return new HydraBackend(this.openAiKey, chainId);
+  }
+
+  private async convertThreadMessagesToLegacyThreadMessages(
+    currentThreadMessages: ThreadMessage[],
+  ): Promise<ChatMessage[]> {
+    return currentThreadMessages.map((message) => ({
+      sender: message.role === 'user' ? 'user' : 'hydra',
+      message: message.content.map((part) => part.text ?? '').join(''),
+    }));
+  }
 
   async createThread(createThreadDto: ThreadRequest): Promise<Thread> {
     const thread = await operations.createThread(this.db, {
@@ -215,32 +235,33 @@ export class ThreadsService {
     messageId: string,
     generateSuggestionsDto: SuggestionsGenerateDto,
   ): Promise<SuggestionDto[]> {
-    // TODO: remove this
-    this.logger.log(`Generating suggestions for message: ${messageId}`);
-    // TODO: remove this
-    this.logger.log(
-      `Available components: ${JSON.stringify(
-        generateSuggestionsDto.availableComponents,
-      )}`,
-    );
-    // FYI: availableComponents could be empty.
-
     const message = await this.getMessage(messageId);
-    this.logger.log(`Found message for suggestions: ${message.id}`);
-
-    const count = generateSuggestionsDto.maxSuggestions ?? 3;
 
     try {
-      // Generate mock suggestions
-      const mockSuggestions = Array.from({ length: count }, (_, index) => ({
-        messageId,
-        title: `Suggestion ${index + 1}`,
-        detailedSuggestion: `This is detailed suggestion number ${index + 1}`,
-      }));
+      const threadMessages = await this.getMessages(message.threadId);
+      const legacyMessages =
+        await this.convertThreadMessagesToLegacyThreadMessages(threadMessages);
+
+      const hydraBackend = await this.getHydraBackend(message.threadId);
+      const suggestions = await hydraBackend.generateSuggestions(
+        legacyMessages,
+        generateSuggestionsDto.maxSuggestions ?? 3,
+        generateSuggestionsDto.availableComponents ?? [],
+        message.threadId,
+        false,
+      );
+
+      if (!suggestions.suggestions || suggestions.suggestions.length === 0) {
+        throw new SuggestionGenerationError(messageId);
+      }
 
       const savedSuggestions = await operations.createSuggestions(
         this.db,
-        mockSuggestions,
+        suggestions.suggestions.map((suggestion) => ({
+          messageId,
+          title: suggestion.title,
+          detailedSuggestion: suggestion.detailedSuggestion,
+        })),
       );
 
       this.logger.log(
@@ -257,6 +278,7 @@ export class ThreadsService {
       );
       throw new SuggestionGenerationError(messageId, {
         maxSuggestions: generateSuggestionsDto.maxSuggestions,
+        availableComponents: generateSuggestionsDto.availableComponents,
       });
     }
   }
