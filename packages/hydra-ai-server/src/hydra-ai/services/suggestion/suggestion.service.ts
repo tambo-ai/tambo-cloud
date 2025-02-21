@@ -1,5 +1,5 @@
+import { ThreadMessage } from "@use-hydra-ai/core";
 import { InputContextAsArray } from "../../model/input-context";
-
 import { LLMClient } from "../llm/llm-client";
 import {
   buildSuggestionPrompt,
@@ -10,17 +10,28 @@ import {
   SuggestionsResponseSchema,
 } from "./suggestion.types";
 
+type SuggestionsContext = {
+  messageHistory: ThreadMessage[];
+  availableComponents: InputContextAsArray["availableComponents"];
+  threadId: string;
+};
+
 // Public function
 export async function generateSuggestions(
   llmClient: LLMClient,
-  context: InputContextAsArray,
+  context: SuggestionsContext,
   count: number,
   threadId: string,
   stream?: boolean,
 ): Promise<SuggestionDecision | AsyncIterableIterator<SuggestionDecision>> {
   const components = context.availableComponents ?? [];
   const schema = generateFormatInstructions(SuggestionsResponseSchema);
-  const messages = buildSuggestionPrompt(components, count, schema);
+  const messages = buildSuggestionPrompt(
+    components,
+    context.messageHistory,
+    count,
+    schema,
+  );
 
   if (stream) {
     throw new Error("Streaming is not supported yet");

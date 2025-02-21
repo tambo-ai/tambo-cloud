@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   ChatCompletionContentPart as ChatCompletionContentPartInterface,
   ContentPartType,
+  ThreadMessage as CoreThreadMessage,
 } from '@use-hydra-ai/core';
 import type { HydraDatabase } from '@use-hydra-ai/db';
 import { operations } from '@use-hydra-ai/db';
@@ -11,6 +12,7 @@ import {
   HydraBackend,
   generateChainId,
 } from '@use-hydra-ai/hydra-ai-server';
+import type { OpenAI } from 'openai';
 import { CorrelationLoggerService } from '../common/services/logger.service';
 import {
   AudioFormat,
@@ -231,6 +233,39 @@ export class ThreadsService {
     }
   }
 
+  private convertToCoreSuggestionMessage(
+    message: ThreadMessage,
+  ): CoreThreadMessage {
+    return {
+      id: message.id,
+      threadId: message.threadId,
+      role: message.role,
+      content: message.content.map(
+        (part): OpenAI.Chat.Completions.ChatCompletionContentPart => {
+          if (part.type === ContentPartType.Text) {
+            return { type: 'text', text: part.text || '' };
+          }
+          if (part.type === ContentPartType.ImageUrl) {
+            return {
+              type: 'image_url',
+              image_url: part.image_url || { url: '' },
+            };
+          }
+          if (part.type === ContentPartType.InputAudio) {
+            return {
+              type: 'input_audio',
+              input_audio: part.input_audio || { data: '', format: 'wav' },
+            };
+          }
+          throw new Error(`Unsupported content part type: ${part.type}`);
+        },
+      ),
+      actionType: message.actionType,
+      metadata: message.metadata,
+      createdAt: message.createdAt,
+    };
+  }
+
   async generateSuggestions(
     messageId: string,
     generateSuggestionsDto: SuggestionsGenerateDto,
@@ -239,12 +274,13 @@ export class ThreadsService {
 
     try {
       const threadMessages = await this.getMessages(message.threadId);
-      const legacyMessages =
-        await this.convertThreadMessagesToLegacyThreadMessages(threadMessages);
+      const coreMessages = threadMessages.map(
+        this.convertToCoreSuggestionMessage,
+      );
 
       const hydraBackend = await this.getHydraBackend(message.threadId);
       const suggestions = await hydraBackend.generateSuggestions(
-        legacyMessages,
+        coreMessages,
         generateSuggestionsDto.maxSuggestions ?? 3,
         generateSuggestionsDto.availableComponents ?? [],
         message.threadId,

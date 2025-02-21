@@ -1,4 +1,4 @@
-import { ComponentDecision } from "@use-hydra-ai/core";
+import { ComponentDecision, ThreadMessage } from "@use-hydra-ai/core";
 import AIService from "./ai-service";
 import { ChatMessage } from "./model/chat-message";
 import {
@@ -39,21 +39,21 @@ export default class HydraBackend {
   }
 
   public async generateSuggestions(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     count: number,
     availableComponents: AvailableComponent[],
     threadId: string,
     stream: true,
   ): Promise<AsyncIterableIterator<SuggestionDecision>>;
   public async generateSuggestions(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     count: number,
     availableComponents: AvailableComponent[],
     threadId: string,
     stream?: false | undefined,
   ): Promise<SuggestionDecision>;
   public async generateSuggestions(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     count: number,
     availableComponents: AvailableComponent[],
     threadId: string,
@@ -65,7 +65,12 @@ export default class HydraBackend {
       threadId,
     };
 
-    return await this.aiService.generateSuggestions(context, count, threadId, stream);
+    return await this.aiService.generateSuggestions(
+      context,
+      count,
+      threadId,
+      stream,
+    );
   }
 
   public async generateComponent(

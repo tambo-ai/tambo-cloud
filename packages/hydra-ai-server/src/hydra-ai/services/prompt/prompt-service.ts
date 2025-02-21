@@ -1,3 +1,4 @@
+import { ThreadMessage } from "@use-hydra-ai/core";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import {
@@ -194,52 +195,69 @@ export function generateFormatInstructions(schema: z.ZodSchema<any>): string {
 
 /**
  * @param components List of available components
+ * @param messageHistory Array of thread messages to provide context
  * @param suggestionCount Number of suggestions to generate
  * @param schema JSON schema for validation
  * @returns Array of system and user messages
  */
 export function buildSuggestionPrompt(
   components: AvailableComponent[],
+  messageHistory: ThreadMessage[] = [],
   suggestionCount: number,
   schema: string,
 ): Array<{ role: "system" | "user"; content: string }> {
   const hasComponents = components.length > 0;
-
   const systemMessage = [
-    "You analyze conversations and suggest actions.",
+    "You analyze conversations and suggest contextually relevant actions.",
     hasComponents
       ? [
           "Available components:",
           components.map((c) => `- ${c.name}: ${c.description}`).join("\n"),
         ].join("\n")
       : "No components are available. Generate suggestions for tasks that can be handled without specialized tools.",
+
+    "Guidelines for generating suggestions:",
+    "1. Each suggestion should directly build upon the user's current task or goal",
+    "2. If a component is already rendered, suggest specific ways to update or modify its current props",
+    "3. Also suggest related components that would complement the current component",
+    "4. Focus on practical, actionable steps that demonstrate component capabilities",
+    "5. Make suggestions that help users discover natural next steps without having to think",
+    "6. Avoid generic suggestions - make them specific to the conversation context",
     "Your response must include a brief reflection of the user's intent and actionable suggestions.",
   ].join("\n\n");
 
   const userMessage = [
-    `Generate ${suggestionCount} specific actions that would help explore and use the available features.`,
+    messageHistory.length > 0
+      ? [
+          "Recent conversation context:",
+          messageHistory
+            .slice(-3) // Only include last 3 messages for focused context
+            .map(
+              (msg) =>
+                `${msg.role}: ${msg.content.map((c) => ("text" in c ? c.text : "")).join("")}${
+                  msg.componentDecision
+                    ? `\nComponent: ${msg.componentDecision.componentName}\nProps: ${JSON.stringify(msg.componentDecision.props)}`
+                    : ""
+                }`,
+            )
+            .join("\n"),
+          "",
+          `Based on this conversation and components sent, generate ${suggestionCount} specific actions. Include suggestions for modifying the previous component's props and exploring related components that would enhance the user's workflow.`,
+        ].join("\n")
+      : `Generate ${suggestionCount} specific actions that would help explore and use the available features.`,
+    "",
     "Format each suggestion as:",
     "title: A clear, concise action title",
     "detailedSuggestion: A specific action using an available component",
     "",
-    hasComponents
-      ? [
-          "Examples:",
-          'title: "Today\'s Apple Stock Price"',
-          'detailedSuggestion: "Show todays stock price for ticker AAPL using the StockPrice component."',
-          "",
-          'title: "Compare Tech Stocks"',
-          'detailedSuggestion: "Display a comparison chart for AAPL, GOOGL, and MSFT using the StockComparison component."',
-        ].join("\n")
-      : [
-          "Examples:",
-          'title: "Answer a Question"',
-          'detailedSuggestion: "Help me understand how to structure my data better."',
-          "",
-          'title: "Explain a Concept"',
-          'detailedSuggestion: "Explain the differences between REST and GraphQL APIs."',
-        ].join("\n"),
-    "",
+    [
+      "Example format (adapt to actual context):",
+      'title: "Show Data Quarterly"',
+      'detailedSuggestion: "Update the timeRange prop from 1-month to 3-months to show quarterly trends."',
+      "",
+      'title: "Trend Analysis"',
+      'detailedSuggestion: "Show the TrendAnalyzer component to automatically identify key patterns in your data."',
+    ].join("\n"),
     "Schema for validation:",
     schema,
   ].join("\n");

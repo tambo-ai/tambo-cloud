@@ -1,6 +1,11 @@
 import { ComponentDecision } from "@use-hydra-ai/core";
-import { AvailableComponent, ChatMessage, ToolResponseBody } from "./model";
-import { InputContext, InputContextAsArray } from "./model/input-context";
+import {
+  AvailableComponent,
+  ChatMessage,
+  InputContext,
+  InputContextAsArray,
+  ToolResponseBody,
+} from "./model";
 import { Provider } from "./model/providers";
 import { decideComponent } from "./services/component/component-decision-service";
 import { hydrateComponent } from "./services/component/component-hydration-service";
