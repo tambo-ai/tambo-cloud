@@ -15,6 +15,7 @@ import { ApiSecurity } from '@nestjs/swagger';
 import { AddProviderKeyRequest } from './dto/add-provider-key.dto';
 import {
   ProjectCreateRequest,
+  ProjectResponse,
   ProjectUpdateRequest,
 } from './dto/project-response.dto';
 import { ProjectAccessOwnGuard } from './guards/project-access-own.guard';
@@ -42,18 +43,18 @@ export class ProjectsController {
 
   @UseGuards(ProjectAccessOwnGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.projectsService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<ProjectResponse | null> {
+    return await this.projectsService.findOne(id);
   }
 
   @UseGuards(ProjectAccessOwnGuard)
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateProjectDto: ProjectUpdateRequest,
     @Req() request,
-  ) {
-    return this.projectsService.update(id, {
+  ): Promise<ProjectResponse | null> {
+    return await this.projectsService.update(id, {
       name: updateProjectDto.name,
       userId: request.userId,
     });
@@ -61,8 +62,8 @@ export class ProjectsController {
 
   @UseGuards(ProjectAccessOwnGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.projectsService.remove(id);
+  async remove(@Param('id') id: string): Promise<boolean> {
+    return await this.projectsService.remove(id);
   }
 
   @UseGuards(ProjectAccessOwnGuard)
