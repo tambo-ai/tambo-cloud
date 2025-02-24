@@ -168,7 +168,7 @@ export class ProjectsService {
     providerName: string,
     providerKey: string,
     userId: string,
-  ): Promise<ProjectResponse | null | undefined> {
+  ): Promise<ProjectResponse> {
     const providerKeySecret = this.config.getOrThrow('PROVIDER_KEY_SECRET');
     const result = await operations.addProviderKey(this.db, providerKeySecret, {
       projectId,
@@ -177,7 +177,7 @@ export class ProjectsService {
       userId,
     });
     if (!result) {
-      return null;
+      throw new Error('Failed to add provider key');
     }
     return {
       id: result.id,
@@ -199,7 +199,7 @@ export class ProjectsService {
   async removeProviderKey(
     projectId: string,
     providerKeyId: string,
-  ): Promise<ProjectResponse | null | undefined> {
+  ): Promise<ProjectResponse> {
     await operations.deleteProviderKey(this.db, projectId, providerKeyId);
     const project = await this.findOneWithKeys(projectId);
     if (!project) {
