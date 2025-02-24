@@ -25,8 +25,12 @@ It is also important to understand the flow for updating the Hydra API. Key poin
 - Stainless polls our API for the spec, so when we push a new version of the Hydra API to Railway, the Hydra client SDKs will be updated in https://github.com/use-hydra-ai/hydra-ai-node
   - A developer can also force an immediate request of the OpenAPI spec in [Stainless Studio](https://app.stainlessapi.com/hydra-ai/hydra-ai/studio?language=node) by clicking the "Release Flow" button.
 - When a new version of the Hydra client SDKs is released, a release PR will be automatically created in https://github.com/use-hydra-ai/hydra-ai-node/pulls. A developer must approve the release PR for it to be released to NPM as `@hydra-ai/client`.
-- Once the new Hydra client SDK is released, a developer must update the react-hydra package by either running dependabot at https://github.com/use-hydra-ai/hydra-ai-react/network/updates or by manually updating the `@hydra-ai/react` package version in the `package.json` file by running:
+- Once the new Hydra client SDK is released, a developer must update the react-hydra package by either running dependabot at https://github.com/use-hydra-ai/hydra-ai-react/network/updates or by manually updating the `@hydra-ai/react` package version in the `package.json` file by running this in the @hydra-ai/react repository:
   ```
-  npx ncu -u @hydra-ai/client
+  npx npm-check-updates -u @hydra-ai/client
   ```
--
+
+* Because the main app (`hydra-ai-site`) includes a smoketest that itself uses `@hydra-ai/react`, the smoketest will need to be updated to use the new version of the Hydra client SDK. Again, a developer can either run dependabot at https://github.com/use-hydra-ai/hydra-ai-site/network/updates or by manually updating all of the `@hydra-ai/*` packages in the `package.json` file by running this in the `hydra-ai-site` repository:
+  ```
+  npx npm-check-updates -u @hydra-ai/client @hydra-ai/react
+  ```
