@@ -44,10 +44,10 @@ export class ProjectsService {
     }));
   }
 
-  async findOne(id: string): Promise<ProjectResponse | null> {
+  async findOne(id: string): Promise<ProjectResponse | undefined> {
     const project = await operations.getProject(this.db, id);
     if (!project || !project.members?.[0]) {
-      return null;
+      return undefined;
     }
     return {
       id: project.id,
@@ -92,7 +92,7 @@ export class ProjectsService {
       name: string;
       userId: string;
     },
-  ): Promise<ProjectResponse | null> {
+  ): Promise<ProjectResponse | undefined> {
     if (!updateProjectDto.name) {
       throw new Error('Project name is required');
     }
@@ -101,7 +101,7 @@ export class ProjectsService {
       name: updateProjectDto.name,
     });
     if (!updated) {
-      return null;
+      return undefined;
     }
     return {
       id: updated.id,

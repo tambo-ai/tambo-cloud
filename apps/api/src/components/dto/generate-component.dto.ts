@@ -1,4 +1,4 @@
-import { ApiSchema } from '@nestjs/swagger';
+import { ApiProperty, ApiSchema, getSchemaPath } from '@nestjs/swagger';
 import {
   AvailableComponent,
   AvailableComponents,
@@ -47,7 +47,11 @@ export class ComponentContextToolMetadataDto
 
 export class GenerateComponentRequest {
   messageHistory!: LegacyChatMessageDto[];
-  availableComponents!: AvailableComponentsDto;
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { $ref: getSchemaPath(AvailableComponentDto) },
+  })
+  availableComponents!: any;
   /** Optional threadId to generate a component for */
   threadId?: string;
   /** Optional contextKey to generate a component for */

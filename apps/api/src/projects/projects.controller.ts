@@ -28,12 +28,15 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
-  create(@Body() { projectName }: ProjectCreateRequest, @Req() request) {
+  async create(
+    @Body() { projectName }: ProjectCreateRequest,
+    @Req() request,
+  ): Promise<ProjectResponse> {
     const createProjectDto = {
       name: projectName,
       userId: request.userId,
     };
-    return this.projectsService.create(createProjectDto);
+    return await this.projectsService.create(createProjectDto);
   }
 
   @Get('user/')
@@ -43,7 +46,7 @@ export class ProjectsController {
 
   @UseGuards(ProjectAccessOwnGuard)
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ProjectResponse | null> {
+  async findOne(@Param('id') id: string): Promise<ProjectResponse | undefined> {
     return await this.projectsService.findOne(id);
   }
 
@@ -53,7 +56,7 @@ export class ProjectsController {
     @Param('id') id: string,
     @Body() updateProjectDto: ProjectUpdateRequest,
     @Req() request,
-  ): Promise<ProjectResponse | null> {
+  ): Promise<ProjectResponse | undefined> {
     return await this.projectsService.update(id, {
       name: updateProjectDto.name,
       userId: request.userId,
