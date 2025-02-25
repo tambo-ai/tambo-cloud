@@ -2,7 +2,7 @@
 title: Streaming
 ---
 
-Use streaming to show response messages and components from Hydra in real-time, as they are being generated, to create more responsive and engaging user experiences.
+Use streaming to show response messages and components from Hydra in real-time as they are being generated, to create more responsive and engaging user experiences.
 
 ```tsx
 const { sendThreadMessage } = useHydra();
@@ -38,7 +38,7 @@ For example, if your component expects a props object that looks like `{name: st
 
 This means that your registered components will need to have all props marked as 'optional', and be prepared to receive `undefined` values while streaming is in progress.
 
-One way to handle this this is to set default values to show until the values are generated:
+One way to handle this is to set default values to show until the values are generated:
 
 ```tsx
 const MyComponent = ({ name = "Loading..." }: { name?: string }) => {
