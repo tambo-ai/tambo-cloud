@@ -54,4 +54,31 @@ const MyComponent = ({ age }: { age?: number }) => {
 };
 ```
 
-## Show "loading" while streaming
+## Show "Loading" while streaming
+
+Without streaming, you might show a 'loading' indicator while the response is being generated like this:
+
+```tsx
+
+const handleSendMessage = async (inputValue: string) => {
+  setIsLoading(true);
+  await sendThreadMessage(inputValue, { streamResponse: true });
+  setIsLoading(false);
+};
+
+...
+
+<div>
+  {isLoading && <div>Loading AI response...</div>}
+</div>
+```
+
+With streaming, the `sendThreadMessage` promise resolves right away, even while streaming is still in progress. If you want to show a 'loading' indicator while streaming is in progress, you can do so by using Hydra's `isIdle` state value:
+
+```tsx
+const { isIdle } = useHydra();
+
+...
+
+<div>{!isIdle && "Loading AI response..."}</div>
+```
