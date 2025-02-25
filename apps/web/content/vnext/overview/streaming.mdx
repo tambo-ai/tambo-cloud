@@ -1,141 +1,39 @@
 ---
 title: Streaming
-description: Implementing real-time updates and streaming responses in Hydra AI.
 ---
 
-Streaming in Hydra AI enables real-time updates and progressive rendering of AI responses, creating more responsive and engaging user experiences.
+Use streaming to show response messages and components from Hydra in real-time, as they are being generated, to create more responsive and engaging user experiences.
 
-## Core Concepts
+```tsx
+const { sendThreadMessage } = useHydra();
+await sendThreadMessage(inputValue, { streamResponse: true });
+```
 
-- **Message Streaming**: Real-time updates of AI responses using `useHydraMessageContext`
-- **Component Streaming**: Progressive updates of component props using `useComponentStreaming`
-- **Validation States**: Type-safe streaming with built-in validation
-- **Abort Control**: Cancellation of ongoing operations
+Hydra will handle updating the thread's final message as data streams in, rather than waiting for the entire response to complete.
 
-## Message Streaming
+Render your thread messages like normal:
 
-### Basic Setup
+```tsx
+const { thread } = useHydra();
 
-```tsx title="Basic Message Streaming"
-function MessageThread({ threadId }: { threadId: string }) {
-  const { messages, operations } = useHydraThread(threadId);
-  const { messageId, streaming } = useHydraMessageContext();
+...
 
-  const sendMessage = async (content: string) => {
-    await operations.messages.generate(threadId, content, {
-      stream: true,
-    });
-  };
-
-  return (
-    <div>
-      {streaming.status.isStreaming && <div>Streaming response...</div>}
-      {messages.map((message) => (
-        <div key={message.id}>{message.content}</div>
-      ))}
+<div>
+  {thread.messages.map((message, index) => (
+    <div
+      key={index}
+    >
+      <div>{message.message}</div>
+      <div>{message.renderedComponent}</div>
     </div>
-  );
-}
+  ))}
+</div>;
 ```
 
-**Additional Features:**
+## Preparing Components for Streaming
 
-- Abort control: `streaming.status.abort()` to cancel streaming
-- Message metadata: `message.status.state` for processing state
-- Partial content: `streaming.status.partialData` for incomplete responses
-- Error handling: Try/catch with error states
+When streaming is enabled, Hydra will stream the response message and components to the client as they are being generated.
 
-## Component Streaming
+To prepare a component for streaming, you can use the `useHydraMessageContext` hook to get the current message and component:
 
-### Progressive Updates
-
-```tsx title="Progressive Component Updates"
-interface DataViewProps {
-  data: Readonly<{
-    title: string;
-    content: string;
-  }>;
-}
-
-function ProgressiveDataView(props: DataViewProps) {
-  const { isStreaming } = useComponentStreaming<DataViewProps>();
-
-  return (
-    <div>
-      <h2>{props.data.title}</h2>
-      <div>{props.data.content}</div>
-      {isStreaming && <div>Loading updates...</div>}
-    </div>
-  );
-}
-```
-
-**Validation Features:**
-
-- Path completion: `validation?.completedPaths.includes(path)`
-- Error tracking: `validation?.errors` for validation failures
-- Valid paths: `validation?.validPaths` for safe-to-use data
-- Loading states: `isStreaming` for overall status
-
-**State Management:**
-
-- Hydra state: `useHydraState<T>()` for persisted component state
-- Partial data: `partialData` for incomplete updates
-- Component registration with `HydraComponentRegistry`
-
-## Type Safety
-
-```tsx title="Type-Safe Component"
-interface StreamingComponentProps {
-  data: Readonly<{
-    items: string[];
-    metadata: {
-      timestamp: number;
-      author: string;
-    };
-  }>;
-}
-
-function StreamingComponent(props: StreamingComponentProps) {
-  const { isStreaming, validation } =
-    useComponentStreaming<StreamingComponentProps>();
-  const isDataComplete = validation?.completedPaths.includes("data");
-
-  return (
-    <div>
-      {!isDataComplete && <div>Loading...</div>}
-      <div>
-        {props.data.items.map((item, index) => (
-          <div key={index}>{item}</div>
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-**Type System Features:**
-
-- Message types: `HydraThreadMessage` for message structure
-- Streaming status: `MessageStreamingStatus<T>` for type-safe streaming
-- Component props: `Readonly<T>` for immutable props
-- Validation types: `ValidationState` for tracking completion
-
-## Error Handling
-
-```tsx title="Stream Error Handling"
-function StreamErrorBoundary() {
-  const { streaming } = useHydraMessageContext();
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    if (streaming.status.error) setError(streaming.status.error);
-  }, [streaming.status.error]);
-
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
-
-  return null;
-}
-```
+## Show "loading" while streaming
