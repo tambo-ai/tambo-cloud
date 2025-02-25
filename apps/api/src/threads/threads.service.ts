@@ -303,6 +303,16 @@ export class ThreadsService {
       detailedSuggestion: suggestion.detailedSuggestion,
     };
   }
+  async updateComponentState(
+    threadId: string,
+    messageId: string,
+    newState: Record<string, unknown>,
+  ) {
+    const message = await operations.updateMessage(this.db, messageId, {
+      componentState: newState,
+    });
+    return message;
+  }
 }
 
 function convertContentDtoToContentPart(

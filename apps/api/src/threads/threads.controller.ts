@@ -207,4 +207,17 @@ export class ThreadsController {
       generateSuggestionsDto,
     );
   }
+
+  @Put(':id/messages/:messageId/component-state')
+  async updateComponentState(
+    @Param('id') threadId: string,
+    @Param('messageId') messageId: string,
+    @Body() newState: Record<string, unknown>,
+  ) {
+    return await this.threadsService.updateComponentState(
+      threadId,
+      messageId,
+      newState,
+    );
+  }
 }
