@@ -167,6 +167,7 @@ export class ThreadsService {
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
       actionType: message.actionType ?? undefined,
+      componentState: message.componentState ?? undefined,
     }));
   }
 
@@ -187,6 +188,7 @@ export class ThreadsService {
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
       actionType: message.actionType ?? undefined,
+      componentState: message.componentState ?? undefined,
     };
   }
 

@@ -63,6 +63,7 @@ export class ThreadMessageDto implements InternalThreadMessage {
   content!: ChatCompletionContentPartDto[];
   metadata?: Record<string, unknown>;
   component?: ComponentDecisionV2;
+  componentState?: Record<string, unknown>;
   toolCallRequest?: ToolCallRequestDto;
   @IsEnum(ActionType)
   actionType?: ActionType;

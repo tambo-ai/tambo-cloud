@@ -28,7 +28,11 @@ import { ErrorDto } from './dto/error.dto';
 import { MessageRequest, ThreadMessageDto } from './dto/message.dto';
 import { SuggestionDto } from './dto/suggestion.dto';
 import { SuggestionsGenerateDto } from './dto/suggestions-generate.dto';
-import { Thread, ThreadRequest } from './dto/thread.dto';
+import {
+  Thread,
+  ThreadRequest,
+  UpdateComponentStateDto,
+} from './dto/thread.dto';
 import { ThreadsService } from './threads.service';
 
 @ApiTags('threads')
@@ -212,12 +216,13 @@ export class ThreadsController {
   async updateComponentState(
     @Param('id') threadId: string,
     @Param('messageId') messageId: string,
-    @Body() newState: Record<string, unknown>,
-  ) {
-    return await this.threadsService.updateComponentState(
+    @Body() newState: UpdateComponentStateDto,
+  ): Promise<ThreadMessageDto> {
+    const message = (await this.threadsService.updateComponentState(
       threadId,
       messageId,
-      newState,
-    );
+      newState.state,
+    )) as ThreadMessageDto;
+    return message;
   }
 }
