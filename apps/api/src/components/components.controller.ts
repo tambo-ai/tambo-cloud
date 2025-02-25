@@ -286,6 +286,16 @@ export class ComponentsController {
     });
   }
 
+  private async updateMessage(messageId: string, component: ComponentDecision) {
+    return await this.threadsService.updateMessage(messageId, {
+      role: MessageRole.Hydra,
+      content: [{ type: ContentPartType.Text, text: component.message }],
+      component: component,
+      actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
+      toolCallRequest: component.toolCallRequest,
+    });
+  }
+
   @Post('hydrate')
   async hydrateComponent(
     @Body() hydrateComponentDto: HydrateComponentRequest,
