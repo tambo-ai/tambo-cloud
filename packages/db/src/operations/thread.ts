@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
 
@@ -201,8 +201,22 @@ export async function deleteMessage(
     .delete(schema.messages)
     .where(eq(schema.messages.id, messageId))
     .returning();
-
   return deleted;
+}
+export async function updateMessageComponentState(
+  db: HydraDb,
+  messageId: string,
+  componentState: Record<string, unknown>,
+): Promise<typeof schema.messages.$inferSelect> {
+  const [updatedMessage] = await db
+    .update(schema.messages)
+    .set({
+      componentState: sql`${schema.messages.componentState} || ${componentState}`,
+    })
+    .where(eq(schema.messages.id, messageId))
+    .returning();
+
+  return updatedMessage;
 }
 
 /**
