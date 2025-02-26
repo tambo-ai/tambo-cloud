@@ -1,11 +1,11 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { api } from "@/trpc/react";
-import { useHydra } from "@hydra-ai/react";
-import { HydraTool } from "@hydra-ai/react/dist/model/component-metadata";
+import { TamboTool, useTambo, useTamboComponentState } from "@hydra-ai/react";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { X } from "lucide-react";
 import {
@@ -29,7 +29,7 @@ export default function SmokePage() {
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
-  const { registerComponent, generationStage, thread } = useHydra();
+  const { registerComponent, generationStage, thread } = useTambo();
   const messages = thread?.messages ?? [];
 
   const { mutateAsync: getAirQuality, isPending: isAqiPending } =
@@ -115,7 +115,7 @@ export default function SmokePage() {
     };
   }, [apiStates, wrappedApis, pollInterval, isAnyApiRunning]);
 
-  const tools: Record<string, HydraTool> = useMemo(
+  const tools: Record<string, TamboTool> = useMemo(
     () =>
       makeWeatherTools(
         wrappedApis.forecast.call,
@@ -361,8 +361,26 @@ const AirQuality = ({ data }: AirQualityProps): ReactNode => {
     return "Hazardous";
   };
 
+  const [checked1, setChecked1] = useTamboComponentState("checked1", false);
+  const [checked2, setChecked2] = useTamboComponentState("checked2", false);
+
   return (
     <Card className="p-4">
+      <div className="flex items-center gap-2">
+        <div>State Demo: </div>
+        <Checkbox
+          id="checked1"
+          checked={checked1}
+          onCheckedChange={(c: boolean) => setChecked1(c)}
+        />
+        <label htmlFor="checked1">One</label>
+        <Checkbox
+          id="checked2"
+          checked={checked2}
+          onCheckedChange={(c: boolean) => setChecked2(c)}
+        />
+        <label htmlFor="checked2">Two</label>
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <p className="font-medium">Air Quality</p>
@@ -467,7 +485,7 @@ function makeWeatherTools(
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
   getAirQuality: (...args: any[]) => Promise<any>,
-): Record<string, HydraTool> {
+): Record<string, TamboTool> {
   const forecastSchema = z
     .object({
       location: z
