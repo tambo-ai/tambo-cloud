@@ -211,7 +211,8 @@ export async function updateMessageComponentState(
   const [updatedMessage] = await db
     .update(schema.messages)
     .set({
-      componentState: sql`${schema.messages.componentState} || ${componentState}`,
+      // need COALESCE because NULL || jsonb results in null
+      componentState: sql`COALESCE(${schema.messages.componentState}, '{}'::jsonb) || ${`${JSON.stringify(componentState)}`}`,
     })
     .where(eq(schema.messages.id, messageId))
     .returning();
