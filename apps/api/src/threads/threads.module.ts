@@ -19,7 +19,7 @@ import { ThreadsService } from './threads.service';
     {
       provide: 'OPENAI_API_KEY', //todo: weird api keys don't match?
       useFactory: (configService: ConfigService) =>
-        configService.get('OPEN_AI_API_KEY'),
+        configService.get('OPENAI_API_KEY'),
       inject: [ConfigService],
     },
   ],
