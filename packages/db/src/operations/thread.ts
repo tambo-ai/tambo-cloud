@@ -103,9 +103,13 @@ export async function updateThread(
   {
     contextKey,
     metadata,
+    generationStage,
+    statusMessage,
   }: {
     contextKey?: string | null;
     metadata?: ThreadMetadata;
+    generationStage?: GenerationStage;
+    statusMessage?: string;
   },
 ) {
   const [updated] = await db
@@ -114,6 +118,8 @@ export async function updateThread(
       contextKey,
       metadata,
       updatedAt: new Date(),
+      generationStage,
+      statusMessage,
     })
     .where(eq(schema.threads.id, threadId))
     .returning();
