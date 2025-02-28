@@ -24,14 +24,28 @@ export function Header({
           className="relative mr-6 flex items-center space-x-2"
         >
           <Icons.logo className="w-auto" />
-          <span className="font-semibold text-lg">{siteConfig.name}</span>
+          <span className="font-semibold text-2xl tracking-tight">
+            {siteConfig.name}
+          </span>
         </Link>
-        <div className="hidden lg:flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-6">
+          <Link
+            href="/product"
+            className="text-foreground/80 hover:text-foreground font-medium transition-colors"
+          >
+            Product
+          </Link>
+          <Link
+            href="/pricing"
+            className="text-foreground/80 hover:text-foreground font-medium transition-colors"
+          >
+            Pricing
+          </Link>
           <Link
             href="/docs"
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "h-8 rounded-lg group tracking-tight font-medium",
+              "h-9 rounded-md group tracking-tight font-medium bg-secondary/50 border-secondary-foreground/10",
             )}
           >
             Documentation
@@ -41,7 +55,7 @@ export function Header({
               href="/dashboard"
               className={cn(
                 buttonVariants({ variant: "default" }),
-                "h-8 text-primary-foreground rounded-lg group tracking-tight font-medium",
+                "h-9 text-primary-foreground rounded-md group tracking-tight font-medium",
               )}
             >
               Dashboard
@@ -56,7 +70,7 @@ export function Header({
           />
         </div>
       </div>
-      <hr className="absolute w-full bottom-0" />
+      <hr className="absolute w-full bottom-0 border-border/20" />
     </header>
   );
 }

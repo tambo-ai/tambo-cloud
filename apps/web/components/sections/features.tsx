@@ -1,50 +1,55 @@
 "use client";
 
+import { Section } from "@/components/section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
-import { icons } from "lucide-react";
-import { Section } from "@/components/section";
 import { copy } from "@/lib/copy";
+import { icons } from "lucide-react";
 
 const content = copy.features;
 
 export function Features() {
   return (
     <Section id="features" className="container py-24 sm:py-32">
-      <h2 className="text-lg text-primary text-center mb-2 tracking-wider">
-        {content.title}
-      </h2>
+      <div className="mb-16">
+        <h2 className="text-lg text-primary uppercase tracking-wider font-medium mb-4">
+          {content.title}
+        </h2>
 
-      <h2 className="text-3xl md:text-4xl text-center font-bold mb-4">
-        {content.heading}
-      </h2>
+        <h2 className="text-5xl md:text-6xl font-bold mb-8 tracking-tight">
+          {content.heading}
+        </h2>
 
-      <h3 className="md:w-1/2 mx-auto text-xl text-center text-muted-foreground mb-8">
-        {content.description}
-      </h3>
+        <p className="text-xl text-muted-foreground max-w-2xl">
+          {content.description}
+        </p>
+      </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {content.list.map(({ icon, title, description }) => (
-          <div key={title}>
-            <Card className="h-full bg-background border-0 shadow-none">
-              <CardHeader className="flex justify-center items-center">
-                <div className="bg-primary/20 p-2 rounded-full ring-8 ring-primary/10 mb-4">
-                  <Icon
-                    name={icon as keyof typeof icons}
-                    size={24}
-                    color="hsl(var(--primary))"
-                    className="text-primary"
-                  />
-                </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {content.list.map(({ icon, title, description }, index) => (
+          <Card
+            key={title}
+            className="h-full bg-card border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300"
+          >
+            <CardHeader>
+              <div
+                className={`bg-[#5C94F7] p-3 rounded-md w-fit mb-4 shadow-sm icon-container ${index % 2 === 0 ? "pulse-animation" : "float-animation"}`}
+              >
+                <Icon
+                  name={icon as keyof typeof icons}
+                  size={24}
+                  color="white"
+                  className="text-white"
+                />
+              </div>
 
-                <CardTitle>{title}</CardTitle>
-              </CardHeader>
+              <CardTitle className="text-xl font-semibold">{title}</CardTitle>
+            </CardHeader>
 
-              <CardContent className="text-muted-foreground text-center">
-                {description}
-              </CardContent>
-            </Card>
-          </div>
+            <CardContent className="text-muted-foreground">
+              {description}
+            </CardContent>
+          </Card>
         ))}
       </div>
     </Section>
