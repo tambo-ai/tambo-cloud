@@ -13,6 +13,7 @@ import {
   ActionType,
   ComponentDecision,
   ContentPartType,
+  GenerationStage,
   MessageRole,
   ThreadMessage,
 } from '@use-hydra-ai/core';
@@ -167,14 +168,38 @@ export class ComponentsController {
         acc[component.name] = component;
         return acc;
       }, {});
-    const component = await hydraBackend.generateComponent(
-      messageHistory,
-      availableComponentMap,
-      resolvedThreadId,
-    );
-    const message = await this.addDecisionToThread(resolvedThreadId, component);
+    try {
+      await this.threadsService.updateGenerationStage(
+        resolvedThreadId,
+        GenerationStage.CHOOSING_COMPONENT,
+      );
+      const component = await hydraBackend.generateComponent(
+        messageHistory,
+        availableComponentMap,
+        resolvedThreadId,
+      );
+      await this.threadsService.updateGenerationStage(
+        resolvedThreadId,
+        component.toolCallRequest
+          ? GenerationStage.FETCHING_CONTEXT
+          : GenerationStage.COMPLETE,
+        component.toolCallRequest &&
+          `Fetching extra data to hydrate ${component.componentName}...`,
+      );
+      const message = await this.addDecisionToThread(
+        resolvedThreadId,
+        component,
+      );
 
-    return { message };
+      return { message };
+    } catch (error: any) {
+      await this.threadsService.updateGenerationStage(
+        resolvedThreadId,
+        GenerationStage.ERROR,
+        'Error generating component',
+      );
+      throw error;
+    }
   }
 
   @Post('generatestream')
@@ -232,11 +257,22 @@ export class ComponentsController {
       }, {});
 
     try {
+      await this.threadsService.updateGenerationStage(
+        resolvedThreadId,
+        GenerationStage.CHOOSING_COMPONENT,
+      );
+
       const stream = await hydraBackend.generateComponent(
         messageHistory,
         availableComponentMap,
         resolvedThreadId,
         true,
+      );
+
+      await this.threadsService.updateGenerationStage(
+        resolvedThreadId,
+        GenerationStage.STREAMING_RESPONSE,
+        'Streaming response...',
       );
 
       let finalComponent: ComponentDecision | undefined;
@@ -283,6 +319,14 @@ export class ComponentsController {
 
       // Ensure final state is saved
       if (finalComponent) {
+        await this.threadsService.updateGenerationStage(
+          resolvedThreadId,
+          finalComponent.toolCallRequest
+            ? GenerationStage.FETCHING_CONTEXT
+            : GenerationStage.COMPLETE,
+          finalComponent.toolCallRequest &&
+            `Fetching extra data to hydrate ${finalComponent.componentName}...`,
+        );
         await this.updateMessage(inProgressMessage.id, {
           ...finalComponent,
           message:
@@ -293,6 +337,11 @@ export class ComponentsController {
       }
     } catch (error: any) {
       this.logger.error('Error in generateComponentStream:', error);
+      await this.threadsService.updateGenerationStage(
+        resolvedThreadId,
+        GenerationStage.ERROR,
+        'Error generating component',
+      );
       response.write(
         `event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`,
       );
