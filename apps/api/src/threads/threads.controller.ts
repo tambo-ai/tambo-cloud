@@ -74,7 +74,7 @@ export class ThreadsController {
     const threads = await threadsPromise;
     const total = await totalPromise;
     return {
-      threads,
+      items: threads,
       total,
       offset,
       limit,

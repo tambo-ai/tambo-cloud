@@ -48,7 +48,7 @@ export class UpdateComponentStateDto {
   name: 'ThreadList',
 })
 export class ThreadListDto {
-  threads!: Thread[];
+  items!: Thread[];
   total!: number;
   offset!: number;
   limit!: number;
