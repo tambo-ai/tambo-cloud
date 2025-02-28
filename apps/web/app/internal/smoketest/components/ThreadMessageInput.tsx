@@ -1,14 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTamboThreadInput } from "@hydra-ai/react";
+import { FC } from "react";
 
 interface ThreadMessageInputProps {
-  contextKey: string;
+  contextKey: string | undefined;
 }
 
-const ThreadMessageInput: React.FC<ThreadMessageInputProps> = ({
-  contextKey,
-}) => {
+const ThreadMessageInput: FC<ThreadMessageInputProps> = ({ contextKey }) => {
   const { value, setValue, submit, isSubmitting, error } =
     useTamboThreadInput();
 
@@ -17,6 +16,13 @@ const ThreadMessageInput: React.FC<ThreadMessageInputProps> = ({
     if (!value.trim()) return;
     await submit();
   };
+  if (!contextKey) {
+    return (
+      <p className="text-destructive">
+        No context key provided, cannot send messages
+      </p>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
