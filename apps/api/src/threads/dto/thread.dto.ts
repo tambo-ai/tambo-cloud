@@ -52,4 +52,5 @@ export class ThreadListDto {
   total!: number;
   offset!: number;
   limit!: number;
+  count!: number;
 }
