@@ -25,6 +25,7 @@
     "extends": "../../package.json"
   },
   "dependencies": {
+    "@hydra-ai/react": "^0.6.1",
     "@use-hydra-ai/core": "*",
     "drizzle-orm": "^0.40.0",
     "postgres": "^3.4.5",
