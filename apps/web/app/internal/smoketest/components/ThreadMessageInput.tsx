@@ -2,7 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTamboThreadInput } from "@hydra-ai/react";
 
-export function ThreadMessageInput() {
+interface ThreadMessageInputProps {
+  contextKey: string;
+}
+
+const ThreadMessageInput: React.FC<ThreadMessageInputProps> = ({
+  contextKey,
+}) => {
   const { value, setValue, submit, isSubmitting, error } =
     useTamboThreadInput();
 
@@ -27,4 +33,6 @@ export function ThreadMessageInput() {
       {error && <p className="text-sm text-destructive">{error}</p>}
     </form>
   );
-}
+};
+
+export { ThreadMessageInput };

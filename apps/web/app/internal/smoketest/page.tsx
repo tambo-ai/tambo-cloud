@@ -4,6 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useSession } from "@/hooks/auth";
 import { api } from "@/trpc/react";
 import { TamboTool, useTambo, useTamboComponentState } from "@hydra-ai/react";
 import { TRPCClientErrorLike } from "@trpc/client";
@@ -26,6 +27,8 @@ import { ThreadMessageInput } from "./components/ThreadMessageInput";
 import { wrapApiCall } from "./utils/apiWrapper";
 
 export default function SmokePage() {
+  const { session } = useSession();
+  const userId = session?.user.id;
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
@@ -181,7 +184,7 @@ export default function SmokePage() {
             Generation stage: {generationStage}
           </p>
         </div>
-        <ThreadMessageInput />
+        <ThreadMessageInput contextKey={userId} />
       </Card>
 
       {errors.length > 0 && (
