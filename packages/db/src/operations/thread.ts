@@ -1,3 +1,4 @@
+import { GenerationStage } from "@use-hydra-ai/core";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
@@ -80,7 +81,11 @@ export async function getThreadForUserId(
 export async function getThreadsByProject(
   db: HydraDb,
   projectId: string,
-  { contextKey }: { contextKey?: string } = {},
+  {
+    contextKey,
+    offset = 0,
+    limit = 10,
+  }: { contextKey?: string; offset?: number; limit?: number } = {},
 ) {
   return await db.query.threads.findMany({
     where: contextKey
@@ -93,7 +98,21 @@ export async function getThreadsByProject(
       messages: true,
     },
     orderBy: (threads, { desc }) => [desc(threads.createdAt)],
+    offset,
+    limit,
   });
+}
+export async function countThreadsByProject(
+  db: HydraDb,
+  projectId: string,
+  { contextKey }: { contextKey?: string } = {},
+) {
+  return await db.$count(
+    schema.threads,
+    contextKey
+      ? eq(schema.threads.contextKey, contextKey)
+      : eq(schema.threads.projectId, projectId),
+  );
 }
 
 export async function updateThread(
@@ -102,9 +121,13 @@ export async function updateThread(
   {
     contextKey,
     metadata,
+    generationStage,
+    statusMessage,
   }: {
     contextKey?: string | null;
     metadata?: ThreadMetadata;
+    generationStage?: GenerationStage;
+    statusMessage?: string;
   },
 ) {
   const [updated] = await db
@@ -113,6 +136,8 @@ export async function updateThread(
       contextKey,
       metadata,
       updatedAt: new Date(),
+      generationStage,
+      statusMessage,
     })
     .where(eq(schema.threads.id, threadId))
     .returning();
@@ -232,4 +257,23 @@ export async function ensureThreadByProjectId(
   if (!thread) {
     throw new Error("Thread not found");
   }
+}
+
+export async function updateThreadGenerationStatus(
+  db: HydraDb,
+  threadId: string,
+  generationStage: GenerationStage,
+  statusMessage?: string,
+) {
+  const [updated] = await db
+    .update(schema.threads)
+    .set({
+      generationStage,
+      statusMessage,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.threads.id, threadId))
+    .returning();
+
+  return updated;
 }

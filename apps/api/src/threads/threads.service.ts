@@ -62,25 +62,38 @@ export class ThreadsService {
       updatedAt: thread.updatedAt,
       contextKey: thread.contextKey ?? undefined,
       metadata: thread.metadata ?? undefined,
+      generationStage: thread.generationStage ?? undefined,
+      statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
     };
   }
 
   async findAllForProject(
     projectId: string,
-    { contextKey }: { contextKey?: string } = {},
+    params: { contextKey?: string; offset?: number; limit?: number } = {},
   ): Promise<Thread[]> {
-    const threads = await operations.getThreadsByProject(this.db, projectId, {
-      contextKey,
-    });
+    const threads = await operations.getThreadsByProject(
+      this.db,
+      projectId,
+      params,
+    );
     return threads.map((thread) => ({
       id: thread.id,
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,
       contextKey: thread.contextKey ?? undefined,
       metadata: thread.metadata ?? undefined,
+      generationStage: thread.generationStage ?? undefined,
+      statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
     }));
+  }
+
+  async countThreadsByProject(
+    projectId: string,
+    params: { contextKey?: string } = {},
+  ): Promise<number> {
+    return await operations.countThreadsByProject(this.db, projectId, params);
   }
 
   async findOne(id: string, projectId: string): Promise<Thread> {
@@ -98,6 +111,8 @@ export class ThreadsService {
       updatedAt: thread.updatedAt,
       contextKey: thread.contextKey ?? undefined,
       metadata: thread.metadata ?? undefined,
+      generationStage: thread.generationStage ?? undefined,
+      statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
     };
   }
@@ -114,6 +129,8 @@ export class ThreadsService {
     return await operations.updateThread(this.db, id, {
       contextKey: updateThreadDto.contextKey,
       metadata: updateThreadDto.metadata,
+      generationStage: updateThreadDto.generationStage,
+      statusMessage: updateThreadDto.statusMessage,
     });
   }
 
