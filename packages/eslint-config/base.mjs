@@ -32,6 +32,7 @@ export default tseslint.config(
         },
       ],
       "@typescript-eslint/return-await": ["error", "always"],
+      "@typescript-eslint/promise-function-async": "error",
     },
   },
   {
