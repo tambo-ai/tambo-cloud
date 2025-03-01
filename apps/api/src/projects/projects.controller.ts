@@ -39,6 +39,11 @@ export class ProjectsController {
     return await this.projectsService.create(createProjectDto);
   }
 
+  @Get()
+  async getCurrentProject(@Req() request) {
+    return await this.projectsService.findOne(request.projectId);
+  }
+
   @Get('user/')
   findAllForUser(@Req() request) {
     return this.projectsService.findAllForUser(request.userId);
