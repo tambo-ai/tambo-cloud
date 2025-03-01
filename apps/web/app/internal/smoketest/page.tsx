@@ -1,10 +1,12 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { ThreadList } from "@/components/thread/thread-list";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSession } from "@/hooks/auth";
+import { env } from "@/lib/env";
 import { api } from "@/trpc/react";
 import { TamboTool, useTambo, useTamboComponentState } from "@hydra-ai/react";
 import { TRPCClientErrorLike } from "@trpc/client";
@@ -151,9 +153,20 @@ export default function SmokePage() {
   }, [registerComponent, tools]);
 
   const isLoading = isAqiPending || isForecastPending || isHistoryPending;
+  const x = useTamboThreads(env.NEXT_PUBLIC_SMOKETEST_PROJECT_ID);
 
   return (
     <div className="container max-w-2xl py-8 space-y-4">
+      <Card className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Threads</h2>
+        </div>
+        <ThreadList
+          threads={threads || []}
+          selectedThreadId={selectedThreadId}
+          onThreadSelect={setSelectedThreadId}
+        />
+      </Card>
       <Card className="p-4 min-h-[500px] flex flex-col">
         <div className="flex-1 overflow-y-auto space-y-4 mb-4">
           {messages.map((message, index) => (
