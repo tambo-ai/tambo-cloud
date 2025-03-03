@@ -1,13 +1,9 @@
 "use client";
 
-import { EmailDialog } from "@/components/email-dialog";
-import { Icons } from "@/components/icons";
+import { CLI } from "@/components/cli";
 import { Section } from "@/components/section";
-import { Button, buttonVariants } from "@/components/ui/button";
 import { copy } from "@/lib/copy";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useState } from "react";
 
 const ease = [0.16, 1, 0.3, 1];
 
@@ -58,21 +54,10 @@ function HeroTitles() {
           staggerChildren: 0.2,
         }}
       >
-        <motion.span
-          className="inline-block text-balance"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.8,
-            delay: 0.5,
-            ease,
-          }}
-        >
-          Smarter conversations, happier users.
-        </motion.span>
+        {heroContent.title}
       </motion.h1>
       <motion.p
-        className="text-center lg:text-left max-w-xl leading-normal text-muted-foreground text-lg sm:text-xl sm:leading-normal text-balance mt-6"
+        className="text-center lg:text-left max-w-xl leading-normal text-muted-foreground text-lg sm:text-xl sm:leading-normal mt-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
@@ -88,29 +73,23 @@ function HeroTitles() {
 }
 
 function HeroCTA() {
-  const [showDialog, setShowDialog] = useState(false);
-
   return (
-    <div className="flex flex-col items-center lg:items-start w-full mt-8 lg:mt-12">
+    <motion.div
+      className="w-full"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.8, duration: 0.8, ease }}
+    >
       <motion.div
-        className="flex flex-col items-center lg:items-start w-full max-w-md"
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8, duration: 0.8, ease }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="w-full"
       >
-        <Button
-          onClick={() => setShowDialog(true)}
-          className={cn(
-            buttonVariants({ variant: "default" }),
-            "w-full sm:w-auto flex gap-2 rounded-lg py-6 sm:py-5 px-8 text-lg bg-primary hover:bg-primary/90 text-[#023A41] font-medium shadow-md"
-          )}
-        >
-          <Icons.logo className="h-5 w-5 sm:h-6 sm:w-6" />
-          {heroContent.cta.buttonText}
-        </Button>
+        <CLI title="Bash" command="npx tambo --full-send" className="w-full" />
       </motion.div>
-      <EmailDialog open={showDialog} onOpenChange={setShowDialog} />
-    </div>
+    </motion.div>
   );
 }
 
@@ -131,11 +110,11 @@ function HeroIllustration() {
 export function Hero() {
   return (
     <Section id="hero" className="py-16 sm:py-20 lg:py-32">
-      <div className="flex flex-col lg:flex-row items-center w-full lg:gap-16">
+      {/* Main content area with titles and illustration */}
+      <div className="flex flex-col lg:flex-row items-center w-full lg:gap-16 mb-12">
         <div className="flex flex-col items-center lg:items-start text-center lg:text-left lg:max-w-[640px]">
           <HeroPill />
           <HeroTitles />
-          <HeroCTA />
         </div>
 
         {/* Hero illustration */}
@@ -148,6 +127,13 @@ export function Hero() {
           >
             <HeroIllustration />
           </motion.div>
+        </div>
+      </div>
+
+      {/* CTA section centered below */}
+      <div className="w-full flex justify-center mt-8">
+        <div className="w-full max-w-3xl">
+          <HeroCTA />
         </div>
       </div>
     </Section>

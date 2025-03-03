@@ -30,16 +30,10 @@ export function Header({
         </Link>
         <div className="hidden lg:flex items-center gap-6">
           <Link
-            href="/product"
+            href="/blog"
             className="text-foreground/80 hover:text-foreground font-medium transition-colors"
           >
-            Product
-          </Link>
-          <Link
-            href="/pricing"
-            className="text-foreground/80 hover:text-foreground font-medium transition-colors"
-          >
-            Pricing
+            Blog
           </Link>
           <Link
             href="/docs"

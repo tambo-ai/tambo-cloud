@@ -1,13 +1,12 @@
 export const copy = {
   hero: {
     pill: {
-      label: "⚡️ Beta",
-      text: "Canvas UI",
-      link: "https://canvas.usehydra.ai/",
+      label: "⚡️ Launching Soon",
+      text: "v1.0.0",
+      link: "http://localhost:3000/blog/0-1-0-announcement",
     },
-    title: "Ship AI Features in Hours, Not Months",
-    subtitle:
-      "Powerful AI capabilities that integrate seamlessly into your existing apps. Add intelligence without managing infrastructure.",
+    title: "An AI powered User Interface in one line of code.",
+    subtitle: "A React package for adding intelligence into your app.",
     cta: {
       buttonText: "Request Early Access",
     },
