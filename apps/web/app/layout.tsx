@@ -1,5 +1,4 @@
 import { TailwindIndicator } from "@/components/tailwind-indicator";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { siteConfig } from "@/lib/config";
@@ -36,11 +35,8 @@ export const metadata: Metadata = constructMetadata({
 });
 
 export const viewport: Viewport = {
-  colorScheme: "dark",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
-  ],
+  colorScheme: "light",
+  themeColor: [{ media: "(prefers-color-scheme: light)", color: "white" }],
 };
 
 export default function RootLayout({
@@ -69,11 +65,11 @@ export default function RootLayout({
           >
             <ThemeProvider
               attribute="class"
-              defaultTheme="dark"
+              defaultTheme="light"
               enableSystem={false}
+              forcedTheme="light"
             >
               <RootProvider>{children}</RootProvider>
-              <ThemeToggle />
               <TailwindIndicator />
             </ThemeProvider>
             <Toaster />

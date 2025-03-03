@@ -134,50 +134,6 @@ html {
     font-family: Inter, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11", "salt";
   }
-
-  .dark {
-    /* Main background and text colors */
-    --background: 162 30% 8%; /* #0E1A17 */
-    --foreground: 0 0% 100%; /* #FFF */
-
-    /* Card and popover styling */
-    --card: 186 94% 13%; /* #023A41 */
-    --card-foreground: 0 0% 100%; /* #FFF */
-    --popover: 186 94% 13%; /* #023A41 */
-    --popover-foreground: 0 0% 100%; /* #FFF */
-
-    /* Primary colors */
-    --primary: 157 100% 75%; /* #7FFFC4 - keeping your logo color consistent */
-    --primary-foreground: 162 30% 8%; /* #0E1A17 */
-
-    /* Secondary colors */
-    --secondary: 217 91% 67%; /* #5C94F7 */
-    --secondary-foreground: 0 0% 100%; /* #FFF */
-
-    /* Muted colors */
-    --muted: 186 94% 13%; /* #023A41 */
-    --muted-foreground: 150 30% 96%; /* #F2F8F6 */
-
-    /* Accent colors */
-    --accent: 320 100% 88%; /* #FFC4EB */
-    --accent-foreground: 162 30% 8%; /* #0E1A17 */
-
-    /* Destructive colors */
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%; /* #FFF */
-
-    /* Border and input styling */
-    --border: 186 94% 13%; /* #023A41 */
-    --input: 186 94% 13%; /* #023A41 */
-    --ring: 157 100% 75%; /* #7FFFC4 */
-
-    /* Chart colors - keeping consistent with light mode */
-    --chart-1: 157 100% 75%; /* #7FFFC4 */
-    --chart-2: 320 100% 88%; /* #FFC4EB */
-    --chart-3: 217 91% 67%; /* #5C94F7 */
-    --chart-4: 49 97% 51%; /* #FED807 */
-    --chart-5: 150 30% 96%; /* #F2F8F6 */
-  }
 }
 
 .shadow-light {
