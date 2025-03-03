@@ -9,7 +9,7 @@ interface ThreadMessageInputProps {
 
 const ThreadMessageInput: FC<ThreadMessageInputProps> = ({ contextKey }) => {
   const { value, setValue, submit, isSubmitting, error } =
-    useTamboThreadInput();
+    useTamboThreadInput(contextKey);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -6,9 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSession } from "@/hooks/auth";
-import { env } from "@/lib/env";
 import { api } from "@/trpc/react";
-import { TamboTool, useTambo, useTamboComponentState } from "@hydra-ai/react";
+import {
+  TamboTool,
+  useTambo,
+  useTamboComponentState,
+  useTamboThreads,
+} from "@hydra-ai/react";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { X } from "lucide-react";
 import {
@@ -30,11 +34,13 @@ import { wrapApiCall } from "./utils/apiWrapper";
 
 export default function SmokePage() {
   const { session } = useSession();
+  console.log("session = ", session);
   const userId = session?.user.id;
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
-  const { registerComponent, generationStage, thread } = useTambo();
+  const { registerComponent, generationStage, thread, switchCurrentThread } =
+    useTambo();
   const messages = thread?.messages ?? [];
 
   const { mutateAsync: getAirQuality, isPending: isAqiPending } =
@@ -153,135 +159,139 @@ export default function SmokePage() {
   }, [registerComponent, tools]);
 
   const isLoading = isAqiPending || isForecastPending || isHistoryPending;
-  const x = useTamboThreads(env.NEXT_PUBLIC_SMOKETEST_PROJECT_ID);
+  const threadInfo = useTamboThreads({ contextKey: userId });
 
   return (
-    <div className="container max-w-2xl py-8 space-y-4">
-      <Card className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Threads</h2>
-        </div>
-        <ThreadList
-          threads={threads || []}
-          selectedThreadId={selectedThreadId}
-          onThreadSelect={setSelectedThreadId}
-        />
-      </Card>
-      <Card className="p-4 min-h-[500px] flex flex-col">
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`p-3 rounded-lg ${
-                message.role === "user"
-                  ? "bg-primary text-primary-foreground ml-12"
-                  : "bg-muted mr-12"
-              }`}
-            >
-              {message.content.map((content, index) => (
-                <div key={index}>
-                  {content.type === "text"
-                    ? content.text
-                    : `[Unhandled ${content.type}]`}
+    <div className="container max-w-4xl py-8 space-y-4">
+      <div className="flex  gap-4">
+        <Card className="p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Threads</h2>
+          </div>
+          <ThreadList
+            threads={threadInfo?.items || []}
+            selectedThreadId={thread?.id}
+            onThreadSelect={(threadId) => {
+              switchCurrentThread(threadId);
+            }}
+          />
+        </Card>
+        <div className="flex-1">
+          <Card className="p-4 min-h-[500px] flex flex-col">
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-lg ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground ml-12"
+                      : "bg-muted mr-12"
+                  }`}
+                >
+                  {message.content.map((content, index) => (
+                    <div key={index}>
+                      {content.type === "text"
+                        ? content.text
+                        : `[Unhandled ${content.type}]`}
+                    </div>
+                  ))}
+                  {message.renderedComponent && (
+                    <div className="mt-2">{message.renderedComponent}</div>
+                  )}
                 </div>
               ))}
-              {message.renderedComponent && (
-                <div className="mt-2">{message.renderedComponent}</div>
-              )}
             </div>
-          ))}
-        </div>
-        <MessageSuggestions maxSuggestions={3} />
-        <div>
-          <p className="text-sm text-muted-foreground p-2">
-            Generation stage: {generationStage}
-          </p>
-        </div>
-        <ThreadMessageInput contextKey={userId} />
-      </Card>
+            <MessageSuggestions maxSuggestions={3} />
+            <div>
+              <p className="text-sm text-muted-foreground p-2">
+                Generation stage: {generationStage}
+              </p>
+            </div>
+            <ThreadMessageInput contextKey={userId} />
+          </Card>
 
-      {errors.length > 0 && (
-        <Card className="p-4 bg-destructive/10">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold">Errors</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setErrors([])}
-              className="h-8 px-2"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {errors.map((error, index) => (
-              <div key={index} className="text-sm font-mono">
-                {error.message || String(error)}
+          {errors.length > 0 && (
+            <Card className="p-4 bg-destructive/10">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold">Errors</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setErrors([])}
+                  className="h-8 px-2"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-            ))}
+              <div className="space-y-2">
+                {errors.map((error, index) => (
+                  <div key={index} className="text-sm font-mono">
+                    {error.message || String(error)}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+          <Card className="p-4">
+            <h3 className="font-semibold mb-2">API Activity</h3>
+            <div className="space-y-2">
+              <ApiActivityMonitor
+                name="Air Quality"
+                state={apiStates.aqi}
+                tokens={apiStates.aqi.tokens ?? undefined}
+                onPauseToggle={(isPaused) => {
+                  if (isPaused) {
+                    wrappedApis.aqi.unpause();
+                  } else {
+                    wrappedApis.aqi.pause();
+                  }
+                  updateApiStates();
+                }}
+                onErrorToggle={(isErroring) => {
+                  wrappedApis.aqi.setNextError(!isErroring);
+                  updateApiStates();
+                }}
+              />
+              <ApiActivityMonitor
+                name="Forecast"
+                state={apiStates.forecast}
+                tokens={apiStates.forecast.tokens ?? undefined}
+                onPauseToggle={(isPaused) => {
+                  if (isPaused) {
+                    wrappedApis.forecast.unpause();
+                  } else {
+                    wrappedApis.forecast.pause();
+                  }
+                  updateApiStates();
+                }}
+                onErrorToggle={(isErroring) => {
+                  wrappedApis.forecast.setNextError(!isErroring);
+                  updateApiStates();
+                }}
+              />
+              <ApiActivityMonitor
+                name="History"
+                state={apiStates.history}
+                tokens={apiStates.history.tokens ?? undefined}
+                onPauseToggle={(isPaused) => {
+                  if (isPaused) {
+                    wrappedApis.history.unpause();
+                  } else {
+                    wrappedApis.history.pause();
+                  }
+                  updateApiStates();
+                }}
+                onErrorToggle={(isErroring) => {
+                  wrappedApis.history.setNextError(!isErroring);
+                  updateApiStates();
+                }}
+              />
+            </div>
+          </Card>
+          <div>
+            <p>Thread ID: &apos;{thread.id}&apos;</p>
           </div>
-        </Card>
-      )}
-
-      <Card className="p-4">
-        <h3 className="font-semibold mb-2">API Activity</h3>
-        <div className="space-y-2">
-          <ApiActivityMonitor
-            name="Air Quality"
-            state={apiStates.aqi}
-            tokens={apiStates.aqi.tokens ?? undefined}
-            onPauseToggle={(isPaused) => {
-              if (isPaused) {
-                wrappedApis.aqi.unpause();
-              } else {
-                wrappedApis.aqi.pause();
-              }
-              updateApiStates();
-            }}
-            onErrorToggle={(isErroring) => {
-              wrappedApis.aqi.setNextError(!isErroring);
-              updateApiStates();
-            }}
-          />
-          <ApiActivityMonitor
-            name="Forecast"
-            state={apiStates.forecast}
-            tokens={apiStates.forecast.tokens ?? undefined}
-            onPauseToggle={(isPaused) => {
-              if (isPaused) {
-                wrappedApis.forecast.unpause();
-              } else {
-                wrappedApis.forecast.pause();
-              }
-              updateApiStates();
-            }}
-            onErrorToggle={(isErroring) => {
-              wrappedApis.forecast.setNextError(!isErroring);
-              updateApiStates();
-            }}
-          />
-          <ApiActivityMonitor
-            name="History"
-            state={apiStates.history}
-            tokens={apiStates.history.tokens ?? undefined}
-            onPauseToggle={(isPaused) => {
-              if (isPaused) {
-                wrappedApis.history.unpause();
-              } else {
-                wrappedApis.history.pause();
-              }
-              updateApiStates();
-            }}
-            onErrorToggle={(isErroring) => {
-              wrappedApis.history.setNextError(!isErroring);
-              updateApiStates();
-            }}
-          />
         </div>
-      </Card>
-
-      <div>
-        <p>Thread ID: &apos;{thread.id}&apos;</p>
       </div>
     </div>
   );
