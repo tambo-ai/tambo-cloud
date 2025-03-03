@@ -1,5 +1,8 @@
-import { ChatCompletionContentPartDto } from './message.dto';
+import { AvailableComponentDto } from '../../components/dto/generate-component.dto';
+import { MessageRequest } from './message.dto';
 
 export class AdvanceThreadDto {
-  messages?: ChatCompletionContentPartDto[];
+  messagesToAppend?: MessageRequest[];
+  contextKey?: string;
+  availableComponents?: AvailableComponentDto[];
 }

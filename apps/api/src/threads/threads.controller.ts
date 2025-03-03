@@ -19,6 +19,7 @@ import {
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
+import { GenerationStage } from '@use-hydra-ai/core';
 import { ApiKeyGuard } from '../components/guards/apikey.guard';
 import {
   ProjectAccessOwnGuard,
@@ -237,7 +238,10 @@ export class ThreadsController {
     @Param('id') threadId: string,
     @Req() request,
     @Body() advanceRequestDto?: AdvanceThreadDto,
-  ): Promise<void> {
+  ): Promise<{
+    responseMessageDto: ThreadMessageDto;
+    generationStage: GenerationStage;
+  }> {
     if (!request.projectId) {
       throw new BadRequestException('Project ID is required');
     }
@@ -255,7 +259,10 @@ export class ThreadsController {
   async createAndAdvanceThread(
     @Req() request,
     @Body() advanceRequestDto: AdvanceThreadDto,
-  ): Promise<void> {
+  ): Promise<{
+    responseMessageDto: ThreadMessageDto;
+    generationStage: GenerationStage;
+  }> {
     if (!request.projectId) {
       throw new BadRequestException('Project ID is required');
     }

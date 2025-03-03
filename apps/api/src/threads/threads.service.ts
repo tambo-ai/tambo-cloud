@@ -1,8 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  ActionType,
   ChatCompletionContentPart,
+  ComponentDecision,
   ContentPartType,
   GenerationStage,
+  MessageRole,
   ThreadMessage,
 } from '@use-hydra-ai/core';
 import type { HydraDatabase } from '@use-hydra-ai/db';
@@ -10,9 +13,12 @@ import { operations } from '@use-hydra-ai/db';
 import type { DBSuggestion } from '@use-hydra-ai/db/src/schema';
 import {
   ChatMessage,
-  HydraBackend,
   generateChainId,
+  HydraBackend,
 } from '@use-hydra-ai/hydra-ai-server';
+import { decryptProviderKey } from 'src/common/key.utils';
+import { AvailableComponentDto } from 'src/components/dto/generate-component.dto';
+import { ProjectsService } from 'src/projects/projects.service';
 import { CorrelationLoggerService } from '../common/services/logger.service';
 import { AdvanceThreadDto } from './dto/advance-thread.dto';
 import {
@@ -34,6 +40,7 @@ export class ThreadsService {
   constructor(
     @Inject('DbRepository')
     private readonly db: HydraDatabase,
+    private projectsService: ProjectsService,
     private readonly logger: CorrelationLoggerService,
     @Inject('OPENAI_API_KEY') private readonly openAiKey: string,
   ) {}
@@ -354,12 +361,75 @@ export class ThreadsService {
     advanceRequestDto?: AdvanceThreadDto,
   ) {
     const thread = await this.ensureThread(projectId, threadId, undefined);
-    console.log('thread', thread);
-    // const hydraBackend = await this.getHydraBackend(thread.id);
-    if (advanceRequestDto) {
-      //handle different message types
+    if (advanceRequestDto?.messagesToAppend) {
+      for (const message of advanceRequestDto.messagesToAppend) {
+        await this.addMessage(thread.id, message);
+      }
     }
-    return;
+    const messages = await this.getMessages(thread.id);
+
+    const decryptedProviderKey =
+      await this.validateProjectAndProviderKeys(projectId);
+    const hydraBackend = new HydraBackend(
+      decryptedProviderKey.providerKey,
+      await generateChainId(thread.id),
+      { version: 'v2' },
+    );
+
+    const availableComponentMap: Record<string, AvailableComponentDto> =
+      advanceRequestDto?.availableComponents?.reduce((acc, component) => {
+        acc[component.name] = component;
+        return acc;
+      }, {}) ?? {};
+
+    // TODO: Let hydrabackend package handle different message types internally
+    if (messages.length === 0) {
+      throw new Error('No messages found');
+    }
+    const latestMessage = messages[messages.length - 1];
+
+    let responseMessage: ComponentDecision;
+    if (latestMessage.role === MessageRole.Tool) {
+      // Since we don't a store tool responses in the db, assumes that the tool response is the latest message of dto.messagesToAppend
+      const toolResponse =
+        advanceRequestDto?.messagesToAppend?.[
+          advanceRequestDto.messagesToAppend.length - 1
+        ]?.toolResponse;
+      if (!toolResponse) {
+        throw new Error('No tool response found');
+      }
+
+      const componentDef = advanceRequestDto?.availableComponents?.find(
+        (c) => c.name === latestMessage.component?.componentName,
+      );
+      if (!componentDef) {
+        throw new Error('Component definition not found');
+      }
+
+      responseMessage = await hydraBackend.hydrateComponentWithData(
+        convertThreadMessagesToLegacyThreadMessages(messages),
+        componentDef,
+        toolResponse,
+        thread.id,
+      );
+    } else {
+      responseMessage = await hydraBackend.generateComponent(
+        convertThreadMessagesToLegacyThreadMessages(messages),
+        availableComponentMap,
+        thread.id,
+      );
+    }
+
+    const responseMessageDto = await this.addResponseToThread(
+      thread.id,
+      responseMessage,
+    );
+    return {
+      responseMessageDto,
+      generationStage: responseMessage.toolCallRequest
+        ? GenerationStage.FETCHING_CONTEXT
+        : GenerationStage.COMPLETE,
+    };
   }
 
   private async ensureThread(
@@ -386,6 +456,36 @@ export class ThreadsService {
       contextKey,
     });
     return newThread;
+  }
+
+  private async validateProjectAndProviderKeys(projectId: string) {
+    const project = await this.projectsService.findOneWithKeys(projectId);
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+    const providerKeys = project.getProviderKeys();
+    if (!providerKeys?.length) {
+      throw new NotFoundException('No provider keys found for project');
+    }
+    const providerKey =
+      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+    if (!providerKey) {
+      throw new NotFoundException('No provider key found for project');
+    }
+    return decryptProviderKey(providerKey);
+  }
+
+  private async addResponseToThread(
+    threadId: string,
+    component: ComponentDecision,
+  ) {
+    return await this.addMessage(threadId, {
+      role: MessageRole.Hydra,
+      content: [{ type: ContentPartType.Text, text: component.message }],
+      component: component,
+      actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
+      toolCallRequest: component.toolCallRequest,
+    });
   }
 }
 
@@ -434,4 +534,26 @@ function convertContentPartToDto(
     return [{ type: ContentPartType.Text, text: part }];
   }
   return part as ChatCompletionContentPartDto[];
+}
+
+function convertThreadMessagesToLegacyThreadMessages(
+  currentThreadMessages: ThreadMessage[] | ThreadMessageDto[],
+) {
+  return currentThreadMessages.map(
+    (message): ChatMessage => ({
+      sender: [MessageRole.User, MessageRole.Tool].includes(message.role)
+        ? (message.role as 'user' | 'tool')
+        : 'hydra',
+      message: message.content
+        .map((part) => {
+          switch (part.type) {
+            case ContentPartType.Text:
+              return part.text ?? '';
+            default:
+              return '';
+          }
+        })
+        .join(''),
+    }),
+  );
 }
