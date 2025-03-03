@@ -66,6 +66,7 @@ export class ThreadsService {
       generationStage: thread.generationStage ?? undefined,
       statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
+      messages: [],
     };
   }
 
@@ -87,6 +88,14 @@ export class ThreadsService {
       generationStage: thread.generationStage ?? undefined,
       statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
+      messages: thread.messages.map((message) => ({
+        ...message,
+        content: convertContentPartToDto(message.content),
+        metadata: message.metadata ?? undefined,
+        componentState: message.componentState ?? undefined,
+        toolCallRequest: message.toolCallRequest ?? undefined,
+        actionType: message.actionType ?? undefined,
+      })),
     }));
   }
 
@@ -115,6 +124,14 @@ export class ThreadsService {
       generationStage: thread.generationStage ?? undefined,
       statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
+      messages: thread.messages.map((message) => ({
+        ...message,
+        content: convertContentPartToDto(message.content),
+        metadata: message.metadata ?? undefined,
+        componentState: message.componentState ?? undefined,
+        toolCallRequest: message.toolCallRequest ?? undefined,
+        actionType: message.actionType ?? undefined,
+      })),
     };
   }
 
@@ -127,12 +144,23 @@ export class ThreadsService {
   }
 
   async update(id: string, updateThreadDto: ThreadRequest) {
-    return await operations.updateThread(this.db, id, {
+    const thread = await operations.updateThread(this.db, id, {
       contextKey: updateThreadDto.contextKey,
       metadata: updateThreadDto.metadata,
       generationStage: updateThreadDto.generationStage,
       statusMessage: updateThreadDto.statusMessage,
     });
+    return {
+      ...thread,
+      messages: thread.messages.map((message) => ({
+        ...message,
+        content: convertContentPartToDto(message.content),
+        metadata: message.metadata ?? undefined,
+        componentState: message.componentState ?? undefined,
+        toolCallRequest: message.toolCallRequest ?? undefined,
+        actionType: message.actionType ?? undefined,
+      })),
+    };
   }
 
   async updateGenerationStage(
