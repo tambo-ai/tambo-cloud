@@ -289,7 +289,7 @@ export default function SmokePage() {
             </div>
           </Card>
           <div>
-            <p>Thread ID: &apos;{thread.id}&apos;</p>
+            <p>Thread ID: &apos;{thread?.id}&apos;</p>
           </div>
         </div>
       </div>
