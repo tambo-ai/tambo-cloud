@@ -31,15 +31,18 @@ export function Header({
         <div className="hidden lg:flex items-center gap-6">
           <Link
             href="/blog"
-            className="text-foreground/80 hover:text-foreground font-medium transition-colors"
+            className={cn(
+              buttonVariants({ variant: "link" }),
+              "h-9 rounded-md group tracking-tight font-medium",
+            )}
           >
             Blog
           </Link>
           <Link
             href="/docs"
             className={cn(
-              buttonVariants({ variant: "outline" }),
-              "h-9 rounded-md group tracking-tight font-medium bg-secondary/50 border-secondary-foreground/10",
+              buttonVariants({ variant: "link" }),
+              "h-9 rounded-md group tracking-tight font-medium",
             )}
           >
             Documentation
@@ -49,7 +52,7 @@ export function Header({
               href="/dashboard"
               className={cn(
                 buttonVariants({ variant: "default" }),
-                "h-9 text-primary-foreground rounded-md group tracking-tight font-medium",
+                "h-9 rounded-md group tracking-tight font-medium",
               )}
             >
               Dashboard
