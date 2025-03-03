@@ -24,13 +24,13 @@ import {
   ProjectAccessOwnGuard,
   ProjectIdParameterKey,
 } from '../projects/guards/project-access-own.guard';
+import { AdvanceThreadDto } from './dto/advance-thread.dto';
 import { ErrorDto } from './dto/error.dto';
 import { MessageRequest, ThreadMessageDto } from './dto/message.dto';
 import { SuggestionDto } from './dto/suggestion.dto';
 import { SuggestionsGenerateDto } from './dto/suggestions-generate.dto';
 import {
   Thread,
-  ThreadListDto,
   ThreadRequest,
   UpdateComponentStateDto,
 } from './dto/thread.dto';
@@ -54,32 +54,13 @@ export class ThreadsController {
   @UseGuards(ProjectAccessOwnGuard)
   @Get('project/:projectId')
   @ApiQuery({ name: 'contextKey', required: false })
-  @ApiQuery({ name: 'offset', required: false, type: Number, default: 0 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, default: 10 })
   async findAllForProject(
-    @Req() request: Request,
     @Param('projectId') projectId: string,
     @Query('contextKey') contextKey?: string,
-    @Query('offset') offset: number = 0,
-    @Query('limit') limit: number = 10,
-  ): Promise<ThreadListDto> {
-    const threadsPromise = this.threadsService.findAllForProject(projectId, {
-      contextKey,
-      offset,
-      limit,
-    });
-    const totalPromise = this.threadsService.countThreadsByProject(projectId, {
+  ): Promise<Thread[]> {
+    return await this.threadsService.findAllForProject(projectId, {
       contextKey,
     });
-    const threads = await threadsPromise;
-    const total = await totalPromise;
-    return {
-      total,
-      offset,
-      limit,
-      count: threads.length,
-      items: threads,
-    };
   }
 
   @UseGuards(ProjectAccessOwnGuard)
@@ -246,5 +227,42 @@ export class ThreadsController {
       newState.state,
     )) as ThreadMessageDto;
     return message;
+  }
+
+  /**
+   * Given a thread, generate the response message, optionally appending extra messages before generation.
+   */
+  @Post(':id/advance')
+  async advanceThread(
+    @Param('id') threadId: string,
+    @Req() request,
+    @Body() advanceRequestDto?: AdvanceThreadDto,
+  ): Promise<void> {
+    if (!request.projectId) {
+      throw new BadRequestException('Project ID is required');
+    }
+    return await this.threadsService.advanceThread(
+      request.projectId,
+      threadId,
+      advanceRequestDto,
+    );
+  }
+
+  /**
+   * Create a new thread and advance it.
+   */
+  @Post('advance')
+  async createAndAdvanceThread(
+    @Req() request,
+    @Body() advanceRequestDto: AdvanceThreadDto,
+  ): Promise<void> {
+    if (!request.projectId) {
+      throw new BadRequestException('Project ID is required');
+    }
+    return await this.threadsService.advanceThread(
+      request.projectId,
+      undefined,
+      advanceRequestDto,
+    );
   }
 }

@@ -14,6 +14,7 @@ import {
   generateChainId,
 } from '@use-hydra-ai/hydra-ai-server';
 import { CorrelationLoggerService } from '../common/services/logger.service';
+import { AdvanceThreadDto } from './dto/advance-thread.dto';
 import {
   ChatCompletionContentPartDto,
   MessageRequest,
@@ -345,6 +346,46 @@ export class ThreadsService {
       newState,
     );
     return message;
+  }
+
+  async advanceThread(
+    projectId: string,
+    threadId?: string,
+    advanceRequestDto?: AdvanceThreadDto,
+  ) {
+    const thread = await this.ensureThread(projectId, threadId, undefined);
+    console.log('thread', thread);
+    // const hydraBackend = await this.getHydraBackend(thread.id);
+    if (advanceRequestDto) {
+      //handle different message types
+    }
+    return;
+  }
+
+  private async ensureThread(
+    projectId: string,
+    threadId: string | undefined,
+    contextKey: string | undefined,
+    preventCreate: boolean = false,
+  ): Promise<Thread> {
+    // If the threadId is provided, ensure that the thread belongs to the project
+    if (threadId) {
+      await this.ensureThreadByProjectId(threadId, projectId);
+      // TODO: should we update contextKey?
+      const thread = await this.findOne(threadId, projectId);
+      return thread;
+    }
+
+    if (preventCreate) {
+      throw new Error('Thread ID is required, and cannot be created');
+    }
+
+    // If the threadId is not provided, create a new thread
+    const newThread = await this.createThread({
+      projectId,
+      contextKey,
+    });
+    return newThread;
   }
 }
 
