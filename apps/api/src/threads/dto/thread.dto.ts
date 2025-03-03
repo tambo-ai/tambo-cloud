@@ -32,6 +32,10 @@ export class Thread extends ThreadRequest {
   id!: string;
   createdAt!: Date;
   updatedAt!: Date;
+}
+
+@ApiSchema({ name: 'ThreadWithMessages' })
+export class ThreadWithMessagesDto extends Thread {
   messages!: ThreadMessageDto[];
 }
 
