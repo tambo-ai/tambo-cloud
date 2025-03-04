@@ -3,7 +3,7 @@ import { MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ProjectResponseDto } from "../../app/dashboard/types/types";
-import { CopyButton } from "../ui/copy-button";
+import { CopyButton } from "../copy-button";
 import { ProjectDetailsDialog } from "./project-details/project-details-dialog";
 
 interface ProjectCardProps {

@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import * as React from "react";
 import { ButtonHTMLAttributes, useCallback, useState } from "react";
-import { Button } from "./button";
+import { Button } from "./ui/button";
 
 export interface CopyButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
