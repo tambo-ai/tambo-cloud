@@ -34,7 +34,6 @@ import { wrapApiCall } from "./utils/apiWrapper";
 
 export default function SmokePage() {
   const { session } = useSession();
-  console.log("session = ", session);
   const userId = session?.user.id;
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
