@@ -38,11 +38,11 @@ export function CLI({ command, className, title }: CLIProps) {
         {title && <div className="text-xs text-gray-400">{title}</div>}
         <button
           onClick={copyToClipboard}
-          className="text-gray-400 hover:text-white transition-colors"
+          className="text-gray-400 hover:text-primary transition-colors"
           aria-label="Copy to clipboard"
         >
           {copied ? (
-            <Check className="h-4 w-4" />
+            <Check className="h-4 w-4 text-primary" />
           ) : (
             <Copy className="h-4 w-4" />
           )}
