@@ -9,6 +9,7 @@ import {
   Put,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -255,6 +256,32 @@ export class ThreadsController {
     };
   }
 
+  @Post(':id/advancestream')
+  async advanceThreadStream(
+    @Param('id') threadId: string,
+    @Req() request,
+    @Body() advanceRequestDto: AdvanceThreadDto,
+    @Res() response,
+  ): Promise<void> {
+    response.setHeader('Content-Type', 'text/event-stream');
+    response.setHeader('Cache-Control', 'no-cache');
+    response.setHeader('Connection', 'keep-alive');
+    if (!request.projectId) {
+      throw new BadRequestException('Project ID is required');
+    }
+    const stream = (await this.threadsService.advanceThread(
+      request.projectId,
+      threadId,
+      advanceRequestDto,
+      true,
+    )) as AsyncIterableIterator<{
+      responseMessageDto: ThreadMessageDto;
+      generationStage: GenerationStage;
+    }>;
+
+    await this.handleAdvanceStream(response, stream);
+  }
+
   /**
    * Create a new thread and advance it.
    */
@@ -277,5 +304,51 @@ export class ThreadsController {
       responseMessageDto: ThreadMessageDto;
       generationStage: GenerationStage;
     };
+  }
+
+  @Post('advancestream')
+  async createAndAdvanceThreadStream(
+    @Req() request,
+    @Body() advanceRequestDto: AdvanceThreadDto,
+    @Res() response,
+  ): Promise<void> {
+    response.setHeader('Content-Type', 'text/event-stream');
+    response.setHeader('Cache-Control', 'no-cache');
+    response.setHeader('Connection', 'keep-alive');
+    if (!request.projectId) {
+      throw new BadRequestException('Project ID is required');
+    }
+    const stream = (await this.threadsService.advanceThread(
+      request.projectId,
+      undefined,
+      advanceRequestDto,
+      true,
+    )) as AsyncIterableIterator<{
+      responseMessageDto: ThreadMessageDto;
+      generationStage: GenerationStage;
+    }>;
+    await this.handleAdvanceStream(response, stream);
+  }
+
+  private async handleAdvanceStream(
+    @Res() response,
+    stream: AsyncIterableIterator<{
+      responseMessageDto: ThreadMessageDto;
+      generationStage: GenerationStage;
+    }>,
+  ) {
+    try {
+      for await (const chunk of stream) {
+        response.write(`data: ${JSON.stringify(chunk)}\n\n`);
+      }
+    } catch (error: any) {
+      console.error(error);
+      response.write(
+        `event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`,
+      );
+    } finally {
+      response.write('data: DONE\n\n');
+      response.end();
+    }
   }
 }

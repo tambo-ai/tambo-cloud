@@ -428,7 +428,7 @@ export class ThreadsService {
           thread.id,
           true,
         );
-        return this.handleAdvanceStream(
+        return this.handleAdvanceThreadStream(
           thread.id,
           responseMessage as AsyncIterableIterator<ComponentDecision>,
         );
@@ -448,7 +448,7 @@ export class ThreadsService {
           thread.id,
           true,
         );
-        return this.handleAdvanceStream(
+        return this.handleAdvanceThreadStream(
           thread.id,
           responseMessage as AsyncIterableIterator<ComponentDecision>,
         );
@@ -473,7 +473,7 @@ export class ThreadsService {
     };
   }
 
-  private async *handleAdvanceStream(
+  private async *handleAdvanceThreadStream(
     threadId: string,
     stream: AsyncIterableIterator<ComponentDecision>,
   ): AsyncIterableIterator<{
@@ -504,48 +504,48 @@ export class ThreadsService {
       finalResponse = {
         responseMessageDto: {
           ...inProgressMessage,
-          content: [{ type: ContentPartType.Text, text: chunk.message }],
+          content: [
+            {
+              type: ContentPartType.Text,
+              text:
+                chunk.message.length > 0
+                  ? chunk.message
+                  : 'streaming in progress...',
+            },
+          ],
           component: chunk,
           actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
           toolCallRequest: chunk.toolCallRequest,
         },
-        generationStage: chunk.toolCallRequest
-          ? GenerationStage.FETCHING_CONTEXT
-          : GenerationStage.COMPLETE,
+        generationStage: GenerationStage.STREAMING_RESPONSE,
       };
       const currentTime = Date.now();
 
       // Update db message on interval
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
-        await this.updateMessage(inProgressMessage.id, {
-          role: MessageRole.Hydra,
-          content: [{ type: ContentPartType.Text, text: chunk.message }],
-          component: chunk,
-          actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
-          toolCallRequest: chunk.toolCallRequest,
-        });
+        await this.updateMessage(
+          inProgressMessage.id,
+          finalResponse.responseMessageDto,
+        );
         lastUpdateTime = currentTime;
       }
 
       yield {
         responseMessageDto: finalResponse.responseMessageDto,
-        generationStage: finalResponse.generationStage,
+        generationStage: GenerationStage.STREAMING_RESPONSE,
       };
     }
 
     if (finalResponse) {
-      await this.updateMessage(inProgressMessage.id, {
-        ...finalResponse.responseMessageDto,
-        content: [
-          {
-            type: ContentPartType.Text,
-            text: finalResponse.responseMessageDto.content[0].text,
-          },
-        ],
-      });
+      await this.updateMessage(
+        inProgressMessage.id,
+        finalResponse.responseMessageDto,
+      );
       yield {
         responseMessageDto: finalResponse.responseMessageDto,
-        generationStage: finalResponse.generationStage,
+        generationStage: finalResponse.responseMessageDto.toolCallRequest
+          ? GenerationStage.FETCHING_CONTEXT
+          : GenerationStage.COMPLETE,
       };
     }
   }
