@@ -255,7 +255,7 @@ export class ThreadsController {
   }
 
   /**
-   * Given a thread, generate the response message, optionally appending extra messages before generation.
+   * Given a thread, generate the response message, optionally appending a message before generation.
    */
   @Post(':id/advance')
   async advanceThread(
@@ -306,7 +306,7 @@ export class ThreadsController {
   }
 
   /**
-   * Create a new thread and advance it, optionally appending extra messages before generation.
+   * Create a new thread and advance it, optionally appending a message before generation.
    */
   @Post('advance')
   async createAndAdvanceThread(

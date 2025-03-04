@@ -377,7 +377,7 @@ export class ThreadsService {
    * Advance the thread by one step.
    * @param projectId - The project ID.
    * @param threadId - The thread ID.
-   * @param advanceRequestDto - The advance request DTO, including optional messages to append, context key, and available components.
+   * @param advanceRequestDto - The advance request DTO, including optional message to append, context key, and available components.
    * @param stream - Whether to stream the response.
    * @returns The the generated response thread message, generation stage, and status message.
    */
@@ -390,10 +390,8 @@ export class ThreadsService {
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
     const thread = await this.ensureThread(projectId, threadId, undefined);
-    if (advanceRequestDto?.messagesToAppend) {
-      for (const message of advanceRequestDto.messagesToAppend) {
-        await this.addMessage(thread.id, message);
-      }
+    if (advanceRequestDto?.messageToAppend) {
+      await this.addMessage(thread.id, advanceRequestDto.messageToAppend);
     }
 
     const decryptedProviderKey =
@@ -426,11 +424,8 @@ export class ThreadsService {
         GenerationStage.HYDRATING_COMPONENT,
         `Hydrating ${latestMessage.component?.componentName}...`,
       );
-      // Since we don't a store tool responses in the db, assumes that the tool response is the latest message of dto.messagesToAppend
-      const toolResponse =
-        advanceRequestDto?.messagesToAppend?.[
-          advanceRequestDto.messagesToAppend.length - 1
-        ]?.toolResponse;
+      // Since we don't a store tool responses in the db, assumes that the tool response is the messageToAppend
+      const toolResponse = advanceRequestDto?.messageToAppend?.toolResponse;
       if (!toolResponse) {
         throw new Error('No tool response found');
       }

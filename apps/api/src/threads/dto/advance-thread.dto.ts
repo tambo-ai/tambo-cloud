@@ -3,7 +3,7 @@ import { AvailableComponentDto } from '../../components/dto/generate-component.d
 import { MessageRequest, ThreadMessageDto } from './message.dto';
 
 export class AdvanceThreadDto {
-  messagesToAppend?: MessageRequest[];
+  messageToAppend?: MessageRequest;
   contextKey?: string;
   availableComponents?: AvailableComponentDto[];
 }
