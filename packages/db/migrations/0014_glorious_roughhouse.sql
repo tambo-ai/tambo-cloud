@@ -1,5 +1,5 @@
--- 1. Create the role with NOINHERIT (and without login if it’s only for SET ROLE)
--- CREATE ROLE project_api_key NOINHERIT;
+-- 1. Change the project_api_key role to NOINHERIT
+ALTER ROLE project_api_key NOINHERIT;
 
 -- 2. Grant membership to the role that will assume project_api_key (e.g. postgres)
 GRANT project_api_key TO postgres;
