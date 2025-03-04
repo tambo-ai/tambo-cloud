@@ -366,10 +366,12 @@ export class ThreadsService {
     | {
         responseMessageDto: ThreadMessageDto;
         generationStage: GenerationStage;
+        statusMessage: string;
       }
     | AsyncIterableIterator<{
         responseMessageDto: ThreadMessageDto;
         generationStage: GenerationStage;
+        statusMessage: string;
       }>
   > {
     const thread = await this.ensureThread(projectId, threadId, undefined);
@@ -404,6 +406,11 @@ export class ThreadsService {
       | ComponentDecision
       | AsyncIterableIterator<ComponentDecision>;
     if (latestMessage.role === MessageRole.Tool) {
+      await this.updateGenerationStage(
+        thread.id,
+        GenerationStage.HYDRATING_COMPONENT,
+        `Hydrating ${latestMessage.component?.componentName}...`,
+      );
       // Since we don't a store tool responses in the db, assumes that the tool response is the latest message of dto.messagesToAppend
       const toolResponse =
         advanceRequestDto?.messagesToAppend?.[
@@ -441,6 +448,11 @@ export class ThreadsService {
         );
       }
     } else {
+      await this.updateGenerationStage(
+        thread.id,
+        GenerationStage.CHOOSING_COMPONENT,
+        `Choosing component...`,
+      );
       if (stream) {
         responseMessage = await hydraBackend.generateComponent(
           convertThreadMessagesToLegacyThreadMessages(messages),
@@ -465,11 +477,22 @@ export class ThreadsService {
       thread.id,
       responseMessage as ComponentDecision,
     );
+    const resultingGenerationStage = responseMessageDto.toolCallRequest
+      ? GenerationStage.FETCHING_CONTEXT
+      : GenerationStage.COMPLETE;
+    const resultingStatusMessage = responseMessageDto.toolCallRequest
+      ? `Fetching context...`
+      : `Generation complete`;
+    await this.updateGenerationStage(
+      thread.id,
+      resultingGenerationStage,
+      resultingStatusMessage,
+    );
+
     return {
       responseMessageDto,
-      generationStage: (responseMessage as ComponentDecision).toolCallRequest
-        ? GenerationStage.FETCHING_CONTEXT
-        : GenerationStage.COMPLETE,
+      generationStage: resultingGenerationStage,
+      statusMessage: resultingStatusMessage,
     };
   }
 
@@ -479,11 +502,13 @@ export class ThreadsService {
   ): AsyncIterableIterator<{
     responseMessageDto: ThreadMessageDto;
     generationStage: GenerationStage;
+    statusMessage: string;
   }> {
     let finalResponse:
       | {
           responseMessageDto: ThreadMessageDto;
           generationStage: GenerationStage;
+          statusMessage: string;
         }
       | undefined;
     let lastUpdateTime = 0;
@@ -518,6 +543,7 @@ export class ThreadsService {
           toolCallRequest: chunk.toolCallRequest,
         },
         generationStage: GenerationStage.STREAMING_RESPONSE,
+        statusMessage: `Streaming response...`,
       };
       const currentTime = Date.now();
 
@@ -533,6 +559,7 @@ export class ThreadsService {
       yield {
         responseMessageDto: finalResponse.responseMessageDto,
         generationStage: GenerationStage.STREAMING_RESPONSE,
+        statusMessage: `Streaming response...`,
       };
     }
 
@@ -546,6 +573,9 @@ export class ThreadsService {
         generationStage: finalResponse.responseMessageDto.toolCallRequest
           ? GenerationStage.FETCHING_CONTEXT
           : GenerationStage.COMPLETE,
+        statusMessage: finalResponse.responseMessageDto.toolCallRequest
+          ? `Fetching context...`
+          : `Complete`,
       };
     }
   }
