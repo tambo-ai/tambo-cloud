@@ -21,7 +21,10 @@ import { decryptProviderKey } from 'src/common/key.utils';
 import { AvailableComponentDto } from 'src/components/dto/generate-component.dto';
 import { ProjectsService } from 'src/projects/projects.service';
 import { CorrelationLoggerService } from '../common/services/logger.service';
-import { AdvanceThreadDto } from './dto/advance-thread.dto';
+import {
+  AdvanceThreadDto,
+  AdvanceThreadResponseDto,
+} from './dto/advance-thread.dto';
 import {
   ChatCompletionContentPartDto,
   MessageRequest,
@@ -363,16 +366,7 @@ export class ThreadsService {
     advanceRequestDto?: AdvanceThreadDto,
     stream?: boolean,
   ): Promise<
-    | {
-        responseMessageDto: ThreadMessageDto;
-        generationStage: GenerationStage;
-        statusMessage: string;
-      }
-    | AsyncIterableIterator<{
-        responseMessageDto: ThreadMessageDto;
-        generationStage: GenerationStage;
-        statusMessage: string;
-      }>
+    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
     const thread = await this.ensureThread(projectId, threadId, undefined);
     if (advanceRequestDto?.messagesToAppend) {
@@ -499,11 +493,7 @@ export class ThreadsService {
   private async *handleAdvanceThreadStream(
     threadId: string,
     stream: AsyncIterableIterator<ComponentDecision>,
-  ): AsyncIterableIterator<{
-    responseMessageDto: ThreadMessageDto;
-    generationStage: GenerationStage;
-    statusMessage: string;
-  }> {
+  ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     let finalResponse:
       | {
           responseMessageDto: ThreadMessageDto;
