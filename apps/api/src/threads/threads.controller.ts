@@ -283,7 +283,7 @@ export class ThreadsController {
   }
 
   /**
-   * Create a new thread and advance it.
+   * Create a new thread and advance it, optionally appending extra messages before generation.
    */
   @Post('advance')
   async createAndAdvanceThread(

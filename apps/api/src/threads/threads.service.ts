@@ -360,6 +360,14 @@ export class ThreadsService {
     return message;
   }
 
+  /**
+   * Advance the thread by one step.
+   * @param projectId - The project ID.
+   * @param threadId - The thread ID.
+   * @param advanceRequestDto - The advance request DTO, including optional messages to append, context key, and available components.
+   * @param stream - Whether to stream the response.
+   * @returns The the generated response thread message, generation stage, and status message.
+   */
   async advanceThread(
     projectId: string,
     threadId?: string,
