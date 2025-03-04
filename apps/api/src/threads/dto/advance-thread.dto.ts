@@ -5,4 +5,5 @@ export class AdvanceThreadDto {
   messagesToAppend?: MessageRequest[];
   contextKey?: string;
   availableComponents?: AvailableComponentDto[];
+  stream?: boolean;
 }

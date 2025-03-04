@@ -245,11 +245,14 @@ export class ThreadsController {
     if (!request.projectId) {
       throw new BadRequestException('Project ID is required');
     }
-    return await this.threadsService.advanceThread(
+    return (await this.threadsService.advanceThread(
       request.projectId,
       threadId,
       advanceRequestDto,
-    );
+    )) as {
+      responseMessageDto: ThreadMessageDto;
+      generationStage: GenerationStage;
+    };
   }
 
   /**
@@ -266,10 +269,13 @@ export class ThreadsController {
     if (!request.projectId) {
       throw new BadRequestException('Project ID is required');
     }
-    return await this.threadsService.advanceThread(
+    return (await this.threadsService.advanceThread(
       request.projectId,
       undefined,
       advanceRequestDto,
-    );
+    )) as {
+      responseMessageDto: ThreadMessageDto;
+      generationStage: GenerationStage;
+    };
   }
 }

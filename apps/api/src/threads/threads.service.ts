@@ -361,7 +361,17 @@ export class ThreadsService {
     projectId: string,
     threadId?: string,
     advanceRequestDto?: AdvanceThreadDto,
-  ) {
+    stream?: boolean,
+  ): Promise<
+    | {
+        responseMessageDto: ThreadMessageDto;
+        generationStage: GenerationStage;
+      }
+    | AsyncIterableIterator<{
+        responseMessageDto: ThreadMessageDto;
+        generationStage: GenerationStage;
+      }>
+  > {
     const thread = await this.ensureThread(projectId, threadId, undefined);
     if (advanceRequestDto?.messagesToAppend) {
       for (const message of advanceRequestDto.messagesToAppend) {
@@ -383,14 +393,16 @@ export class ThreadsService {
         return acc;
       }, {}) ?? {};
 
-    // TODO: Let hydrabackend package handle different message types internally
+    // TODO: Let tambobackend package handle different message types internally
     const messages = await this.getMessages(thread.id, true);
     if (messages.length === 0) {
       throw new Error('No messages found');
     }
     const latestMessage = messages[messages.length - 1];
 
-    let responseMessage: ComponentDecision;
+    let responseMessage:
+      | ComponentDecision
+      | AsyncIterableIterator<ComponentDecision>;
     if (latestMessage.role === MessageRole.Tool) {
       // Since we don't a store tool responses in the db, assumes that the tool response is the latest message of dto.messagesToAppend
       const toolResponse =
@@ -408,30 +420,134 @@ export class ThreadsService {
         throw new Error('Component definition not found');
       }
 
-      responseMessage = await hydraBackend.hydrateComponentWithData(
-        convertThreadMessagesToLegacyThreadMessages(messages),
-        componentDef,
-        toolResponse,
-        thread.id,
-      );
+      if (stream) {
+        responseMessage = await hydraBackend.hydrateComponentWithData(
+          convertThreadMessagesToLegacyThreadMessages(messages),
+          componentDef,
+          toolResponse,
+          thread.id,
+          true,
+        );
+        return this.handleAdvanceStream(
+          thread.id,
+          responseMessage as AsyncIterableIterator<ComponentDecision>,
+        );
+      } else {
+        responseMessage = await hydraBackend.hydrateComponentWithData(
+          convertThreadMessagesToLegacyThreadMessages(messages),
+          componentDef,
+          toolResponse,
+          thread.id,
+        );
+      }
     } else {
-      responseMessage = await hydraBackend.generateComponent(
-        convertThreadMessagesToLegacyThreadMessages(messages),
-        availableComponentMap,
-        thread.id,
-      );
+      if (stream) {
+        responseMessage = await hydraBackend.generateComponent(
+          convertThreadMessagesToLegacyThreadMessages(messages),
+          availableComponentMap,
+          thread.id,
+          true,
+        );
+        return this.handleAdvanceStream(
+          thread.id,
+          responseMessage as AsyncIterableIterator<ComponentDecision>,
+        );
+      } else {
+        responseMessage = await hydraBackend.generateComponent(
+          convertThreadMessagesToLegacyThreadMessages(messages),
+          availableComponentMap,
+          thread.id,
+        );
+      }
     }
 
     const responseMessageDto = await this.addResponseToThread(
       thread.id,
-      responseMessage,
+      responseMessage as ComponentDecision,
     );
     return {
       responseMessageDto,
-      generationStage: responseMessage.toolCallRequest
+      generationStage: (responseMessage as ComponentDecision).toolCallRequest
         ? GenerationStage.FETCHING_CONTEXT
         : GenerationStage.COMPLETE,
     };
+  }
+
+  private async *handleAdvanceStream(
+    threadId: string,
+    stream: AsyncIterableIterator<ComponentDecision>,
+  ): AsyncIterableIterator<{
+    responseMessageDto: ThreadMessageDto;
+    generationStage: GenerationStage;
+  }> {
+    let finalResponse:
+      | {
+          responseMessageDto: ThreadMessageDto;
+          generationStage: GenerationStage;
+        }
+      | undefined;
+    let lastUpdateTime = 0;
+    const updateIntervalMs = 500;
+
+    const inProgressMessage = await this.addMessage(threadId, {
+      role: MessageRole.Hydra,
+      content: [
+        { type: ContentPartType.Text, text: 'streaming in progress...' },
+      ],
+      component: undefined,
+      actionType: undefined,
+      toolCallRequest: undefined,
+      metadata: {},
+    });
+
+    for await (const chunk of stream) {
+      finalResponse = {
+        responseMessageDto: {
+          ...inProgressMessage,
+          content: [{ type: ContentPartType.Text, text: chunk.message }],
+          component: chunk,
+          actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
+          toolCallRequest: chunk.toolCallRequest,
+        },
+        generationStage: chunk.toolCallRequest
+          ? GenerationStage.FETCHING_CONTEXT
+          : GenerationStage.COMPLETE,
+      };
+      const currentTime = Date.now();
+
+      // Update db message on interval
+      if (currentTime - lastUpdateTime >= updateIntervalMs) {
+        await this.updateMessage(inProgressMessage.id, {
+          role: MessageRole.Hydra,
+          content: [{ type: ContentPartType.Text, text: chunk.message }],
+          component: chunk,
+          actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
+          toolCallRequest: chunk.toolCallRequest,
+        });
+        lastUpdateTime = currentTime;
+      }
+
+      yield {
+        responseMessageDto: finalResponse.responseMessageDto,
+        generationStage: finalResponse.generationStage,
+      };
+    }
+
+    if (finalResponse) {
+      await this.updateMessage(inProgressMessage.id, {
+        ...finalResponse.responseMessageDto,
+        content: [
+          {
+            type: ContentPartType.Text,
+            text: finalResponse.responseMessageDto.content[0].text,
+          },
+        ],
+      });
+      yield {
+        responseMessageDto: finalResponse.responseMessageDto,
+        generationStage: finalResponse.generationStage,
+      };
+    }
   }
 
   private async ensureThread(
