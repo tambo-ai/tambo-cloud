@@ -3,6 +3,7 @@ import {
   ActionType,
   ChatCompletionContentPart,
   ComponentDecision,
+  ComponentDecisionV2,
   ContentPartType,
   GenerationStage,
   MessageRole,
@@ -205,6 +206,7 @@ export class ThreadsService {
       toolCallRequest: message.toolCallRequest ?? undefined,
       actionType: message.actionType ?? undefined,
       componentState: message.componentState ?? undefined,
+      component: message.componentDecision as ComponentDecisionV2 | undefined,
     }));
   }
 
@@ -366,7 +368,6 @@ export class ThreadsService {
         await this.addMessage(thread.id, message);
       }
     }
-    const messages = await this.getMessages(thread.id);
 
     const decryptedProviderKey =
       await this.validateProjectAndProviderKeys(projectId);
@@ -383,6 +384,7 @@ export class ThreadsService {
       }, {}) ?? {};
 
     // TODO: Let hydrabackend package handle different message types internally
+    const messages = await this.getMessages(thread.id, true);
     if (messages.length === 0) {
       throw new Error('No messages found');
     }
