@@ -45,7 +45,7 @@ function HeroTitles() {
   return (
     <div className="flex flex-col items-center lg:items-start overflow-hidden pt-4 sm:pt-8 lg:pt-12">
       <motion.h1
-        className="text-center lg:text-left text-5xl sm:text-6xl font-semibold leading-tight sm:leading-tighter text-foreground md:text-7xl lg:text-8xl tracking-tighter"
+        className="text-center lg:text-left text-4xl sm:text-6xl font-heading leading-tight sm:leading-tighter text-foreground md:text-7xl lg:text-8xl tracking-tighter"
         initial={{ filter: "blur(10px)", opacity: 0, y: 50 }}
         animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
         transition={{

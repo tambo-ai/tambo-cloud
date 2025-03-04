@@ -5,7 +5,7 @@ export const copy = {
       text: "v1.0.0",
       link: "http://localhost:3000/blog/0-1-0-announcement",
     },
-    title: "An AI powered User Interface in one line of code.",
+    title: "An AI powered Interface in one line of code.",
     subtitle: "A React package for adding intelligence into your app.",
     cta: {
       buttonText: "Request Early Access",
@@ -15,7 +15,7 @@ export const copy = {
     title: "Features",
     heading: "AI Tools for Every Use Case",
     description:
-      "Hydra AI provides tools to add AI-powered capabilities to your existing applications. Enhance your app with smarter, more intuitive experiences faster than ever before.",
+      "A batteries included React package for adding intelligence into your app.",
     list: [
       {
         icon: "Brain",
@@ -27,13 +27,13 @@ export const copy = {
         icon: "Zap",
         title: "Fast Integration",
         description:
-          "Add to your existing app in hours, not weeks. Hydra AI tools plug directly into your current stack without requiring AI expertise or infrastructure changes.",
+          "Add to your existing app in hours, not weeks. Tambo AI tools plug directly into your current stack without requiring AI expertise or infrastructure changes.",
       },
       {
         icon: "Puzzle",
         title: "Fits Into Your Workflow",
         description:
-          "Connect seamlessly with your existing stack. Hydra AI works with your data sources, APIs, and infrastructure with no migrations required.",
+          "Connect seamlessly with your existing stack. Tambo AI works with your data sources, APIs, and infrastructure with no migrations required.",
       },
       {
         icon: "Palette",
@@ -51,14 +51,14 @@ export const copy = {
         icon: "Sparkles",
         title: "Continuously Adapting",
         description:
-          "Hydra AI evolves with your users, learning from behavior to improve interactions over time automatically.",
+          "tambo AI evolves with your users, learning from behavior to improve interactions over time automatically.",
       },
     ],
   },
   analytics: {
     title: "Integrate Conversational Analytics in to your app",
     description:
-      "Hydra AI provides a simple, powerful way to integrate conversational analytics into your app.",
+      "tambo AI provides a simple, powerful way to integrate conversational analytics into your app.",
     features: [
       {
         title: "Seamless Data Integration",
@@ -81,7 +81,7 @@ export const copy = {
     ],
     cta: {
       buttonText: "Try Demo",
-      link: "https://canvas.usehydra.ai",
+      link: "https://canvas.tambo.co",
     },
     demo: {
       videoSrc: "/videos/canvas-demo.mp4",
@@ -90,7 +90,7 @@ export const copy = {
   controlBar: {
     title: "Simplify User Journeys with AI",
     description:
-      "Enhance your existing app's navigation. Hydra AI's control bar drops in seamlessly to surface the right features at the right time.",
+      "Enhance your existing app's navigation. tambo AI's control bar drops in seamlessly to surface the right features at the right time.",
     features: [
       {
         title: "Context-Aware Guidance",
@@ -113,7 +113,7 @@ export const copy = {
     ],
     cta: {
       buttonText: "Try Control Bar",
-      link: "https://control-bar.usehydra.ai",
+      link: "https://control-bar.tambo.co",
     },
     demo: {
       videoSrc: "/videos/control-bar-demo.mp4",

@@ -12,15 +12,11 @@ export function Features() {
   return (
     <Section id="features" className="container py-24 sm:py-32">
       <div className="mb-16">
-        <h2 className="text-lg text-primary uppercase tracking-wider font-medium mb-4">
-          {content.title}
-        </h2>
-
-        <h2 className="text-5xl md:text-6xl font-bold mb-8 tracking-tight">
+        <h2 className="text-5xl md:text-6xl font-heading mb-8 tracking-tight">
           {content.heading}
         </h2>
 
-        <p className="text-xl text-muted-foreground max-w-2xl">
+        <p className="text-xl text-muted-foreground max-w-4xl">
           {content.description}
         </p>
       </div>

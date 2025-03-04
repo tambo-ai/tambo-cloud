@@ -55,7 +55,7 @@ export function ControlBarSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
+            <h2 className="text-4xl font-heading tracking-tight sm:text-5xl md:text-6xl">
               AI tools for every case.
             </h2>
             <p className="text-xl text-muted-foreground max-w-xl">

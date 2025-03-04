@@ -160,6 +160,15 @@ html {
     @apply bg-background text-foreground;
   }
 
+  /* Font utility classes */
+  .font-sentient {
+    font-family: var(--font-sentient-light), serif;
+  }
+
+  .font-heading {
+    font-family: var(--font-sentient-light), serif;
+  }
+
   /* width */
   ::-webkit-scrollbar {
     width: 5px;
