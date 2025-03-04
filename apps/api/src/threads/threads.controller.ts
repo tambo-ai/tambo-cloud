@@ -34,6 +34,7 @@ import { SuggestionsGenerateDto } from './dto/suggestions-generate.dto';
 import {
   Thread,
   ThreadRequest,
+  ThreadWithMessagesDto,
   UpdateComponentStateDto,
 } from './dto/thread.dto';
 import { ThreadsService } from './threads.service';
@@ -65,9 +66,11 @@ export class ThreadsController {
     });
   }
 
-  @UseGuards(ProjectAccessOwnGuard)
   @Get(':id')
-  async findOne(@Param('id') id: string, @Req() request): Promise<Thread> {
+  async findOne(
+    @Param('id') id: string,
+    @Req() request,
+  ): Promise<ThreadWithMessagesDto> {
     if (!request.projectId) {
       throw new BadRequestException('Project ID is required');
     }
