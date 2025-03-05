@@ -61,7 +61,7 @@ export function MessageSuggestions({
             );
           })
         )}
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error.message}</p>}
       </div>
     </div>
   );
