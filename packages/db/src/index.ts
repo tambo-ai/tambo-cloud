@@ -1,4 +1,4 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as operations from "./operations";
 import * as schema from "./schema";
 import type { HydraDatabase } from "./types";
