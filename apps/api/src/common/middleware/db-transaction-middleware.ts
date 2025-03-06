@@ -61,8 +61,11 @@ export class TransactionMiddleware implements NestMiddleware {
       throw new UnauthorizedException('Invalid API key');
     }
     const p = this.db.transaction(async (tx) => {
-      (req as HydraRequest).tx = tx; // Attach transaction to request
-      console.log('====TransactionMiddleware attached tx to request', `${req}`);
+      req.tx = tx; // Attach transaction to request
+      console.log(
+        '====TransactionMiddleware attached tx to request ',
+        `${req.constructor.name}`,
+      );
       await tx.execute(sql`
             -- auth.jwt()
             select set_config('request.apikey.project_id', '${sql.raw(
