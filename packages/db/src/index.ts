@@ -19,7 +19,7 @@ function getDb(databaseUrl: string): HydraDatabase {
 
 async function closeDb() {
   if (globalDb) {
-    await globalDb.$client.end();
+    // await globalDb.$client.end();
     globalDb = null;
   }
 }
