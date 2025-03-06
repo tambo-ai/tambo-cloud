@@ -23,14 +23,7 @@ export const TransactionProvider: Provider = {
   provide: TRANSACTION,
   scope: Scope.REQUEST,
   inject: [REQUEST],
-  useFactory: (req: HydraRequest) => {
-    console.log(
-      '====TransactionProvider useFactory',
-      `${req.constructor.name}`,
-      `${req.tx?.constructor.name}`,
-    );
-    return req.tx;
-  },
+  useFactory: (req: HydraRequest) => req.tx,
 };
 
 export const DATABASE = Symbol('DATABASE');
@@ -45,10 +38,6 @@ export class TransactionMiddleware implements NestMiddleware {
     private readonly db: HydraDb,
   ) {}
   async use(req: HydraRequest, res: Response, next: NextFunction) {
-    console.log(
-      '====TransactionMiddleware use with req',
-      `${req.constructor.name}`,
-    );
     const apiKeyHeader = req.headers['x-api-key'];
     const apiKeyHeaderString = Array.isArray(apiKeyHeader)
       ? apiKeyHeader[0]
@@ -62,10 +51,6 @@ export class TransactionMiddleware implements NestMiddleware {
     }
     const p = this.db.transaction(async (tx) => {
       req.tx = tx; // Attach transaction to request
-      console.log(
-        '====TransactionMiddleware attached tx to request ',
-        `${req.constructor.name}`,
-      );
       await tx.execute(sql`
             -- auth.jwt()
             select set_config('request.apikey.project_id', '${sql.raw(
@@ -78,13 +63,11 @@ export class TransactionMiddleware implements NestMiddleware {
       return await new Promise((resolve, reject) => {
         res.on('finish', async () => {
           try {
-            console.log('====TransactionMiddleware finish');
             await tx.execute(sql`
                 select set_config('request.apikey.project_id', NULL, TRUE);
                 reset role;
                 `);
             delete (req as HydraRequest).tx;
-            console.log('====TransactionMiddleware finish after delete req.tx');
             resolve(true);
           } catch (error) {
             reject(error);
@@ -98,7 +81,6 @@ export class TransactionMiddleware implements NestMiddleware {
     try {
       await p;
     } catch (error) {
-      console.log('====TransactionMiddleware error', error);
       // automatically rollback on unrecognized errors
       if (!(error instanceof HttpException) || error.getStatus() >= 500) {
         // Rollback transaction manually on error

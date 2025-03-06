@@ -36,13 +36,7 @@ export class ProjectsController {
     private readonly projectsService: ProjectsService,
     @Inject(TRANSACTION)
     private readonly tx: HydraTransaction,
-  ) {
-    console.log(
-      '====ProjectsController constructor',
-
-      `${this.tx?.constructor.name}`,
-    );
-  }
+  ) {}
 
   @Post()
   async create(
@@ -57,17 +51,8 @@ export class ProjectsController {
   }
 
   @Get()
-  async getCurrentProject(
-    @Req() request,
-    @Inject(TRANSACTION) tx: HydraTransaction,
-  ) {
-    console.log(
-      '====getCurrentProject',
-      request.projectId,
-      tx?.constructor.name,
-    );
+  async getCurrentProject(@Req() request) {
     const result = await this.projectsService.findOne(request.projectId);
-    console.log('====getCurrentProject result', result);
     return result;
   }
 

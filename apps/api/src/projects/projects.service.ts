@@ -14,12 +14,7 @@ export class ProjectsService {
     @Inject(TRANSACTION)
     private readonly tx: HydraTransaction,
     private readonly config: ConfigService,
-  ) {
-    console.log(
-      '====ProjectsService constructor',
-      `${this.tx?.constructor.name}`,
-    );
-  }
+  ) {}
 
   async create(createProjectDto: {
     name: string;
@@ -63,12 +58,6 @@ export class ProjectsService {
   }
 
   async findOneWithKeys(id: string): Promise<Project | null> {
-    console.log(
-      '====findOneWithKeys',
-      id,
-      ' using db ',
-      `${this.tx?.constructor.name}`,
-    );
     const project = await operations.getProjectWithKeys(this.tx, id);
     if (!project || !project.members?.[0]) {
       return null;
