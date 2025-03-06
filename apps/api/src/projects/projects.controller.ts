@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   NotFoundException,
   Param,
   Patch,
@@ -11,10 +12,10 @@ import {
   Put,
   Req,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ApiSecurity } from '@nestjs/swagger';
-import { TransactionInterceptor } from 'src/common/middleware/db-transaction-middleware';
+import { HydraTransaction } from '@use-hydra-ai/db';
+import { TRANSACTION } from 'src/common/middleware/db-transaction-middleware';
 import { ApiKeyGuard } from 'src/components/guards/apikey.guard';
 import { AddProviderKeyRequest } from './dto/add-provider-key.dto';
 import {
@@ -27,11 +28,21 @@ import { ProjectsService } from './projects.service';
 
 @ApiSecurity('apiKey')
 @UseGuards(ApiKeyGuard)
-@UseInterceptors(TransactionInterceptor)
+// @UseInterceptors(TransactionInterceptor)
 @Controller('projects')
 @UseGuards(ApiKeyGuard)
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(
+    private readonly projectsService: ProjectsService,
+    @Inject(TRANSACTION)
+    private readonly tx: HydraTransaction,
+  ) {
+    console.log(
+      '====ProjectsController constructor',
+
+      `${this.tx?.constructor.name}`,
+    );
+  }
 
   @Post()
   async create(
@@ -46,8 +57,18 @@ export class ProjectsController {
   }
 
   @Get()
-  async getCurrentProject(@Req() request) {
-    return await this.projectsService.findOne(request.projectId);
+  async getCurrentProject(
+    @Req() request,
+    @Inject(TRANSACTION) tx: HydraTransaction,
+  ) {
+    console.log(
+      '====getCurrentProject',
+      request.projectId,
+      tx?.constructor.name,
+    );
+    const result = await this.projectsService.findOne(request.projectId);
+    console.log('====getCurrentProject result', result);
+    return result;
   }
 
   @Get('user/')

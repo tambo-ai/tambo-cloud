@@ -1,7 +1,9 @@
 import { MiddlewareConsumer, Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { getDb } from '@use-hydra-ai/db';
 import { AppService } from './app.service';
 import { LoggerModule } from './common/logger.module';
+import { TransactionMiddleware } from './common/middleware/db-transaction-middleware';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 import { ComponentsModule } from './components/components.module';
 import { ConfigServiceSingleton } from './config.service';
@@ -21,7 +23,10 @@ import { ThreadsModule } from './threads/threads.module';
     ThreadsModule,
   ],
   controllers: [],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: 'DbRepository', useValue: getDb(process.env.DATABASE_URL!) },
+  ],
 })
 export class AppModule implements OnModuleInit {
   constructor(private configService: ConfigService) {}
@@ -32,5 +37,6 @@ export class AppModule implements OnModuleInit {
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(RequestLoggerMiddleware).forRoutes('*');
+    consumer.apply(TransactionMiddleware).forRoutes('*');
   }
 }
