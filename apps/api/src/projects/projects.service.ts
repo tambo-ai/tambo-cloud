@@ -63,7 +63,12 @@ export class ProjectsService {
   }
 
   async findOneWithKeys(id: string): Promise<Project | null> {
-    console.log('====findOneWithKeys', id, ' using db ', `${this.tx}`);
+    console.log(
+      '====findOneWithKeys',
+      id,
+      ' using db ',
+      `${this.tx?.constructor.name}`,
+    );
     const project = await operations.getProjectWithKeys(this.tx, id);
     if (!project || !project.members?.[0]) {
       return null;

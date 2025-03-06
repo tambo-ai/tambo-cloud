@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { HydraDb, HydraTransaction, schema } from '@use-hydra-ai/db';
+import { getDb, HydraDb, HydraTransaction, schema } from '@use-hydra-ai/db';
 import { sql } from 'drizzle-orm';
 import { NextFunction, Response } from 'express';
 import { IncomingMessage } from 'http';
@@ -18,6 +18,7 @@ interface HydraRequest extends IncomingMessage {
 }
 
 export const TRANSACTION = Symbol('TRANSACTION');
+/** Gets the active transaction that was created by the TransactionMiddleware */
 export const TransactionProvider: Provider = {
   provide: TRANSACTION,
   scope: Scope.REQUEST,
@@ -32,9 +33,15 @@ export const TransactionProvider: Provider = {
   },
 };
 
+export const DATABASE = Symbol('DATABASE');
+export const DatabaseProvider: Provider = {
+  provide: DATABASE,
+  useFactory: () => getDb(process.env.DATABASE_URL!),
+};
+
 export class TransactionMiddleware implements NestMiddleware {
   constructor(
-    @Inject('DbRepository')
+    @Inject(DATABASE)
     private readonly db: HydraDb,
   ) {}
   async use(req: HydraRequest, res: Response, next: NextFunction) {
