@@ -1,3 +1,4 @@
 import nextJsConfig from "@use-hydra-ai/eslint-config/next-js";
+import tseslint from "typescript-eslint";
 
-export default nextJsConfig;
+export default tseslint.config(...nextJsConfig, { ignores: [".source/"] });
