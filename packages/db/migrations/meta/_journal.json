@@ -141,6 +141,13 @@
       "when": 1741309293885,
       "tag": "0019_rich_amazoness",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1741310158454,
+      "tag": "0020_little_excalibur",
+      "breakpoints": true
     }
   ]
 }
