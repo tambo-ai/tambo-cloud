@@ -155,6 +155,13 @@
       "when": 1741380485072,
       "tag": "0021_orange_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1741381761339,
+      "tag": "0022_unusual_madripoor",
+      "breakpoints": true
     }
   ]
 }
