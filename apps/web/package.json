@@ -7,14 +7,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "check-types": "tsc --noEmit",
     "postinstall": "fumadocs-mdx",
     "clean": "rm -rf dist .next"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
-    "@hydra-ai/react": "^0.9.2",
+    "@hydra-ai/react": "^0.10.0",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-avatar": "^1.1.3",
