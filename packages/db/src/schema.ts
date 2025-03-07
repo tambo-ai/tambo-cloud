@@ -27,12 +27,16 @@ export const projects = pgTable(
       .default(sql`generate_custom_id('p_')`),
     legacyId: text("legacy_id").unique(),
     name: text("name").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`clock_timestamp()`)
+      .notNull(),
     creatorId: uuid("creator_id")
       .references(() => authUsers.id)
       // Need to write raw `auth.uid()` becuse ${authUid} includes a select statement
       .default(sql`auth.uid()`),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .default(sql`clock_timestamp()`)
+      .notNull(),
   }),
   (table) => {
     return [
