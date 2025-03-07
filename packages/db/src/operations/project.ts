@@ -11,7 +11,11 @@ import type { HydraDb } from "../types";
 
 export async function createProject(
   db: HydraDb,
-  { name, userId }: { name: string; userId: string },
+  {
+    name,
+    userId,
+    role = "admin",
+  }: { name: string; userId: string; role?: string },
 ) {
   if (!userId) {
     throw new Error("User ID is required");
@@ -28,7 +32,7 @@ export async function createProject(
     await tx.insert(schema.projectMembers).values({
       projectId: project.id,
       userId: userId,
-      role: "admin",
+      role,
     });
 
     return {

@@ -19,7 +19,7 @@ export const projectApiKeyRole = pgRole("project_api_key", {
 
 export const projects = pgTable(
   "projects",
-  ({ text, timestamp }) => ({
+  ({ text, timestamp, uuid }) => ({
     id: text("id")
       .primaryKey()
       .notNull()
@@ -28,16 +28,47 @@ export const projects = pgTable(
     legacyId: text("legacy_id").unique(),
     name: text("name").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
+    creatorId: uuid("creator_id")
+      .references(() => authUsers.id)
+      // Need to write raw `auth.uid()` becuse ${authUid} includes a select statement
+      .default(sql`auth.uid()`),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   }),
   (table) => {
     return [
-      pgPolicy("project_user_policy", {
+      pgPolicy("project_user_select_policy", {
         to: authenticatedRole,
+        for: "select",
+        using: sql`
+          exists (
+            select 1 
+            from project_members 
+            where project_members.project_id = ${table.id} 
+              and project_members.user_id = ${authUid}
+          ) or (
+            ${table.creatorId} is not null 
+            and ${table.creatorId} = ${authUid}
+          )
+        `,
+      }),
+      pgPolicy("project_user_update_policy", {
+        to: authenticatedRole,
+        for: "update",
         using: sql`exists (select 1 from project_members where project_members.project_id = ${table.id} and project_members.user_id = ${authUid})`,
+      }),
+      pgPolicy("project_user_delete_policy", {
+        to: authenticatedRole,
+        for: "delete",
+        using: sql`exists (select 1 from project_members where project_members.project_id = ${table.id} and project_members.user_id = ${authUid})`,
+      }),
+      pgPolicy("project_user_insert_policy", {
+        to: authenticatedRole,
+        for: "insert",
+        withCheck: sql`true`,
       }),
       pgPolicy("project_api_key_policy", {
         to: projectApiKeyRole,
+        for: "select",
         using: sql`${table.id} = ${projectApiKeyVariable}`,
       }),
     ];
@@ -143,10 +174,14 @@ export const providerKeyRelations = relations(providerKeys, ({ one }) => ({
   }),
 }));
 
-export const projectRelations = relations(projects, ({ many }) => ({
+export const projectRelations = relations(projects, ({ many, one }) => ({
   members: many(projectMembers),
   apiKeys: many(apiKeys),
   providerKeys: many(providerKeys),
+  creator: one(authUsers, {
+    fields: [projects.creatorId],
+    references: [authUsers.id],
+  }),
 }));
 
 export const threads = pgTable(
