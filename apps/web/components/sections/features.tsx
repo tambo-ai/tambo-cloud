@@ -1,51 +1,86 @@
 "use client";
 
 import { Section } from "@/components/section";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
-import { copy } from "@/lib/copy";
-import { icons } from "lucide-react";
+import Image from "next/image";
 
-const content = copy.features;
+// Move copy directly into the component
+const featuresContent = {
+  heading: "Features",
+  description:
+    "A batteries included React package for adding intelligence into your app.",
+  list: [
+    {
+      // octo-running
+      title: "Streaming",
+      description:
+        "We support streaming of every AI generated bit of your UI, including react components, with helpful hooks to improve the UX.",
+    },
+    {
+      // octo-filing
+      title: "Message Thread History",
+      description:
+        "We automagically store message history. So you can focus on the functionality, while we focus on the rest.",
+    },
+    {
+      // octo-directing
+      title: "State Management",
+      description:
+        "We give you an AI integrated state hook that keeps track of user inputs, and passes them to the AI.",
+    },
+    {
+      // octo-guiding
+      title: "Suggested Actions",
+      description:
+        "Turn your AI assistant into a guide through the functionality of your app.",
+    },
+    {
+      // octo-multi-tasking
+      title: "Decision Loop",
+      description:
+        "We handle AI orchestration so you can focus on adding the functionality.",
+    },
+    {
+      // octo-painting
+      title: "Component Library",
+      description:
+        "Need components to setup your AI, we have them for you in one CLI command.",
+    },
+  ],
+};
 
 export function Features() {
   return (
     <Section id="features" className="container py-24 sm:py-32">
       <div className="mb-16">
         <h2 className="text-5xl md:text-6xl font-heading mb-8 tracking-tight">
-          {content.heading}
+          {featuresContent.heading}
         </h2>
 
         <p className="text-xl text-muted-foreground max-w-4xl">
-          {content.description}
+          {featuresContent.description}
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {content.list.map(({ icon, title, description }, index) => (
-          <Card
-            key={title}
-            className="h-full bg-card border border-border/50 shadow-sm hover:shadow-md transition-shadow duration-300"
-          >
-            <CardHeader>
-              <div
-                className={`bg-[#5C94F7] p-3 rounded-md w-fit mb-4 shadow-sm icon-container ${index % 2 === 0 ? "pulse-animation" : "float-animation"}`}
-              >
-                <Icon
-                  name={icon as keyof typeof icons}
-                  size={24}
-                  color="white"
-                  className="text-white"
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-12">
+        {featuresContent.list.map(({ title, description }, index) => (
+          <div key={title} className="feature-item flex flex-col items-center">
+            <div className="mb-6 flex flex-col items-center w-full">
+              {/* Octo image placeholder */}
+              <div className="w-48 h-48 relative mb-3">
+                <Image
+                  src="/assets/landing/octo-feature-placeholder.png"
+                  alt={`${title} illustration`}
+                  fill
+                  className="object-contain"
                 />
               </div>
+            </div>
 
-              <CardTitle className="text-xl font-semibold">{title}</CardTitle>
-            </CardHeader>
-
-            <CardContent className="text-muted-foreground">
-              {description}
-            </CardContent>
-          </Card>
+            <div className="text-left w-full">
+              <h3 className="text-xl font-heading mb-2">{title}</h3>
+              <p className="text-muted-foreground">{description}</p>
+            </div>
+          </div>
         ))}
       </div>
     </Section>

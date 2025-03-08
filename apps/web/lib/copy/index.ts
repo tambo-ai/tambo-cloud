@@ -120,33 +120,38 @@ export const copy = {
     },
   },
   community: {
-    title: "Built With Your Stack in Mind",
+    title: "Join Our Community",
     description:
-      "Add AI features to your existing app without rebuilding your infrastructure.",
+      "Connect with our team and other developers to get support, share ideas, and stay updated on the latest features.",
     features: [
       {
-        title: "Keep Your Auth and Data",
+        title: "Join Our Discord Community",
         description:
-          "Works with your existing JWT tokens and database connections. No parallel systems or data duplication needed.",
-        icon: "BookOpen",
+          "Connect with other developers, get help, and stay updated on the latest features and announcements.",
+        icon: "MessageSquare",
       },
       {
-        title: "Test Before Production",
+        title: "Enterprise Support",
         description:
-          "Debug AI interactions locally, see exactly how responses will work with your data, and tune behavior through configuration.",
-        icon: "Smartphone",
+          "Book a consultation with our team to discuss your enterprise needs, custom integrations, and dedicated support options.",
+        icon: "Calendar",
       },
       {
-        title: "Start Fast, Customize Later",
+        title: "Developer Resources",
         description:
-          "Begin with our React components for chat and analytics, then customize the UI and behavior as your needs grow.",
+          "Access documentation, tutorials, and examples to help you get the most out of our platform.",
         icon: "Package",
       },
     ],
     cta: {
-      text: "See Integration Guide",
-      icon: "Book",
-      link: "/docs",
+      text: "Join Discord",
+      icon: "MessageSquare",
+      link: "https://discord.gg/your-discord-link",
+    },
+    enterpriseCta: {
+      text: "Book a Meeting",
+      icon: "Calendar",
+      link: "/contact",
     },
   },
 } as const;

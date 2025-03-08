@@ -3,95 +3,102 @@
 import { Section } from "@/components/section";
 import { buttonVariants } from "@/components/ui/button";
 import HeroVideoDialog from "@/components/ui/hero-video-dialog";
-import { copy } from "@/lib/copy";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import {
-  ExternalLinkIcon,
-  GraduationCapIcon,
-  LineChartIcon,
-  MessageSquareTextIcon,
-} from "lucide-react";
+import { ExternalLinkIcon } from "lucide-react";
 import Link from "next/link";
 
-const iconMap = {
-  MessageSquareText: MessageSquareTextIcon,
-  GraduationCap: GraduationCapIcon,
-  LineChart: LineChartIcon,
-} as const;
+const ease = [0.16, 1, 0.3, 1];
 
-const content = copy.analytics;
+const content = {
+  title: "Check out our Demo App",
+  description: "It's a simple chat with your data demo app.",
+  demo: {
+    videoSrc: "/assets/landing/videos/canvas-demo.mp4",
+  },
+  cta: {
+    buttonText: "Try Demo",
+    link: "https://canvas.usehydra.ai",
+  },
+};
+
+function AnalyticsTitle() {
+  return (
+    <motion.div
+      className="flex flex-col space-y-6"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.8, ease }}
+    >
+      <h2 className="text-center lg:text-left text-4xl font-heading tracking-tight sm:text-5xl md:text-6xl">
+        {content.title}
+      </h2>
+      <p className="text-center lg:text-left text-xl text-muted-foreground max-w-xl">
+        {content.description}
+      </p>
+    </motion.div>
+  );
+}
+
+function AnalyticsVideo() {
+  return (
+    <motion.div
+      className="w-full"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.8, delay: 0.2 }}
+    >
+      <div className="aspect-video w-full rounded-2xl overflow-hidden">
+        <HeroVideoDialog
+          videoSrc={content.demo.videoSrc}
+          className="w-full h-full shadow-xl border border-border/50"
+          animationStyle="from-bottom"
+        />
+      </div>
+    </motion.div>
+  );
+}
+
+function AnalyticsCTA() {
+  return (
+    <motion.div
+      className="flex justify-center lg:justify-start mt-6"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.8, delay: 0.4 }}
+    >
+      <Link
+        href={content.cta.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          buttonVariants({ variant: "secondary" }),
+          "flex gap-2 py-6 px-8 rounded-md text-lg hover:bg-[#5C94F7]/20 hover:text-[#5C94F7] transition-colors",
+        )}
+      >
+        <ExternalLinkIcon className="h-5 w-5" />
+        {content.cta.buttonText}
+      </Link>
+    </motion.div>
+  );
+}
 
 export function AnalyticsSection() {
   return (
     <Section id="analytics" className="py-16 sm:py-24">
-      <div className="flex flex-col items-center text-center lg:text-left lg:items-start max-w-3xl mx-auto lg:max-w-none lg:grid lg:grid-cols-2 gap-16">
-        <div className="flex flex-col space-y-8 order-2 lg:order-1">
-          <motion.div
-            className="flex flex-col space-y-6"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <h2 className="text-4xl font-heading tracking-tight sm:text-5xl md:text-6xl">
-              Plain Language Insights
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-xl">
-              {content.description}
-            </p>
-          </motion.div>
-
-          <motion.div
-            className="grid gap-8"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            {content.features.map((feature, index) => (
-              <div
-                key={index}
-                className="flex flex-col lg:flex-row items-center lg:items-start gap-5 text-center lg:text-left"
-              >
-                <div
-                  className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-[#5C94F7] shadow-md icon-container ${index % 2 === 0 ? "float-animation" : "pulse-animation"}`}
-                >
-                  {(() => {
-                    const Icon = iconMap[feature.icon as keyof typeof iconMap];
-                    return <Icon className="h-7 w-7 text-white" />;
-                  })()}
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-medium">{feature.title}</h3>
-                  <p className="text-muted-foreground text-lg">
-                    {feature.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </motion.div>
+      <div className="flex flex-col lg:flex-row items-center justify-between w-full lg:gap-16">
+        {/* Left side: Title and description */}
+        <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full lg:w-[45%] mb-12 lg:mb-0">
+          <AnalyticsTitle />
+          <AnalyticsCTA />
         </div>
 
-        <div className="flex flex-col space-y-6 w-full order-1 lg:order-2">
-          <div className="aspect-video w-full rounded-lg overflow-hidden">
-            <HeroVideoDialog
-              videoSrc={content.demo.videoSrc}
-              className="w-full shadow-xl rounded-xl border border-border/50"
-            />
-          </div>
-          <div className="flex justify-center">
-            <Link
-              href={content.cta.link}
-              className={cn(
-                buttonVariants({ variant: "secondary" }),
-                "flex gap-2 py-6 px-8 rounded-md text-lg",
-              )}
-            >
-              <ExternalLinkIcon className="h-5 w-5" />
-              {content.cta.buttonText}
-            </Link>
-          </div>
+        {/* Right side: Video */}
+        <div className="w-full lg:w-[50%]">
+          <AnalyticsVideo />
         </div>
       </div>
     </Section>

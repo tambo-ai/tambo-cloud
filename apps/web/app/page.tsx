@@ -1,10 +1,11 @@
 import { AnalyticsSection } from "@/components/sections/analytics-section";
-import { Community } from "@/components/sections/community";
-import { ControlBarSection } from "@/components/sections/control-bar-section";
 import { Features } from "@/components/sections/features";
+import { FinalCTA } from "@/components/sections/final-cta";
 import { Footer } from "@/components/sections/footer";
 import { Header } from "@/components/sections/header";
 import { Hero } from "@/components/sections/hero";
+import { Statistics } from "@/components/sections/statistics";
+import { Testimonials } from "@/components/sections/testimonials";
 
 export default function Home() {
   return (
@@ -14,9 +15,10 @@ export default function Home() {
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <Hero />
           <AnalyticsSection />
-          <ControlBarSection />
+          <Statistics />
+          <Testimonials />
           <Features />
-          <Community />
+          <FinalCTA />
           <Footer />
         </div>
       </div>

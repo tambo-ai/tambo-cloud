@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
 import { track } from "@vercel/analytics";
+import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -136,11 +136,13 @@ export default function HeroVideoDialog({
     return (
       <div
         className={cn(
-          "relative bg-muted rounded-3xl p-8 text-center",
+          "relative bg-muted rounded-2xl p-8 text-center",
           className,
         )}
       >
-        <p className="text-muted-foreground">Failed to load video</p>
+        <p className="text-muted-foreground error-message">
+          Failed to load video
+        </p>
       </div>
     );
   }
@@ -150,9 +152,9 @@ export default function HeroVideoDialog({
       <motion.div
         {...selectedAnimation}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="rounded-3xl overflow-hidden relative shadow-[0_0_30px_rgba(210,71,191,0.3)] transition-shadow duration-300 group-hover:shadow-[0_0_40px_rgba(210,71,191,0.5)]"
+        className="overflow-hidden relative floating-element shadow-light dark:shadow-dark hover:shadow-[0_0_40px_rgba(127,255,196,0.3)] transition-shadow duration-300"
       >
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-b from-black/10 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-transparent pointer-events-none" />
         <video
           ref={videoRef}
           onClick={handleVideoClick}
@@ -173,19 +175,21 @@ export default function HeroVideoDialog({
         {!isPlaying && (
           <button
             onClick={handlePlayClick}
-            className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/30 hover:bg-black/20 transition-colors duration-300"
+            className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/30 hover:bg-black/20 transition-colors duration-300 button"
           >
-            <svg
-              className="w-20 h-20 text-white"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <div className="icon-container pulse-animation">
+              <svg
+                className="w-20 h-20 text-primary"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
           </button>
         )}
       </motion.div>

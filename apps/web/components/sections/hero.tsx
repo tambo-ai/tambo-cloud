@@ -2,12 +2,23 @@
 
 import { CLI } from "@/components/cli";
 import { Section } from "@/components/section";
-import { copy } from "@/lib/copy";
 import { motion } from "framer-motion";
 
 const ease = [0.16, 1, 0.3, 1];
 
-const heroContent = copy.hero;
+// Hero content moved directly into this file
+const heroContent = {
+  pill: {
+    label: "⚡️ Launching Soon",
+    text: "v1.0.0",
+    link: "http://localhost:3000/blog/0-1-0-announcement",
+  },
+  title: "An AI powered Interface in one line of code.",
+  subtitle: "A React package for interfaces that think.",
+  cta: {
+    buttonText: "Request Early Access",
+  },
+};
 
 function HeroPill() {
   return (
@@ -96,12 +107,16 @@ function HeroCTA() {
 // Placeholder for illustration
 function HeroIllustration() {
   return (
-    <div className="w-full h-full flex items-center justify-center">
-      <div className="w-full h-full relative">
-        {/* This is where your illustration will go */}
-        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30">
-          <p className="text-lg">Your illustration will go here</p>
-        </div>
+    <div className="w-full h-full flex items-center justify-center overflow-visible">
+      <div className="w-[400%] h-[400%] relative">
+        <motion.img
+          src="/assets/landing/octo-juggling-placeholder.png"
+          alt="Octopus juggling illustration"
+          className="w-full h-full object-contain scale-150"
+          initial={{ opacity: 0, scale: 1.3 }}
+          animate={{ opacity: 1, scale: 1.5 }}
+          transition={{ duration: 0.8, ease }}
+        />
       </div>
     </div>
   );
