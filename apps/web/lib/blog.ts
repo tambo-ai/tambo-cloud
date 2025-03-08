@@ -9,6 +9,7 @@ import rehypeStringify from "rehype-stringify";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
+import { createHighlighter } from "shiki";
 import { unified } from "unified";
 
 export type Post = {
@@ -52,6 +53,13 @@ export async function markdownToHTML(markdown: string) {
     .use(rehypePrettyCode, {
       theme: "one-dark-pro",
       keepBackground: true,
+      getHighlighter: async (options) => {
+        return await createHighlighter({
+          ...options,
+          langs: options.langs || [],
+          themes: options.themes || [],
+        });
+      },
       transformers: [
         transformerCopyButton({
           visibility: "always",
