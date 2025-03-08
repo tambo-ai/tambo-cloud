@@ -50,23 +50,23 @@ const featuresContent = {
 
 export function Features() {
   return (
-    <Section id="features" className="container py-24 sm:py-32">
-      <div className="mb-16">
-        <h2 className="text-5xl md:text-6xl font-heading mb-8 tracking-tight">
+    <Section id="features" className="container py-16 sm:py-24">
+      <div className="mb-8 sm:mb-16 text-center sm:text-left">
+        <h2 className="text-4xl sm:text-5xl md:text-6xl font-heading mb-4 sm:mb-8 tracking-tight">
           {featuresContent.heading}
         </h2>
 
-        <p className="text-xl text-muted-foreground max-w-4xl">
+        <p className="text-lg sm:text-xl text-muted-foreground max-w-4xl mx-auto sm:mx-0">
           {featuresContent.description}
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-12">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
         {featuresContent.list.map(({ title, description }, index) => (
           <div key={title} className="feature-item flex flex-col items-center">
-            <div className="mb-6 flex flex-col items-center w-full">
+            <div className="mb-4 sm:mb-6 flex flex-col items-center w-full">
               {/* Octo image placeholder */}
-              <div className="w-48 h-48 relative mb-3">
+              <div className="w-36 h-36 sm:w-48 sm:h-48 relative mb-3">
                 <Image
                   src="/assets/landing/octo-feature-placeholder.png"
                   alt={`${title} illustration`}
@@ -76,7 +76,7 @@ export function Features() {
               </div>
             </div>
 
-            <div className="text-left w-full">
+            <div className="text-center sm:text-left w-full">
               <h3 className="text-xl font-heading mb-2">{title}</h3>
               <p className="text-muted-foreground">{description}</p>
             </div>

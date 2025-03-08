@@ -54,9 +54,9 @@ function HeroPill() {
 
 function HeroTitles() {
   return (
-    <div className="flex flex-col items-center lg:items-start overflow-hidden pt-4 sm:pt-8 lg:pt-12">
+    <div className="flex flex-col items-center lg:items-start overflow-hidden pt-2 sm:pt-4 md:pt-6 lg:pt-8">
       <motion.h1
-        className="text-center lg:text-left text-4xl sm:text-6xl font-heading leading-tight sm:leading-tighter text-foreground md:text-7xl lg:text-8xl tracking-tighter"
+        className="text-center lg:text-left text-4xl sm:text-5xl md:text-6xl lg:text-6xl xl:text-7xl font-heading leading-tight tracking-tighter text-foreground"
         initial={{ filter: "blur(10px)", opacity: 0, y: 50 }}
         animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
         transition={{
@@ -68,7 +68,7 @@ function HeroTitles() {
         {heroContent.title}
       </motion.h1>
       <motion.p
-        className="text-center lg:text-left max-w-xl leading-normal text-muted-foreground text-lg sm:text-xl sm:leading-normal mt-6"
+        className="text-center lg:text-left max-w-xl leading-normal text-muted-foreground text-base sm:text-lg md:text-xl sm:leading-normal mt-2 sm:mt-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
@@ -98,7 +98,11 @@ function HeroCTA() {
         transition={{ duration: 0.8, delay: 0.2 }}
         className="w-full"
       >
-        <CLI title="Bash" command="npx tambo --full-send" className="w-full" />
+        <CLI
+          title="Bash"
+          command="npx tambo --full-send"
+          className="w-full max-w-full overflow-x-auto"
+        />
       </motion.div>
     </motion.div>
   );
@@ -107,14 +111,14 @@ function HeroCTA() {
 // Placeholder for illustration
 function HeroIllustration() {
   return (
-    <div className="w-full h-full flex items-center justify-center overflow-visible">
-      <div className="w-[400%] h-[400%] relative">
+    <div className="w-full h-full flex items-center justify-center overflow-hidden">
+      <div className="w-full h-full relative">
         <motion.img
           src="/assets/landing/octo-juggling-placeholder.png"
           alt="Octopus juggling illustration"
-          className="w-full h-full object-contain scale-150"
+          className="w-full h-full object-contain max-w-full"
           initial={{ opacity: 0, scale: 1.3 }}
-          animate={{ opacity: 1, scale: 1.5 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease }}
         />
       </div>
@@ -124,16 +128,16 @@ function HeroIllustration() {
 
 export function Hero() {
   return (
-    <Section id="hero" className="py-16 sm:py-20 lg:py-32">
+    <Section id="hero" className="py-4 sm:py-8 md:py-12 lg:py-20">
       {/* Main content area with titles and illustration */}
-      <div className="flex flex-col lg:flex-row items-center w-full lg:gap-16 mb-12">
-        <div className="flex flex-col items-center lg:items-start text-center lg:text-left lg:max-w-[640px]">
+      <div className="flex flex-col lg:flex-row items-center w-full lg:gap-8 xl:gap-16 mb-4 lg:mb-8">
+        <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full lg:max-w-[50%]">
           <HeroPill />
           <HeroTitles />
         </div>
 
         {/* Hero illustration */}
-        <div className="w-full lg:w-1/2 aspect-square mt-12 lg:mt-0">
+        <div className="w-full lg:w-1/2 aspect-square mt-4 lg:mt-0">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -146,8 +150,8 @@ export function Hero() {
       </div>
 
       {/* CTA section centered below */}
-      <div className="w-full flex justify-center mt-8">
-        <div className="w-full max-w-3xl">
+      <div className="w-full flex justify-center mt-2 sm:mt-4 lg:mt-6">
+        <div className="w-full max-w-full sm:max-w-3xl">
           <HeroCTA />
         </div>
       </div>
