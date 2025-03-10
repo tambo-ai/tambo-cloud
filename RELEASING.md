@@ -11,7 +11,7 @@ The Hydra API is built in the `apps/api` directory of the main site. When the AP
 3. A developer must review and approve the release PR.
 4. Once approved and merged, Stainless will automatically publish the new version to https://www.npmjs.com/package/@hydra-ai/client. You can watch progress at https://github.com/use-hydra-ai/hydra-ai-node/actions/workflows/publish-npm.yml
 
-### React SDK (`@hydra-ai/react`)
+### React SDK (`@tambo-ai/react`)
 
 Once the Hydra API client is updated, the React SDK can be updated.
 
@@ -23,17 +23,17 @@ Once the Hydra API client is updated, the React SDK can be updated.
      ```
 2. Create and merge a PR with the dependency update. You may have to fix types and tests to reflect changes in the Hydra API.
 3. The release-please action will create a release PR to bump the version.
-4. Once approved and merged, release-please will publish the new version to https://www.npmjs.com/package/@hydra-ai/react. You can watch progress at https://github.com/use-hydra-ai/hydra-ai-react/actions/workflows/release-please.yml
+4. Once approved and merged, release-please will publish the new version to https://www.npmjs.com/package/@tambo-ai/react. You can watch progress at https://github.com/use-hydra-ai/hydra-ai-react/actions/workflows/release-please.yml
 
 ### Main Site (`hydra-ai-site`)
 
 When you update either or both of the Hydra client SDKs, you must also update the dependencies in the [hydra-ai-site repository](https://github.com/use-hydra-ai/hydra-ai-site) to ensure that the smoketests are using the latest versions of the Hydra client SDKs.
 
-1. **OPTIONAL:** After both `@hydra-ai/client` and `@hydra-ai/react` are published, update the dependencies in the [hydra-ai-site repository](https://github.com/use-hydra-ai/hydra-ai-site) either:
+1. **OPTIONAL:** After both `@hydra-ai/client` and `@tambo-ai/react` are published, update the dependencies in the [hydra-ai-site repository](https://github.com/use-hydra-ai/hydra-ai-site) either:
    - Through Dependabot at https://github.com/use-hydra-ai/hydra-ai-site/network/updates
    - Or manually by running:
      ```bash
-     npx npm-check-updates -u @hydra-ai/client @hydra-ai/react
+     npx npm-check-updates -u @hydra-ai/client @tambo-ai/react
      ```
 2. Create and merge a PR with the dependency updates.
 3. The release-please action will create a release PR to bump the version.
