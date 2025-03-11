@@ -1,7 +1,6 @@
 "use client";
 
 import { Section } from "@/components/section";
-import Image from "next/image";
 
 // Move copy directly into the component
 const featuresContent = {
@@ -64,17 +63,7 @@ export function Features() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
         {featuresContent.list.map(({ title, description }, index) => (
           <div key={title} className="feature-item flex flex-col items-center">
-            <div className="mb-4 sm:mb-6 flex flex-col items-center w-full">
-              {/* Octo image placeholder */}
-              <div className="w-36 h-36 sm:w-48 sm:h-48 relative mb-3">
-                <Image
-                  src="/assets/landing/octo-feature-placeholder.png"
-                  alt={`${title} illustration`}
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </div>
+            {/* TODO: Add image back later */}
 
             <div className="text-center sm:text-left w-full">
               <h3 className="text-xl font-heading mb-2">{title}</h3>
