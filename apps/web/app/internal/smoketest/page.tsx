@@ -304,53 +304,71 @@ export default function SmokePage() {
 }
 
 interface WeatherDay {
-  date: string;
-  day: {
-    maxtemp_c: number;
-    mintemp_c: number;
-    avgtemp_c: number;
-    maxwind_kph: number;
-    totalprecip_mm: number;
-    avghumidity: number;
-    condition: {
-      text: string;
-      icon: string;
+  date?: string;
+  day?: {
+    maxtemp_c?: number;
+    mintemp_c?: number;
+    avgtemp_c?: number;
+    maxwind_kph?: number;
+    totalprecip_mm?: number;
+    avghumidity?: number;
+    condition?: {
+      text?: string;
+      icon?: string;
     };
   };
 }
 
 interface WeatherDayProps {
-  readonly data: WeatherDay;
+  readonly data?: WeatherDay;
 }
 
 const WeatherDay = ({ data }: WeatherDayProps): ReactNode => {
+  if (!data) {
+    return (
+      <Card className="p-4">
+        <p className="text-muted-foreground">Loading weather data...</p>
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="font-medium">
-            {new Date(data.date).toLocaleDateString()}
+            {data.date ? new Date(data.date).toLocaleDateString() : ""}
           </p>
           <div className="flex items-center gap-2">
-            <img
-              src={data.day.condition.icon}
-              alt={data.day.condition.text}
-              width={64}
-              height={64}
-            />
+            {data.day?.condition?.icon && (
+              <img
+                src={data.day.condition.icon}
+                alt={data.day.condition?.text ?? "Weather condition"}
+                width={64}
+                height={64}
+              />
+            )}
             <p className="text-sm text-muted-foreground">
-              {data.day.condition.text}
+              {data.day?.condition?.text ?? ""}
             </p>
           </div>
         </div>
 
         <div className="text-right">
           <div className="text-2xl font-bold">
-            {Math.round(data.day.avgtemp_c)}°C
+            {data.day?.avgtemp_c !== undefined
+              ? `${Math.round(data.day.avgtemp_c)}°C`
+              : "--°C"}
           </div>
           <div className="text-sm text-muted-foreground">
-            H: {Math.round(data.day.maxtemp_c)}° L:{" "}
-            {Math.round(data.day.mintemp_c)}°
+            H:{" "}
+            {data.day?.maxtemp_c !== undefined
+              ? `${Math.round(data.day.maxtemp_c)}°`
+              : "--°"}{" "}
+            L:{" "}
+            {data.day?.mintemp_c !== undefined
+              ? `${Math.round(data.day.mintemp_c)}°`
+              : "--°"}
           </div>
         </div>
       </div>
@@ -358,15 +376,27 @@ const WeatherDay = ({ data }: WeatherDayProps): ReactNode => {
       <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
         <div>
           <p className="text-muted-foreground">Wind</p>
-          <p>{Math.round(data.day.maxwind_kph)} km/h</p>
+          <p>
+            {data.day?.maxwind_kph !== undefined
+              ? `${Math.round(data.day.maxwind_kph)} km/h`
+              : "--"}
+          </p>
         </div>
         <div>
           <p className="text-muted-foreground">Precipitation</p>
-          <p>{data.day.totalprecip_mm} mm</p>
+          <p>
+            {data.day?.totalprecip_mm !== undefined
+              ? `${data.day.totalprecip_mm} mm`
+              : "--"}
+          </p>
         </div>
         <div>
           <p className="text-muted-foreground">Humidity</p>
-          <p>{Math.round(data.day.avghumidity)}%</p>
+          <p>
+            {data.day?.avghumidity !== undefined
+              ? `${Math.round(data.day.avghumidity)}%`
+              : "--"}
+          </p>
         </div>
       </div>
     </Card>
