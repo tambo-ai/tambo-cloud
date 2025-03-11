@@ -2,13 +2,13 @@ import BlogListItem from "@/components/blog-card";
 import { Button } from "@/components/ui/button";
 import { getBlogPosts } from "@/lib/blog";
 import { siteConfig } from "@/lib/config";
-import { constructMetadata } from "@/lib/utils";
+import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata = constructMetadata({
+export const metadata: Metadata = {
   title: "Blog",
   description: `Latest news and updates from ${siteConfig.name}.`,
-});
+};
 
 export default async function Blog() {
   const allPosts = await getBlogPosts();

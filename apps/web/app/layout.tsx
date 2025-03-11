@@ -1,9 +1,16 @@
+import { PreloadResources } from "@/components/preload-resources";
+import { Schema } from "@/components/schema";
 import { TailwindIndicator } from "@/components/tailwind-indicator";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { WebVitalsReporter } from "@/components/web-vitals";
 import { siteConfig } from "@/lib/config";
 import { GeistMono, GeistSans, sentientLight } from "@/lib/fonts";
-import { cn, constructMetadata } from "@/lib/utils";
+import {
+  generateOrganizationSchema,
+  generateWebsiteSchema,
+} from "@/lib/schema";
+import { cn } from "@/lib/utils";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Analytics } from "@vercel/analytics/react";
 import { RootProvider } from "fumadocs-ui/provider";
@@ -12,23 +19,25 @@ import { Suspense } from "react";
 import "./globals.css";
 import { PHProvider, PostHogPageview } from "./providers";
 
-export const metadata: Metadata = constructMetadata({
-  title: `${siteConfig.name} | ${siteConfig.description}`,
+export const metadata: Metadata = {
+  title: {
+    template: "%s | " + siteConfig.name,
+    default: `${siteConfig.name} | ${siteConfig.description}`,
+  },
   description: siteConfig.metadata.description,
   keywords: siteConfig.keywords,
-  openGraph: {
-    title: siteConfig.metadata.openGraph.title,
-    description: siteConfig.metadata.openGraph.description,
-    images: siteConfig.metadata.openGraph.images,
-  },
-  twitter: {
-    card: siteConfig.metadata.twitter.card,
-    title: siteConfig.metadata.twitter.title,
-    description: siteConfig.metadata.twitter.description,
-    images: siteConfig.metadata.twitter.images,
+  metadataBase: new URL(siteConfig.url),
+  authors: [
+    {
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+  ],
+  alternates: {
+    canonical: "/",
   },
   icons: siteConfig.metadata.icons,
-});
+};
 
 export const viewport: Viewport = {
   colorScheme: "light",
@@ -40,6 +49,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Generate schema for the website and organization
+  const websiteSchema = generateWebsiteSchema();
+  const organizationSchema = generateOrganizationSchema();
+
   return (
     <html
       lang="en"
@@ -48,8 +61,14 @@ export default function RootLayout({
         `${GeistSans.variable} ${GeistMono.variable} ${sentientLight.variable}`,
       )}
     >
+      <head>
+        <PreloadResources />
+      </head>
       <Suspense>
         <PostHogPageview />
+      </Suspense>
+      <Suspense>
+        <WebVitalsReporter />
       </Suspense>
       <TRPCReactProvider>
         <PHProvider>
@@ -69,6 +88,7 @@ export default function RootLayout({
             </ThemeProvider>
             <Toaster />
             <Analytics />
+            <Schema jsonLd={[websiteSchema, organizationSchema]} />
           </body>
         </PHProvider>
       </TRPCReactProvider>
