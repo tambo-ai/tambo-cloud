@@ -101,7 +101,7 @@ html {
     --muted-foreground: 186 94% 13%; /* #023A41 */
 
     /* Accent colors */
-    --accent: 320 100% 88%; /* #FFC4EB */
+    --accent: 320 100% 80%; /* Brighter pink for better contrast (orginal: #FFC4EB) */
     --accent-foreground: 162 30% 8%; /* #0E1A17 */
 
     /* Destructive colors (keeping your existing one) */

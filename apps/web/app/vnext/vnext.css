@@ -7,6 +7,9 @@
 
   /* Ensure proper layout width */
   --fd-layout-width: 1400px;
+
+  /* Brighter accent color for better contrast */
+  --accent: 320 100% 80%; /* Brighter pink for better contrast */
 }
 
 /* Apply heading font to all headings and navigation elements */
