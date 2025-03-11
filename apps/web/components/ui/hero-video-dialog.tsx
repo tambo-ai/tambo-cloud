@@ -97,6 +97,7 @@ export default function HeroVideoDialog({
     if (videoRef.current) {
       videoRef.current.play().catch((error) => {
         console.error("Failed to autoplay video:", error);
+        // Don't set video error here, just log it
       });
     }
   }, [currentVideoSrc]);
@@ -140,27 +141,25 @@ export default function HeroVideoDialog({
           className,
         )}
       >
-        <p className="text-muted-foreground error-message">
-          Failed to load video
-        </p>
+        <p className="text-muted-foreground">Failed to load video</p>
       </div>
     );
   }
 
   return (
-    <div className={cn("relative group", className)}>
+    <div className={cn("relative group w-full", className)}>
       <motion.div
         {...selectedAnimation}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="overflow-hidden relative floating-element shadow-light dark:shadow-dark hover:shadow-[0_0_40px_rgba(127,255,196,0.3)] transition-shadow duration-300"
+        className="overflow-hidden relative rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 w-full aspect-[1.44/1] bg-background"
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 to-transparent pointer-events-none z-10" />
         <video
           ref={videoRef}
           onClick={handleVideoClick}
           className={cn(
-            "w-full h-full object-cover transition-opacity duration-300",
-            isPlaying ? "opacity-100" : "opacity-50",
+            "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+            isPlaying ? "opacity-100" : "opacity-90",
           )}
           muted
           loop
@@ -175,13 +174,15 @@ export default function HeroVideoDialog({
         {!isPlaying && (
           <button
             onClick={handlePlayClick}
-            className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/30 hover:bg-black/20 transition-colors duration-300 button"
+            className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors duration-300 z-20"
+            aria-label="Play video"
           >
-            <div className="icon-container pulse-animation">
+            <div className="flex items-center justify-center animate-pulse">
               <svg
-                className="w-20 h-20 text-primary"
+                className="w-16 h-16 text-primary"
                 fill="currentColor"
                 viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   fillRule="evenodd"
