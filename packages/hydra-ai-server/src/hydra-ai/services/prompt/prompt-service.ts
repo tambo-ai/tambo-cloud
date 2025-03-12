@@ -10,7 +10,6 @@ import { schemaV1, schemaV2 } from "./schemas";
 export interface PromptTemplate {
   template: string;
   args: Record<string, string>;
-  version?: "v1" | "v2";
 }
 
 export function getBasePrompt(version: "v1" | "v2" = "v1"): string {
@@ -115,7 +114,6 @@ function getComponentHydrationPromptWithToolResponseTemplate(
   return {
     template: componentHydrationPromptWithToolResponse(version),
     args: { toolResponseString, availableComponentsPrompt, zodTypePrompt },
-    version,
   };
 }
 
@@ -127,7 +125,6 @@ function getComponentHydrationPromptWithoutToolResponseTemplate(
   return {
     template: componentHydrationPromptWithoutToolResponse(version),
     args: { availableComponentsPrompt, zodTypePrompt },
-    version,
   };
 }
 
