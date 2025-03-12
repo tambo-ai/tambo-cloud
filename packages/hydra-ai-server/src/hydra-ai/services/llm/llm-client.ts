@@ -2,6 +2,8 @@ import {
   type ChatCompletionMessageParam,
   type ChatCompletionTool,
 } from "@libretto/token.js";
+import { JSONSchema } from "openai/lib/jsonschema";
+import { ZodObject } from "zod";
 import { OpenAIResponse } from "../../model/openai-response";
 
 export interface StreamingCompleteParams {
@@ -11,6 +13,8 @@ export interface StreamingCompleteParams {
   promptTemplateName: string;
   promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>;
   jsonMode?: boolean;
+  responseFormat?: ZodObject<any>;
+  schemaResponseFormat?: JSONSchema;
 }
 
 export interface CompleteParams {
@@ -20,6 +24,8 @@ export interface CompleteParams {
   promptTemplateName: string;
   promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>;
   jsonMode?: boolean;
+  zodResponseFormat?: ZodObject<any>;
+  schemaResponseFormat?: JSONSchema;
 }
 
 export interface LLMClient {
