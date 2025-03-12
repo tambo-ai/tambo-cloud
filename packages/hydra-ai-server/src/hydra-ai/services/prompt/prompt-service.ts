@@ -212,7 +212,6 @@ export function buildSuggestionPrompt(
   components: AvailableComponent[],
   messageHistory: ThreadMessage[] = [],
   suggestionCount: number,
-  schema: string,
 ): Array<{ role: "system" | "user"; content: string }> {
   // Get current component if available
   let currentComponent: string | null = null;
@@ -277,9 +276,7 @@ ${currentComponent ? `Current component: ${currentComponent}\nCurrent props: ${J
 Generate ${suggestionCount} natural follow-up messages that a user might send. Each suggestion should be a complete message that could be sent directly to the system.
 
 The suggestions should be written exactly as a user would type them, not as descriptions or commands.
-
-Schema for validation:
-${schema}`;
+`;
 
   return [
     { role: "system", content: systemMessage },
