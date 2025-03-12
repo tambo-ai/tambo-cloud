@@ -6,21 +6,27 @@ import { JSONSchema } from "openai/lib/jsonschema";
 import { ZodObject } from "zod";
 import { OpenAIResponse } from "../../model/openai-response";
 
-interface JsonResponseFormat {
+interface BaseResponseFormat {
+  jsonMode?: boolean;
+  zodResponseFormat?: ZodObject<any>;
+  schemaResponseFormat?: JSONSchema;
+}
+interface JsonResponseFormat extends BaseResponseFormat {
   jsonMode: true;
 }
-interface ZodResponseFormat {
-  jsonMode?: false;
-  zodResponseFormat?: undefined;
-  schemaResponseFormat: JSONSchema;
-}
-interface SchemaResponseFormat {
-  jsonMode?: false;
-  schemaResponseFormat?: undefined;
+interface ZodResponseFormat extends BaseResponseFormat {
   zodResponseFormat: ZodObject<any>;
+}
+interface SchemaResponseFormat extends BaseResponseFormat {
+  schemaResponseFormat: JSONSchema;
 }
 
 type ResponseFormat =
+  | {
+      jsonMode?: never;
+      zodResponseFormat?: never;
+      schemaResponseFormat?: never;
+    }
   | JsonResponseFormat
   | ZodResponseFormat
   | SchemaResponseFormat;
