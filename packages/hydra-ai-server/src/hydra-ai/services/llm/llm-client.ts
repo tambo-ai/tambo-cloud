@@ -4,22 +4,28 @@ import {
 } from "@libretto/token.js";
 import { OpenAIResponse } from "../../model/openai-response";
 
-export interface LLMClient {
-  complete(params: {
-    messages: ChatCompletionMessageParam[];
-    stream: true;
-    tools?: ChatCompletionTool[];
-    promptTemplateName: string;
-    promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>;
-    jsonMode?: boolean;
-  }): Promise<AsyncIterableIterator<OpenAIResponse>>;
+export interface StreamingCompleteParams {
+  messages: ChatCompletionMessageParam[];
+  stream: true;
+  tools?: ChatCompletionTool[];
+  promptTemplateName: string;
+  promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>;
+  jsonMode?: boolean;
+}
 
-  complete(params: {
-    messages: ChatCompletionMessageParam[];
-    stream?: false | undefined;
-    tools?: ChatCompletionTool[];
-    promptTemplateName: string;
-    promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>;
-    jsonMode?: boolean;
-  }): Promise<OpenAIResponse>;
+export interface CompleteParams {
+  messages: ChatCompletionMessageParam[];
+  stream?: false | undefined;
+  tools?: ChatCompletionTool[];
+  promptTemplateName: string;
+  promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>;
+  jsonMode?: boolean;
+}
+
+export interface LLMClient {
+  complete(
+    params: StreamingCompleteParams,
+  ): Promise<AsyncIterableIterator<OpenAIResponse>>;
+
+  complete(params: CompleteParams): Promise<OpenAIResponse>;
 }
