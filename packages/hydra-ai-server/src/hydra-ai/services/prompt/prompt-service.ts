@@ -82,23 +82,21 @@ const suggestedActionsGuidelines = `When generating suggestedActions, consider t
 const basePromptV1 = `${basePrompt}\n${suggestedActionsGuidelines}`;
 const basePromptV2 = basePrompt;
 
-const componentHydrationPromptWithToolResponse = (
-  version: "v1" | "v2",
-) => `${version === "v1" ? basePromptV1 : basePromptV2}
+const componentHydrationPromptWithToolResponse = (version: "v1" | "v2") =>
+  `${version === "v1" ? basePromptV1 : basePromptV2}
 You have received a response from a tool. Use this data to help determine what props to pass in: {toolResponseString}
 
 {availableComponentsPrompt}
 
-{zodTypePrompt}`;
+{zodTypePrompt}` as const;
 
-const componentHydrationPromptWithoutToolResponse = (
-  version: "v1" | "v2",
-) => `${version === "v1" ? basePromptV1 : basePromptV2}
+const componentHydrationPromptWithoutToolResponse = (version: "v1" | "v2") =>
+  `${version === "v1" ? basePromptV1 : basePromptV2}
 You can also use any of the provided tools to fetch data needed to pass into the component.
 
 {availableComponentsPrompt}
 
-{zodTypePrompt}`;
+{zodTypePrompt}` as const;
 
 function getComponentHydrationPromptWithToolResponseTemplate(
   toolResponseString: string,
