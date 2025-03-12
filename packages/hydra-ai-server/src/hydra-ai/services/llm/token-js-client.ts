@@ -6,7 +6,10 @@ import {
 } from "@libretto/token.js";
 import { ToolCallRequest } from "@tambo-ai-cloud/core";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { ChatCompletion } from "openai/resources/chat/completions";
+import {
+  ChatCompletion,
+  ChatCompletionCreateParams,
+} from "openai/resources/chat/completions";
 import { OpenAIResponse } from "../../model/openai-response";
 import { Provider } from "../../model/providers";
 import {
@@ -176,7 +179,7 @@ export class TokenJSClient implements LLMClient {
 
 function extractResponseFormat(
   params: StreamingCompleteParams | CompleteParams,
-) {
+): ChatCompletionCreateParams["response_format"] {
   return params.jsonMode
     ? { type: "json_object" }
     : params.zodResponseFormat
