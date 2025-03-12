@@ -177,19 +177,30 @@ export class TokenJSClient implements LLMClient {
 function extractResponseFormat(
   params: StreamingCompleteParams | CompleteParams,
 ) {
-  return params.jsonMode
-    ? { type: "json_object" }
-    : params.zodResponseFormat
-      ? (zodResponseFormat(params.zodResponseFormat, "response") as any)
-      : params.schemaResponseFormat
-        ? {
-            type: "json_schema",
-            json_schema: {
-              name: "response",
-              schema: params.schemaResponseFormat,
-            },
-          }
-        : undefined;
+  if (params.jsonMode) {
+    return { type: "json_object" };
+  }
+
+  if (params.zodResponseFormat) {
+    const zodResponse = zodResponseFormat(
+      params.zodResponseFormat,
+      "response",
+    ) as any;
+    console.log("zodResponse", zodResponse);
+    return zodResponse;
+  }
+
+  if (params.schemaResponseFormat) {
+    return {
+      type: "json_schema",
+      json_schema: {
+        name: "response",
+        schema: params.schemaResponseFormat,
+      },
+    };
+  }
+
+  return undefined;
 }
 
 /** We have to manually format this because objectTemplate doesn't seem to support chat_history */

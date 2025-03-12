@@ -1,9 +1,12 @@
 import { createPromptTemplate, ThreadMessage } from "@tambo-ai-cloud/core";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import {
   AvailableComponent,
   AvailableComponents,
   ToolResponseBody,
 } from "../../model/component-metadata";
+import { schemaV1, schemaV2 } from "./schemas";
 export function getBasePrompt(version: "v1" | "v2" = "v1"): string {
   return version === "v1" ? basePromptV1 : basePromptV2;
 }
@@ -79,38 +82,44 @@ const suggestedActionsGuidelines = `When generating suggestedActions, consider t
 const basePromptV1 = `${basePrompt}\n${suggestedActionsGuidelines}`;
 const basePromptV2 = basePrompt;
 
-const componentHydrationPromptWithToolResponse = (version: "v1" | "v2") =>
-  `${version === "v1" ? basePromptV1 : basePromptV2}
+const componentHydrationPromptWithToolResponse = (
+  version: "v1" | "v2",
+) => `${version === "v1" ? basePromptV1 : basePromptV2}
 You have received a response from a tool. Use this data to help determine what props to pass in: {toolResponseString}
 
 {availableComponentsPrompt}
-` as const;
 
-const componentHydrationPromptWithoutToolResponse = (version: "v1" | "v2") =>
-  `${version === "v1" ? basePromptV1 : basePromptV2}
+{zodTypePrompt}`;
+
+const componentHydrationPromptWithoutToolResponse = (
+  version: "v1" | "v2",
+) => `${version === "v1" ? basePromptV1 : basePromptV2}
 You can also use any of the provided tools to fetch data needed to pass into the component.
 
 {availableComponentsPrompt}
-` as const;
+
+{zodTypePrompt}`;
 
 function getComponentHydrationPromptWithToolResponseTemplate(
   toolResponseString: string,
   availableComponentsPrompt: string,
+  zodTypePrompt: string,
   version: "v1" | "v2" = "v1",
 ) {
   return createPromptTemplate(
     componentHydrationPromptWithToolResponse(version),
-    { toolResponseString, availableComponentsPrompt },
+    { toolResponseString, availableComponentsPrompt, zodTypePrompt },
   );
 }
 
 function getComponentHydrationPromptWithoutToolResponseTemplate(
   availableComponentsPrompt: string,
+  zodTypePrompt: string,
   version: "v1" | "v2" = "v1",
 ) {
   return createPromptTemplate(
     componentHydrationPromptWithoutToolResponse(version),
-    { availableComponentsPrompt },
+    { availableComponentsPrompt, zodTypePrompt },
   );
 }
 
@@ -124,17 +133,22 @@ export function getComponentHydrationPromptTemplate(
     : undefined;
   const availableComponentsPrompt =
     generateAvailableComponentsPrompt(availableComponents);
+  const zodTypePrompt = generateZodTypePrompt(
+    version === "v1" ? schemaV1 : schemaV2,
+  );
 
   if (toolResponseString) {
     return getComponentHydrationPromptWithToolResponseTemplate(
       toolResponseString,
       availableComponentsPrompt,
+      zodTypePrompt,
       version,
     );
   }
 
   return getComponentHydrationPromptWithoutToolResponseTemplate(
     availableComponentsPrompt,
+    zodTypePrompt,
     version,
   );
 }
@@ -199,6 +213,34 @@ function generateAvailableComponentsPrompt(
 ): string {
   const template = getAvailableComponentsPromptTemplate(availableComponents);
   return replaceTemplateVariables(template.template, template.args);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function generateZodTypePrompt(schema: z.ZodSchema<any>): string {
+  return `
+      Return a JSON object that matches the given Zod schema.
+      If a field is Optional and there is no input don't include in the JSON response.
+      Only use tailwind classes where it explicitly says to use them.
+      ${generateFormatInstructions(schema)}
+    `;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function generateFormatInstructions(schema: z.ZodSchema<any>): string {
+  return `You must format your output as a JSON value that adheres to a given "JSON Schema" instance.
+
+    "JSON Schema" is a declarative language that allows you to annotate and validate JSON documents.
+    For example, the example "JSON Schema" instance {{"properties": {{"foo": {{"description": "a list of test words", "type": "array", "items": {{"type": "string"}}}}}}, "required": ["foo"]}}}}
+    would match an object with one required property, "foo". The "type" property specifies "foo" must be an "array", and the "description" property semantically describes it as "a list of test words". The items within "foo" must be strings.
+    Thus, the object {{"foo": ["bar", "baz"]}} is a well-formatted instance of this example "JSON Schema". The object {{"properties": {{"foo": ["bar", "baz"]}}}} is not well-formatted.
+
+    Your output will be parsed and type-checked according to the provided schema instance, so make sure all fields in your output match the schema exactly and there are no trailing commas!
+
+    Here is the JSON Schema instance your output must adhere to. Only return valid JSON Schema.
+    \`\`\`json
+    ${JSON.stringify(zodToJsonSchema(schema))}
+    \`\`\`
+    `;
 }
 
 /**
@@ -275,7 +317,7 @@ ${currentComponent ? `Current component: ${currentComponent}\nCurrent props: ${J
 
 Generate ${suggestionCount} natural follow-up messages that a user might send. Each suggestion should be a complete message that could be sent directly to the system.
 
-The suggestions should be written exactly as a user would type them, not as descriptions or commands.
+The suggestions should be written exactly as a user would type them, not as descriptions or commands, in a JSON structure.
 `;
 
   return [

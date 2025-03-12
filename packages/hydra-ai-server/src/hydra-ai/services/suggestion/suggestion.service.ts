@@ -35,7 +35,6 @@ export async function generateSuggestions(
   try {
     const response = await llmClient.complete({
       messages,
-      jsonMode: true,
       promptTemplateName: "suggestion-generation",
       promptTemplateParams: {},
       zodResponseFormat: SuggestionsResponseSchema,
