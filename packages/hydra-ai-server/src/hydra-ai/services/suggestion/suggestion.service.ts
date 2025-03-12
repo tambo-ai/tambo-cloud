@@ -51,7 +51,6 @@ export async function generateSuggestions(
     }
 
     // Use safeParse for better error handling
-    console.warn(`response.message ${response.message}`);
     const parsed = SuggestionsResponseSchema.safeParse(
       JSON.parse(response.message),
     );
