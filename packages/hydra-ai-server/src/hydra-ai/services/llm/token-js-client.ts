@@ -59,7 +59,7 @@ export class TokenJSClient implements LLMClient {
         model: this.model,
         messages: messagesFormatted,
         temperature: 0,
-        response_format: params.jsonMode ? { type: "json_object" } : undefined,
+        response_format: extractResponseFormat(params),
         tools: componentTools,
         libretto: {
           promptTemplateName: params.promptTemplateName,
@@ -78,17 +78,7 @@ export class TokenJSClient implements LLMClient {
       model: this.model,
       messages: messagesFormatted,
       temperature: 0,
-      response_format: params.zodResponseFormat
-        ? (zodResponseFormat(params.zodResponseFormat, "response") as any)
-        : params.schemaResponseFormat
-          ? {
-              type: "json_schema",
-              json_schema: {
-                name: "response",
-                schema: params.schemaResponseFormat,
-              },
-            }
-          : undefined,
+      response_format: extractResponseFormat(params),
       tools: componentTools,
       libretto: {
         promptTemplateName: params.promptTemplateName,
@@ -182,6 +172,24 @@ export class TokenJSClient implements LLMClient {
       })),
     };
   }
+}
+
+function extractResponseFormat(
+  params: StreamingCompleteParams | CompleteParams,
+) {
+  return params.jsonMode
+    ? { type: "json_object" }
+    : params.zodResponseFormat
+      ? (zodResponseFormat(params.zodResponseFormat, "response") as any)
+      : params.schemaResponseFormat
+        ? {
+            type: "json_schema",
+            json_schema: {
+              name: "response",
+              schema: params.schemaResponseFormat,
+            },
+          }
+        : undefined;
 }
 
 /** We have to manually format this because objectTemplate doesn't seem to support chat_history */
