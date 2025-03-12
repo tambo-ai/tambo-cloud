@@ -79,7 +79,7 @@ export async function hydrateComponent(
       ...availableComponentsArgs,
     },
     tools,
-    jsonMode: true,
+    zodResponseFormat: version === "v1" ? schemaV1 : schemaV2,
   };
 
   if (stream) {
