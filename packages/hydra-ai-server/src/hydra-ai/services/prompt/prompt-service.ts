@@ -1,4 +1,4 @@
-import { ThreadMessage } from "@tambo-ai-cloud/core";
+import { createPromptTemplate, ThreadMessage } from "@tambo-ai-cloud/core";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import {
@@ -7,11 +7,6 @@ import {
   ToolResponseBody,
 } from "../../model/component-metadata";
 import { schemaV1, schemaV2 } from "./schemas";
-export interface PromptTemplate {
-  template: string;
-  args: Record<string, string>;
-}
-
 export function getBasePrompt(version: "v1" | "v2" = "v1"): string {
   return version === "v1" ? basePromptV1 : basePromptV2;
 }
@@ -49,13 +44,13 @@ This response should be short and concise.`;
 export function getNoComponentPromptTemplate(
   reasoning: string,
   availableComponents: AvailableComponents,
-): PromptTemplate {
+) {
   const availableComponentsStr =
     generateAvailableComponentsPrompt(availableComponents);
-  return {
-    template: noComponentPrompt,
-    args: { reasoning, availableComponents: availableComponentsStr },
-  };
+  return createPromptTemplate(noComponentPrompt, {
+    reasoning,
+    availableComponents: availableComponentsStr,
+  });
 }
 
 function replaceTemplateVariables(
@@ -110,29 +105,29 @@ function getComponentHydrationPromptWithToolResponseTemplate(
   availableComponentsPrompt: string,
   zodTypePrompt: string,
   version: "v1" | "v2" = "v1",
-): PromptTemplate {
-  return {
-    template: componentHydrationPromptWithToolResponse(version),
-    args: { toolResponseString, availableComponentsPrompt, zodTypePrompt },
-  };
+) {
+  return createPromptTemplate(
+    componentHydrationPromptWithToolResponse(version),
+    { toolResponseString, availableComponentsPrompt, zodTypePrompt },
+  );
 }
 
 function getComponentHydrationPromptWithoutToolResponseTemplate(
   availableComponentsPrompt: string,
   zodTypePrompt: string,
   version: "v1" | "v2" = "v1",
-): PromptTemplate {
-  return {
-    template: componentHydrationPromptWithoutToolResponse(version),
-    args: { availableComponentsPrompt, zodTypePrompt },
-  };
+) {
+  return createPromptTemplate(
+    componentHydrationPromptWithoutToolResponse(version),
+    { availableComponentsPrompt, zodTypePrompt },
+  );
 }
 
 export function getComponentHydrationPromptTemplate(
   toolResponse: ToolResponseBody | undefined,
   availableComponents: AvailableComponents,
   version: "v1" | "v2" = "v1",
-): PromptTemplate {
+) {
   const toolResponseString = toolResponse
     ? JSON.stringify(toolResponse)
     : undefined;
@@ -160,7 +155,7 @@ export function getComponentHydrationPromptTemplate(
 
 export function getAvailableComponentsPromptTemplate(
   availableComponents: AvailableComponents,
-): PromptTemplate {
+) {
   const availableComponentsStr = Object.values(availableComponents)
     .map((component) => {
       let propsStr = "";
@@ -206,11 +201,11 @@ export function getAvailableComponentsPromptTemplate(
       return `- ${component.name}: ${component.description}${propsStr}`;
     })
     .join("\n");
-  return {
-    template: `Available components and their descriptions:
+  return createPromptTemplate(
+    `Available components and their descriptions:
 {availableComponents}`,
-    args: { availableComponents: availableComponentsStr },
-  };
+    { availableComponents: availableComponentsStr },
+  );
 }
 
 function generateAvailableComponentsPrompt(
