@@ -186,7 +186,6 @@ function extractResponseFormat(
       params.zodResponseFormat,
       "response",
     ) as any;
-    console.log("zodResponse", zodResponse);
     return zodResponse;
   }
 
