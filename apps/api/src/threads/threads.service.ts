@@ -409,7 +409,7 @@ export class ThreadsService {
     });
 
     const availableComponentMap: Record<string, AvailableComponentDto> =
-      advanceRequestDto?.availableComponents?.reduce((acc, component) => {
+      advanceRequestDto.availableComponents?.reduce((acc, component) => {
         acc[component.name] = component;
         return acc;
       }, {}) ?? {};
@@ -436,7 +436,7 @@ export class ThreadsService {
         throw new Error('No tool response found');
       }
 
-      const componentDef = advanceRequestDto?.availableComponents?.find(
+      const componentDef = advanceRequestDto.availableComponents?.find(
         (c) => c.name === latestMessage.component?.componentName,
       );
       if (!componentDef) {
@@ -445,9 +445,10 @@ export class ThreadsService {
 
       if (stream) {
         responseMessage = await hydraBackend.hydrateComponentWithData(
-          messages,
+          threadMessageDtoToThreadMessage(messages),
           componentDef,
           toolResponse,
+          latestMessage.tool_call_id,
           thread.id,
           true,
         );
@@ -457,9 +458,10 @@ export class ThreadsService {
         );
       } else {
         responseMessage = await hydraBackend.hydrateComponentWithData(
-          messages,
+          threadMessageDtoToThreadMessage(messages),
           componentDef,
           toolResponse,
+          latestMessage.tool_call_id,
           thread.id,
         );
       }
@@ -471,7 +473,7 @@ export class ThreadsService {
       );
       if (stream) {
         responseMessage = await hydraBackend.generateComponent(
-          messages,
+          threadMessageDtoToThreadMessage(messages),
           availableComponentMap,
           thread.id,
           true,
@@ -482,7 +484,7 @@ export class ThreadsService {
         );
       } else {
         responseMessage = await hydraBackend.generateComponent(
-          messages,
+          threadMessageDtoToThreadMessage(messages),
           availableComponentMap,
           thread.id,
         );
@@ -700,6 +702,15 @@ function convertContentDtoToContentPart(
         throw new Error(`Unknown content part type: ${part.type}`);
     }
   });
+}
+
+function threadMessageDtoToThreadMessage(
+  messages: ThreadMessageDto[],
+): ThreadMessage[] {
+  return messages.map((message) => ({
+    ...message,
+    content: convertContentDtoToContentPart(message.content),
+  }));
 }
 
 function convertContentPartToDto(

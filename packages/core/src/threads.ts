@@ -17,6 +17,12 @@ export enum MessageRole {
   Hydra = "hydra",
 }
 
+export type OpenAIRole =
+  | MessageRole.User
+  | MessageRole.Assistant
+  | MessageRole.System
+  | MessageRole.Tool;
+
 /**
  * Defines the types of actions that can occur in a thread
  */
@@ -88,6 +94,9 @@ export interface ThreadMessage {
   metadata?: Record<string, unknown>;
   /** Timestamp when the message was created */
   createdAt: Date;
+
+  /** Used only when role === "tool" */
+  tool_call_id?: string;
 }
 
 /** Temporary internal type to make sure that subclasses are aligned on types */
@@ -98,7 +107,7 @@ export interface InternalThreadMessage {
   component?: ComponentDecisionV2;
   actionType?: ActionType;
   toolCallRequest?: Partial<ToolCallRequest>;
-  tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
+  tool_call_id?: string;
 }
 
 /**

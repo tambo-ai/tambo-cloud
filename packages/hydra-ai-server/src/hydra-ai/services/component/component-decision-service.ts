@@ -70,15 +70,16 @@ export async function decideComponent(
     if (!component) {
       throw new Error(`Component ${componentName} not found`);
     }
-    return await hydrateComponent(
+    return await hydrateComponent({
       llmClient,
-      context.messageHistory,
-      component,
-      undefined,
-      context.availableComponents,
+      messageHistory: context.messageHistory,
+      chosenComponent: component,
+      toolResponse: undefined,
+      toolCallId: undefined,
+      availableComponents: context.availableComponents,
       threadId,
       stream,
-    );
+    });
   }
 
   throw new Error(`Invalid decision: ${decisionResponse.message}`);

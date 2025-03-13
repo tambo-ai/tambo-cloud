@@ -3,6 +3,7 @@ import {
   ChatCompletionContentPart,
   ChatCompletionContentPartText,
   MessageRole,
+  OpenAIRole,
   ThreadMessage,
 } from "@tambo-ai-cloud/core";
 
@@ -28,12 +29,34 @@ export function chatHistoryToParams(
       type: "text",
       text: nextContentContext,
     };
+    const role = getOpenAIRole(message, message.tool_call_id);
     return {
-      role: message.role === MessageRole.Hydra ? "user" : message.role,
+      role,
       content: [
         ...message.content,
         additionalContextMessage,
       ] as ChatCompletionContentPart[],
-    };
+    } as ChatCompletionMessageParam;
   });
+}
+
+/**
+ * Make sure to handle some edge cases:
+ * - Tool messages without a tool call id are user messages
+ * - Hydra messages are user messages
+ */
+function getOpenAIRole(
+  message: ThreadMessage,
+  toolCallId: string | undefined,
+): OpenAIRole {
+  if (message.role === MessageRole.Tool) {
+    if (toolCallId) {
+      return MessageRole.Tool;
+    }
+    return MessageRole.User;
+  }
+  if (message.role === MessageRole.Hydra) {
+    return MessageRole.User;
+  }
+  return message.role;
 }

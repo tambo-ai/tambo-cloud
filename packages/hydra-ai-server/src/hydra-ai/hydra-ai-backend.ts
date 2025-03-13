@@ -105,6 +105,7 @@ export default class HydraBackend {
     messageHistory: ThreadMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
+    toolCallId: string | undefined,
     threadId: string,
     stream: true,
   ): Promise<AsyncIterableIterator<LegacyComponentDecision>>;
@@ -112,6 +113,7 @@ export default class HydraBackend {
     messageHistory: ThreadMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
+    toolCallId: string | undefined,
     threadId: string,
     stream?: false | undefined,
   ): Promise<LegacyComponentDecision>;
@@ -119,6 +121,7 @@ export default class HydraBackend {
     messageHistory: ThreadMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
+    toolCallId: string | undefined,
     threadId: string,
     stream?: boolean,
   ): Promise<
@@ -128,6 +131,7 @@ export default class HydraBackend {
       messageHistory,
       component,
       toolResponse,
+      toolCallId,
       threadId,
       stream,
     );

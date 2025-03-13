@@ -56,20 +56,22 @@ export default class AIService {
     messageHistory: ThreadMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
+    toolCallId: string | undefined,
     threadId: string,
     stream?: boolean,
   ): Promise<
     LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
   > {
-    return await hydrateComponent(
-      this.llmClient,
+    return await hydrateComponent({
+      llmClient: this.llmClient,
       messageHistory,
-      component,
+      chosenComponent: component,
       toolResponse,
-      undefined,
+      toolCallId,
+      availableComponents: undefined,
       threadId,
       stream,
-      this.version,
-    );
+      version: this.version,
+    });
   }
 }

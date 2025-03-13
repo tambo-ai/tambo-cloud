@@ -174,6 +174,7 @@ export class ComponentsController {
         legacyChatMessagesToThreadMessages(messageHistory, resolvedThreadId),
         component,
         toolResponse,
+        undefined,
         resolvedThreadId,
       );
 
