@@ -1,6 +1,8 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import {
   ActionType,
+  ChatCompletionContentPart,
+  CombineUnion,
   ContentPartType,
   MessageRole,
   ToolCallRequest,
@@ -37,7 +39,9 @@ export class ImageUrl {
 
 /** DTO for the content part of a message. This may be safely cast to or from the ChatCompletionContentPart interface. */
 @ApiSchema({ name: 'ChatCompletionContentPart' })
-export class ChatCompletionContentPartDto {
+export class ChatCompletionContentPartDto
+  implements ChatCompletionContentPartUnion
+{
   @IsEnum(ContentPartType)
   type!: ContentPartType;
   @ValidateIf((o) => o.type === ContentPartType.Text)
@@ -48,10 +52,12 @@ export class ChatCompletionContentPartDto {
   input_audio?: InputAudio;
 }
 
+type ChatCompletionContentPartUnion = CombineUnion<ChatCompletionContentPart>;
+
 /** Internal type to make sure that subclasses are aligned on types */
 interface InternalThreadMessage {
   role: MessageRole;
-  content: ChatCompletionContentPartDto[];
+  content: ChatCompletionContentPartUnion[];
   metadata?: Record<string, unknown>;
   component?: ComponentDecisionV2;
   actionType?: ActionType;
