@@ -330,10 +330,10 @@ export default function CLIAuthPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div className="space-y-1.5">
               <CardTitle className="text-2xl font-bold">
-                HydraAI CLI Setup
+                tambo CLI Setup
               </CardTitle>
               <CardDescription className="text-base">
-                {step === "auth" && "Sign in to get started with HydraAI CLI"}
+                {step === "auth" && "Sign in to get started with tambo"}
                 {step === "project" &&
                   "Choose a project to generate your API key"}
                 {step === "key" && "Almost done! Generate your API key"}
