@@ -1,12 +1,10 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
 import {
   ActionType,
-  ChatCompletionContentPart,
-  CombineUnion,
-  ComponentDecisionV2,
+  ChatCompletionContentPartUnion,
   ContentPartType,
+  InternalThreadMessage,
   MessageRole,
-  ToolCallRequest,
 } from '@tambo-ai-cloud/core';
 import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from 'class-validator';
 import { type OpenAI } from 'openai';
@@ -51,19 +49,6 @@ export class ChatCompletionContentPartDto
   image_url?: ImageUrl;
   @ValidateIf((o) => o.type === ContentPartType.InputAudio)
   input_audio?: InputAudio;
-}
-
-type ChatCompletionContentPartUnion = CombineUnion<ChatCompletionContentPart>;
-
-/** Internal type to make sure that subclasses are aligned on types */
-interface InternalThreadMessage {
-  role: MessageRole;
-  content: ChatCompletionContentPartUnion[];
-  metadata?: Record<string, unknown>;
-  component?: ComponentDecisionV2;
-  actionType?: ActionType;
-  toolCallRequest?: Partial<ToolCallRequest>;
-  tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
 }
 
 @ApiSchema({ name: 'ThreadMessage' })
