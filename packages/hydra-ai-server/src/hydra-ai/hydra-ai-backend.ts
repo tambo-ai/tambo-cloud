@@ -1,4 +1,4 @@
-import { ComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
+import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
 import AIService from "./ai-service";
 import { ChatMessage } from "./model/chat-message";
 import {
@@ -78,19 +78,21 @@ export default class HydraBackend {
     availableComponents: AvailableComponents,
     threadId: string,
     stream: true,
-  ): Promise<AsyncIterableIterator<ComponentDecision>>;
+  ): Promise<AsyncIterableIterator<LegacyComponentDecision>>;
   public async generateComponent(
     messageHistory: ChatMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
     stream?: false | undefined,
-  ): Promise<ComponentDecision>;
+  ): Promise<LegacyComponentDecision>;
   public async generateComponent(
     messageHistory: ChatMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
     stream?: boolean,
-  ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
+  ): Promise<
+    LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
+  > {
     const context: InputContext = {
       messageHistory,
       availableComponents,
@@ -106,21 +108,23 @@ export default class HydraBackend {
     toolResponse: ToolResponseBody,
     threadId: string,
     stream: true,
-  ): Promise<AsyncIterableIterator<ComponentDecision>>;
+  ): Promise<AsyncIterableIterator<LegacyComponentDecision>>;
   public async hydrateComponentWithData(
     messageHistory: ChatMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
     threadId: string,
     stream?: false | undefined,
-  ): Promise<ComponentDecision>;
+  ): Promise<LegacyComponentDecision>;
   public async hydrateComponentWithData(
     messageHistory: ChatMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
     threadId: string,
     stream?: boolean,
-  ): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
+  ): Promise<
+    LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
+  > {
     return await this.aiService.hydrateComponent(
       messageHistory,
       component,

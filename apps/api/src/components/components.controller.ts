@@ -10,9 +10,9 @@ import {
 import { ApiSecurity } from '@nestjs/swagger';
 import {
   ActionType,
-  ComponentDecision,
   ContentPartType,
   GenerationStage,
+  LegacyComponentDecision,
   MessageRole,
 } from '@tambo-ai-cloud/core';
 import { HydraBackend, generateChainId } from '@tambo-ai-cloud/hydra-ai-server';
@@ -104,7 +104,7 @@ export class ComponentsController {
 
   private async addDecisionToThread(
     threadId: string,
-    component: ComponentDecision,
+    component: LegacyComponentDecision,
   ) {
     return await this.threadsService.addMessage(threadId, {
       role: MessageRole.Hydra,

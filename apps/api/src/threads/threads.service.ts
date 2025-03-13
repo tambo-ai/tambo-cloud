@@ -2,10 +2,10 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   ActionType,
   ChatCompletionContentPart,
-  ComponentDecision,
   ComponentDecisionV2,
   ContentPartType,
   GenerationStage,
+  LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
 } from '@tambo-ai-cloud/core';
@@ -418,8 +418,8 @@ export class ThreadsService {
     const latestMessage = messages[messages.length - 1];
 
     let responseMessage:
-      | ComponentDecision
-      | AsyncIterableIterator<ComponentDecision>;
+      | LegacyComponentDecision
+      | AsyncIterableIterator<LegacyComponentDecision>;
     if (latestMessage.role === MessageRole.Tool) {
       await this.updateGenerationStage(
         thread.id,
@@ -449,7 +449,7 @@ export class ThreadsService {
         );
         return this.handleAdvanceThreadStream(
           thread.id,
-          responseMessage as AsyncIterableIterator<ComponentDecision>,
+          responseMessage as AsyncIterableIterator<LegacyComponentDecision>,
         );
       } else {
         responseMessage = await hydraBackend.hydrateComponentWithData(
@@ -474,7 +474,7 @@ export class ThreadsService {
         );
         return this.handleAdvanceThreadStream(
           thread.id,
-          responseMessage as AsyncIterableIterator<ComponentDecision>,
+          responseMessage as AsyncIterableIterator<LegacyComponentDecision>,
         );
       } else {
         responseMessage = await hydraBackend.generateComponent(
@@ -487,7 +487,7 @@ export class ThreadsService {
 
     const responseMessageDto = await this.addResponseToThread(
       thread.id,
-      responseMessage as ComponentDecision,
+      responseMessage as LegacyComponentDecision,
     );
     const resultingGenerationStage = responseMessageDto.toolCallRequest
       ? GenerationStage.FETCHING_CONTEXT
@@ -510,7 +510,7 @@ export class ThreadsService {
 
   private async *handleAdvanceThreadStream(
     threadId: string,
-    stream: AsyncIterableIterator<ComponentDecision>,
+    stream: AsyncIterableIterator<LegacyComponentDecision>,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     let finalResponse:
       | {
@@ -648,7 +648,7 @@ export class ThreadsService {
 
   private async addResponseToThread(
     threadId: string,
-    component: ComponentDecision,
+    component: LegacyComponentDecision,
   ) {
     return await this.addMessage(threadId, {
       role: MessageRole.Hydra,

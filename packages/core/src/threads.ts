@@ -1,7 +1,7 @@
 import type { OpenAI } from "openai";
 import type {
-  ComponentDecision,
   ComponentDecisionV2,
+  LegacyComponentDecision,
   ToolCallRequest,
 } from "./ComponentDecision";
 import { CombineUnion } from "./typeutils";
@@ -73,7 +73,7 @@ export interface ThreadMessage {
   /** Array of content parts making up the message */
   content: ChatCompletionContentPart[];
   /** Component decision for this message */
-  component?: ComponentDecision;
+  component?: LegacyComponentDecision;
   /** Type of action performed */
   actionType?: ActionType;
   /** Additional metadata for the message */

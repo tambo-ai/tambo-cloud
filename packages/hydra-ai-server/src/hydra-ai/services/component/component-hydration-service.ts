@@ -1,6 +1,6 @@
 import { objectTemplate } from "@libretto/openai";
 import { ChatCompletionMessageParam } from "@libretto/token.js";
-import { ComponentDecision } from "@tambo-ai-cloud/core";
+import { LegacyComponentDecision } from "@tambo-ai-cloud/core";
 import { parse } from "partial-json";
 import { z } from "zod";
 import { ChatMessage } from "../../model/chat-message";
@@ -30,7 +30,9 @@ export async function hydrateComponent(
   threadId: string,
   stream?: boolean,
   version: "v1" | "v2" = "v1",
-): Promise<ComponentDecision | AsyncIterableIterator<ComponentDecision>> {
+): Promise<
+  LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
+> {
   //only define tools if we don't have a tool response
   const tools = toolResponse
     ? undefined
@@ -98,7 +100,7 @@ export async function hydrateComponent(
 
   const generateComponentResponse = await llmClient.complete(completeOptions);
 
-  const componentDecision: ComponentDecision = {
+  const componentDecision: LegacyComponentDecision = {
     message: "Fetching additional data",
     componentName: chosenComponent.name,
     props: null,
@@ -129,8 +131,8 @@ async function* handleComponentHydrationStream(
   componentName: string,
   threadId: string,
   version: "v1" | "v2" = "v1",
-): AsyncIterableIterator<ComponentDecision> {
-  const initialDecision: ComponentDecision = {
+): AsyncIterableIterator<LegacyComponentDecision> {
+  const initialDecision: LegacyComponentDecision = {
     componentName,
     props: null,
     message: "",

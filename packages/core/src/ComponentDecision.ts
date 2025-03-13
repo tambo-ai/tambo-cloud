@@ -1,4 +1,4 @@
-export interface ComponentDecision {
+export interface LegacyComponentDecision {
   componentName: string | null;
   props: any | null;
   message: string;
