@@ -1,6 +1,9 @@
 import { objectTemplate } from "@libretto/openai";
-import { ChatCompletionMessageParam } from "@libretto/token.js";
-import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
+import {
+  ChatCompletionMessageParam,
+  LegacyComponentDecision,
+  ThreadMessage,
+} from "@tambo-ai-cloud/core";
 import { parse } from "partial-json";
 import { z } from "zod";
 import {

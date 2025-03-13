@@ -57,6 +57,8 @@ export type ChatCompletionContentPartInputAudio =
 export type ChatCompletionContentPart =
   OpenAI.Chat.Completions.ChatCompletionContentPart;
 
+export type ChatCompletionMessageParam =
+  OpenAI.Chat.Completions.ChatCompletionMessageParam;
 /**
  * A "static" type that combines all the content part types without any
  * discriminators, useful for expressing a serialized content part in a

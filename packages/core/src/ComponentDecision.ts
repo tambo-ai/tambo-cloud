@@ -14,6 +14,7 @@ export interface ComponentDecisionV2 {
 
 export interface ToolCallRequest {
   toolName: string;
+  tool_call_id: string;
   parameters: {
     parameterName: string;
     parameterValue: any;
