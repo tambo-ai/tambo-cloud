@@ -3,6 +3,7 @@ import {
   ActionType,
   ChatCompletionContentPart,
   CombineUnion,
+  ComponentDecisionV2,
   ContentPartType,
   MessageRole,
   ToolCallRequest,
@@ -59,7 +60,7 @@ interface InternalThreadMessage {
   role: MessageRole;
   content: ChatCompletionContentPartUnion[];
   metadata?: Record<string, unknown>;
-  component?: ComponentDecisionV2Dto;
+  component?: ComponentDecisionV2;
   actionType?: ActionType;
   toolCallRequest?: Partial<ToolCallRequest>;
   tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
