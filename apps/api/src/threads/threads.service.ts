@@ -147,7 +147,7 @@ export class ThreadsService {
         threadId: message.threadId,
         role: message.role,
         createdAt: message.createdAt,
-        component: message.componentDecision ?? undefined,
+        component: message.componentDecisionDBXXX ?? undefined,
         content: convertContentPartToDto(message.content),
         metadata: message.metadata ?? undefined,
         componentState: message.componentState ?? undefined,
@@ -190,7 +190,7 @@ export class ThreadsService {
       threadId,
       role: messageDto.role,
       content: convertContentDtoToContentPart(messageDto.content),
-      componentDecision: messageDto.component ?? undefined,
+      componentDecisionDBXXX: messageDto.component ?? undefined,
       metadata: messageDto.metadata,
       actionType: messageDto.actionType ?? undefined,
       toolCallRequest: messageDto.toolCallRequest ?? undefined,
@@ -201,7 +201,7 @@ export class ThreadsService {
       role: message.role,
       content: convertContentPartToDto(message.content),
       metadata: message.metadata ?? undefined,
-      component: message.componentDecision ?? undefined,
+      component: message.componentDecisionDBXXX ?? undefined,
       actionType: message.actionType ?? undefined,
       createdAt: message.createdAt,
       toolCallRequest: message.toolCallRequest ?? undefined,
@@ -229,7 +229,9 @@ export class ThreadsService {
       toolCallRequest: message.toolCallRequest ?? undefined,
       actionType: message.actionType ?? undefined,
       componentState: message.componentState ?? undefined,
-      component: message.componentDecision as ComponentDecisionV2 | undefined,
+      component: message.componentDecisionDBXXX as
+        | ComponentDecisionV2
+        | undefined,
     }));
   }
 
@@ -239,7 +241,7 @@ export class ThreadsService {
   ): Promise<ThreadMessageDto> {
     const message = await operations.updateMessage(this.tx, messageId, {
       content: convertContentDtoToContentPart(messageDto.content),
-      componentDecision: messageDto.component ?? undefined,
+      componentDecisionDBXXX: messageDto.component ?? undefined,
       metadata: messageDto.metadata,
       actionType: messageDto.actionType ?? undefined,
       toolCallRequest: messageDto.toolCallRequest ?? undefined,

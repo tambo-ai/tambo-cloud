@@ -58,7 +58,7 @@ export const threadRouter = createTRPCRouter({
         ...thread,
         messages: thread.messages.map((message) => ({
           ...message,
-          componentDecision: message.componentDecision ?? undefined,
+          componentDecision: message.componentDecisionDBXXX ?? undefined,
           toolCallRequest: message.toolCallRequest ?? undefined,
           suggestedActions: message.suggestions ?? undefined,
         })),
