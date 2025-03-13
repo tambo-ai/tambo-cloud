@@ -390,16 +390,14 @@ export class ThreadsService {
    */
   async advanceThread(
     projectId: string,
+    advanceRequestDto: AdvanceThreadDto,
     threadId?: string,
-    advanceRequestDto?: AdvanceThreadDto,
     stream?: boolean,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
     const thread = await this.ensureThread(projectId, threadId, undefined);
-    if (advanceRequestDto?.messageToAppend) {
-      await this.addMessage(thread.id, advanceRequestDto.messageToAppend);
-    }
+    await this.addMessage(thread.id, advanceRequestDto.messageToAppend);
 
     // Use the shared method to create the HydraBackend instance
     const hydraBackend = await this.createHydraBackendForThread(thread.id, {
@@ -429,7 +427,7 @@ export class ThreadsService {
         `Hydrating ${latestMessage.component?.componentName}...`,
       );
       // Since we don't a store tool responses in the db, assumes that the tool response is the messageToAppend
-      const toolResponse = advanceRequestDto?.messageToAppend?.toolResponse;
+      const toolResponse = advanceRequestDto.messageToAppend.toolResponse;
       if (!toolResponse) {
         throw new Error('No tool response found');
       }
@@ -524,6 +522,12 @@ export class ThreadsService {
     let lastUpdateTime = 0;
     const updateIntervalMs = 500;
 
+    await this.updateGenerationStage(
+      threadId,
+      GenerationStage.STREAMING_RESPONSE,
+      `Streaming response...`,
+    );
+
     const inProgressMessage = await this.addMessage(threadId, {
       role: MessageRole.Hydra,
       content: [
@@ -578,14 +582,23 @@ export class ThreadsService {
         inProgressMessage.id,
         finalResponse.responseMessageDto,
       );
+      const resultingGenerationStage = finalResponse.responseMessageDto
+        .toolCallRequest
+        ? GenerationStage.FETCHING_CONTEXT
+        : GenerationStage.COMPLETE;
+      const resultingStatusMessage = finalResponse.responseMessageDto
+        .toolCallRequest
+        ? `Fetching context...`
+        : `Complete`;
+      await this.updateGenerationStage(
+        threadId,
+        resultingGenerationStage,
+        resultingStatusMessage,
+      );
       yield {
         responseMessageDto: finalResponse.responseMessageDto,
-        generationStage: finalResponse.responseMessageDto.toolCallRequest
-          ? GenerationStage.FETCHING_CONTEXT
-          : GenerationStage.COMPLETE,
-        statusMessage: finalResponse.responseMessageDto.toolCallRequest
-          ? `Fetching context...`
-          : `Complete`,
+        generationStage: resultingGenerationStage,
+        statusMessage: resultingStatusMessage,
       };
     }
   }
@@ -712,6 +725,11 @@ function convertThreadMessagesToLegacyThreadMessages(
           }
         })
         .join(''),
+      component: message.componentDecision?.componentName
+        ? message.componentDecision
+        : undefined,
+      componentState: message.componentState,
+      actionType: message.actionType,
     }),
   );
 }
