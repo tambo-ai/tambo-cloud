@@ -16,7 +16,8 @@ export class ComponentDecision {
   threadId!: string;
 }
 
-export class ComponentDecisionV2 {
+@ApiSchema({ name: 'ComponentDecisionV2' })
+export class ComponentDecisionV2Dto {
   componentName!: string | null;
   @ApiProperty({
     type: 'object',

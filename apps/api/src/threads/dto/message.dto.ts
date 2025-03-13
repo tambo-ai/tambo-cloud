@@ -10,7 +10,7 @@ import {
 import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from 'class-validator';
 import { type OpenAI } from 'openai';
 import {
-  ComponentDecisionV2,
+  ComponentDecisionV2Dto,
   ToolCallRequestDto,
 } from '../../components/dto/component-decision.dto';
 
@@ -59,7 +59,7 @@ interface InternalThreadMessage {
   role: MessageRole;
   content: ChatCompletionContentPartUnion[];
   metadata?: Record<string, unknown>;
-  component?: ComponentDecisionV2;
+  component?: ComponentDecisionV2Dto;
   actionType?: ActionType;
   toolCallRequest?: Partial<ToolCallRequest>;
   tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
@@ -77,7 +77,7 @@ export class ThreadMessageDto implements InternalThreadMessage {
     additionalProperties: true,
   })
   metadata?: Record<string, unknown>;
-  component?: ComponentDecisionV2;
+  component?: ComponentDecisionV2Dto;
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
@@ -107,7 +107,7 @@ export class MessageRequest implements InternalThreadMessage {
   metadata?: Record<string, unknown>;
 
   @IsOptional()
-  component?: ComponentDecisionV2;
+  component?: ComponentDecisionV2Dto;
 
   @IsOptional()
   toolCallRequest?: ToolCallRequestDto;
