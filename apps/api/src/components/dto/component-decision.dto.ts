@@ -7,7 +7,8 @@ import {
 import { ThreadMessageDto } from '../../threads/dto/message.dto';
 
 /** Legacy - for v1 of generate/hydrate */
-export class ComponentDecision {
+@ApiSchema({ name: 'ComponentDecision' })
+export class ComponentDecisionDto {
   componentName!: string | null;
   @ApiProperty({
     type: 'object',
