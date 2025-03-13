@@ -1,44 +1,35 @@
 "use client";
 
-import { Section } from "@/components/section";
 import { Card } from "@/components/ui/card";
-import { env } from "@/lib/env";
-import { TamboProvider, useTambo } from "@tambo-ai/react";
+import { TamboThreadMessage, useTambo } from "@tambo-ai/react";
 import { useEffect, useRef } from "react";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import {
+  FounderEmailComponent,
+  FounderEmailProps,
+} from "./FounderEmailComponent";
 import { TamboSuggestions } from "./TamboSuggestions";
 import { TamboThreadInput } from "./TamboThreadInput";
-
-// Define a simple type for message content handling
-type MessageContent =
-  | string
-  | { text: string }
-  | Array<string | { text: string }>;
-
-interface Message {
-  id: string;
-  role: string;
-  content: MessageContent;
-}
-
-// Simple demo component for registration
-const DemoComponent = () => <div>Demo Component</div>;
 
 // Inner component that uses Tambo hooks
 const TamboDemoInner = () => {
   const { registerComponent, thread } = useTambo();
   // Use a simple string for the context key
-  const contextKey = "tambo-demo";
-  const messages = (thread?.messages ?? []) as Message[];
+  const contextKey = "founder-email-demo";
+  const messages = thread?.messages ?? [];
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Register the component with Tambo
+  // Register the FounderEmailComponent with Tambo
   useEffect(() => {
+    console.log("Registering FounderEmailComponent");
     try {
       registerComponent({
-        component: DemoComponent,
-        name: "Tambo Demo",
-        description: "Interactive demo of Tambo AI capabilities",
+        name: "FounderEmail",
+        description: "A component for sending emails to the founders",
+        component: FounderEmailComponent,
+        propsDefinition: zodToJsonSchema(FounderEmailProps),
       });
+      console.log("FounderEmailComponent registered successfully");
     } catch (error) {
       console.error("Error registering component:", error);
     }
@@ -60,7 +51,7 @@ const TamboDemoInner = () => {
   }, [messages]);
 
   // Helper function to safely render message content
-  const renderMessageContent = (message: Message) => {
+  const renderMessageContent = (message: TamboThreadMessage) => {
     if (typeof message.content === "string") {
       return message.content;
     } else if (Array.isArray(message.content)) {
@@ -93,7 +84,8 @@ const TamboDemoInner = () => {
           >
             {messages.length === 0 ? (
               <p className="text-center text-gray-500 dark:text-gray-400">
-                No messages yet. Start a conversation!
+                No messages yet. Start a conversation to interact with the
+                FounderEmail component!
               </p>
             ) : (
               <>
@@ -112,6 +104,11 @@ const TamboDemoInner = () => {
                     <p className="whitespace-pre-wrap text-black dark:text-white">
                       {renderMessageContent(message)}
                     </p>
+                    {message.renderedComponent && (
+                      <>
+                        <div className="mt-2">{message.renderedComponent}</div>
+                      </>
+                    )}
                   </div>
                 ))}
               </>
@@ -131,16 +128,5 @@ const TamboDemoInner = () => {
 
 // Wrapper component that provides the TamboProvider
 export const TamboDemo = () => {
-  return (
-    <Section id="tambo-demo" className="py-16 sm:py-24">
-      <div className="w-full max-w-3xl mx-auto">
-        <TamboProvider
-          tamboUrl={env.NEXT_PUBLIC_HYDRA_API_URL!}
-          apiKey={env.NEXT_PUBLIC_HYDRA_API_KEY!}
-        >
-          <TamboDemoInner />
-        </TamboProvider>
-      </div>
-    </Section>
-  );
+  return <TamboDemoInner />;
 };

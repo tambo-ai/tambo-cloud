@@ -8,9 +8,14 @@ import { TamboProvider } from "@tambo-ai/react";
 export function InteractiveDemo() {
   return (
     <Section id="interactive-demo" className="py-16 sm:py-24">
-      <TamboProvider apiKey={env.NEXT_PUBLIC_HYDRA_API_KEY!}>
-        <TamboDemo />
-      </TamboProvider>
+      <div className="w-full max-w-3xl mx-auto">
+        <TamboProvider
+          apiKey={env.NEXT_PUBLIC_HYDRA_API_KEY!}
+          tamboUrl={env.NEXT_PUBLIC_HYDRA_API_URL!}
+        >
+          <TamboDemo />
+        </TamboProvider>
+      </div>
     </Section>
   );
 }
