@@ -1,6 +1,5 @@
 import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
 import AIService from "./ai-service";
-import { ChatMessage } from "./model/chat-message";
 import {
   AvailableComponent,
   AvailableComponents,
@@ -74,19 +73,19 @@ export default class HydraBackend {
   }
 
   public async generateComponent(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
     stream: true,
   ): Promise<AsyncIterableIterator<LegacyComponentDecision>>;
   public async generateComponent(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
     stream?: false | undefined,
   ): Promise<LegacyComponentDecision>;
   public async generateComponent(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
     stream?: boolean,
@@ -103,21 +102,21 @@ export default class HydraBackend {
   }
 
   public async hydrateComponentWithData(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
     threadId: string,
     stream: true,
   ): Promise<AsyncIterableIterator<LegacyComponentDecision>>;
   public async hydrateComponentWithData(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
     threadId: string,
     stream?: false | undefined,
   ): Promise<LegacyComponentDecision>;
   public async hydrateComponentWithData(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
     threadId: string,

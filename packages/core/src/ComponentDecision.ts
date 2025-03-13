@@ -4,7 +4,6 @@ export interface LegacyComponentDecision {
   message: string;
   suggestedActions?: SuggestedAction[];
   toolCallRequest?: ToolCallRequest;
-  threadId: string;
 }
 
 export interface ComponentDecisionV2 {

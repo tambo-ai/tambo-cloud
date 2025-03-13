@@ -1,27 +1,39 @@
 import { ChatCompletionMessageParam } from "@libretto/token.js";
-import { ChatMessage } from "../../model/chat-message";
+import {
+  ChatCompletionContentPart,
+  ChatCompletionContentPartText,
+  MessageRole,
+  ThreadMessage,
+} from "@tambo-ai-cloud/core";
 
 export function chatHistoryToParams(
-  messageHistory: ChatMessage[],
+  messageHistory: ThreadMessage[],
 ): ChatCompletionMessageParam[] {
   console.log("messageHistory", messageHistory);
-  return messageHistory.map((message) => {
-    let content = message.message;
+  return messageHistory.map((message): ChatCompletionMessageParam => {
+    let nextContentContext = "";
 
     if (message.component && !message.actionType) {
-      content += `\n<Component>${JSON.stringify(message.component)}</Component>`;
+      nextContentContext += `\n<Component>${JSON.stringify(message.component)}</Component>`;
     }
     if (message.componentState && !message.actionType) {
-      content += `\n<ComponentState>${JSON.stringify(message.componentState)}</ComponentState>`;
+      nextContentContext += `\n<ComponentState>${JSON.stringify(message.componentState)}</ComponentState>`;
     }
 
     if (message.additionalContext) {
-      content += `<System> The following is additional context provided by the system that you can use when responding to the user: ${message.additionalContext} </System>`;
+      nextContentContext += `<System> The following is additional context provided by the system that you can use when responding to the user: ${message.additionalContext} </System>`;
     }
 
+    const additionalContextMessage: ChatCompletionContentPartText = {
+      type: "text",
+      text: nextContentContext,
+    };
     return {
-      role: ["user", "tool"].includes(message.sender) ? "user" : "assistant",
-      content,
+      role: message.role === MessageRole.Hydra ? "user" : message.role,
+      content: [
+        ...message.content,
+        additionalContextMessage,
+      ] as ChatCompletionContentPart[],
     };
   });
 }

@@ -1,7 +1,6 @@
-import { LegacyComponentDecision } from "@tambo-ai-cloud/core";
+import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
 import {
   AvailableComponent,
-  ChatMessage,
   InputContext,
   InputContextAsArray,
   ToolResponseBody,
@@ -54,7 +53,7 @@ export default class AIService {
   }
 
   async hydrateComponent(
-    messageHistory: ChatMessage[],
+    messageHistory: ThreadMessage[],
     component: AvailableComponent,
     toolResponse: ToolResponseBody,
     threadId: string,

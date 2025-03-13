@@ -14,8 +14,13 @@ import {
   GenerationStage,
   LegacyComponentDecision,
   MessageRole,
+  ThreadMessage,
 } from '@tambo-ai-cloud/core';
-import { HydraBackend, generateChainId } from '@tambo-ai-cloud/hydra-ai-server';
+import {
+  ChatMessage,
+  HydraBackend,
+  generateChainId,
+} from '@tambo-ai-cloud/hydra-ai-server';
 import { decryptProviderKey } from '../common/key.utils';
 import { CorrelationLoggerService } from '../common/services/logger.service';
 import { ProjectsService } from '../projects/projects.service';
@@ -93,7 +98,7 @@ export class ComponentsController {
     });
 
     const component = await hydraBackend.generateComponent(
-      messageHistory,
+      legacyChatMessagesToThreadMessages(messageHistory, resolvedThreadId),
       availableComponents ?? {},
       resolvedThreadId,
     );
@@ -166,7 +171,7 @@ export class ComponentsController {
       });
 
       const hydratedComponent = await hydraBackend.hydrateComponentWithData(
-        messageHistory,
+        legacyChatMessagesToThreadMessages(messageHistory, resolvedThreadId),
         component,
         toolResponse,
         resolvedThreadId,
@@ -219,4 +224,29 @@ export class ComponentsController {
     });
     return newThread.id;
   }
+}
+
+function legacyChatMessagesToThreadMessages(
+  messageHistory: ChatMessage[],
+  threadId: string,
+): ThreadMessage[] {
+  return messageHistory.map(
+    (message, index): ThreadMessage => ({
+      role:
+        message.sender === 'hydra'
+          ? MessageRole.User
+          : (message.sender as MessageRole),
+      id: `message-${index}`,
+      threadId,
+      ...message,
+      content: [
+        {
+          type: 'text',
+          text: message.message,
+        },
+      ],
+      componentState: {},
+      createdAt: new Date(),
+    }),
+  );
 }

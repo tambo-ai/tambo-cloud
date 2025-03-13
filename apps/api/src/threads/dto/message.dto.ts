@@ -52,7 +52,7 @@ export class ChatCompletionContentPartDto
 }
 
 @ApiSchema({ name: 'ThreadMessage' })
-export class ThreadMessageDto implements InternalThreadMessage {
+export class ThreadMessageDto {
   id!: string;
   threadId!: string;
   @IsEnum(MessageRole)
@@ -68,7 +68,7 @@ export class ThreadMessageDto implements InternalThreadMessage {
     type: 'object',
     additionalProperties: true,
   })
-  componentState?: Record<string, unknown>;
+  componentState!: Record<string, unknown>;
   toolCallRequest?: ToolCallRequestDto;
   @IsEnum(ActionType)
   actionType?: ActionType;

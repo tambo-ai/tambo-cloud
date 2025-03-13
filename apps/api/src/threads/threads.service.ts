@@ -12,11 +12,7 @@ import {
 import type { HydraDatabase } from '@tambo-ai-cloud/db';
 import { operations, schema } from '@tambo-ai-cloud/db';
 import type { DBSuggestion } from '@tambo-ai-cloud/db/src/schema';
-import {
-  ChatMessage,
-  generateChainId,
-  HydraBackend,
-} from '@tambo-ai-cloud/hydra-ai-server';
+import { generateChainId, HydraBackend } from '@tambo-ai-cloud/hydra-ai-server';
 import { eq } from 'drizzle-orm';
 import { decryptProviderKey } from 'src/common/key.utils';
 import { TRANSACTION } from 'src/common/middleware/db-transaction-middleware';
@@ -150,7 +146,7 @@ export class ThreadsService {
         component: message.componentDecisionDBXXX ?? undefined,
         content: convertContentPartToDto(message.content),
         metadata: message.metadata ?? undefined,
-        componentState: message.componentState ?? undefined,
+        componentState: message.componentState ?? {},
         toolCallRequest: message.toolCallRequest ?? undefined,
         actionType: message.actionType ?? undefined,
       })),
@@ -205,7 +201,7 @@ export class ThreadsService {
       actionType: message.actionType ?? undefined,
       createdAt: message.createdAt,
       toolCallRequest: message.toolCallRequest ?? undefined,
-
+      componentState: message.componentState ?? {},
       // TODO: promote suggestionActions to the message level in the db, this is just
       // relying on the internal ComponentDecision type
       // suggestions: (message.componentDecision as ComponentDecision)
@@ -228,7 +224,7 @@ export class ThreadsService {
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
       actionType: message.actionType ?? undefined,
-      componentState: message.componentState ?? undefined,
+      componentState: message.componentState ?? {},
       component: message.componentDecisionDBXXX as
         | ComponentDecisionV2
         | undefined,
@@ -252,7 +248,7 @@ export class ThreadsService {
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
       actionType: message.actionType ?? undefined,
-      componentState: message.componentState ?? undefined,
+      componentState: message.componentState ?? {},
     };
   }
 
@@ -370,16 +366,22 @@ export class ThreadsService {
     };
   }
   async updateComponentState(
-    threadId: string,
     messageId: string,
     newState: Record<string, unknown>,
-  ) {
+  ): Promise<ThreadMessageDto> {
     const message = await operations.updateMessageComponentState(
       this.tx,
       messageId,
       newState,
     );
-    return message;
+    return {
+      ...message,
+      content: convertContentPartToDto(message.content),
+      metadata: message.metadata ?? undefined,
+      componentState: message.componentState ?? {},
+      toolCallRequest: message.toolCallRequest ?? undefined,
+      actionType: message.actionType ?? undefined,
+    };
   }
 
   /**
@@ -443,7 +445,7 @@ export class ThreadsService {
 
       if (stream) {
         responseMessage = await hydraBackend.hydrateComponentWithData(
-          convertThreadMessagesToLegacyThreadMessages(messages),
+          messages,
           componentDef,
           toolResponse,
           thread.id,
@@ -455,7 +457,7 @@ export class ThreadsService {
         );
       } else {
         responseMessage = await hydraBackend.hydrateComponentWithData(
-          convertThreadMessagesToLegacyThreadMessages(messages),
+          messages,
           componentDef,
           toolResponse,
           thread.id,
@@ -469,7 +471,7 @@ export class ThreadsService {
       );
       if (stream) {
         responseMessage = await hydraBackend.generateComponent(
-          convertThreadMessagesToLegacyThreadMessages(messages),
+          messages,
           availableComponentMap,
           thread.id,
           true,
@@ -480,7 +482,7 @@ export class ThreadsService {
         );
       } else {
         responseMessage = await hydraBackend.generateComponent(
-          convertThreadMessagesToLegacyThreadMessages(messages),
+          messages,
           availableComponentMap,
           thread.id,
         );
@@ -707,31 +709,4 @@ function convertContentPartToDto(
     return [{ type: ContentPartType.Text, text: part }];
   }
   return part as ChatCompletionContentPartDto[];
-}
-
-function convertThreadMessagesToLegacyThreadMessages(
-  currentThreadMessages: ThreadMessage[] | ThreadMessageDto[],
-) {
-  return currentThreadMessages.map(
-    (message): ChatMessage => ({
-      sender: [MessageRole.User, MessageRole.Tool].includes(message.role)
-        ? (message.role as 'user' | 'tool')
-        : 'hydra',
-      message: message.content
-        .map((part) => {
-          switch (part.type) {
-            case ContentPartType.Text:
-              return part.text ?? '';
-            default:
-              return '';
-          }
-        })
-        .join(''),
-      component: message.componentDecision?.componentName
-        ? message.componentDecision
-        : undefined,
-      componentState: message.componentState,
-      actionType: message.actionType,
-    }),
-  );
 }

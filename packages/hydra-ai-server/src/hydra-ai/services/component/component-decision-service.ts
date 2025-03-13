@@ -130,7 +130,6 @@ async function handleNoComponentCase(
     props: null,
     message: noComponentResponse.message,
     ...(version === "v1" ? { suggestedActions: [] } : {}),
-    threadId,
   };
 }
 
@@ -144,7 +143,6 @@ async function* handleNoComponentStream(
     props: null,
     message: "",
     ...(version === "v1" ? { suggestedActions: [] } : {}),
-    threadId,
   };
 
   for await (const chunk of responseStream) {

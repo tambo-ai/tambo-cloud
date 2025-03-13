@@ -1,9 +1,8 @@
 import { objectTemplate } from "@libretto/openai";
 import { ChatCompletionMessageParam } from "@libretto/token.js";
-import { LegacyComponentDecision } from "@tambo-ai-cloud/core";
+import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
 import { parse } from "partial-json";
 import { z } from "zod";
-import { ChatMessage } from "../../model/chat-message";
 import {
   AvailableComponent,
   AvailableComponents,
@@ -23,7 +22,7 @@ import { convertMetadataToTools } from "../tool/tool-service";
 // Public function
 export async function hydrateComponent(
   llmClient: LLMClient,
-  messageHistory: ChatMessage[],
+  messageHistory: ThreadMessage[],
   chosenComponent: AvailableComponent,
   toolResponse: ToolResponseBody | undefined,
   availableComponents: AvailableComponents | undefined,
@@ -106,7 +105,6 @@ export async function hydrateComponent(
     props: null,
     ...(version === "v1" ? { suggestedActions: [] } : {}),
     toolCallRequest: generateComponentResponse.toolCallRequest,
-    threadId,
   };
 
   if (!componentDecision.toolCallRequest) {
@@ -138,7 +136,6 @@ async function* handleComponentHydrationStream(
     message: "",
     ...(version === "v1" ? { suggestedActions: [] } : {}),
     toolCallRequest: undefined,
-    threadId,
   };
 
   let accumulatedDecision = initialDecision;
