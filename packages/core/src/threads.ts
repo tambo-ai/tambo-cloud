@@ -73,7 +73,7 @@ export interface ThreadMessage {
   /** Array of content parts making up the message */
   content: ChatCompletionContentPart[];
   /** Component decision for this message */
-  componentDecision?: ComponentDecision;
+  component?: ComponentDecision;
   /** Type of action performed */
   actionType?: ActionType;
   /** Additional metadata for the message */
