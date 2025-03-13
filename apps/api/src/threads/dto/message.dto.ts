@@ -1,5 +1,10 @@
 import { ApiProperty, ApiSchema } from '@nestjs/swagger';
-import { ActionType, ContentPartType, MessageRole } from '@tambo-ai-cloud/core';
+import {
+  ActionType,
+  ContentPartType,
+  MessageRole,
+  ToolCallRequest,
+} from '@tambo-ai-cloud/core';
 import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from 'class-validator';
 import { type OpenAI } from 'openai';
 import {
@@ -50,7 +55,7 @@ interface InternalThreadMessage {
   metadata?: Record<string, unknown>;
   component?: ComponentDecisionV2;
   actionType?: ActionType;
-  toolCallRequest?: ToolCallRequestDto;
+  toolCallRequest?: Partial<ToolCallRequest>;
   tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
 }
 
