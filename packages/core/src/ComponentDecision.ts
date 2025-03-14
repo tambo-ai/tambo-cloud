@@ -14,7 +14,8 @@ export interface ComponentDecisionV2 {
 
 export interface ToolCallRequest {
   toolName: string;
-  tool_call_id: string;
+  /** @deprecated - The enclosing message's tool_call_id is used instead */
+  tool_call_id?: string;
   parameters: {
     parameterName: string;
     parameterValue: any;

@@ -149,7 +149,7 @@ export class ThreadsService {
         componentState: message.componentState ?? {},
         toolCallRequest: message.toolCallRequest ?? undefined,
         actionType: message.actionType ?? undefined,
-        tool_call_id: message.toolCallRequest?.tool_call_id,
+        tool_call_id: message.toolCallId ?? undefined,
       })),
     };
   }
@@ -226,7 +226,7 @@ export class ThreadsService {
       content: convertContentPartToDto(message.content),
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
-      tool_call_id: message.toolCallRequest?.tool_call_id,
+      tool_call_id: message.toolCallId ?? undefined,
       actionType: message.actionType ?? undefined,
       componentState: message.componentState ?? {},
       component: message.componentDecision as ComponentDecisionV2 | undefined,
@@ -242,14 +242,15 @@ export class ThreadsService {
       componentDecision: messageDto.component ?? undefined,
       metadata: messageDto.metadata,
       actionType: messageDto.actionType ?? undefined,
-      toolCallRequest: messageDto.toolCallRequest ?? undefined,
+      toolCallRequest: messageDto.toolCallRequest,
+      toolCallId: messageDto.tool_call_id ?? undefined,
     });
     return {
       ...message,
       content: convertContentPartToDto(message.content),
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
-      tool_call_id: message.toolCallRequest?.tool_call_id,
+      tool_call_id: message.toolCallId ?? undefined,
       actionType: message.actionType ?? undefined,
       componentState: message.componentState ?? {},
     };
@@ -383,7 +384,7 @@ export class ThreadsService {
       metadata: message.metadata ?? undefined,
       componentState: message.componentState ?? {},
       toolCallRequest: message.toolCallRequest ?? undefined,
-      tool_call_id: message.toolCallRequest?.tool_call_id,
+      tool_call_id: message.toolCallId ?? undefined,
       actionType: message.actionType ?? undefined,
     };
   }
@@ -477,8 +478,10 @@ export class ThreadsService {
         return this.handleAdvanceThreadStream(
           thread.id,
           streamedResponseMessage,
+          latestMessage.tool_call_id,
         );
       } else {
+        console.log('hydrating component with data', latestMessage);
         responseMessage = await hydraBackend.hydrateComponentWithData(
           threadMessageDtoToThreadMessage(messages),
           componentDef,
@@ -503,6 +506,7 @@ export class ThreadsService {
         return this.handleAdvanceThreadStream(
           thread.id,
           streamedResponseMessage,
+          latestMessage.tool_call_id,
         );
       } else {
         responseMessage = await hydraBackend.generateComponent(
@@ -516,6 +520,7 @@ export class ThreadsService {
     const responseMessageDto = await this.addResponseToThread(
       thread.id,
       responseMessage as LegacyComponentDecision,
+      latestMessage.tool_call_id,
     );
     const resultingGenerationStage = responseMessageDto.toolCallRequest
       ? GenerationStage.FETCHING_CONTEXT
@@ -539,6 +544,7 @@ export class ThreadsService {
   private async *handleAdvanceThreadStream(
     threadId: string,
     stream: AsyncIterableIterator<LegacyComponentDecision>,
+    toolCallId: string | undefined,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     let finalResponse:
       | {
@@ -564,7 +570,7 @@ export class ThreadsService {
       component: undefined,
       actionType: undefined,
       toolCallRequest: undefined,
-      tool_call_id: undefined,
+      tool_call_id: toolCallId,
       metadata: {},
     });
 
@@ -584,7 +590,7 @@ export class ThreadsService {
           component: chunk,
           actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
           toolCallRequest: chunk.toolCallRequest,
-          tool_call_id: chunk.toolCallRequest?.tool_call_id,
+          tool_call_id: toolCallId,
         },
         generationStage: GenerationStage.STREAMING_RESPONSE,
         statusMessage: `Streaming response...`,
@@ -679,6 +685,7 @@ export class ThreadsService {
   private async addResponseToThread(
     threadId: string,
     component: LegacyComponentDecision,
+    toolCallId: string | undefined,
   ) {
     return await this.addMessage(threadId, {
       role: MessageRole.Hydra,
@@ -686,7 +693,7 @@ export class ThreadsService {
       component: component,
       actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
       toolCallRequest: component.toolCallRequest,
-      tool_call_id: component.toolCallRequest?.tool_call_id,
+      tool_call_id: toolCallId,
     });
   }
 }

@@ -119,7 +119,6 @@ export class ComponentsController {
       component: component,
       actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
       toolCallRequest: component.toolCallRequest,
-      tool_call_id: component.toolCallRequest?.tool_call_id,
       // suggestedActions: component.suggestedActions,
     });
   }
