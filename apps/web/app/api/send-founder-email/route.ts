@@ -44,11 +44,11 @@ export async function POST(req: Request) {
       replyTo: usersEmail,
       subject: `[Tambo Demo] ${subject}`,
       html: `
-        <h1>Message from Tambo Demo</h1>
-        <hr />
         <div>
           ${body.replace(/\n/g, "<br />")}
         </div>
+        <hr>
+        <p>This email was sent from ${usersEmail}</p>
       `,
     });
 
