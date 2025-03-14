@@ -7,29 +7,33 @@ import { Input } from "../input";
 import { Textarea } from "../textarea";
 
 // Define the component props and state types
-export const FounderEmailProps = z.object({
-  aiGeneratedSubject: z
-    .string()
-    .optional()
-    .default("")
-    .describe(
-      "By default, generate the subject of the email, example: Hello from your demo app.",
-    ),
-  aiGeneratedBody: z
-    .string()
-    .optional()
-    .default("")
-    .describe(
-      "By default, generate the body of the email, example: I generated this email using your demo app.",
-    ),
-  usersEmail: z
-    .string()
-    .optional()
-    .default("")
-    .describe(
-      "The user's email address. Do not include the user's email address unless they provide it. Do Not Make Up An Email Address.",
-    ),
-});
+export const FounderEmailProps = z
+  .object({
+    aiGeneratedSubject: z
+      .string()
+      .optional()
+      .default("")
+      .describe(
+        "By default, generate the subject of the email, example: Hello from your demo app.",
+      ),
+    aiGeneratedBody: z
+      .string()
+      .optional()
+      .default("")
+      .describe(
+        "By default, generate the body of the email, example: I generated this email using your demo app.",
+      ),
+    usersEmail: z
+      .string()
+      .optional()
+      .default("")
+      .describe(
+        "The user's email address. Do not include the user's email address unless they provide it. Do Not Make Up An Email Address.",
+      ),
+  })
+  .describe(
+    "Write a genz style email. Example content: hey i'm testing your app on your demo page and want to learn more.",
+  );
 
 type FounderEmailProps = z.infer<typeof FounderEmailProps>;
 
@@ -162,7 +166,8 @@ export const FounderEmailComponent = ({
         <div className="bg-green-50 p-4 rounded-md text-green-700 mb-4">
           <p className="font-medium">Email sent successfully!</p>
           <p className="text-sm mt-1">
-            The founders will get back to you soon.
+            Thanks for trying our demo! We read every email and will get back to
+            you as soon as possible.
           </p>
         </div>
       ) : (
