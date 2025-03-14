@@ -48,17 +48,17 @@ interface EmailState {
 }
 
 export const FounderEmailComponent = ({
-  aiGeneratedSubject,
-  aiGeneratedBody,
-  usersEmail,
+  aiGeneratedSubject = "",
+  aiGeneratedBody = "",
+  usersEmail = "",
 }: FounderEmailProps) => {
   // Use Tambo's state management hook with a unique key
   const [emailState, setEmailState] = useTamboComponentState<EmailState>(
     "founder-email-state",
     {
-      subject: aiGeneratedSubject,
-      body: aiGeneratedBody,
-      usersEmail: usersEmail,
+      subject: aiGeneratedSubject || "",
+      body: aiGeneratedBody || "",
+      usersEmail: usersEmail || "",
       isSent: false,
       isLoading: false,
       error: null,
@@ -154,18 +154,6 @@ export const FounderEmailComponent = ({
     return <div>Loading...</div>;
   }
 
-  // Function to reset the form
-  const handleReset = () => {
-    // When resetting, we should use the new AI generated content if available
-    setEmailState({
-      ...emailState,
-      isSent: false,
-      subject: aiGeneratedSubject,
-      body: aiGeneratedBody,
-      error: null,
-    });
-  };
-
   return (
     <div className="founder-email-component p-4 border rounded-lg shadow-sm">
       <h2 className="text-xl font-semibold mb-4">Email the Founders</h2>
@@ -176,29 +164,9 @@ export const FounderEmailComponent = ({
           <p className="text-sm mt-1">
             The founders will get back to you soon.
           </p>
-
-          <Button className="mt-4" onClick={handleReset}>
-            Send Another Email
-          </Button>
         </div>
       ) : (
         <form className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
-              Your Email Address
-            </label>
-            <Input
-              id="email"
-              type="email"
-              value={emailState.usersEmail}
-              onChange={handleEmailChange}
-              placeholder="Enter your email address"
-              disabled={emailState.isLoading}
-              className="w-full"
-              required
-            />
-          </div>
-
           <div>
             <label htmlFor="subject" className="block text-sm font-medium mb-1">
               Subject
@@ -207,7 +175,6 @@ export const FounderEmailComponent = ({
               id="subject"
               value={emailState.subject}
               onChange={handleSubjectChange}
-              placeholder="Enter email subject"
               disabled={emailState.isLoading}
               className="w-full"
             />
@@ -221,16 +188,30 @@ export const FounderEmailComponent = ({
               id="body"
               value={emailState.body}
               onChange={handleBodyChange}
-              placeholder="Enter your message to the founders"
               rows={6}
               disabled={emailState.isLoading}
               className="w-full"
             />
           </div>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-1">
+              Enter Your Email Address
+            </label>
+            <Input
+              id="email"
+              type="email"
+              value={emailState.usersEmail}
+              onChange={handleEmailChange}
+              placeholder="Enter your email address"
+              disabled={emailState.isLoading}
+              className="w-full"
+              required
+            />
+          </div>
 
           {emailState.error && (
             <div className="bg-red-50 p-3 rounded-md text-red-700 text-sm">
-              {emailState.error}
+              <p>Please enter a valid email address.</p>
             </div>
           )}
 

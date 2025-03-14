@@ -10,8 +10,13 @@ interface TamboThreadInputProps {
 }
 
 export const TamboThreadInput: FC<TamboThreadInputProps> = ({ contextKey }) => {
-  const { value, setValue, submit, isPending, error } =
-    useTamboThreadInput(contextKey);
+  const {
+    value = "",
+    setValue,
+    submit,
+    isPending,
+    error,
+  } = useTamboThreadInput(contextKey);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

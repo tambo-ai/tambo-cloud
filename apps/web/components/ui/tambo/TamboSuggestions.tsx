@@ -24,10 +24,6 @@ export const TamboSuggestions = ({
 
   // Get thread to check if there are any messages
   const { thread } = useTambo();
-  const hasMessages = thread?.messages && thread.messages.length > 0;
-  const hasAiMessage =
-    thread?.messages && thread.messages.some((msg) => msg.role === "assistant");
-
   // Track when we should show the loading animation
   const [showLoading, setShowLoading] = useState(false);
 
