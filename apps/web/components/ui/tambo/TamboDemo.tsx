@@ -93,7 +93,7 @@ const TamboDemoInner = () => {
   };
 
   return (
-    <Card className="p-4 shadow-md h-[90vh] sm:h-[80vh] flex flex-col bg-white dark:bg-black">
+    <Card className="p-4 shadow-md h-[500px] md:h-[700px] lg:h-[750px] flex flex-col bg-white dark:bg-black">
       <div className="space-y-4 flex flex-col h-full">
         {/* Messages display - with enhanced isolation from page scroll */}
         <div className="flex-grow relative">

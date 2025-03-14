@@ -3,6 +3,8 @@
 import { CLI } from "@/components/cli";
 import { Section } from "@/components/section";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { Button } from "../ui/button";
 
 const ease = [0.16, 1, 0.3, 1];
 
@@ -126,14 +128,29 @@ function HeroIllustration() {
   );
 }
 
+function HeroCTAButton() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.9, duration: 0.6, ease: "easeOut" }}
+    >
+      <Button asChild className="mt-4 hover:scale-105 transition-transform">
+        <Link href="#interactive-demo">Take Tambo for a Spin</Link>
+      </Button>
+    </motion.div>
+  );
+}
+
 export function Hero() {
   return (
-    <Section id="hero" className="py-4 sm:py-8 md:py-12 lg:py-20">
+    <Section id="hero">
       {/* Main content area with titles and illustration */}
       <div className="flex flex-col lg:flex-row items-center w-full lg:gap-8 xl:gap-16 mb-4 lg:mb-8">
         <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full lg:max-w-[50%]">
           <HeroPill />
           <HeroTitles />
+          <HeroCTAButton />
         </div>
 
         {/* Hero illustration */}
@@ -149,12 +166,14 @@ export function Hero() {
         </div>
       </div>
 
-      {/* CTA section centered below */}
+      {/* CTA section centered below 
+      // Todo: Add back later?
       <div className="w-full flex justify-center mt-2 sm:mt-4 lg:mt-6">
         <div className="w-full max-w-full sm:max-w-3xl">
           <HeroCTA />
         </div>
       </div>
+      */}
     </Section>
   );
 }

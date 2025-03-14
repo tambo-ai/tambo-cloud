@@ -8,7 +8,7 @@ import { TamboProvider } from "@tambo-ai/react";
 export function InteractiveDemo() {
   return (
     <Section id="interactive-demo" className="py-16 sm:py-24">
-      <div className="w-full max-w-3xl mx-auto">
+      <div className="w-full">
         <TamboProvider
           apiKey={env.NEXT_PUBLIC_HYDRA_API_KEY!}
           tamboUrl={env.NEXT_PUBLIC_HYDRA_API_URL!}
