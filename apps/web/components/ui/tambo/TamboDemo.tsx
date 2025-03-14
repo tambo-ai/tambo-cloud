@@ -1,8 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { TamboThreadMessage, useTambo } from "@tambo-ai/react";
-import { useEffect, useRef } from "react";
+import {
+  TamboThreadMessage,
+  useTambo,
+  useTamboThreadInput,
+} from "@tambo-ai/react";
+import { useEffect, useRef, useState } from "react";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import {
   FounderEmailComponent,
@@ -18,6 +23,25 @@ const TamboDemoInner = () => {
   const contextKey = "founder-email-demo";
   const messages = thread?.messages ?? [];
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const { setValue } = useTamboThreadInput(contextKey);
+  const [hasPressedButton, setHasPressedButton] = useState(false);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Command+E (Mac) or Ctrl+E (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === "e") {
+        e.preventDefault(); // Prevent default browser behavior
+        if (!hasPressedButton && messages.length === 0) {
+          setValue("Help me send an email to the founders.");
+          setHasPressedButton(true);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hasPressedButton, messages.length, setValue]);
 
   // Register the FounderEmailComponent with Tambo
   useEffect(() => {
@@ -83,10 +107,22 @@ const TamboDemoInner = () => {
             }}
           >
             {messages.length === 0 ? (
-              <p className="text-center text-gray-500 dark:text-gray-400">
-                No messages yet. Start a conversation to interact with the
-                FounderEmail component!
-              </p>
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                {!hasPressedButton && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={() => {
+                      setValue("Help me send an email to the founders.");
+                      setHasPressedButton(true);
+                    }}
+                    className="px-8 py-6 text-sm animate-pulse hover:animate-none hover:from-primary/90 hover:to-primary/70 transition-all duration-600 shadow-lg hover:shadow-xl"
+                  >
+                    Try Sending Us an Email
+                    <span className="ml-2 text-xs opacity-75">(⌘+E)</span>
+                  </Button>
+                )}
+              </div>
             ) : (
               <>
                 {messages.map((message) => (
