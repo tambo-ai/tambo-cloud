@@ -149,6 +149,7 @@ export class ThreadsService {
         componentState: message.componentState ?? {},
         toolCallRequest: message.toolCallRequest ?? undefined,
         actionType: message.actionType ?? undefined,
+        tool_call_id: message.toolCallRequest?.tool_call_id,
       })),
     };
   }
@@ -201,6 +202,7 @@ export class ThreadsService {
       actionType: message.actionType ?? undefined,
       createdAt: message.createdAt,
       toolCallRequest: message.toolCallRequest ?? undefined,
+      tool_call_id: message.toolCallRequest?.tool_call_id,
       componentState: message.componentState ?? {},
       // TODO: promote suggestionActions to the message level in the db, this is just
       // relying on the internal ComponentDecision type
@@ -223,6 +225,7 @@ export class ThreadsService {
       content: convertContentPartToDto(message.content),
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
+      tool_call_id: message.toolCallRequest?.tool_call_id,
       actionType: message.actionType ?? undefined,
       componentState: message.componentState ?? {},
       component: message.componentDecision as ComponentDecisionV2 | undefined,
@@ -245,6 +248,7 @@ export class ThreadsService {
       content: convertContentPartToDto(message.content),
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
+      tool_call_id: message.toolCallRequest?.tool_call_id,
       actionType: message.actionType ?? undefined,
       componentState: message.componentState ?? {},
     };
@@ -378,6 +382,7 @@ export class ThreadsService {
       metadata: message.metadata ?? undefined,
       componentState: message.componentState ?? {},
       toolCallRequest: message.toolCallRequest ?? undefined,
+      tool_call_id: message.toolCallRequest?.tool_call_id,
       actionType: message.actionType ?? undefined,
     };
   }
@@ -439,9 +444,7 @@ export class ThreadsService {
     }
     const latestMessage = messages[messages.length - 1];
 
-    let responseMessage:
-      | LegacyComponentDecision
-      | AsyncIterableIterator<LegacyComponentDecision>;
+    let responseMessage: LegacyComponentDecision;
     if (latestMessage.role === MessageRole.Tool) {
       await this.updateGenerationStage(
         thread.id,
@@ -560,6 +563,7 @@ export class ThreadsService {
       component: undefined,
       actionType: undefined,
       toolCallRequest: undefined,
+      tool_call_id: undefined,
       metadata: {},
     });
 
@@ -579,6 +583,7 @@ export class ThreadsService {
           component: chunk,
           actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
           toolCallRequest: chunk.toolCallRequest,
+          tool_call_id: chunk.toolCallRequest?.tool_call_id,
         },
         generationStage: GenerationStage.STREAMING_RESPONSE,
         statusMessage: `Streaming response...`,
@@ -680,6 +685,7 @@ export class ThreadsService {
       component: component,
       actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
       toolCallRequest: component.toolCallRequest,
+      tool_call_id: component.toolCallRequest?.tool_call_id,
     });
   }
 }
