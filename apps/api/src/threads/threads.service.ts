@@ -460,19 +460,19 @@ export class ThreadsService {
       if (!componentDef) {
         throw new Error('Component definition not found');
       }
-
       if (stream) {
-        responseMessage = await hydraBackend.hydrateComponentWithData(
-          threadMessageDtoToThreadMessage(messages),
-          componentDef,
-          toolResponse,
-          latestMessage.tool_call_id,
-          thread.id,
-          true,
-        );
+        const streamedResponseMessage =
+          await hydraBackend.hydrateComponentWithData(
+            threadMessageDtoToThreadMessage(messages),
+            componentDef,
+            toolResponse,
+            latestMessage.tool_call_id,
+            thread.id,
+            true,
+          );
         return this.handleAdvanceThreadStream(
           thread.id,
-          responseMessage as AsyncIterableIterator<LegacyComponentDecision>,
+          streamedResponseMessage,
         );
       } else {
         responseMessage = await hydraBackend.hydrateComponentWithData(
@@ -490,7 +490,7 @@ export class ThreadsService {
         `Choosing component...`,
       );
       if (stream) {
-        responseMessage = await hydraBackend.generateComponent(
+        const streamedResponseMessage = await hydraBackend.generateComponent(
           threadMessageDtoToThreadMessage(messages),
           availableComponentMap,
           thread.id,
@@ -498,7 +498,7 @@ export class ThreadsService {
         );
         return this.handleAdvanceThreadStream(
           thread.id,
-          responseMessage as AsyncIterableIterator<LegacyComponentDecision>,
+          streamedResponseMessage,
         );
       } else {
         responseMessage = await hydraBackend.generateComponent(
