@@ -191,6 +191,7 @@ export class ThreadsService {
       metadata: messageDto.metadata,
       actionType: messageDto.actionType ?? undefined,
       toolCallRequest: messageDto.toolCallRequest ?? undefined,
+      toolCallId: messageDto?.tool_call_id,
     });
     return {
       id: message.id,
@@ -202,7 +203,7 @@ export class ThreadsService {
       actionType: message.actionType ?? undefined,
       createdAt: message.createdAt,
       toolCallRequest: message.toolCallRequest ?? undefined,
-      tool_call_id: message.toolCallRequest?.tool_call_id,
+      tool_call_id: message.toolCallId ?? undefined,
       componentState: message.componentState ?? {},
       // TODO: promote suggestionActions to the message level in the db, this is just
       // relying on the internal ComponentDecision type
