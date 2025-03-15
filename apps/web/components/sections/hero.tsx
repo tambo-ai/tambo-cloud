@@ -110,7 +110,7 @@ function HeroCTA() {
   );
 }
 
-// Updated illustration to only show GIF
+// Replace with SVG if GIF is annoying
 function HeroIllustration() {
   return (
     <div className="w-full h-full flex items-center justify-center">
