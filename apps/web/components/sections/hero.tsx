@@ -110,18 +110,18 @@ function HeroCTA() {
   );
 }
 
-// Placeholder for illustration
+// Updated illustration to only show GIF
 function HeroIllustration() {
   return (
-    <div className="w-full h-full flex items-center justify-center overflow-hidden">
-      <div className="w-full h-full relative">
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full relative scale-90 md:scale-100 lg:scale-125">
         <motion.img
-          src="/assets/landing/octo-juggling-placeholder.png"
-          alt="Octopus juggling illustration"
-          className="w-full h-full object-contain max-w-full"
-          initial={{ opacity: 0, scale: 1.3 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease }}
+          src="/assets/landing/hero/Octo-5-transparent.gif"
+          alt="Tambo Octopus Animation"
+          className="w-full h-full object-contain max-w-full scale-90 md:scale-100 lg:scale-125"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, ease }}
         />
       </div>
     </div>
