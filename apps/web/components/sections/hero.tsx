@@ -15,7 +15,7 @@ const heroContent = {
     text: "v1.0.0",
     link: "http://localhost:3000/blog/0-1-0-announcement",
   },
-  title: "An AI powered Interface in one line of code.",
+  title: "An AI powered Interface in a few lines of code.",
   subtitle: "A React package for interfaces that think.",
   cta: {
     buttonText: "Request Early Access",
