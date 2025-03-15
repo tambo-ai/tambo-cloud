@@ -70,7 +70,7 @@ export function Features() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12">
         {featuresContent.list.map(({ title, description, image }, index) => (
           <div key={title} className="feature-item flex flex-col items-center">
-            <div className="mb-4 h-40 w-40 relative">
+            <div className="mb-2 h-32 w-32 relative">
               <Image
                 src={image}
                 alt={title}
@@ -80,7 +80,7 @@ export function Features() {
               />
             </div>
 
-            <div className="text-center sm:text-left w-full">
+            <div className="text-center w-full">
               <h3 className="text-xl font-heading mb-2">{title}</h3>
               <p className="text-muted-foreground">{description}</p>
             </div>
