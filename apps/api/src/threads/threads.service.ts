@@ -506,7 +506,7 @@ export class ThreadsService {
         return this.handleAdvanceThreadStream(
           thread.id,
           streamedResponseMessage,
-          latestMessage.tool_call_id,
+          undefined,
         );
       } else {
         responseMessage = await hydraBackend.generateComponent(
@@ -514,13 +514,13 @@ export class ThreadsService {
           availableComponentMap,
           thread.id,
         );
+        console.log('*** GENERATED COMPONENT', responseMessage);
       }
     }
 
     const responseMessageDto = await this.addResponseToThread(
       thread.id,
       responseMessage as LegacyComponentDecision,
-      latestMessage.tool_call_id,
     );
     const resultingGenerationStage = responseMessageDto.toolCallRequest
       ? GenerationStage.FETCHING_CONTEXT
@@ -590,7 +590,9 @@ export class ThreadsService {
           component: chunk,
           actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
           toolCallRequest: chunk.toolCallRequest,
-          tool_call_id: toolCallId,
+          // toolCallId is set when streaming the response to a tool response
+          // chunk.toolCallId is set when streaming the response to a component
+          tool_call_id: toolCallId ?? chunk.toolCallId,
         },
         generationStage: GenerationStage.STREAMING_RESPONSE,
         statusMessage: `Streaming response...`,
@@ -685,7 +687,6 @@ export class ThreadsService {
   private async addResponseToThread(
     threadId: string,
     component: LegacyComponentDecision,
-    toolCallId: string | undefined,
   ) {
     return await this.addMessage(threadId, {
       role: MessageRole.Hydra,
@@ -693,7 +694,7 @@ export class ThreadsService {
       component: component,
       actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
       toolCallRequest: component.toolCallRequest,
-      tool_call_id: toolCallId,
+      tool_call_id: component.toolCallRequest?.tool_call_id,
     });
   }
 }
