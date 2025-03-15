@@ -98,7 +98,7 @@ export interface ThreadMessage {
   createdAt: Date;
 
   /** Used only when role === "tool" */
-  tool_call_id: string | undefined;
+  tool_call_id?: string;
 }
 
 /** Temporary internal type to make sure that subclasses are aligned on types */

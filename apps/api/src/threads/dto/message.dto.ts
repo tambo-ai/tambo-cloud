@@ -70,7 +70,7 @@ export class ThreadMessageDto {
   })
   componentState!: Record<string, unknown>;
   toolCallRequest?: ToolCallRequestDto;
-  tool_call_id!: string | undefined;
+  tool_call_id?: string;
   @IsEnum(ActionType)
   actionType?: ActionType;
 

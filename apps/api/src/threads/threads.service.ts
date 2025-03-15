@@ -447,6 +447,9 @@ export class ThreadsService {
     const latestMessage = messages[messages.length - 1];
 
     let responseMessage: LegacyComponentDecision;
+    console.log(
+      `Handling message ${latestMessage.id} role ${latestMessage.role} with tool call id ${latestMessage.tool_call_id}`,
+    );
     if (latestMessage.role === MessageRole.Tool) {
       await this.updateGenerationStage(
         thread.id,
@@ -481,7 +484,7 @@ export class ThreadsService {
           latestMessage.tool_call_id,
         );
       } else {
-        console.log('hydrating component with data', latestMessage);
+        console.log('*** HYDRATING COMPONENT WITH DATA', latestMessage);
         responseMessage = await hydraBackend.hydrateComponentWithData(
           threadMessageDtoToThreadMessage(messages),
           componentDef,
@@ -506,7 +509,6 @@ export class ThreadsService {
         return this.handleAdvanceThreadStream(
           thread.id,
           streamedResponseMessage,
-          undefined,
         );
       } else {
         responseMessage = await hydraBackend.generateComponent(
@@ -544,7 +546,7 @@ export class ThreadsService {
   private async *handleAdvanceThreadStream(
     threadId: string,
     stream: AsyncIterableIterator<LegacyComponentDecision>,
-    toolCallId: string | undefined,
+    toolCallId?: string,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     let finalResponse:
       | {
