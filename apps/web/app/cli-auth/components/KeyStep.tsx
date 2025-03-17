@@ -1,8 +1,14 @@
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { memo, useCallback } from "react";
-import { ApiKey } from "../types";
+import { useCallback, useState } from "react";
+
+type ApiKey = Readonly<{
+  id: string;
+  name: string;
+  partiallyHiddenKey: string | null;
+  createdAt: Date;
+}>;
 
 interface KeyStepProps {
   apiKey: string;
@@ -14,6 +20,8 @@ interface KeyStepProps {
   onBack: () => void;
   onGenerate: () => Promise<void>;
   onDeleteClick: (keyId: string, keyName: string) => void;
+  providerKey: string | null;
+  onProviderKeyChange: (key: string) => Promise<void>;
 }
 
 /**
@@ -25,7 +33,7 @@ interface KeyStepProps {
  * - Displays newly generated keys with copy functionality
  * - Shows countdown for auto-close after key generation
  */
-export const KeyStep = memo(function KeyStep({
+export function KeyStep({
   apiKey,
   countdown,
   existingKeys,
@@ -35,8 +43,31 @@ export const KeyStep = memo(function KeyStep({
   onBack,
   onGenerate,
   onDeleteClick,
+  providerKey,
+  onProviderKeyChange,
 }: KeyStepProps) {
   const { toast } = useToast();
+  const [isEditingProviderKey, setIsEditingProviderKey] = useState(false);
+  const [newProviderKey, setNewProviderKey] = useState("");
+
+  const handleProviderKeySave = async () => {
+    try {
+      await onProviderKeyChange(newProviderKey);
+      setIsEditingProviderKey(false);
+      setNewProviderKey("");
+      toast({
+        title: "Success",
+        description: "OpenAI API key updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to update OpenAI API key:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update OpenAI API key",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleCopy = useCallback(async () => {
     try {
@@ -170,6 +201,59 @@ export const KeyStep = memo(function KeyStep({
           Back to Projects
         </Button>
       </div>
+
+      <div className="p-4 bg-muted rounded-lg space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">OpenAI API Key</p>
+          {isEditingProviderKey ? (
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleProviderKeySave}
+                className="h-8"
+              >
+                Save
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsEditingProviderKey(false);
+                  setNewProviderKey("");
+                }}
+                className="h-8"
+              >
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditingProviderKey(true)}
+              className="h-8"
+            >
+              Edit
+            </Button>
+          )}
+        </div>
+        {isEditingProviderKey ? (
+          <input
+            type="password"
+            value={newProviderKey}
+            onChange={(e) => setNewProviderKey(e.target.value)}
+            placeholder="Enter your OpenAI API key"
+            className="w-full px-3 py-2 text-sm border rounded-md"
+            autoFocus
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground font-mono">
+            {providerKey ? "••••••" + providerKey.slice(-4) : "No API key set"}
+          </p>
+        )}
+      </div>
+
       <div className="text-center mb-4">
         <p className="text-sm text-muted-foreground">
           Manage API keys for your CLI application
@@ -297,4 +381,4 @@ export const KeyStep = memo(function KeyStep({
       </Button>
     </div>
   );
-});
+}

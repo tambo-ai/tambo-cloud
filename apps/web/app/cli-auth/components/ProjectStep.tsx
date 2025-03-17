@@ -1,7 +1,11 @@
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { memo } from "react";
-import { Project } from "../types";
+
+type Project = Readonly<{
+  id: string;
+  name: string;
+}>;
 
 interface ProjectStepProps {
   projects: readonly Project[] | undefined;

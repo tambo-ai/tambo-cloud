@@ -9,7 +9,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { memo, useCallback } from "react";
-import { DeleteDialogState } from "../types";
+
+type DeleteDialogState = Readonly<{
+  isOpen: boolean;
+  keyId: string;
+  keyName: string;
+}>;
 
 interface DeleteKeyDialogProps {
   state: Readonly<DeleteDialogState>;

@@ -1,7 +1,8 @@
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { memo } from "react";
-import { AuthProvider } from "../types";
+
+type AuthProvider = "github" | "google";
 
 interface AuthStepProps {
   onAuth: (provider: AuthProvider) => Promise<void>;

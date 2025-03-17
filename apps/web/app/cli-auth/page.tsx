@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useSession } from "@/hooks/auth";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -16,19 +17,25 @@ import { AuthStep } from "./components/AuthStep";
 import { CreateProjectDialog } from "./components/CreateProjectDialog";
 import { DeleteKeyDialog } from "./components/DeleteKeyDialog";
 import { KeyStep } from "./components/KeyStep";
+import { ProgressIndicator } from "./components/ProgressIndicator";
 import { ProjectStep } from "./components/ProjectStep";
-import {
-  AUTO_CLOSE_DELAY,
-  CLI_KEY_PREFIX,
-  ERROR_MESSAGES,
-  QUERY_CONFIG,
-} from "./constants";
-import {
-  AuthProvider,
-  CreateProjectDialogState,
-  DeleteDialogState,
-  Step,
-} from "./types";
+
+// Types
+type AuthProvider = "github" | "google";
+
+type Step = "auth" | "project" | "key";
+
+type CreateProjectDialogState = Readonly<{
+  isOpen: boolean;
+  name: string;
+  providerKey: string;
+}>;
+
+type DeleteDialogState = Readonly<{
+  isOpen: boolean;
+  keyId: string;
+  keyName: string;
+}>;
 
 /**
  * CLI Authentication Page Component
@@ -43,7 +50,7 @@ export default function CLIAuthPage() {
   const [step, setStep] = useState<Step>("auth");
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [apiKey, setApiKey] = useState<string>("");
-  const [countdown, setCountdown] = useState<number>(AUTO_CLOSE_DELAY);
+  const [countdown, setCountdown] = useState<number>(30);
   const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({
     isOpen: false,
     keyId: "",
@@ -52,7 +59,11 @@ export default function CLIAuthPage() {
   const [createDialog, setCreateDialog] = useState<CreateProjectDialogState>({
     isOpen: false,
     name: "",
+    providerKey: "",
   });
+
+  const { data: session } = useSession();
+  const isAuthenticated = !!session;
 
   const { toast } = useToast();
   const supabase = useMemo(() => getSupabaseClient(), []);
@@ -64,7 +75,6 @@ export default function CLIAuthPage() {
     error: projectsError,
     refetch: refetchProjects,
   } = api.project.getUserProjects.useQuery(undefined, {
-    ...QUERY_CONFIG,
     enabled: step === "project",
   });
 
@@ -74,11 +84,9 @@ export default function CLIAuthPage() {
     error: apiKeysError,
     refetch: refetchApiKeys,
   } = api.project.getApiKeys.useQuery(selectedProject, {
-    ...QUERY_CONFIG,
     enabled: step === "key" && !!selectedProject,
   });
 
-  // Mutations with optimistic updates and error handling
   const { mutateAsync: deleteApiKey, isPending: isDeletingKey } =
     api.project.removeApiKey.useMutation({
       onSuccess: () => {
@@ -91,7 +99,7 @@ export default function CLIAuthPage() {
       onError: () => {
         toast({
           title: "Error",
-          description: ERROR_MESSAGES.API_KEY_DELETE,
+          description: "Failed to delete API key. Please try again.",
           variant: "destructive",
         });
       },
@@ -105,7 +113,7 @@ export default function CLIAuthPage() {
       onError: () => {
         toast({
           title: "Error",
-          description: ERROR_MESSAGES.API_KEY_GENERATE,
+          description: "Failed to generate API key. Please try again.",
           variant: "destructive",
         });
       },
@@ -116,68 +124,65 @@ export default function CLIAuthPage() {
       onError: () => {
         toast({
           title: "Error",
-          description: ERROR_MESSAGES.PROJECT_CREATE,
+          description: "Failed to create project. Please try again.",
           variant: "destructive",
         });
       },
     });
 
-  // Memoized values and handlers
-  const nextKeyName = useMemo(() => {
-    const cliKeyCount =
-      existingApiKeys?.filter((key) => key.name.startsWith(CLI_KEY_PREFIX))
-        .length ?? 0;
-    return cliKeyCount === 0
-      ? CLI_KEY_PREFIX
-      : `${CLI_KEY_PREFIX} ${cliKeyCount + 1}`;
-  }, [existingApiKeys]);
+  const { mutateAsync: addProviderKey } =
+    api.project.addProviderKey.useMutation({
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to add provider key. Please try again.",
+          variant: "destructive",
+        });
+      },
+    });
+
+  const { mutateAsync: updateProviderKey } =
+    api.project.addProviderKey.useMutation();
+  const { data: providerKeys } = api.project.getProviderKeys.useQuery(
+    selectedProject,
+    {
+      enabled: step === "key" && !!selectedProject,
+    },
+  );
+
+  // Calculate key name directly
+  const cliKeyCount =
+    existingApiKeys?.filter((key) => key.name.startsWith("CLI Key")).length ??
+    0;
+  const nextKeyName =
+    cliKeyCount === 0 ? "CLI Key" : `CLI Key ${cliKeyCount + 1}`;
 
   const closeWindow = useCallback(() => {
     try {
-      window.opener = null;
-      window.open("", "_self");
       window.close();
-      window.location.href = "about:blank";
-      window.top?.close();
     } catch (error) {
       console.error("Failed to close window:", error);
       toast({
         title: "Warning",
-        description: ERROR_MESSAGES.WINDOW_CLOSE,
+        description:
+          "Unable to close window automatically. Please close it manually.",
         variant: "destructive",
       });
     }
   }, [toast]);
 
-  // Effects
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session) {
-          setStep("project");
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        toast({
-          title: "Error",
-          description: ERROR_MESSAGES.AUTH,
-          variant: "destructive",
-        });
-      }
-    };
-
-    checkAuth();
-  }, [supabase.auth, toast]);
+    if (isAuthenticated) {
+      setStep("project");
+    }
+  }, [isAuthenticated, setStep]);
 
   useEffect(() => {
     if (!apiKey) return;
 
     toast({
       title: "API Key Generated",
-      description: `This window will close automatically in ${AUTO_CLOSE_DELAY} seconds.`,
+      description: `This window will close automatically in 30 seconds.`,
     });
 
     const timer = setInterval(() => {
@@ -217,7 +222,7 @@ export default function CLIAuthPage() {
         console.error("Auth failed:", error);
         toast({
           title: "Error",
-          description: ERROR_MESSAGES.AUTH,
+          description: "Failed to authenticate. Please try again.",
           variant: "destructive",
         });
       }
@@ -226,17 +231,33 @@ export default function CLIAuthPage() {
   );
 
   const handleCreateProject = useCallback(async () => {
-    if (!createDialog.name.trim()) return;
+    if (!createDialog.name.trim() || !createDialog.providerKey.trim()) return;
 
     try {
       const project = await createProject(createDialog.name);
+      await addProviderKey({
+        projectId: project.id,
+        provider: "openai",
+        providerKey: createDialog.providerKey,
+      });
       setSelectedProject(project.id);
       setStep("key");
-      setCreateDialog({ isOpen: false, name: "" });
+      setCreateDialog({ isOpen: false, name: "", providerKey: "" });
     } catch (error) {
       console.error("Project creation failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create project. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [createProject, createDialog.name]);
+  }, [
+    createProject,
+    addProviderKey,
+    createDialog.name,
+    createDialog.providerKey,
+    toast,
+  ]);
 
   const handleGenerateApiKey = useCallback(async () => {
     try {
@@ -245,11 +266,16 @@ export default function CLIAuthPage() {
         name: nextKeyName,
       });
       setApiKey(result.apiKey);
-      setCountdown(AUTO_CLOSE_DELAY);
+      setCountdown(30);
     } catch (error) {
       console.error("API key generation failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate API key. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [generateApiKey, selectedProject, nextKeyName]);
+  }, [generateApiKey, selectedProject, nextKeyName, toast]);
 
   const handleDeleteApiKey = useCallback(
     async (keyId: string) => {
@@ -261,9 +287,14 @@ export default function CLIAuthPage() {
         setDeleteDialog({ isOpen: false, keyId: "", keyName: "" });
       } catch (error) {
         console.error("API key deletion failed:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete API key. Please try again.",
+          variant: "destructive",
+        });
       }
     },
-    [deleteApiKey, selectedProject],
+    [deleteApiKey, selectedProject, toast],
   );
 
   const handleLogout = useCallback(async () => {
@@ -276,38 +307,33 @@ export default function CLIAuthPage() {
       console.error("Logout failed:", error);
       toast({
         title: "Error",
-        description: ERROR_MESSAGES.LOGOUT,
+        description: "Failed to sign out. Please try again.",
         variant: "destructive",
       });
     }
   }, [supabase.auth, toast]);
 
-  // Render methods
-  const renderProgressIndicator = () => (
-    <div className="flex justify-between mb-8 px-2">
-      {["auth", "project", "key"].map((s, i) => (
-        <div key={s} className="flex flex-col items-center gap-2">
-          <div
-            className={`
-              w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-              ${
-                step === s
-                  ? "bg-primary text-primary-foreground"
-                  : i < ["auth", "project", "key"].indexOf(step)
-                    ? "bg-primary/20 text-primary"
-                    : "bg-muted text-muted-foreground"
-              }
-            `}
-          >
-            {i + 1}
-          </div>
-          <div className="text-xs font-medium text-muted-foreground capitalize">
-            {s}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  const handleProviderKeyChange = async (key: string) => {
+    try {
+      await updateProviderKey({
+        projectId: selectedProject,
+        provider: "openai",
+        providerKey: key,
+      });
+      await refetchProjects();
+      toast({
+        title: "Success",
+        description: "OpenAI API key updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to update provider key:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update OpenAI API key",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <>
@@ -367,7 +393,10 @@ export default function CLIAuthPage() {
             )}
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
-            {renderProgressIndicator()}
+            <ProgressIndicator
+              steps={["auth", "project", "key"]}
+              currentStep={step}
+            />
 
             {step === "auth" && <AuthStep onAuth={handleAuth} />}
 
@@ -402,6 +431,8 @@ export default function CLIAuthPage() {
                 onDeleteClick={(keyId, keyName) =>
                   setDeleteDialog({ isOpen: true, keyId, keyName })
                 }
+                providerKey={providerKeys?.[0]?.partiallyHiddenKey ?? null}
+                onProviderKeyChange={handleProviderKeyChange}
               />
             )}
           </CardContent>

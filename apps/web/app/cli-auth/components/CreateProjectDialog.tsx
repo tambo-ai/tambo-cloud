@@ -9,7 +9,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { memo, useCallback } from "react";
-import { CreateProjectDialogState } from "../types";
+
+type CreateProjectDialogState = Readonly<{
+  isOpen: boolean;
+  name: string;
+  providerKey: string;
+}>;
 
 interface CreateProjectDialogProps {
   state: Readonly<CreateProjectDialogState>;
@@ -36,7 +41,9 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       onStateChange(
-        isOpen ? { ...state, isOpen } : { isOpen: false, name: "" },
+        isOpen
+          ? { ...state, isOpen }
+          : { isOpen: false, name: "", providerKey: "" },
       );
     },
     [state, onStateChange],
@@ -49,14 +56,26 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
     [state, onStateChange],
   );
 
+  const handleProviderKeyChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onStateChange({ ...state, providerKey: e.target.value });
+    },
+    [state, onStateChange],
+  );
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter" && !isCreating && state.name.trim()) {
+      if (
+        e.key === "Enter" &&
+        !isCreating &&
+        state.name.trim() &&
+        state.providerKey.trim()
+      ) {
         e.preventDefault();
         onConfirm();
       }
     },
-    [isCreating, state.name, onConfirm],
+    [isCreating, state.name, state.providerKey, onConfirm],
   );
 
   return (
@@ -65,20 +84,49 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
           <DialogDescription>
-            Enter a name for your new project. This will be used to organize
-            your API keys.
+            Enter a name for your new project and your OpenAI API key.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          <input
-            type="text"
-            value={state.name}
-            onChange={handleNameChange}
-            onKeyDown={handleKeyDown}
-            placeholder="My Project"
-            className="w-full px-3 py-2 border rounded-md text-sm"
-            autoFocus
-          />
+        <div className="py-4 space-y-4">
+          <div>
+            <label
+              htmlFor="projectName"
+              className="text-sm font-medium block mb-2"
+            >
+              Project Name
+            </label>
+            <input
+              id="projectName"
+              type="text"
+              value={state.name}
+              onChange={handleNameChange}
+              onKeyDown={handleKeyDown}
+              placeholder="My Project"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="providerKey"
+              className="text-sm font-medium block mb-2"
+            >
+              OpenAI API Key
+            </label>
+            <input
+              id="providerKey"
+              type="password"
+              value={state.providerKey}
+              onChange={handleProviderKeyChange}
+              onKeyDown={handleKeyDown}
+              placeholder="sk-..."
+              className="w-full px-3 py-2 border rounded-md text-sm"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              tambo will use your API key to make AI calls on your behalf until
+              we implement our payment system.
+            </p>
+          </div>
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
           <Button
@@ -90,7 +138,9 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
           </Button>
           <Button
             onClick={onConfirm}
-            disabled={isCreating || !state.name.trim()}
+            disabled={
+              isCreating || !state.name.trim() || !state.providerKey.trim()
+            }
           >
             {isCreating ? (
               <>
