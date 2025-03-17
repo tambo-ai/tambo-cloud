@@ -1,5 +1,6 @@
 import { createMDX } from "fumadocs-mdx/next";
 import { createJiti } from "jiti";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 const jiti = createJiti(fileURLToPath(import.meta.url));
 
@@ -11,6 +12,12 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  // This lets us use `npm link` and still get hot reloading - it allows
+  // ../../node_modules to be included in the list of watched files
+  outputFileTracingRoot: path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../",
+  ),
   images: {
     remotePatterns: [
       {
@@ -30,6 +37,16 @@ const config = {
         hostname: "localhost",
       },
     ],
+  },
+  // Configure webpack to use SVGR for SVG imports
+  webpack(config) {
+    // Modify the rules for SVG files
+    config.module.rules.push({
+      test: /\.svg$/,
+      use: ["@svgr/webpack"],
+    });
+
+    return config;
   },
 };
 
