@@ -6,7 +6,7 @@ import {
 import { InputContext } from "../../model/input-context";
 import { OpenAIResponse } from "../../model/openai-response";
 import { LLMClient } from "../llm/llm-client";
-import { chatHistoryToParams } from "../llm/utils";
+import { threadMessagesToChatHistory } from "../llm/threadMessagesToChatHistory";
 import {
   generateDecisionPrompt,
   getAvailableComponentsPromptTemplate,
@@ -27,7 +27,7 @@ export async function decideComponent(
     template: _availableComponentsTemplate,
     args: availableComponentsArgs,
   } = getAvailableComponentsPromptTemplate(context.availableComponents);
-  const chatHistory = chatHistoryToParams(context.messageHistory);
+  const chatHistory = threadMessagesToChatHistory(context.messageHistory);
   const prompt = objectTemplate<ChatCompletionMessageParam[]>([
     { role: "system", content: generateDecisionPrompt() },
     {
@@ -102,7 +102,7 @@ async function handleNoComponentCase(
     /<reasoning>(.*?)<\/reasoning>/,
   )?.[1];
 
-  const chatHistory = chatHistoryToParams(context.messageHistory);
+  const chatHistory = threadMessagesToChatHistory(context.messageHistory);
   const { template, args } = getNoComponentPromptTemplate(
     reasoning ?? "No reasoning provided",
     context.availableComponents,
