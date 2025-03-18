@@ -2,7 +2,7 @@
 import "regenerator-runtime/runtime";
 
 import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { SpeechTranscription } from "./SpeechTranscription";
 import { SubscribeForm, formSchemaTambo } from "./SubscribeForm";
@@ -12,6 +12,8 @@ export function TamboSubscribeIntegration() {
   const contextKey = "subscribe-form";
   const { setValue, submit } = useTamboThreadInput(contextKey);
   const isRegistered = useRef(false);
+  const [lastValidRenderedComponent, setLastValidRenderedComponent] =
+    useState<React.ReactNode | null>(null);
 
   // Register the component once
   useEffect(() => {
@@ -44,15 +46,26 @@ export function TamboSubscribeIntegration() {
   const isProcessing = !isIdle;
   const processingStage = isProcessing ? generationStage : null;
 
-  // Find the most recent component
-  const lastMessage = [...(thread?.messages || [])].reverse().find((m) => m);
+  // Find the most recent component and update the cached version when valid
+  const messages = thread?.messages || [];
+  const lastMessage = [...messages].reverse().find((m) => m);
+
+  useEffect(() => {
+    if (lastMessage?.renderedComponent) {
+      setLastValidRenderedComponent(lastMessage.renderedComponent);
+    }
+  }, [lastMessage?.renderedComponent]);
+
+  // Determine what to display - either the latest rendered component or the cached one
+  const displayComponent =
+    lastMessage?.renderedComponent || lastValidRenderedComponent;
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Show form component or loading */}
+      {/* Show current form component or cached version or loading */}
       <div className="border p-4 rounded-lg shadow-sm">
-        {lastMessage?.renderedComponent ? (
-          <div id={lastMessage.id}>{lastMessage.renderedComponent}</div>
+        {displayComponent ? (
+          <div id={lastMessage?.id || "cached-form"}>{displayComponent}</div>
         ) : (
           <div className="text-center p-4">
             <div className="animate-pulse">Loading subscription form...</div>

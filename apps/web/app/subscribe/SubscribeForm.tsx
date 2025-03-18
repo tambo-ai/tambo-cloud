@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 
 // Schema with descriptions to help Tambo understand the component
@@ -16,9 +16,8 @@ export const formSchemaTambo = z.object({
 
 export type FormDataTambo = z.infer<typeof formSchemaTambo>;
 
-// Simplified component with basic props and functionality
 export function SubscribeForm(props: Partial<FormDataTambo>) {
-  // Initialize with props or empty strings
+  // Initialize form state
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -26,64 +25,52 @@ export function SubscribeForm(props: Partial<FormDataTambo>) {
     email: "",
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string>(
-    "Thank you for subscribing! We'll be in touch soon.",
-  );
-  const [error, setError] = useState<string | null>(null);
-
-  // Debug timestamp to verify component updates
-  const mountTime = useRef(new Date().toISOString());
+  const [status, setStatus] = useState({
+    isSubmitting: false,
+    success: false,
+    message: null as string | null,
+    error: null as string | null,
+  });
 
   // Update form data when props change
   useEffect(() => {
-    // Only update if we have actual prop values
-    const hasProps = Object.values(props).some((value) => value !== undefined);
-
-    if (hasProps) {
-      setFormData((prevData) => ({
-        ...prevData,
+    if (Object.values(props).some((value) => value !== undefined)) {
+      setFormData((prev) => ({
+        ...prev,
         ...props,
       }));
 
-      // Reset success state when new props are received
-      setSuccess(false);
-      setError(null);
-
-      console.log(`Form data updated with props:`, JSON.stringify(props));
+      // Reset form status when props change
+      setStatus((prev) => ({
+        ...prev,
+        success: false,
+        error: null,
+      }));
     }
   }, [props]);
 
-  // Log component mount
-  useEffect(() => {
-    console.log(`SubscribeForm mounted at ${mountTime.current}`);
-  }, []);
-
-  // Simple change handler
+  // Handle form field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit handler
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
+
+    setStatus({
+      isSubmitting: true,
+      success: false,
+      message: null,
+      error: null,
+    });
 
     try {
-      // Submit to our contacts API
       const response = await fetch("/api/contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          role: "subscriber",
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
@@ -92,17 +79,21 @@ export function SubscribeForm(props: Partial<FormDataTambo>) {
         throw new Error(data.error || "Failed to subscribe");
       }
 
-      setSuccess(true);
-      setSuccessMessage(
-        data.message || "Thank you for subscribing! We'll be in touch soon.",
-      );
-      console.log("Successfully subscribed:", data);
+      setStatus({
+        isSubmitting: false,
+        success: true,
+        message:
+          data.message || "Thank you for subscribing! We'll be in touch soon.",
+        error: null,
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
-      );
-    } finally {
-      setIsSubmitting(false);
+      setStatus({
+        isSubmitting: false,
+        success: false,
+        message: null,
+        error:
+          err instanceof Error ? err.message : "An unexpected error occurred",
+      });
     }
   };
 
@@ -117,7 +108,7 @@ export function SubscribeForm(props: Partial<FormDataTambo>) {
           value={formData.firstName}
           onChange={handleChange}
           required
-          disabled={isSubmitting || success}
+          disabled={status.isSubmitting || status.success}
           className="mt-1"
         />
       </div>
@@ -130,7 +121,7 @@ export function SubscribeForm(props: Partial<FormDataTambo>) {
           type="text"
           value={formData.lastName}
           onChange={handleChange}
-          disabled={isSubmitting || success}
+          disabled={status.isSubmitting || status.success}
           className="mt-1"
         />
       </div>
@@ -143,7 +134,7 @@ export function SubscribeForm(props: Partial<FormDataTambo>) {
           type="text"
           value={formData.title}
           onChange={handleChange}
-          disabled={isSubmitting || success}
+          disabled={status.isSubmitting || status.success}
           className="mt-1"
         />
       </div>
@@ -157,24 +148,24 @@ export function SubscribeForm(props: Partial<FormDataTambo>) {
           value={formData.email}
           onChange={handleChange}
           required
-          disabled={isSubmitting || success}
+          disabled={status.isSubmitting || status.success}
           className="mt-1"
         />
       </div>
 
-      {error && (
+      {status.error && (
         <div className="rounded bg-red-50 p-3 text-sm text-red-500">
-          {error}
+          {status.error}
         </div>
       )}
 
-      {success ? (
+      {status.success ? (
         <div className="rounded bg-green-50 p-3 text-sm text-green-600">
-          {successMessage}
+          {status.message}
         </div>
       ) : (
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? "Subscribing..." : "Subscribe"}
+        <Button type="submit" disabled={status.isSubmitting} className="w-full">
+          {status.isSubmitting ? "Subscribing..." : "Subscribe"}
         </Button>
       )}
     </form>
