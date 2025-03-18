@@ -60,6 +60,7 @@ export class TokenJSClient implements LLMClient {
         temperature: 0,
         response_format: extractResponseFormat(params),
         tools: componentTools,
+        tool_choice: params.tool_choice,
         libretto: {
           promptTemplateName: params.promptTemplateName,
           templateParams: params.promptTemplateParams,
