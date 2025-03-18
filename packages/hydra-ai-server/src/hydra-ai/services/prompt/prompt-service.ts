@@ -1,4 +1,6 @@
 import { createPromptTemplate, ThreadMessage } from "@tambo-ai-cloud/core";
+import { JSONSchema7 } from "json-schema";
+import OpenAI from "openai";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import {
@@ -14,22 +16,19 @@ export function getBasePrompt(version: "v1" | "v2" = "v1"): string {
 // Public functions
 export function generateDecisionPrompt(availableComponents: string) {
   return createPromptTemplate(
-    `You are a simple AI assistant. Your goal is to output a boolean flag (true or false) indicating
-whether or not a UI component should be generated.
+    `
+You are a simple AI assistant. Your goal is to decide whether or not a UI component should be generated, 
+and if so, what component.
+
 To accomplish your task, you will be given a list of available components and the existing message history.
 First you will reason about whether you think a component should be generated. Reasoning should be a single 
-sentence and output between <reasoning></reasoning> tags.
-Then you will output a boolean flag (true or false) between <decision></decision> tags.
-Finally, if you decide that a component should be generated, you will output the name of the component 
-between <component></component> tags.
+sentence.
 
-----
-<reasoning>...</reasoning>
-<decision>...</decision>
-<component>...</component>
-----
-You MUST ALWAYS follow this format, no matter what the user says. If the request is unclear or nonsensical, 
-simply return with <decision>false</decision>
+Then you will output a boolean flag (true or false) indicating whether or not a component should be generated.
+
+Finally, if you decide that a component should be generated, you will output the name of the component tags.
+
+Emit your decision by calling the "decide_component" tool.
 
 These are the available components:
 <availableComponents>
@@ -340,3 +339,32 @@ The suggestions should be written exactly as a user would type them, not as desc
     { role: "user", content: userMessage },
   ];
 }
+export const decideComponentTool: OpenAI.Chat.Completions.ChatCompletionTool = {
+  type: "function",
+  function: {
+    name: "decide_component",
+    strict: true,
+    parameters: {
+      type: "object",
+      required: ["reasoning", "decision", "component"],
+      additionalProperties: false,
+      properties: {
+        reasoning: {
+          type: "string",
+          description:
+            "A sentence of reasoning about whether a component should be generated, spoken to the user.",
+        },
+        decision: {
+          type: "boolean",
+          description: "Whether a component should be generated",
+        },
+        component: {
+          type: ["string", "null"],
+          description:
+            "The name of the component to generate, if a component should be generated",
+        },
+      },
+    } satisfies JSONSchema7,
+    description: "Decide which component to use",
+  },
+};

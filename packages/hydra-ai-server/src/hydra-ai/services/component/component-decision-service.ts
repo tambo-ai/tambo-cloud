@@ -8,6 +8,7 @@ import { OpenAIResponse } from "../../model/openai-response";
 import { LLMClient } from "../llm/llm-client";
 import { threadMessagesToChatHistory } from "../llm/threadMessagesToChatHistory";
 import {
+  decideComponentTool,
   generateAvailableComponentsList,
   generateDecisionPrompt,
   getNoComponentPromptTemplate,
@@ -35,6 +36,8 @@ export async function decideComponent(
   ]);
   const decisionResponse = await llmClient.complete({
     messages: prompt,
+    tool_choice: "required",
+    tools: [decideComponentTool],
     promptTemplateName: "component-decision",
     promptTemplateParams: {
       chat_history: chatHistory,
@@ -42,28 +45,25 @@ export async function decideComponent(
     },
   });
 
-  const shouldGenerate = decisionResponse.message.match(
-    /<decision>(.*?)<\/decision>/,
-  )?.[1];
+  const shouldGenerate = decisionResponse.toolCallRequest?.parameters.find(
+    ({ parameterName }) => parameterName === "decision",
+  )?.parameterValue;
 
-  const componentName = decisionResponse.message.match(
-    /<component>(.*?)<\/component>/,
-  )?.[1];
+  const componentName = decisionResponse.toolCallRequest?.parameters.find(
+    ({ parameterName }) => parameterName === "component",
+  )?.parameterValue;
 
   if (!shouldGenerate) {
-    console.error(
-      `Badly formatted decision response: "${decisionResponse.message}" for thread ${threadId}`,
-    );
-  }
-  if (!shouldGenerate || shouldGenerate === "false") {
     return await handleNoComponentCase(
       llmClient,
-      decisionResponse,
+      decisionResponse.toolCallRequest?.parameters.find(
+        ({ parameterName }) => parameterName === "reasoning",
+      )?.parameterValue ?? decisionResponse.message,
       context,
       threadId,
       stream,
     );
-  } else if (shouldGenerate === "true" && componentName) {
+  } else if (shouldGenerate && componentName) {
     const component = context.availableComponents[componentName];
     if (!component) {
       throw new Error(`Component ${componentName} not found`);
@@ -86,7 +86,7 @@ export async function decideComponent(
 // Private function
 async function handleNoComponentCase(
   llmClient: LLMClient,
-  decisionResponse: OpenAIResponse,
+  reasoning: string,
   context: InputContext,
   threadId: string,
   stream?: boolean,
@@ -94,10 +94,6 @@ async function handleNoComponentCase(
 ): Promise<
   LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
 > {
-  const reasoning = decisionResponse.message.match(
-    /<reasoning>(.*?)<\/reasoning>/,
-  )?.[1];
-
   const chatHistory = threadMessagesToChatHistory(context.messageHistory);
   const { template, args } = getNoComponentPromptTemplate(
     reasoning ?? "No reasoning provided",
