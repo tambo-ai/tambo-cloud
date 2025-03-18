@@ -1,12 +1,12 @@
 {
+  "title": "Documentation",
   "pages": [
     "index",
-    "getting-started",
-    "concepts",
-    "api-reference",
-    "slack",
-    "react",
-    "troubleshooting",
-    "future"
+    "---Quickstart---",
+    "...quickstart",
+    "---Core Concepts---",
+    "...concepts",
+    "---What's Next?---",
+    "...future"
   ]
 }

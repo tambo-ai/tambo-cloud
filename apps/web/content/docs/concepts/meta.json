@@ -1,4 +1,4 @@
 {
-  "title": "Concepts",
-  "pages": ["component-data-props"]
+  "title": "Core Concepts",
+  "pages": ["streaming", "component-data-props"]
 }
