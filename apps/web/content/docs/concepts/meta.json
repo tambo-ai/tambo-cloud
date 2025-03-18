@@ -1,4 +1,10 @@
 {
   "title": "Core Concepts",
-  "pages": ["tools", "streaming", "generation-stage", "component-data-props"]
+  "pages": [
+    "tools",
+    "streaming",
+    "component-state",
+    "generation-stage",
+    "component-data-props"
+  ]
 }
