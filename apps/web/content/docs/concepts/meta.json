@@ -4,6 +4,7 @@
     "message-threads",
     "tools",
     "streaming",
+    "suggestions",
     "component-state",
     "generation-stage",
     "component-data-props"
