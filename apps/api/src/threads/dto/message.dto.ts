@@ -106,5 +106,8 @@ export class MessageRequest implements InternalThreadMessage {
   actionType?: ActionType;
 
   @IsOptional()
+  @ApiProperty({
+    description: '@deprecated Put the response in the content instead',
+  })
   toolResponse?: any;
 }
