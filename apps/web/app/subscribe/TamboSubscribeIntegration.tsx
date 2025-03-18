@@ -45,15 +45,15 @@ export function TamboSubscribeIntegration() {
   const processingStage = isProcessing ? generationStage : null;
 
   // Find the most recent component
-  const lastComponent = [...(thread?.messages || [])]
-    .reverse()
-    .find((m) => m.renderedComponent)?.renderedComponent;
+  const lastMessage = [...(thread?.messages || [])].reverse().find((m) => m);
 
   return (
     <div className="flex flex-col gap-6">
       {/* Show form component or loading */}
       <div className="border p-4 rounded-lg shadow-sm">
-        {lastComponent || (
+        {lastMessage?.renderedComponent ? (
+          <div id={lastMessage.id}>{lastMessage.renderedComponent}</div>
+        ) : (
           <div className="text-center p-4">
             <div className="animate-pulse">Loading subscription form...</div>
           </div>
