@@ -105,6 +105,9 @@ export class MessageRequest implements InternalThreadMessage {
   @IsEnum(ActionType)
   actionType?: ActionType;
 
+  /**
+   * @deprecated Put the response in the content instead
+   */
   @IsOptional()
   @ApiProperty({
     description: '@deprecated Put the response in the content instead',
