@@ -29,22 +29,25 @@
     "turbo": "^2.4.4",
     "typescript": "^5.8.2"
   },
-  "engines": {
-    "node": "20.x",
-    "npm": "10.x"
-  },
-  "packageManager": "npm@10.9.2",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  },
   "volta": {
-    "node": "20.18.1",
+    "node": "20.19.0",
     "npm": "10.9.2"
   },
+  "packageManager": "npm@10.9.2",
   "dependencies": {
+    "@tambo-ai/react": "^0.15.1",
+    "@types/react-speech-recognition": "^3.9.6",
     "posthog-js": "^1.231.0",
+    "react-speech-recognition": "^4.0.0",
     "resend": "^4.1.2"
   },
-  "version": "0.24.1"
+  "version": "0.25.0"
 }
