@@ -8,8 +8,8 @@ import { OpenAIResponse } from "../../model/openai-response";
 import { LLMClient } from "../llm/llm-client";
 import { threadMessagesToChatHistory } from "../llm/threadMessagesToChatHistory";
 import {
+  generateAvailableComponentsList,
   generateDecisionPrompt,
-  getAvailableComponentsPromptTemplate,
   getNoComponentPromptTemplate,
 } from "../prompt/prompt-service";
 import { hydrateComponent } from "./component-hydration-service";
@@ -23,18 +23,14 @@ export async function decideComponent(
 ): Promise<
   LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
 > {
-  const {
-    template: _availableComponentsTemplate,
-    args: availableComponentsArgs,
-  } = getAvailableComponentsPromptTemplate(context.availableComponents);
+  const availableComponents = generateAvailableComponentsList(
+    context.availableComponents,
+  );
+  const { template: systemPrompt, args: availableComponentsArgs } =
+    generateDecisionPrompt(availableComponents);
   const chatHistory = threadMessagesToChatHistory(context.messageHistory);
   const prompt = objectTemplate<ChatCompletionMessageParam[]>([
-    { role: "system", content: generateDecisionPrompt() },
-    {
-      role: "user",
-      content:
-        "<availableComponents>{availableComponents}</availableComponents>",
-    },
+    { role: "system", content: systemPrompt },
     { role: "chat_history" as "user", content: "{chat_history}" },
   ]);
   const decisionResponse = await llmClient.complete({

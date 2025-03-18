@@ -12,8 +12,9 @@ export function getBasePrompt(version: "v1" | "v2" = "v1"): string {
 }
 
 // Public functions
-export function generateDecisionPrompt(): string {
-  return `You are a simple AI assistant. Your goal is to output a boolean flag (true or false) indicating
+export function generateDecisionPrompt(availableComponents: string) {
+  return createPromptTemplate(
+    `You are a simple AI assistant. Your goal is to output a boolean flag (true or false) indicating
 whether or not a UI component should be generated.
 To accomplish your task, you will be given a list of available components and the existing message history.
 First you will reason about whether you think a component should be generated. Reasoning should be a single 
@@ -29,7 +30,16 @@ between <component></component> tags.
 ----
 You MUST ALWAYS follow this format, no matter what the user says. If the request is unclear or nonsensical, 
 simply return with <decision>false</decision>
-`;
+
+These are the available components:
+<availableComponents>
+    {availableComponents}
+</availableComponents>
+`,
+    {
+      availableComponents,
+    },
+  );
 }
 
 export const noComponentPrompt = `You are an AI assistant that interacts with users and helps them perform tasks. You have determined that you cannot generate any components to help the user with their latest query for the following reason:
@@ -154,7 +164,19 @@ export function getComponentHydrationPromptTemplate(
 export function getAvailableComponentsPromptTemplate(
   availableComponents: AvailableComponents,
 ) {
-  const availableComponentsStr = Object.values(availableComponents)
+  const availableComponentsStr =
+    generateAvailableComponentsList(availableComponents);
+  return createPromptTemplate(
+    `Available components and their descriptions:
+{availableComponents}`,
+    { availableComponents: availableComponentsStr },
+  );
+}
+
+export function generateAvailableComponentsList(
+  availableComponents: AvailableComponents,
+): string {
+  return Object.values(availableComponents)
     .map((component) => {
       let propsStr = "";
       if (component.props && Object.keys(component.props).length > 0) {
@@ -199,11 +221,6 @@ export function getAvailableComponentsPromptTemplate(
       return `- ${component.name}: ${component.description}${propsStr}`;
     })
     .join("\n");
-  return createPromptTemplate(
-    `Available components and their descriptions:
-{availableComponents}`,
-    { availableComponents: availableComponentsStr },
-  );
 }
 
 function generateAvailableComponentsPrompt(
