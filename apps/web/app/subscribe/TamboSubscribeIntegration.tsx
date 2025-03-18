@@ -65,7 +65,7 @@ export function TamboSubscribeIntegration() {
       {/* Show current form component or cached version or loading */}
       <div className="border p-4 rounded-lg shadow-sm">
         {displayComponent ? (
-          <div id={lastMessage?.id || "cached-form"}>{displayComponent}</div>
+          displayComponent
         ) : (
           <div className="text-center p-4">
             <div className="animate-pulse">Loading subscription form...</div>
