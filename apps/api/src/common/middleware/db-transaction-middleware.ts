@@ -57,12 +57,13 @@ export class TransactionMiddleware implements NestMiddleware {
       throw new UnauthorizedException('Invalid API key');
     }
 
+    const currentRequestSerialNumber = requestSerialNumber;
     console.log(
-      `[${requestSerialNumber}] starting transaction ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle) with ${req.method} ${req.url}`,
+      `[${currentRequestSerialNumber}] starting transaction ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle) with ${req.method} ${req.url}`,
     );
     const p = this.db.transaction(async (tx) => {
       console.log(
-        `[${requestSerialNumber}] got transaction ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle)`,
+        `[${currentRequestSerialNumber}] got transaction ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle)`,
       );
       req.tx = tx; // Attach transaction to request
       await tx.execute(sql`
@@ -77,10 +78,16 @@ export class TransactionMiddleware implements NestMiddleware {
       const [finishPromise, resolveFinish, rejectFinish] =
         makeResolvablePromise<boolean>();
 
+      res.on('close', async () => {
+        console.log(
+          `[${currentRequestSerialNumber}] HTTP connection dropped, closing transaction ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle)`,
+        );
+        rejectFinish(new Error('Request closed'));
+      });
       // wire up the finish event to resolve the promise
       res.on('finish', async () => {
         console.log(
-          `[${requestSerialNumber}] finishing ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle)`,
+          `[${currentRequestSerialNumber}] finishing ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle)`,
         );
         try {
           await tx.execute(sql`
@@ -90,14 +97,14 @@ export class TransactionMiddleware implements NestMiddleware {
           delete (req as HydraRequest).tx;
           resolveFinish(true);
           console.log(
-            `[${requestSerialNumber}] finished ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle)`,
+            `[${currentRequestSerialNumber}] finished ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle)`,
           );
         } catch (error) {
           rejectFinish(error);
         }
       });
       console.log(
-        `[${requestSerialNumber}] calling next ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle)`,
+        `[${currentRequestSerialNumber}] calling next ${this.db.$client.totalCount} connections (${this.db.$client.idleCount} idle)`,
       );
 
       // it is now safe to call next(), because the finish event will resolve the promise
