@@ -34,6 +34,7 @@ export const TransactionProvider: Provider = {
 export const DATABASE = Symbol('DATABASE');
 export const DatabaseProvider: Provider = {
   provide: DATABASE,
+  scope: Scope.REQUEST,
   useFactory: () => getDb(process.env.DATABASE_URL!),
 };
 
