@@ -78,7 +78,9 @@ const weatherTool: TamboTool = {
     .args(
       z
         .string()
-        .describe("The geographic location, such as a city, state, or zip code")
+        .describe(
+          "The geographic location, such as a city, state, or zip code",
+        ),
     ),
 };
 
