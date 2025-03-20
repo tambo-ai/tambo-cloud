@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.25.5](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.25.4...repo-v0.25.5) (2025-03-20)
+
+
+### Bug Fixes
+
+* bump connection limit to 50 ([#549](https://github.com/tambo-ai/tambo-cloud/issues/549)) ([43ad9d4](https://github.com/tambo-ai/tambo-cloud/commit/43ad9d4da7d8856cd06f8aaada505832d97a9329))
+
+## [0.25.4](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.25.3...repo-v0.25.4) (2025-03-19)
+
+
+### Miscellaneous Chores
+
+* bump to 0.16.1 to get better component-state behavior ([#547](https://github.com/tambo-ai/tambo-cloud/issues/547)) ([9e0b088](https://github.com/tambo-ai/tambo-cloud/commit/9e0b088e6a7954999d02ebef89333c2aac3ebc60))
+
+## [0.25.3](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.25.2...repo-v0.25.3) (2025-03-19)
+
+
+### Bug Fixes
+
+* make sure db is retrieved per request ([#546](https://github.com/tambo-ai/tambo-cloud/issues/546)) ([344500e](https://github.com/tambo-ai/tambo-cloud/commit/344500ead10d321252e486117c4ec518f2fdd35b))
+* switch to postgres driver for individual connections, store current request serial # for logging ([#543](https://github.com/tambo-ai/tambo-cloud/issues/543)) ([abccc2c](https://github.com/tambo-ai/tambo-cloud/commit/abccc2ce437678455006b5a5823718171024bc57))
+
 ## [0.25.2](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.25.1...repo-v0.25.2) (2025-03-19)
 
 
