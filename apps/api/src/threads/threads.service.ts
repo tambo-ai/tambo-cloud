@@ -550,36 +550,84 @@ export class ThreadsService {
       }
     }
 
-    const latestMessages = await this.getMessages(thread.id, true);
-    const latestMessageBeforeWrite = latestMessages[latestMessages.length - 1];
-    if (
-      !(
-        latestMessageBeforeWrite.id === addedUserMessage.id &&
-        latestMessageBeforeWrite.createdAt === addedUserMessage.createdAt
-      )
-    ) {
-      throw new Error(
-        'Latest message before write is not the same as the added user message',
-      );
-    }
-    const responseMessageDto = await this.addResponseToThread(
-      thread.id,
-      responseMessage as LegacyComponentDecision,
-    );
-    const resultingGenerationStage = responseMessageDto.toolCallRequest
-      ? GenerationStage.FETCHING_CONTEXT
-      : GenerationStage.COMPLETE;
-    const resultingStatusMessage = responseMessageDto.toolCallRequest
-      ? `Fetching context...`
-      : `Generation complete`;
-    await this.updateGenerationStage(
-      thread.id,
+    const {
+      responseMessageDto,
       resultingGenerationStage,
       resultingStatusMessage,
+    } = await this.getDb().transaction(
+      async (tx) => {
+        const latestMessages = await tx.query.messages.findMany({
+          where: eq(schema.messages.threadId, thread.id),
+          orderBy: (messages, { desc }) => [desc(messages.createdAt)],
+        });
+
+        const latestMessageBeforeWrite = latestMessages[0];
+        console.log('latestMessageBeforeWrite', latestMessageBeforeWrite);
+        console.log('addedUserMessage', addedUserMessage);
+        if (
+          !(
+            latestMessageBeforeWrite.id === addedUserMessage.id &&
+            latestMessageBeforeWrite.createdAt.toISOString() ===
+              addedUserMessage.createdAt.toISOString()
+          )
+        ) {
+          throw new Error(
+            'Latest message before write is not the same as the added user message',
+          );
+        }
+
+        // Add the response within the same transaction
+        console.log('adding response to thread');
+        const message = await operations.addMessage(tx, {
+          threadId: thread.id,
+          role: MessageRole.Hydra,
+          content: [
+            { type: ContentPartType.Text, text: responseMessage.message },
+          ],
+          componentDecision: responseMessage,
+          actionType: responseMessage.toolCallRequest
+            ? ActionType.ToolCall
+            : undefined,
+          toolCallRequest: responseMessage.toolCallRequest,
+          toolCallId: responseMessage.toolCallRequest?.tool_call_id,
+        });
+
+        const responseMessageDto = {
+          ...message,
+          content: convertContentPartToDto(message.content),
+          metadata: message.metadata ?? undefined,
+          component: message.componentDecision,
+          actionType: message.actionType ?? undefined,
+          toolCallRequest: message.toolCallRequest ?? undefined,
+          tool_call_id: message.toolCallId ?? undefined,
+          componentState: message.componentState ?? {},
+        };
+
+        const resultingGenerationStage = responseMessageDto.toolCallRequest
+          ? GenerationStage.FETCHING_CONTEXT
+          : GenerationStage.COMPLETE;
+        const resultingStatusMessage = responseMessageDto.toolCallRequest
+          ? `Fetching context...`
+          : `Generation complete`;
+
+        await operations.updateThread(tx, thread.id, {
+          generationStage: resultingGenerationStage,
+          statusMessage: resultingStatusMessage,
+        });
+
+        return {
+          responseMessageDto,
+          resultingGenerationStage,
+          resultingStatusMessage,
+        };
+      },
+      {
+        isolationLevel: 'serializable',
+      },
     );
 
     return {
-      responseMessageDto,
+      responseMessageDto: responseMessageDto as ThreadMessageDto,
       generationStage: resultingGenerationStage,
       statusMessage: resultingStatusMessage,
     };
