@@ -395,6 +395,7 @@ export class ThreadsService {
       detailedSuggestion: suggestion.detailedSuggestion,
     };
   }
+
   async updateComponentState(
     messageId: string,
     newState: Record<string, unknown>,
@@ -640,7 +641,7 @@ export class ThreadsService {
       orderBy: (messages, { desc }) => [desc(messages.createdAt)],
     });
 
-    // If we have an in-progress message, we need to check the message before it
+    // If we have an in-progress message (streaming), we need to check the message before it
     // Otherwise, we check the latest message
     const messageToCheck = inProgressMessageId
       ? latestMessages[1] // Check message before our in-progress message
@@ -746,7 +747,7 @@ export class ThreadsService {
             );
             await this.updateMessage(
               inProgressMessage.id,
-              finalResponse.responseMessageDto,
+              finalResponse!.responseMessageDto,
               tx,
             );
             lastUpdateTime = currentTime;
