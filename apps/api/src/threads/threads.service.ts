@@ -425,19 +425,50 @@ export class ThreadsService {
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
     const thread = await this.ensureThread(projectId, threadId, undefined);
-    if (
-      thread.generationStage === GenerationStage.STREAMING_RESPONSE ||
-      thread.generationStage === GenerationStage.HYDRATING_COMPONENT ||
-      thread.generationStage === GenerationStage.CHOOSING_COMPONENT
-    ) {
-      throw new Error(
-        'Thread is already in processing, only one response can be generated at a time',
-      );
-    }
 
-    const addedUserMessage = await this.addMessage(
-      thread.id,
-      advanceRequestDto.messageToAppend,
+    const addedUserMessage = await this.getDb().transaction(
+      async (tx) => {
+        const [currentThread] = await tx
+          .select()
+          .from(schema.threads)
+          .where(eq(schema.threads.id, thread.id))
+          .for('update');
+
+        if (
+          currentThread.generationStage ===
+            GenerationStage.STREAMING_RESPONSE ||
+          currentThread.generationStage ===
+            GenerationStage.HYDRATING_COMPONENT ||
+          currentThread.generationStage === GenerationStage.CHOOSING_COMPONENT
+        ) {
+          throw new Error(
+            'Thread is already in processing, only one response can be generated at a time',
+          );
+        }
+
+        await operations.updateThread(tx, thread.id, {
+          generationStage: GenerationStage.CHOOSING_COMPONENT,
+          statusMessage: 'Starting processing...',
+        });
+
+        return await operations.addMessage(tx, {
+          threadId: thread.id,
+          role: advanceRequestDto.messageToAppend.role,
+          content: convertContentDtoToContentPart(
+            advanceRequestDto.messageToAppend.content,
+          ),
+          componentDecision:
+            advanceRequestDto.messageToAppend.component ?? undefined,
+          metadata: advanceRequestDto.messageToAppend.metadata,
+          actionType: advanceRequestDto.messageToAppend.actionType ?? undefined,
+          toolCallRequest:
+            advanceRequestDto.messageToAppend.toolCallRequest ?? undefined,
+          toolCallId: advanceRequestDto.messageToAppend?.tool_call_id,
+        });
+      },
+      {
+        isolationLevel: 'serializable',
+      },
     );
 
     // Use the shared method to create the HydraBackend instance
