@@ -51,3 +51,237 @@ This value provides access to the registry of all registered tools.
 `const { componentToolAssociations } = useTamboRegistry()`
 
 This value provides access to the associations between components and tools.
+
+### useTamboThread
+
+This hook provides access to the current thread and functions for managing thread interactions.
+
+#### thread
+
+`const { thread } = useTamboThread()`
+
+The current thread object containing messages and metadata. Messages can be accessed via `thread.messages`. Each message contains fields for AI responses, rendered components, and partial content during streaming.
+
+#### inputValue
+
+`const { inputValue } = useTamboThread()`
+
+Current value of the thread input field.
+
+#### generationStage
+
+`const { generationStage } = useTamboThread()`
+
+Current stage of message generation (IDLE, GENERATING, COMPLETE, STREAMING, etc.).
+
+#### generationStatusMessage
+
+`const { generationStatusMessage } = useTamboThread()`
+
+Status message describing the current generation state.
+
+#### isIdle
+
+`const { isIdle } = useTamboThread()`
+
+Boolean indicating whether the thread is in an idle state.
+
+#### switchCurrentThread
+
+`const { switchCurrentThread } = useTamboThread()`
+
+Function to change the active thread.
+
+#### addThreadMessage
+
+`const { addThreadMessage } = useTamboThread()`
+
+Function to append a new message to the thread.
+
+#### updateThreadMessage
+
+`const { updateThreadMessage } = useTamboThread()`
+
+Function to modify an existing thread message.
+
+#### setLastThreadStatus
+
+`const { setLastThreadStatus } = useTamboThread()`
+
+Function to update the status of the most recent thread message.
+
+#### setInputValue
+
+`const { setInputValue } = useTamboThread()`
+
+Function to update the input field value.
+
+#### sendThreadMessage
+
+`const { sendThreadMessage } = useTamboThread()`
+
+Function to send a user message to Tambo and receive a response.
+
+### useTamboThreads
+
+This hook provides access to the list of all threads for a project and their loading states.
+
+#### data
+
+`const { data } = useTamboThreads()`
+
+Array of threads or null if not yet loaded.
+
+#### isPending
+
+`const { isPending } = useTamboThreads()`
+
+Boolean indicating if threads are currently being fetched.
+
+#### isSuccess
+
+`const { isSuccess } = useTamboThreads()`
+
+Boolean indicating if threads were successfully fetched.
+
+#### isError
+
+`const { isError } = useTamboThreads()`
+
+Boolean indicating if an error occurred while fetching threads.
+
+#### error
+
+`const { error } = useTamboThreads()`
+
+Error object containing details if the fetch failed.
+
+### useTamboThreadInput
+
+This hook provides utilities for building an input interface that sends messages to Tambo.
+
+#### value
+
+`const { value } = useTamboThreadInput()`
+
+Current value of the input field.
+
+#### setValue
+
+`const { setValue } = useTamboThreadInput()`
+
+Function to update the input field value.
+
+#### submit
+
+`const { submit } = useTamboThreadInput()`
+
+Function to submit the current input value, with optional context and streaming configuration.
+
+#### isPending
+
+`const { isPending } = useTamboThreadInput()`
+
+Boolean indicating if a submission is in progress.
+
+#### isSuccess
+
+`const { isSuccess } = useTamboThreadInput()`
+
+Boolean indicating if the last submission was successful.
+
+#### isError
+
+`const { isError } = useTamboThreadInput()`
+
+Boolean indicating if the last submission failed.
+
+#### error
+
+`const { error } = useTamboThreadInput()`
+
+Error object containing details if the submission failed.
+
+### useTamboSuggestions
+
+This hook provides utilities for managing AI-generated message suggestions.
+
+#### suggestions
+
+`const { suggestions } = useTamboSuggestions()`
+
+List of available AI-generated suggestions for the next message.
+
+#### selectedSuggestionId
+
+`const { selectedSuggestionId } = useTamboSuggestions()`
+
+ID of the currently selected suggestion.
+
+#### accept
+
+`const { accept } = useTamboSuggestions()`
+
+Function to accept and apply a suggestion, with an option for automatic submission.
+
+#### acceptResult
+
+`const { acceptResult } = useTamboSuggestions()`
+
+Detailed mutation result for accepting a suggestion.
+
+#### generateResult
+
+`const { generateResult } = useTamboSuggestions()`
+
+Detailed mutation result for generating new suggestions.
+
+#### isPending
+
+`const { isPending } = useTamboSuggestions()`
+
+Boolean indicating if a suggestion operation is in progress.
+
+#### isSuccess
+
+`const { isSuccess } = useTamboSuggestions()`
+
+Boolean indicating if the last operation was successful.
+
+#### isError
+
+`const { isError } = useTamboSuggestions()`
+
+Boolean indicating if the last operation resulted in an error.
+
+#### error
+
+`const { error } = useTamboSuggestions()`
+
+Error object containing details if the operation failed.
+
+### useTamboClient
+
+This hook provides direct access to the Tambo client instance.
+
+#### client
+
+`const { client } = useTamboClient()`
+
+The Tambo client instance for direct API access.
+
+### useTamboComponentState
+
+This hook manages state storage for components within thread messages.
+
+#### value
+
+`const { value } = useTamboComponentState()`
+
+Current state value stored in the thread message for the given key.
+
+#### setValue
+
+`const { setValue } = useTamboComponentState()`
+
+Function to update the state value, synchronizing both local state and server state.
