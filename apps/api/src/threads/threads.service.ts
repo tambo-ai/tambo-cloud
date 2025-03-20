@@ -435,7 +435,10 @@ export class ThreadsService {
       );
     }
 
-    await this.addMessage(thread.id, advanceRequestDto.messageToAppend);
+    const addedUserMessage = await this.addMessage(
+      thread.id,
+      advanceRequestDto.messageToAppend,
+    );
 
     // Use the shared method to create the HydraBackend instance
     const hydraBackend = await this.createHydraBackendForThread(thread.id, {
@@ -547,6 +550,18 @@ export class ThreadsService {
       }
     }
 
+    const latestMessages = await this.getMessages(thread.id, true);
+    const latestMessageBeforeWrite = latestMessages[latestMessages.length - 1];
+    if (
+      !(
+        latestMessageBeforeWrite.id === addedUserMessage.id &&
+        latestMessageBeforeWrite.createdAt === addedUserMessage.createdAt
+      )
+    ) {
+      throw new Error(
+        'Latest message before write is not the same as the added user message',
+      );
+    }
     const responseMessageDto = await this.addResponseToThread(
       thread.id,
       responseMessage as LegacyComponentDecision,
