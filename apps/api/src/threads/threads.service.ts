@@ -15,7 +15,10 @@ import type { DBSuggestion } from '@tambo-ai-cloud/db/src/schema';
 import { generateChainId, HydraBackend } from '@tambo-ai-cloud/hydra-ai-server';
 import { eq } from 'drizzle-orm';
 import { decryptProviderKey } from 'src/common/key.utils';
-import { TRANSACTION } from 'src/common/middleware/db-transaction-middleware';
+import {
+  DATABASE,
+  TRANSACTION,
+} from 'src/common/middleware/db-transaction-middleware';
 import { AvailableComponentDto } from 'src/components/dto/generate-component.dto';
 import { ProjectsService } from 'src/projects/projects.service';
 import { CorrelationLoggerService } from '../common/services/logger.service';
@@ -42,9 +45,15 @@ export class ThreadsService {
   constructor(
     @Inject(TRANSACTION)
     private readonly tx: HydraDatabase,
+    @Inject(DATABASE)
+    private readonly db: HydraDatabase,
     private projectsService: ProjectsService,
     private readonly logger: CorrelationLoggerService,
   ) {}
+
+  getDb() {
+    return this.tx ?? this.db;
+  }
 
   private async getHydraBackend(threadId: string): Promise<HydraBackend> {
     return await this.createHydraBackendForThread(threadId);
@@ -57,7 +66,7 @@ export class ThreadsService {
     const chainId = await generateChainId(threadId);
 
     // Get the thread's project ID from the database
-    const threadData = await this.tx.query.threads.findFirst({
+    const threadData = await this.getDb().query.threads.findFirst({
       where: eq(schema.threads.id, threadId),
     });
 
@@ -75,7 +84,7 @@ export class ThreadsService {
   }
 
   async createThread(createThreadDto: ThreadRequest): Promise<Thread> {
-    const thread = await operations.createThread(this.tx, {
+    const thread = await operations.createThread(this.getDb(), {
       projectId: createThreadDto.projectId,
       contextKey: createThreadDto.contextKey,
       metadata: createThreadDto.metadata,
@@ -97,7 +106,7 @@ export class ThreadsService {
     params: { contextKey?: string; offset?: number; limit?: number } = {},
   ): Promise<Thread[]> {
     const threads = await operations.getThreadsByProject(
-      this.tx,
+      this.getDb(),
       projectId,
       params,
     );
@@ -117,12 +126,16 @@ export class ThreadsService {
     projectId: string,
     params: { contextKey?: string } = {},
   ): Promise<number> {
-    return await operations.countThreadsByProject(this.tx, projectId, params);
+    return await operations.countThreadsByProject(
+      this.getDb(),
+      projectId,
+      params,
+    );
   }
 
   async findOne(id: string, projectId: string): Promise<ThreadWithMessagesDto> {
     const thread = await operations.getThreadForProjectId(
-      this.tx,
+      this.getDb(),
       id,
       projectId,
     );
@@ -155,7 +168,7 @@ export class ThreadsService {
   }
 
   async update(id: string, updateThreadDto: ThreadRequest) {
-    const thread = await operations.updateThread(this.tx, id, {
+    const thread = await operations.updateThread(this.getDb(), id, {
       contextKey: updateThreadDto.contextKey,
       metadata: updateThreadDto.metadata,
       generationStage: updateThreadDto.generationStage,
@@ -169,21 +182,21 @@ export class ThreadsService {
     generationStage: GenerationStage,
     statusMessage?: string,
   ) {
-    return await operations.updateThread(this.tx, id, {
+    return await operations.updateThread(this.getDb(), id, {
       generationStage,
       statusMessage,
     });
   }
 
   async remove(id: string) {
-    return await operations.deleteThread(this.tx, id);
+    return await operations.deleteThread(this.getDb(), id);
   }
 
   async addMessage(
     threadId: string,
     messageDto: MessageRequest,
   ): Promise<ThreadMessageDto> {
-    const message = await operations.addMessage(this.tx, {
+    const message = await operations.addMessage(this.getDb(), {
       threadId,
       role: messageDto.role,
       content: convertContentDtoToContentPart(messageDto.content),
@@ -217,7 +230,7 @@ export class ThreadsService {
     includeInternal: boolean = false,
   ): Promise<ThreadMessageDto[]> {
     const messages = await operations.getMessages(
-      this.tx,
+      this.getDb(),
       threadId,
       includeInternal,
     );
@@ -237,7 +250,7 @@ export class ThreadsService {
     messageId: string,
     messageDto: MessageRequest,
   ): Promise<ThreadMessageDto> {
-    const message = await operations.updateMessage(this.tx, messageId, {
+    const message = await operations.updateMessage(this.getDb(), messageId, {
       content: convertContentDtoToContentPart(messageDto.content),
       componentDecision: messageDto.component ?? undefined,
       metadata: messageDto.metadata,
@@ -257,16 +270,19 @@ export class ThreadsService {
   }
 
   async deleteMessage(messageId: string) {
-    await operations.deleteMessage(this.tx, messageId);
+    await operations.deleteMessage(this.getDb(), messageId);
   }
 
   async ensureThreadByProjectId(threadId: string, projectId: string) {
-    await operations.ensureThreadByProjectId(this.tx, threadId, projectId);
+    await operations.ensureThreadByProjectId(this.getDb(), threadId, projectId);
   }
 
   private async getMessage(messageId: string) {
     try {
-      const message = await operations.getMessageWithAccess(this.tx, messageId);
+      const message = await operations.getMessageWithAccess(
+        this.getDb(),
+        messageId,
+      );
       if (!message) {
         this.logger.warn(`Message not found: ${messageId}`);
         throw new InvalidSuggestionRequestError('Message not found');
@@ -287,7 +303,10 @@ export class ThreadsService {
     await this.getMessage(messageId);
 
     try {
-      const suggestions = await operations.getSuggestions(this.tx, messageId);
+      const suggestions = await operations.getSuggestions(
+        this.getDb(),
+        messageId,
+      );
       if (!suggestions || suggestions.length === 0) {
         throw new SuggestionNotFoundException(messageId);
       }
@@ -334,7 +353,7 @@ export class ThreadsService {
       }
 
       const savedSuggestions = await operations.createSuggestions(
-        this.tx,
+        this.getDb(),
         suggestions.suggestions.map((suggestion) => ({
           messageId,
           title: suggestion.title,
@@ -374,7 +393,7 @@ export class ThreadsService {
     newState: Record<string, unknown>,
   ): Promise<ThreadMessageDto> {
     const message = await operations.updateMessageComponentState(
-      this.tx,
+      this.getDb(),
       messageId,
       newState,
     );
@@ -406,6 +425,16 @@ export class ThreadsService {
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
     const thread = await this.ensureThread(projectId, threadId, undefined);
+    if (
+      thread.generationStage === GenerationStage.STREAMING_RESPONSE ||
+      thread.generationStage === GenerationStage.HYDRATING_COMPONENT ||
+      thread.generationStage === GenerationStage.CHOOSING_COMPONENT
+    ) {
+      throw new Error(
+        'Thread is already in processing, only one response can be generated at a time',
+      );
+    }
+
     await this.addMessage(thread.id, advanceRequestDto.messageToAppend);
 
     // Use the shared method to create the HydraBackend instance
