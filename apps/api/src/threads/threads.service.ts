@@ -434,6 +434,7 @@ export class ThreadsService {
   > {
     const thread = await this.ensureThread(projectId, threadId, undefined);
 
+    // Ensure only one request per thread adds its user message and continues
     const addedUserMessage = await this.getDb().transaction(
       async (tx) => {
         const [currentThread] = await tx
@@ -607,10 +608,12 @@ export class ThreadsService {
           ? `Fetching context...`
           : `Generation complete`;
 
-        await operations.updateThread(tx, thread.id, {
-          generationStage: resultingGenerationStage,
-          statusMessage: resultingStatusMessage,
-        });
+        await this.updateGenerationStage(
+          thread.id,
+          resultingGenerationStage,
+          resultingStatusMessage,
+          tx,
+        );
 
         return {
           responseMessageDto,
