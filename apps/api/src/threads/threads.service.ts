@@ -627,7 +627,7 @@ export class ThreadsService {
     );
 
     return {
-      responseMessageDto: responseMessageDto,
+      responseMessageDto,
       generationStage: resultingGenerationStage,
       statusMessage: resultingStatusMessage,
     };
