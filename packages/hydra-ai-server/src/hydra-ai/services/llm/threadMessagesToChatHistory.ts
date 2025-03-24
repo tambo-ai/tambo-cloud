@@ -73,7 +73,9 @@ function makeAssistantMessages(
   message: ThreadMessage,
   respondedToolIds: string[],
 ): (ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam)[] {
-  // if we got a tool call request, but not the id, then we have to fake the response
+  // if we got a tool call request, but never recorded the original tool call,
+  // so we have to fake the response. This is almost certainly some old data in
+  // the database (before 3/15/2025)
   if (
     message.tool_call_id &&
     message.component?.toolCallRequest &&
@@ -99,13 +101,30 @@ function makeAssistantMessages(
       },
     ];
   }
+
+  // We have recorded that we're calling one of the user's tools, but we also
+  // store the component decision in the same row in the messages table in the
+  // db. Really, this is as a result of two calls: make a decision and then call
+  // a tool.
+  //
+  // For now, we'll fake the tool call request and the choice response, so that
+  // the LLM sees a very clear pattern of component decision -> tool call.
+  //
+  // In the future we should record the component decision as a tool call so we
+  // don't have to fake it.
   if (
     message.tool_call_id &&
     message.component?.componentName &&
     message.component?.toolCallRequest
   ) {
+    // Note that we have to keep the tool call id short, OpenAI complains if it
+    // is more than 46 characters
     const fakeToolCallId = `${message.tool_call_id}-cc`;
-    // simulate the tool call request, then a choice response, then the next message
+    // Messages:
+    // 1. simulate the tool call request, which is the component decision
+    // 2. the tool call response, which is the system acknowledgement that the
+    //    tool call was handled.
+    // 3. the next message, which is the actual user tool call response.
     return [
       {
         role: "assistant",
@@ -120,6 +139,8 @@ function makeAssistantMessages(
         content: [
           {
             type: "text",
+            // The "component_decision" tool call response, which is basically
+            // just the system acknowledgement that the tool call was handled.
             text: "{}",
           },
         ],
@@ -136,7 +157,12 @@ function makeAssistantMessages(
     ];
   }
 
-  // no tool call id, so just return the assistant message
+  // Finally, if there's no tool call id, just return the assistant message
+  if (message.tool_call_id) {
+    console.warn(
+      `no tool call id in assistant message ${message.id}, returning assistant message`,
+    );
+  }
   const assistantMessage: ChatCompletionAssistantMessageParam = {
     role: "assistant",
     content: message.content as ChatCompletionContentPartText[],
