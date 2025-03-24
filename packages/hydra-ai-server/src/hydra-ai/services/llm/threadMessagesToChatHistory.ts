@@ -1,8 +1,10 @@
 import {
   ChatCompletionContentPartText,
   ChatCompletionMessageParam,
+  LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
+  ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import {
   ChatCompletionAssistantMessageParam,
@@ -70,10 +72,11 @@ function makeToolMessages(
 function makeAssistantMessages(
   message: ThreadMessage,
   respondedToolIds: string[],
-): ChatCompletionAssistantMessageParam[] {
+): (ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam)[] {
   // if we got a tool call request, but not the id, then we have to fake the response
   if (
     message.tool_call_id &&
+    message.component?.toolCallRequest &&
     !respondedToolIds.includes(message.tool_call_id)
   ) {
     console.warn(
@@ -96,6 +99,44 @@ function makeAssistantMessages(
       },
     ];
   }
+  if (
+    message.tool_call_id &&
+    message.component?.componentName &&
+    message.component?.toolCallRequest
+  ) {
+    const fakeToolCallId = `${message.tool_call_id}-cc`;
+    // simulate the tool call request, then a choice response, then the next message
+    return [
+      {
+        role: "assistant",
+        content: message.content as ChatCompletionContentPartText[],
+        tool_calls: formatFunctionCall(
+          makeFakeDecisionCall(message.component),
+          fakeToolCallId,
+        ),
+      },
+      {
+        role: "tool",
+        content: [
+          {
+            type: "text",
+            text: "{}",
+          },
+        ],
+        tool_call_id: fakeToolCallId,
+      },
+      {
+        role: "assistant",
+        content: "Now fetch some data",
+        tool_calls: formatFunctionCall(
+          message.component?.toolCallRequest,
+          message.tool_call_id,
+        ),
+      },
+    ];
+  }
+
+  // no tool call id, so just return the assistant message
   const assistantMessage: ChatCompletionAssistantMessageParam = {
     role: "assistant",
     content: message.content as ChatCompletionContentPartText[],
@@ -105,6 +146,30 @@ function makeAssistantMessages(
     ),
   };
   return [assistantMessage];
+}
+
+/** This simulates the tool call that the LLM would make to decide which
+ * component to use, since we previously recorded this in the message history */
+function makeFakeDecisionCall(
+  component: LegacyComponentDecision,
+): ToolCallRequest {
+  return {
+    toolName: "decide_component",
+    parameters: [
+      {
+        parameterName: "reasoning",
+        parameterValue: component.message,
+      },
+      {
+        parameterName: "decision",
+        parameterValue: true,
+      },
+      {
+        parameterName: "component",
+        parameterValue: component.componentName,
+      },
+    ],
+  };
 }
 
 function makeUserMessages(
