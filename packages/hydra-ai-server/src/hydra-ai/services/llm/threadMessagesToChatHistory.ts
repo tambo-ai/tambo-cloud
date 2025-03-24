@@ -29,16 +29,16 @@ export function threadMessagesToChatHistory(
     )
     .map((message) => message.tool_call_id)
     .filter((id) => id !== undefined);
-  const newMessages = messageHistory.map(
-    (message): ChatCompletionMessageParam => {
+  const newMessages = messageHistory.flatMap(
+    (message): ChatCompletionMessageParam[] => {
       switch (message.role) {
         case MessageRole.Tool:
-          return makeToolMessage(message);
+          return makeToolMessages(message);
         case MessageRole.Hydra:
         case MessageRole.Assistant:
-          return makeAssistantMessage(message, respondedToolIds);
+          return makeAssistantMessages(message, respondedToolIds);
         default:
-          return makeUserMessage(message);
+          return makeUserMessages(message);
       }
     },
   );
@@ -46,16 +46,16 @@ export function threadMessagesToChatHistory(
   return newMessages;
 }
 
-function makeToolMessage(
+function makeToolMessages(
   message: ThreadMessage,
-): ChatCompletionToolMessageParam | ChatCompletionUserMessageParam {
+): (ChatCompletionToolMessageParam | ChatCompletionUserMessageParam)[] {
   if (message.tool_call_id) {
     const toolMessage: ChatCompletionToolMessageParam = {
       role: "tool",
       content: message.content as ChatCompletionContentPartText[],
       tool_call_id: message.tool_call_id,
     };
-    return toolMessage;
+    return [toolMessage];
   }
   console.warn(
     `no tool id in tool message ${message.id} converting to user message`,
@@ -65,12 +65,12 @@ function makeToolMessage(
     role: "user",
     content: message.content as ChatCompletionContentPartText[],
   };
-  return userToolMessage;
+  return [userToolMessage];
 }
-function makeAssistantMessage(
+function makeAssistantMessages(
   message: ThreadMessage,
   respondedToolIds: string[],
-): ChatCompletionAssistantMessageParam {
+): ChatCompletionAssistantMessageParam[] {
   // if we got a tool call request, but not the id, then we have to fake the response
   if (
     message.tool_call_id &&
@@ -79,20 +79,22 @@ function makeAssistantMessage(
     console.warn(
       `tool message ${message.id} not responded to, responding with tool call (${message.tool_call_id})`,
     );
-    return {
-      role: "assistant",
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            formatFunctionCall(
-              message.component?.toolCallRequest,
-              message.tool_call_id,
+    return [
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              formatFunctionCall(
+                message.component?.toolCallRequest,
+                message.tool_call_id,
+              ),
             ),
-          ),
-        },
-      ],
-    };
+          },
+        ],
+      },
+    ];
   }
   const assistantMessage: ChatCompletionAssistantMessageParam = {
     role: "assistant",
@@ -102,12 +104,12 @@ function makeAssistantMessage(
       message.tool_call_id,
     ),
   };
-  return assistantMessage;
+  return [assistantMessage];
 }
 
-function makeUserMessage(
+function makeUserMessages(
   message: ThreadMessage,
-): ChatCompletionUserMessageParam | ChatCompletionSystemMessageParam {
+): (ChatCompletionUserMessageParam | ChatCompletionSystemMessageParam)[] {
   if (
     message.role === MessageRole.Hydra ||
     message.role === MessageRole.Assistant ||
@@ -123,8 +125,10 @@ function makeUserMessage(
         additionalContextMessage,
       ]
     : (message.content as ChatCompletionContentPartText[]);
-  return {
-    role: message.role, // either user or system
-    content: content,
-  };
+  return [
+    {
+      role: message.role, // either user or system
+      content: content,
+    },
+  ];
 }
