@@ -1,10 +1,10 @@
 "use client";
 
+import { Message } from "@/components/ui/tambo/message";
 import { cn } from "@/lib/utils";
-import * as React from "react";
-import { Message } from "@/components/ui/message";
 import { useTambo } from "@tambo-ai/react";
 import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 
 const threadContentVariants = cva("flex flex-col gap-4", {
   variants: {
@@ -47,13 +47,11 @@ const ThreadContent = React.forwardRef<HTMLDivElement, ThreadContentProps>(
       >
         {messages.map((message, index) => {
           const showLoading = isGenerating && index === messages.length - 1;
-          const messageContent = showLoading
-            ? ""
-            : Array.isArray(message.content)
-              ? (message.content[0]?.text ?? "Empty message")
-              : typeof message.content === "string"
-                ? message.content
-                : "Empty message";
+          const messageContent = Array.isArray(message.content)
+            ? (message.content[0]?.text ?? "Empty message")
+            : typeof message.content === "string"
+              ? message.content
+              : "Empty message";
 
           return (
             <div

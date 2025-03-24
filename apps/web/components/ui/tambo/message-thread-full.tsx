@@ -45,7 +45,7 @@ const MessageThreadFull = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "flex flex-col bg-white rounded-lg shadow-sm overflow-hidden bg-background h-[600px] w-full min-w-2xl max-w-2xl border border-gray-200",
+        "flex flex-col bg-white rounded-lg shadow-sm overflow-hidden bg-background h-[800px] w-full min-w-2xl max-w-2xl border border-gray-200",
         className,
       )}
       {...props}

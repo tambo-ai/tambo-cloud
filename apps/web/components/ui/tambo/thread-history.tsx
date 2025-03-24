@@ -1,15 +1,15 @@
 "use client";
 
-import * as React from "react";
-import { useCallback } from "react";
 import { cn } from "@/lib/utils";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
-  useTamboThreads,
   useTamboThread,
+  useTamboThreads,
   type TamboThread,
 } from "@tambo-ai/react";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { PlusIcon } from "lucide-react";
+import * as React from "react";
+import { useCallback } from "react";
 
 export interface ThreadHistoryProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -43,7 +43,7 @@ export function ThreadHistory({
       }
 
       try {
-        switchCurrentThread(contextKey ?? "", false); // TODO: This will be updated when createThread is implemented
+        switchCurrentThread(contextKey ?? ""); // TODO: This will be updated when createThread is implemented
         onThreadChange?.();
       } catch (error) {
         console.error("Failed to create new thread:", error);
@@ -107,7 +107,7 @@ export function ThreadHistory({
           >
             <DropdownMenu.Item
               className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-              onSelect={(e: React.MouseEvent) => {
+              onSelect={(e: Event) => {
                 e.preventDefault();
                 handleNewThread();
               }}
@@ -149,7 +149,7 @@ export function ThreadHistory({
                 <DropdownMenu.Item
                   key={thread.id}
                   className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                  onSelect={(e: React.MouseEvent) => {
+                  onSelect={(e: Event) => {
                     e.preventDefault();
                     handleSwitchThread(thread.id);
                   }}
