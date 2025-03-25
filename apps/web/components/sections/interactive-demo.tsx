@@ -20,7 +20,7 @@ export function InteractiveDemo() {
             tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL!}
             components={demoComponents}
           >
-            <div className="tambo_theme w-full">
+            <div className="tambo-theme w-full">
               <div className="relative w-full mx-auto">
                 <MessageThreadFull className="mx-auto shadow-xl" />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

@@ -54,7 +54,10 @@ const MessageThreadFull = React.forwardRef<
     >
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="font-semibold text-lg">Try tambo-ai</h2>
-        <ThreadHistory contextKey={contextKey} />
+        <ThreadHistory
+          contextKey={contextKey}
+          position={{ side: "left", align: "start" }}
+        />
       </div>
       <div
         ref={scrollContainerRef}
