@@ -14,14 +14,14 @@ import { operations, schema } from "@tambo-ai-cloud/db";
 import type { DBSuggestion } from "@tambo-ai-cloud/db/src/schema";
 import { generateChainId, HydraBackend } from "@tambo-ai-cloud/hydra-ai-server";
 import { eq } from "drizzle-orm";
-import { decryptProviderKey } from "src/common/key.utils";
+import { decryptProviderKey } from "../common/key.utils";
 import {
   DATABASE,
   TRANSACTION,
-} from "src/common/middleware/db-transaction-middleware";
-import { AvailableComponentDto } from "src/components/dto/generate-component.dto";
-import { ProjectsService } from "src/projects/projects.service";
+} from "../common/middleware/db-transaction-middleware";
 import { CorrelationLoggerService } from "../common/services/logger.service";
+import { AvailableComponentDto } from "../components/dto/generate-component.dto";
+import { ProjectsService } from "../projects/projects.service";
 import {
   AdvanceThreadDto,
   AdvanceThreadResponseDto,
@@ -207,6 +207,7 @@ export class ThreadsService {
       actionType: messageDto.actionType ?? undefined,
       toolCallRequest: messageDto.toolCallRequest ?? undefined,
       toolCallId: messageDto?.tool_call_id,
+      componentState: messageDto.componentState ?? {},
     });
     return {
       id: message.id,
@@ -893,6 +894,8 @@ export class ThreadsService {
       message: component.message,
       componentName: component.componentName,
       props: component.props,
+      state: component.state,
+      reasoning: component.reasoning,
     };
     return await this.addMessage(
       threadId,
@@ -908,6 +911,7 @@ export class ThreadsService {
         actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
         toolCallRequest: component.toolCallRequest,
         tool_call_id: component.toolCallRequest?.tool_call_id,
+        componentState: component.state ?? {},
       },
       tx,
     );
