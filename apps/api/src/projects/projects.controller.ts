@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiSecurity } from "@nestjs/swagger";
-import { ApiKeyGuard } from "src/components/guards/apikey.guard";
+import { ApiKeyGuard } from "../components/guards/apikey.guard";
 import { AddProviderKeyRequest } from "./dto/add-provider-key.dto";
 import {
   ProjectCreateRequest,
