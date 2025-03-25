@@ -18,9 +18,9 @@ const heroContent = {
     link: "https://github.com/tambo-ai/tambo",
   },
   title: "An AI powered Interface in a few lines of code.",
-  subtitle: "A React package for interfaces that think.",
+  subtitle: "Ship smarter React apps, not more documentation.",
   cta: {
-    buttonText: "Take Tambo for a Spin",
+    buttonText: "Take tambo for a spin",
   },
 };
 
