@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   TamboThreadMessage,
@@ -8,6 +7,7 @@ import {
   useTamboThreadInput,
 } from "@tambo-ai/react";
 import { useEffect, useRef, useState } from "react";
+import { TamboEmailButton } from "./TamboEmailButton";
 import { TamboSuggestions } from "./TamboSuggestions";
 import { TamboThreadInput } from "./TamboThreadInput";
 
@@ -76,6 +76,7 @@ export const TamboDemo = () => {
       <div className="space-y-4 flex flex-col h-full">
         {/* Messages display - with enhanced isolation from page scroll */}
         <div className="flex-grow relative">
+          {messages.length === 0 && <TamboEmailButton />}
           <div
             ref={chatContainerRef}
             className="space-y-4 absolute inset-0 overflow-y-auto p-4 border border-gray-200 dark:border-gray-800 rounded-md bg-gray-50 dark:bg-gray-950 scroll-container"
@@ -87,20 +88,7 @@ export const TamboDemo = () => {
           >
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full space-y-4">
-                {!hasPressedButton && (
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={() => {
-                      setValue("Help me send an email to the founders.");
-                      setHasPressedButton(true);
-                    }}
-                    className="px-8 py-6 text-sm animate-pulse hover:animate-none hover:from-primary/90 hover:to-primary/70 transition-all duration-600 shadow-lg hover:shadow-xl"
-                  >
-                    Try Sending Us an Email
-                    <span className="ml-2 text-xs opacity-75">(⌘+E)</span>
-                  </Button>
-                )}
+                {/* Button now floats over this container instead of being inside it */}
               </div>
             ) : (
               <>
