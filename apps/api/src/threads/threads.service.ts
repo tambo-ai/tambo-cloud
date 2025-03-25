@@ -157,7 +157,10 @@ export class ThreadsService {
         role: message.role,
         createdAt: message.createdAt,
         component: message.componentDecision ?? undefined,
-        content: convertContentPartToDto(message.content),
+        content: convertContentPartToDto(
+          message.content,
+          message.role === MessageRole.Assistant,
+        ),
         metadata: message.metadata ?? undefined,
         componentState: message.componentState ?? {},
         toolCallRequest: message.toolCallRequest ?? undefined,
@@ -212,7 +215,10 @@ export class ThreadsService {
       id: message.id,
       threadId,
       role: message.role,
-      content: convertContentPartToDto(message.content),
+      content: convertContentPartToDto(
+        message.content,
+        message.role === MessageRole.Assistant,
+      ),
       metadata: message.metadata ?? undefined,
       component: message.componentDecision ?? undefined,
       actionType: message.actionType ?? undefined,
@@ -238,7 +244,10 @@ export class ThreadsService {
     );
     return messages.map((message) => ({
       ...message,
-      content: convertContentPartToDto(message.content),
+      content: convertContentPartToDto(
+        message.content,
+        message.role === MessageRole.Assistant,
+      ),
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
       tool_call_id: message.toolCallId ?? undefined,
@@ -267,7 +276,10 @@ export class ThreadsService {
     );
     return {
       ...message,
-      content: convertContentPartToDto(message.content),
+      content: convertContentPartToDto(
+        message.content,
+        message.role === MessageRole.Assistant,
+      ),
       metadata: message.metadata ?? undefined,
       toolCallRequest: message.toolCallRequest ?? undefined,
       tool_call_id: message.toolCallId ?? undefined,
@@ -407,7 +419,10 @@ export class ThreadsService {
     );
     return {
       ...message,
-      content: convertContentPartToDto(message.content),
+      content: convertContentPartToDto(
+        message.content,
+        message.role === MessageRole.Assistant,
+      ),
       metadata: message.metadata ?? undefined,
       componentState: message.componentState ?? {},
       toolCallRequest: message.toolCallRequest ?? undefined,
@@ -894,7 +909,7 @@ export class ThreadsService {
       componentName: component.componentName,
       props: component.props,
     };
-    return await this.addMessage(
+    const message = await this.addMessage(
       threadId,
       {
         role: MessageRole.Assistant,
@@ -911,7 +926,31 @@ export class ThreadsService {
       },
       tx,
     );
+    return {
+      ...message,
+      content: extractStructuredContent(message.content),
+    };
   }
+}
+
+function extractStructuredContent(
+  content: ChatCompletionContentPartDto[],
+): ChatCompletionContentPartDto[] {
+  if (
+    content.length === 1 &&
+    content[0].type === ContentPartType.Text &&
+    content[0].text?.startsWith("{")
+  ) {
+    const parsedMessage = tryParseJson(content[0].text);
+    const newContent = [
+      {
+        type: ContentPartType.Text,
+        text: parsedMessage?.message ?? content[0].text,
+      },
+    ];
+    return newContent;
+  }
+  return content;
 }
 
 function convertContentDtoToContentPart(
@@ -963,9 +1002,13 @@ function threadMessageDtoToThreadMessage(
 
 function convertContentPartToDto(
   part: ChatCompletionContentPart[] | string,
+  structured: boolean,
 ): ChatCompletionContentPartDto[] {
   if (typeof part === "string") {
     return [{ type: ContentPartType.Text, text: part }];
+  }
+  if (structured) {
+    return extractStructuredContent(part as ChatCompletionContentPartDto[]);
   }
   return part as ChatCompletionContentPartDto[];
 }
