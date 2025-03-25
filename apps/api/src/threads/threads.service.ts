@@ -207,6 +207,7 @@ export class ThreadsService {
       actionType: messageDto.actionType ?? undefined,
       toolCallRequest: messageDto.toolCallRequest ?? undefined,
       toolCallId: messageDto?.tool_call_id,
+      componentState: messageDto.componentState ?? {},
     });
     return {
       id: message.id,
@@ -910,6 +911,7 @@ export class ThreadsService {
         actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
         toolCallRequest: component.toolCallRequest,
         tool_call_id: component.toolCallRequest?.tool_call_id,
+        componentState: component.state ?? {},
       },
       tx,
     );
