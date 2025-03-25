@@ -35,6 +35,7 @@ export class ComponentDecisionV2Dto implements ComponentDecisionV2 {
     additionalProperties: true,
   })
   state!: Record<string, unknown> | null;
+  reasoning!: string;
 }
 
 export class ToolParameter {

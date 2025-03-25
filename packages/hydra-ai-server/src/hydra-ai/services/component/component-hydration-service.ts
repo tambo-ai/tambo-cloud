@@ -149,6 +149,7 @@ To respond to the user's message:
   const generateComponentResponse = await llmClient.complete(completeOptions);
 
   const componentDecision: LegacyComponentDecision = {
+    reasoning: "",
     message: "Fetching additional data",
     componentName: chosenComponent.name,
     props: null,
@@ -182,6 +183,7 @@ async function* handleComponentHydrationStream(
   version: "v1" | "v2" = "v1",
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const initialDecision: LegacyComponentDecision = {
+    reasoning: "",
     componentName,
     props: null,
     message: "",

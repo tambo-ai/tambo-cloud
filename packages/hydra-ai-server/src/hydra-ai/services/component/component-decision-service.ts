@@ -126,6 +126,7 @@ async function handleNoComponentCase(
   const noComponentResponse = await llmClient.complete(completeOptions);
 
   return {
+    reasoning: "",
     componentName: null,
     props: null,
     message: noComponentResponse.message,
@@ -140,6 +141,7 @@ async function* handleNoComponentStream(
   version: "v1" | "v2" = "v1",
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const accumulatedDecision: LegacyComponentDecision = {
+    reasoning: "",
     componentName: null,
     props: null,
     message: "",

@@ -894,6 +894,7 @@ export class ThreadsService {
       componentName: component.componentName,
       props: component.props,
       state: component.state,
+      reasoning: component.reasoning,
     };
     return await this.addMessage(
       threadId,
