@@ -14,11 +14,10 @@ const baseSchema = {
       "The props that should be used in the chosen component. These will be injected by using React.createElement(component, props)",
     ),
   reasoning: z.string().describe("The reasoning behind the decision"),
-  state: z
-    .record(z.any())
-    .describe(
-      "Any state that should be injected into the component, often used to carry state forward from previous component decisions.",
-    ),
+  state: z.record(z.any()).describe(
+    `Any additional state properties that should be injected into the component, 
+used to carry state forward from previous component decisions.`,
+  ),
 };
 
 const suggestedActionsSchema = z
