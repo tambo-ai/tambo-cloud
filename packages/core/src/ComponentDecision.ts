@@ -5,12 +5,14 @@ export interface LegacyComponentDecision {
   suggestedActions?: SuggestedAction[];
   toolCallRequest?: ToolCallRequest;
   toolCallId?: string;
+  state: Record<string, unknown> | null;
 }
 
 export interface ComponentDecisionV2 {
   componentName: string | null;
-  props: any | null;
+  props: Record<string, unknown>;
   message: string;
+  state: Record<string, unknown> | null;
 }
 
 export interface ToolCallRequest {

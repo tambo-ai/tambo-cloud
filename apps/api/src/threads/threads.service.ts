@@ -893,6 +893,7 @@ export class ThreadsService {
       message: component.message,
       componentName: component.componentName,
       props: component.props,
+      state: component.state,
     };
     return await this.addMessage(
       threadId,

@@ -152,6 +152,7 @@ To respond to the user's message:
     message: "Fetching additional data",
     componentName: chosenComponent.name,
     props: null,
+    state: null, // TOOD: remove when optional
     ...(version === "v1" ? { suggestedActions: [] } : {}),
     toolCallRequest: generateComponentResponse.toolCallRequest,
   };
@@ -183,6 +184,7 @@ async function* handleComponentHydrationStream(
     componentName,
     props: null,
     message: "",
+    state: null, // TOOD: remove when optional
     ...(version === "v1" ? { suggestedActions: [] } : {}),
     toolCallRequest: undefined,
     toolCallId: undefined,
