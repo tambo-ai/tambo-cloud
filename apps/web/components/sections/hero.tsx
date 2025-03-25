@@ -13,14 +13,14 @@ const ease = [0.16, 1, 0.3, 1];
 // Hero content moved directly into this file
 const heroContent = {
   pill: {
-    label: "⚡️ Launching Soon",
-    text: "v1.0.0",
-    link: "http://localhost:3000/blog/0-1-0-announcement",
+    label: "⭐ Star us on",
+    text: "Github",
+    link: "https://github.com/tambo-ai/tambo",
   },
   title: "An AI powered Interface in a few lines of code.",
   subtitle: "A React package for interfaces that think.",
   cta: {
-    buttonText: "Request Early Access",
+    buttonText: "Take Tambo for a Spin",
   },
 };
 
@@ -182,7 +182,7 @@ function HeroCTAButton() {
       transition={{ delay: 0.9, duration: 0.6, ease: "easeOut" }}
     >
       <Button asChild className="mt-4 hover:scale-105 transition-transform">
-        <Link href="#interactive-demo">Take Tambo for a Spin</Link>
+        <Link href="#interactive-demo">{heroContent.cta.buttonText}</Link>
       </Button>
     </motion.div>
   );
