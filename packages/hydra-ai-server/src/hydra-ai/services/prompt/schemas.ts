@@ -50,6 +50,3 @@ export const schemaV1 = z.object({
 
 // Modern v2 schema without suggested actions
 export const schemaV2 = z.object(baseSchema);
-
-// Default to v1 schema for backward compatibility
-export const schema = schemaV1;
