@@ -1,15 +1,14 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Request } from "express";
 import { decryptApiKey, hashKey } from "../../common/key.utils";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 import { ProjectsService } from "../../projects/projects.service";
 
+/**
+ * This is the symbol used to store the project that the current request is
+ * authorized for. It is set by the ApiKeyGuard and used by other guards to
+ * ensure that the request is authorized for the correct project.
+ */
 export const ProjectId = Symbol("projectId");
 
 declare module "express" {
@@ -18,6 +17,13 @@ declare module "express" {
   }
 }
 
+/**
+ * This makes sure that the request has a valid API key, and if so, stores the
+ * project ID in `request[ProjectId]`.
+ *
+ * Use other guards to make sure that the project ID is valid for the current
+ * request.
+ */
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
   constructor(
@@ -31,7 +37,7 @@ export class ApiKeyGuard implements CanActivate {
     const apiKey = Array.isArray(apiKeyAny) ? apiKeyAny[0] : apiKeyAny;
     if (!apiKey) {
       this.logger.error("Missing API key in request");
-      throw new ForbiddenException("API key is required in x-api-key header");
+      return false;
     }
 
     try {
@@ -43,7 +49,7 @@ export class ApiKeyGuard implements CanActivate {
       );
       if (!projectId) {
         this.logger.error(`Invalid API key for project ${projectIdOrLegacyId}`);
-        throw new UnauthorizedException("Invalid API key");
+        return false;
       }
       request[ProjectId] = projectId;
 
@@ -54,21 +60,20 @@ export class ApiKeyGuard implements CanActivate {
         `Error validating API key: ${error.message}`,
         error.stack,
       );
-      throw new UnauthorizedException(error.message, {
-        cause: error,
-      });
+      return false;
     }
   }
 
   private async validateApiKeyWithProject(
     apiKey: string,
     projectIdOrLegacyId: string,
-  ): Promise<string> {
+  ): Promise<string | null> {
     try {
       const project =
         await this.projectsService.findOneWithKeys(projectIdOrLegacyId);
       if (!project?.id) {
-        throw new Error("Project not found");
+        this.logger.error(`Project not found for API key ${apiKey}`);
+        return null;
       }
 
       const hashedKey = hashKey(apiKey);
@@ -82,9 +87,11 @@ export class ApiKeyGuard implements CanActivate {
 
       return project.id;
     } catch (error: any) {
-      throw new UnauthorizedException(error.message, {
-        cause: error,
-      });
+      this.logger.error(
+        `Error validating API key: ${error.message}`,
+        error.stack,
+      );
+      return null;
     }
   }
 

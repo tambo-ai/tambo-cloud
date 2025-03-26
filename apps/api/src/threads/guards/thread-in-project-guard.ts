@@ -1,10 +1,8 @@
 import {
-  BadRequestException,
   CanActivate,
   ExecutionContext,
   Inject,
   Injectable,
-  UnauthorizedException,
 } from "@nestjs/common";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import { Request } from "express";
@@ -26,12 +24,14 @@ export class ThreadInProjectGuard implements CanActivate {
 
     if (!threadId) {
       this.logger.error("Missing thread ID in request parameters");
-      throw new BadRequestException("Thread ID is required");
+      return false;
     }
 
     if (!projectId) {
-      this.logger.error("Missing project ID in request");
-      throw new BadRequestException("Project ID is required");
+      this.logger.error(
+        "Missing project ID in request: should be set by ApiKeyGuard",
+      );
+      return false;
     }
 
     try {
@@ -45,9 +45,7 @@ export class ThreadInProjectGuard implements CanActivate {
         `Error validating thread access: ${error.message}`,
         error.stack,
       );
-      throw new UnauthorizedException("Invalid thread access", {
-        cause: error,
-      });
+      return false;
     }
   }
 }

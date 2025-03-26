@@ -8,7 +8,7 @@ import { ProjectsService } from "../projects.service";
 export const ProjectIdParameterKey = Reflector.createDecorator<string>({});
 
 /** Makes sure that the project being accessed belongs to the API key making the
- * request. Stores the current project ID in `request.projectId`
+ * request. Stores the current project ID in `request[ProjectId]`
  *
  * If the parameter name is not `'id'`, then use the ProjectIdParameterKey
  * decorator to specify the parameter name.
@@ -38,19 +38,30 @@ export class ProjectAccessOwnGuard implements CanActivate {
         ProjectIdParameterKey,
         context.getHandler(),
       );
+      const authorizedProjectId = request[ProjectId];
+      if (!authorizedProjectId) {
+        this.logger.warn(
+          `[${correlationId}] No project ID provided for API key ${apiKey}`,
+        );
+        return true; // Allow the request to proceed, let the controller handle missing projectId
+      }
 
       const projectId = projectIdParameterKey
         ? request.params[projectIdParameterKey]
         : request.params.id;
-
-      // Store the project ID in the request for use in controllers
-      request[ProjectId] = projectId;
 
       if (!projectId) {
         this.logger.warn(
           `[${correlationId}] No project ID provided for API key ${apiKey}`,
         );
         return true; // Allow the request to proceed, let the controller handle missing projectId
+      }
+
+      if (projectId !== authorizedProjectId) {
+        this.logger.warn(
+          `[${correlationId}] Project ID ${projectId} does not match authorized project ID ${authorizedProjectId}`,
+        );
+        return false;
       }
 
       const project = await this.projectsService.findOne(projectId);
