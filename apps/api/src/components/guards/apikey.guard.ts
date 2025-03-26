@@ -5,9 +5,18 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import { Request } from "express";
 import { decryptApiKey, hashKey } from "../../common/key.utils";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 import { ProjectsService } from "../../projects/projects.service";
+
+export const ProjectId = Symbol("projectId");
+
+declare module "express" {
+  interface Request {
+    [ProjectId]?: string;
+  }
+}
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
@@ -17,9 +26,9 @@ export class ApiKeyGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const apiKey = request.headers["x-api-key"];
-
+    const request: Request = context.switchToHttp().getRequest();
+    const apiKeyAny = request.headers["x-api-key"];
+    const apiKey = Array.isArray(apiKeyAny) ? apiKeyAny[0] : apiKeyAny;
     if (!apiKey) {
       this.logger.error("Missing API key in request");
       throw new ForbiddenException("API key is required in x-api-key header");
@@ -36,7 +45,7 @@ export class ApiKeyGuard implements CanActivate {
         this.logger.error(`Invalid API key for project ${projectIdOrLegacyId}`);
         throw new UnauthorizedException("Invalid API key");
       }
-      request.projectId = projectId;
+      request[ProjectId] = projectId;
 
       this.logger.log(`Valid API key used for project ${projectId}`);
       return true;

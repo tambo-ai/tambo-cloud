@@ -7,6 +7,8 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
+import { Request } from "express";
+import { ProjectId } from "src/components/guards/apikey.guard";
 import { DATABASE } from "../../common/middleware/db-transaction-middleware";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 
@@ -18,9 +20,9 @@ export class ThreadInProjectGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request: Request = context.switchToHttp().getRequest();
     const threadId = request.params.id;
-    const projectId = request.projectId;
+    const projectId = request[ProjectId];
 
     if (!threadId) {
       this.logger.error("Missing thread ID in request parameters");

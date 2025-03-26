@@ -1,5 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import { Request } from "express";
+import { ProjectId } from "src/components/guards/apikey.guard";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 import { ProjectsService } from "../projects.service";
 
@@ -20,7 +22,7 @@ export class ProjectAccessOwnGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request: Request = context.switchToHttp().getRequest();
     const correlationId = request["correlationId"];
     const apiKey = request.headers["x-api-key"];
 
@@ -42,7 +44,7 @@ export class ProjectAccessOwnGuard implements CanActivate {
         : request.params.id;
 
       // Store the project ID in the request for use in controllers
-      request.projectId = projectId;
+      request[ProjectId] = projectId;
 
       if (!projectId) {
         this.logger.warn(
