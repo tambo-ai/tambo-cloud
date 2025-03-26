@@ -21,6 +21,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { GenerationStage } from "@tambo-ai-cloud/core";
+import { Request } from "express";
 import { ApiKeyGuard, ProjectId } from "../components/guards/apikey.guard";
 import {
   ProjectAccessOwnGuard,
@@ -94,7 +95,7 @@ export class ThreadsController {
   @UseGuards(ThreadInProjectGuard)
   async findOne(
     @Param("id") threadId: string,
-    @Req() request,
+    @Req() request: Request,
   ): Promise<ThreadWithMessagesDto> {
     if (!request[ProjectId]) {
       throw new BadRequestException("Project ID is required");
@@ -264,7 +265,7 @@ export class ThreadsController {
   @Post(":id/advance")
   async advanceThread(
     @Param("id") threadId: string,
-    @Req() request,
+    @Req() request: Request,
     @Body() advanceRequestDto: AdvanceThreadDto,
   ): Promise<AdvanceThreadResponseDto> {
     if (!request[ProjectId]) {
@@ -281,7 +282,7 @@ export class ThreadsController {
   @Post(":id/advancestream")
   async advanceThreadStream(
     @Param("id") threadId: string,
-    @Req() request,
+    @Req() request: Request,
     @Body() advanceRequestDto: AdvanceThreadDto,
     @Res() response,
   ): Promise<void> {
@@ -314,7 +315,7 @@ export class ThreadsController {
    */
   @Post("advance")
   async createAndAdvanceThread(
-    @Req() request,
+    @Req() request: Request,
     @Body() advanceRequestDto: AdvanceThreadDto,
   ): Promise<AdvanceThreadResponseDto> {
     if (!request[ProjectId]) {
@@ -328,7 +329,7 @@ export class ThreadsController {
 
   @Post("advancestream")
   async createAndAdvanceThreadStream(
-    @Req() request,
+    @Req() request: Request,
     @Body() advanceRequestDto: AdvanceThreadDto,
     @Res() response,
   ): Promise<void> {

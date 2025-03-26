@@ -21,6 +21,7 @@ import {
   HydraBackend,
   generateChainId,
 } from "@tambo-ai-cloud/hydra-ai-server";
+import { Request } from "express";
 import { decryptProviderKey } from "../common/key.utils";
 import { CorrelationLoggerService } from "../common/services/logger.service";
 import { ProjectsService } from "../projects/projects.service";
@@ -61,7 +62,7 @@ export class ComponentsController {
   @Post("generate")
   async generateComponent(
     @Body() generateComponentDto: GenerateComponentRequest,
-    @Req() request, // Assumes the request object has the projectId
+    @Req() request: Request, // Assumes the request object has the projectId
   ): Promise<ComponentDecisionDto> {
     const { messageHistory, availableComponents, threadId, contextKey } =
       generateComponentDto;
@@ -79,6 +80,9 @@ export class ComponentsController {
       `generating component for project ${request[ProjectId]}, with message: ${lastMessageEntry.message}`,
     );
     const projectId = request[ProjectId];
+    if (!projectId) {
+      throw new BadRequestException("Project ID is required");
+    }
     const decryptedProviderKey =
       await this.validateProjectAndProviderKeys(projectId);
 
@@ -128,7 +132,7 @@ export class ComponentsController {
   @Post("hydrate")
   async hydrateComponent(
     @Body() hydrateComponentDto: HydrateComponentRequest,
-    @Req() request, // Assumes the request object has the projectId
+    @Req() request: Request, // Assumes the request object has the projectId
   ): Promise<ComponentDecisionDto> {
     const {
       messageHistory = [],
@@ -138,6 +142,9 @@ export class ComponentsController {
       contextKey,
     } = hydrateComponentDto;
     const projectId = request[ProjectId];
+    if (!projectId) {
+      throw new BadRequestException("Project ID is required");
+    }
     const decryptedProviderKey =
       await this.validateProjectAndProviderKeys(projectId);
 
