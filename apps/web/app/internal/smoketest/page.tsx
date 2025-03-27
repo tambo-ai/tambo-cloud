@@ -174,8 +174,15 @@ export default function SmokePage() {
     <div className="container max-w-4xl py-8 space-y-4">
       <div className="flex  gap-4">
         <Card className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Threads</h2>
+          <div className="flex justify-between items-center mb-4 gap-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">Threads</h2>
+              {isLoading && (
+                <div className="animate-spin">
+                  <RefreshCcw className="h-4 w-4" />
+                </div>
+              )}
+            </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
