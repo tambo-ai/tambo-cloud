@@ -7,7 +7,7 @@ import { useSession } from "@/hooks/auth";
 import { api } from "@/trpc/react";
 import { TamboTool, useTambo, useTamboThreadList } from "@tambo-ai/react";
 import { TRPCClientErrorLike } from "@trpc/client";
-import { RefreshCcw, X } from "lucide-react";
+import { PlusCircle, RefreshCcw, X } from "lucide-react";
 import {
   SetStateAction,
   useCallback,
@@ -32,8 +32,13 @@ export default function SmokePage() {
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
     [],
   );
-  const { registerComponent, generationStage, thread, switchCurrentThread } =
-    useTambo();
+  const {
+    registerComponent,
+    generationStage,
+    thread,
+    switchCurrentThread,
+    startNewThread,
+  } = useTambo();
   const messages = thread?.messages ?? [];
 
   const { mutateAsync: getAirQuality, isPending: isAqiPending } =
@@ -171,13 +176,25 @@ export default function SmokePage() {
         <Card className="p-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Threads</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => await refetchThreadInfo()}
-            >
-              <RefreshCcw className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => startNewThread()}
+                className="mr-2"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                New Thread
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => await refetchThreadInfo()}
+              >
+                <RefreshCcw className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           <ThreadList
             threads={threadInfo?.items ?? []}
@@ -219,7 +236,12 @@ export default function SmokePage() {
                 Generation stage: {generationStage}
               </p>
             </div>
-            <ThreadMessageInput contextKey={userId} />
+            <ThreadMessageInput
+              contextKey={userId}
+              onSubmit={async (value) => {
+                await refetchThreadInfo();
+              }}
+            />
           </Card>
 
           {errors.length > 0 && (
