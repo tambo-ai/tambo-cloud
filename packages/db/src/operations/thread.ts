@@ -1,5 +1,6 @@
 import { GenerationStage } from "@tambo-ai-cloud/core";
 import { and, eq, isNull, sql } from "drizzle-orm";
+import { stringify } from "superjson";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
 import { fixLegacyRole } from "../util/legacyMessages";
@@ -240,13 +241,34 @@ export async function deleteMessage(
 export async function updateMessageComponentState(
   db: HydraDb,
   messageId: string,
-  componentState: Record<string, unknown>,
+  newPartialState: Record<string, unknown>,
 ): Promise<typeof schema.messages.$inferSelect> {
+  const componentStateColumn = schema.messages.componentState;
+  const newPartialStateJsonb = stringify(newPartialState);
+  const componentStateExpression = sql`
+        jsonb_build_object(
+          'json',
+          (
+            COALESCE(
+              (${componentStateColumn}->>'json')::jsonb,
+              '{}'::jsonb
+            ) || 
+            (${newPartialStateJsonb}::json->>'json')::jsonb
+          ),
+          'meta',
+          (
+            COALESCE(
+              (${componentStateColumn}->>'meta')::jsonb,
+              '{}'::jsonb
+            ) || 
+            (${newPartialStateJsonb}::json->>'meta')::jsonb
+          )
+        )
+      `;
   const [updatedMessage] = await db
     .update(schema.messages)
     .set({
-      // need COALESCE because NULL || jsonb results in null
-      componentState: sql`COALESCE(${schema.messages.componentState}, '{}'::jsonb) || ${`${JSON.stringify(componentState)}`}`,
+      componentState: componentStateExpression,
     })
     .where(eq(schema.messages.id, messageId))
     .returning();
