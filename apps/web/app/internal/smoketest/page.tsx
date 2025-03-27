@@ -7,7 +7,7 @@ import { useSession } from "@/hooks/auth";
 import { api } from "@/trpc/react";
 import { TamboTool, useTambo, useTamboThreadList } from "@tambo-ai/react";
 import { TRPCClientErrorLike } from "@trpc/client";
-import { X } from "lucide-react";
+import { RefreshCcw, X } from "lucide-react";
 import {
   SetStateAction,
   useCallback,
@@ -151,10 +151,13 @@ export default function SmokePage() {
     });
   }, [registerComponent, tools]);
 
-  const { data: threadInfo, isLoading: isThreadInfoLoading } =
-    useTamboThreadList({
-      contextKey: userId,
-    });
+  const {
+    data: threadInfo,
+    isLoading: isThreadInfoLoading,
+    refetch: refetchThreadInfo,
+  } = useTamboThreadList({
+    contextKey: userId,
+  });
 
   const isLoading =
     isAqiPending ||
@@ -168,6 +171,13 @@ export default function SmokePage() {
         <Card className="p-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Threads</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => await refetchThreadInfo()}
+            >
+              <RefreshCcw className="h-4 w-4" />
+            </Button>
           </div>
           <ThreadList
             threads={threadInfo?.items ?? []}
