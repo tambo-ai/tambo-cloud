@@ -1,6 +1,6 @@
 import { GenerationStage } from "@tambo-ai-cloud/core";
-import { and, eq, isNull, sql } from "drizzle-orm";
-import { stringify } from "superjson";
+import { and, eq, isNull } from "drizzle-orm";
+import { mergeSuperJson } from "../drizzleUtil";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
 import { fixLegacyRole } from "../util/legacyMessages";
@@ -244,31 +244,10 @@ export async function updateMessageComponentState(
   newPartialState: Record<string, unknown>,
 ): Promise<typeof schema.messages.$inferSelect> {
   const componentStateColumn = schema.messages.componentState;
-  const newPartialStateJsonb = stringify(newPartialState);
-  const componentStateExpression = sql`
-        jsonb_build_object(
-          'json',
-          (
-            COALESCE(
-              (${componentStateColumn}->>'json')::jsonb,
-              '{}'::jsonb
-            ) || 
-            (${newPartialStateJsonb}::json->>'json')::jsonb
-          ),
-          'meta',
-          (
-            COALESCE(
-              (${componentStateColumn}->>'meta')::jsonb,
-              '{}'::jsonb
-            ) || 
-            (${newPartialStateJsonb}::json->>'meta')::jsonb
-          )
-        )
-      `;
   const [updatedMessage] = await db
     .update(schema.messages)
     .set({
-      componentState: componentStateExpression,
+      componentState: mergeSuperJson(componentStateColumn, newPartialState),
     })
     .where(eq(schema.messages.id, messageId))
     .returning();
