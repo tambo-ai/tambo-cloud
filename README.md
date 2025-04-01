@@ -135,7 +135,7 @@ turbo lint     # Lint all packages
 
 After setting up your local environment, configure your Tambo API key:
 
-1. Start your local environment:
+1. Start your local development server:
 
    ```bash
    npm run dev
