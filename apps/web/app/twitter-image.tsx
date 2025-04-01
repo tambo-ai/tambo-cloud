@@ -147,7 +147,7 @@ export default async function Image() {
           name: "Inter",
           data: await fetch(
             new URL(
-              "https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2",
+              "https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.ttf",
             ),
           ).then(async (res) => await res.arrayBuffer()),
           weight: 400,
@@ -157,7 +157,7 @@ export default async function Image() {
           name: "Inter",
           data: await fetch(
             new URL(
-              "https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hiJ-Ek-_EeA.woff2",
+              "https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa0XL7.ttf",
             ),
           ).then(async (res) => await res.arrayBuffer()),
           weight: 700,
