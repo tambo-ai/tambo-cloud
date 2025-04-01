@@ -24,7 +24,7 @@ export default async function Image() {
           justifyContent: "center",
           backgroundColor: "#F2F8F6",
           backgroundImage: "linear-gradient(to bottom right, #F2F8F6, #FFEBF5)",
-          fontFamily: "Arial, sans-serif",
+          fontFamily: "Inter, sans-serif",
           position: "relative",
           overflow: "hidden",
         }}
@@ -144,7 +144,7 @@ export default async function Image() {
       ...size,
       fonts: [
         {
-          name: "Arial",
+          name: "Inter",
           data: await fetch(
             new URL(
               "https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2",
@@ -154,7 +154,7 @@ export default async function Image() {
           style: "normal",
         },
         {
-          name: "Arial",
+          name: "Inter",
           data: await fetch(
             new URL(
               "https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hiJ-Ek-_EeA.woff2",
