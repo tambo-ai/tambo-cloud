@@ -72,8 +72,8 @@ You can also preview what the script will do without making any changes:
 
 ### Prerequisites
 
-- **Node.js** (v18 or later)
-- **npm** (v8 or later)
+- **Node.js** (v20 or later)
+- **npm** (v10 or later)
 - **Supabase CLI**
 - **Docker** (for running Supabase locally)
 
@@ -88,6 +88,7 @@ If you prefer to set things up manually, follow these steps:
    ```
 
 2. **Environment Setup**:
+
    Create `.env` files in the following locations using their respective `.env.example` templates:
 
    - `apps/api/.env`
@@ -97,13 +98,10 @@ If you prefer to set things up manually, follow these steps:
 3. **Database Setup**:
 
    ```bash
-   # Initialize Supabase
-   npx supabase login
-   npx supabase link
+   # Start Supabase locally (requires Docker)
    npx supabase start
 
-   # Run migrations
-   cd packages/db
+   # Run database migrations
    npm run db:migrate
    ```
 
@@ -112,14 +110,35 @@ If you prefer to set things up manually, follow these steps:
    npm run dev
    ```
 
-### Common Commands
+### Development Commands
+
+#### Core Commands
 
 - `npm run dev` - Runs the API and web apps in development mode
 - `npm run build` - Builds all applications
+- `npm run hydra-api:start` - Starts the API server in production mode
 - `npm run lint` - Runs linting across all applications
+- `npm run lint:fix` - Runs linting with automatic fixes
+- `npm run format` - Formats code using Prettier
+- `npm run prettier-check` - Checks formatting without making changes
 - `npm run check-types` - Checks TypeScript types across all applications
 
-You can also use Turborepo directly with `turbo dev`, `turbo build`, etc.
+#### Database Commands
+
+- `npm run db:generate` - Generates SQL migrations based on schema changes
+- `npm run db:migrate` - Applies pending migrations to the database
+- `npm run db:check` - Checks migration status
+- `npm run db:studio` - Opens Drizzle Studio for database visualization
+
+#### Turborepo Commands
+
+You can also use Turborepo directly:
+
+```bash
+turbo dev      # Development mode
+turbo build    # Build all packages
+turbo lint     # Lint all packages
+```
 
 ## API Key Setup
 
@@ -151,7 +170,13 @@ After setting up your local environment, configure your Tambo API key:
 
 ## Contributing
 
-We welcome contributions to Tambo Cloud! Please see our contribution guidelines for more information on how to get involved.
+This is a private repository for internal development. If you're a team member and need to contribute, please:
+
+1. Follow the setup instructions above
+2. Create a feature branch for your changes
+3. Follow the code style guidelines and existing patterns
+4. Run tests and linting before submitting changes
+5. Submit a pull request with a clear description of changes
 
 ## Frontend
 
