@@ -76,7 +76,7 @@ export default function CLIAuthPage() {
     error: projectsError,
     refetch: refetchProjects,
   } = api.project.getUserProjects.useQuery(undefined, {
-    enabled: step === "project",
+    enabled: isAuthenticated,
   });
 
   const {
@@ -247,13 +247,18 @@ export default function CLIAuthPage() {
         providerKey: createDialog.providerKey,
       });
 
+      // Refetch projects and wait for it to complete
+      await refetchProjects();
+
+      // set the project id
+      setSelectedProject(project.id);
+
       // Auto-generate the first API key
       const result = await generateApiKey({
         projectId: project.id,
         name: "CLI Key",
       });
 
-      setSelectedProject(project.id);
       setApiKey(result.apiKey);
       setStep("key");
       setCreateDialog({ isOpen: false, name: "", providerKey: "" });
@@ -269,6 +274,7 @@ export default function CLIAuthPage() {
     createProject,
     addProviderKey,
     generateApiKey,
+    refetchProjects,
     createDialog.name,
     createDialog.providerKey,
     toast,
