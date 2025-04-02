@@ -133,7 +133,6 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
               placeholder="My Project"
               className="w-full px-3 py-2 border rounded-md text-sm"
               autoFocus
-              autoComplete="off"
               name="project-name"
             />
           </div>
@@ -152,7 +151,7 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
               onKeyDown={handleKeyDown}
               placeholder="sk-..."
               className="w-full px-3 py-2 border rounded-md text-sm"
-              autoComplete="off"
+              autoComplete="new-password"
               name="openai-api-key"
               pattern="sk-.*"
               title="OpenAI API key must start with 'sk-'"
