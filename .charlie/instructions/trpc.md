@@ -1,3 +1,5 @@
+TRPC is used in the apps/web app.
+
 The way we use TRPC means most of the parameters and return values are inferred automatically.
 
 In addition, TRPC uses useQuery / useMutation from `react-query` under the hood, so you can use the same patterns for loading states, caching, etc.
