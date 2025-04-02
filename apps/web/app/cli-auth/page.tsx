@@ -144,12 +144,10 @@ export default function CLIAuthPage() {
 
   const { mutateAsync: updateProviderKey } =
     api.project.addProviderKey.useMutation();
-  const { data: providerKeys } = api.project.getProviderKeys.useQuery(
-    selectedProject,
-    {
+  const { data: providerKeys, refetch: refetchProviderKeys } =
+    api.project.getProviderKeys.useQuery(selectedProject, {
       enabled: step === "key" && !!selectedProject,
-    },
-  );
+    });
 
   // Calculate key name directly
   const cliKeyCount =
@@ -205,8 +203,15 @@ export default function CLIAuthPage() {
       refetchProjects();
     } else if (step === "key" && selectedProject) {
       refetchApiKeys();
+      refetchProviderKeys();
     }
-  }, [step, selectedProject, refetchProjects, refetchApiKeys]);
+  }, [
+    step,
+    selectedProject,
+    refetchProjects,
+    refetchApiKeys,
+    refetchProviderKeys,
+  ]);
 
   // Event handlers
   const handleAuth = useCallback(
@@ -241,7 +246,15 @@ export default function CLIAuthPage() {
         provider: "openai",
         providerKey: createDialog.providerKey,
       });
+
+      // Auto-generate the first API key
+      const result = await generateApiKey({
+        projectId: project.id,
+        name: "CLI Key",
+      });
+
       setSelectedProject(project.id);
+      setApiKey(result.apiKey);
       setStep("key");
       setCreateDialog({ isOpen: false, name: "", providerKey: "" });
     } catch (error) {
@@ -255,6 +268,7 @@ export default function CLIAuthPage() {
   }, [
     createProject,
     addProviderKey,
+    generateApiKey,
     createDialog.name,
     createDialog.providerKey,
     toast,
@@ -321,7 +335,7 @@ export default function CLIAuthPage() {
         provider: "openai",
         providerKey: key,
       });
-      await refetchProjects();
+      await refetchProviderKeys();
       toast({
         title: "Success",
         description: "OpenAI API key updated successfully",
@@ -433,8 +447,14 @@ export default function CLIAuthPage() {
                 onDeleteClick={(keyId, keyName) =>
                   setDeleteDialog({ isOpen: true, keyId, keyName })
                 }
-                providerKey={providerKeys?.[0]?.partiallyHiddenKey ?? null}
+                providerKey={
+                  providerKeys?.[providerKeys.length - 1]?.partiallyHiddenKey ??
+                  null
+                }
                 onProviderKeyChange={handleProviderKeyChange}
+                projectName={
+                  projects?.find((p) => p.id === selectedProject)?.name ?? ""
+                }
               />
             )}
           </CardContent>
