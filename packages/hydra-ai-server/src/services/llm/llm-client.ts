@@ -2,6 +2,7 @@ import { ChatCompletionChoice } from "@libretto/token.js";
 import {
   ChatCompletionMessageParam,
   ToolCallRequest,
+  tryParseJsonObject,
 } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { JSONSchema } from "openai/lib/jsonschema";
@@ -64,30 +65,44 @@ export interface LLMClient {
 }
 export type LLMResponse = Omit<ChatCompletionChoice, "finish_reason">;
 
+/** Get the string response from the LLM response */
 export function getLLMResponseMessage(response: LLMResponse) {
   return response.message?.content ?? "";
 }
 
+/** Get the tool call id from the LLM response */
 export function getLLMResponseToolCallId(response: LLMResponse) {
   return response.message.tool_calls?.[0]?.id;
 }
 
+/**
+ * Get the tool call request from the LLM response, as a ToolCallRequest
+ *
+ * This is for backwards compatibility with the homegrown tool call format.
+ */
 export function getLLMResponseToolCallRequest(
   response: LLMResponse,
 ): ToolCallRequest | undefined {
-  const toolCallRequest = response.message.tool_calls?.[0];
-  if (!toolCallRequest) {
+  const llmToolCall = response.message.tool_calls?.[0];
+  if (!llmToolCall) {
     return undefined;
   }
 
-  const args = JSON.parse(toolCallRequest.function.arguments);
+  // TODO: should we throw here?
+  const args = tryParseJsonObject(llmToolCall.function.arguments, false);
+  if (!args) {
+    console.error(
+      `Failed to parse tool call arguments, is this an incomplete stream? ${llmToolCall.function.arguments}`,
+    );
+    return undefined;
+  }
   const parameters = Object.entries(args).map(([key, value]) => ({
     parameterName: key,
     parameterValue: value,
   }));
 
   return {
-    toolName: toolCallRequest.function.name,
+    toolName: llmToolCall.function.name,
     parameters,
   };
 }

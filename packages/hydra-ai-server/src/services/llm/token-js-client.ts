@@ -1,6 +1,9 @@
 import { formatTemplate } from "@libretto/openai/lib/src/template";
 import { StreamCompletionResponse, TokenJS } from "@libretto/token.js";
-import { ChatCompletionMessageParam } from "@tambo-ai-cloud/core";
+import {
+  ChatCompletionMessageParam,
+  tryParseJsonObject,
+} from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { Provider } from "../../model/providers";
@@ -86,6 +89,9 @@ export class TokenJSClient implements LLMClient {
       },
     });
 
+    if (!response.choices.length) {
+      throw new Error("No choices returned from TokenJS");
+    }
     return response.choices[0];
   }
 
@@ -124,13 +130,16 @@ export class TokenJSClient implements LLMClient {
         | OpenAI.Chat.Completions.ChatCompletionMessageToolCall
         | undefined;
       if (accumulatedToolCall.name && accumulatedToolCall.arguments) {
-        //don't return tool calls until they are complete
-        const toolArgs = tryParseJson(accumulatedToolCall.arguments);
+        //don't return tool calls until they are complete and parseable
+        const toolArgs = tryParseJsonObject(
+          accumulatedToolCall.arguments,
+          false,
+        );
         if (toolArgs) {
           toolCallRequest = {
             function: {
               name: accumulatedToolCall.name,
-              arguments: JSON.stringify(toolArgs),
+              arguments: accumulatedToolCall.arguments,
             },
             id: accumulatedToolCall.id ?? "",
             type: "function",
@@ -188,18 +197,5 @@ function tryFormatTemplate(
     return formatTemplate(messages as any, promptTemplateParams);
   } catch (_e) {
     return messages;
-  }
-}
-
-function tryParseJson(text: string): any {
-  // we are assuming that JSON is only ever an object or an array,
-  // so we don't need to check for other types of JSON structures
-  if (!text.startsWith("{") && !text.startsWith("[")) {
-    return null;
-  }
-  try {
-    return JSON.parse(text);
-  } catch (_error) {
-    return null;
   }
 }
