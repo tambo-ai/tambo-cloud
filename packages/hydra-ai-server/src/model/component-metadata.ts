@@ -34,13 +34,7 @@ export interface AvailableComponent extends ComponentMetadata {
   contextTools: ComponentContextToolMetadata[];
 }
 
-export interface ComponentWithContext extends ComponentMetadata {
-  context: ToolResponseBody;
-}
-
-export interface AvailableComponents {
-  [key: string]: AvailableComponent;
-}
+export type AvailableComponents = Record<string, AvailableComponent>;
 
 /**
  * The body of a tool response.
