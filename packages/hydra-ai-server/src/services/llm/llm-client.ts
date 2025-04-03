@@ -6,18 +6,18 @@ import {
 } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { JSONSchema } from "openai/lib/jsonschema";
-import { ZodObject } from "zod";
+import { ZodObject, ZodRawShape } from "zod";
 
 interface BaseResponseFormat {
   jsonMode?: boolean;
-  zodResponseFormat?: ZodObject<any>;
+  zodResponseFormat?: ZodObject<ZodRawShape>;
   schemaResponseFormat?: JSONSchema;
 }
 interface JsonResponseFormat extends BaseResponseFormat {
   jsonMode: true;
 }
 interface ZodResponseFormat extends BaseResponseFormat {
-  zodResponseFormat: ZodObject<any>;
+  zodResponseFormat: ZodObject<ZodRawShape>;
 }
 interface SchemaResponseFormat extends BaseResponseFormat {
   schemaResponseFormat: JSONSchema;
@@ -58,7 +58,7 @@ export type CompleteParams = CompleteBaseParams & ResponseFormat;
 
 export interface LLMClient {
   complete(
-    params: StreamingCompleteParams,
+    params: StreamingCompleteParams
   ): Promise<AsyncIterableIterator<LLMResponse>>;
 
   complete(params: CompleteParams): Promise<LLMResponse>;
@@ -81,7 +81,7 @@ export function getLLMResponseToolCallId(response: LLMResponse) {
  * This is for backwards compatibility with the homegrown tool call format.
  */
 export function getLLMResponseToolCallRequest(
-  response: LLMResponse,
+  response: LLMResponse
 ): ToolCallRequest | undefined {
   const llmToolCall = response.message.tool_calls?.[0];
   if (!llmToolCall) {
@@ -92,7 +92,7 @@ export function getLLMResponseToolCallRequest(
   const args = tryParseJsonObject(llmToolCall.function.arguments, false);
   if (!args) {
     console.error(
-      `Failed to parse tool call arguments, is this an incomplete stream? ${llmToolCall.function.arguments}`,
+      `Failed to parse tool call arguments, is this an incomplete stream? ${llmToolCall.function.arguments}`
     );
     return undefined;
   }
