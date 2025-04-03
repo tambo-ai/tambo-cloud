@@ -9,10 +9,10 @@ import { LLMClient } from "../llm/llm-client";
 import { threadMessagesToChatHistory } from "../llm/threadMessagesToChatHistory";
 import {
   decideComponentTool,
-  generateAvailableComponentsList,
   generateDecisionPrompt,
   getNoComponentPromptTemplate,
-} from "../prompt/prompt-service";
+} from "../prompt/component-decision";
+import { generateAvailableComponentsList } from "../prompt/component-formatting";
 import { hydrateComponent } from "./component-hydration-service";
 
 // Public function
