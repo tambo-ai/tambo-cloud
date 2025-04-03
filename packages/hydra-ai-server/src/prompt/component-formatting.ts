@@ -1,11 +1,18 @@
 import { createPromptTemplate } from "@tambo-ai-cloud/core";
 import Ajv from "ajv";
+import draft7MetaSchema from "ajv/dist/refs/json-schema-draft-07.json";
 import { z } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
 import { AvailableComponents } from "../model/component-metadata";
 
-const ajv = new Ajv();
+const ajv = new Ajv({ strict: true });
 
+function isValidJSONSchema(schema: any) {
+  if (!schema || typeof schema !== "object") {
+    return false;
+  }
+  return ajv.validate(draft7MetaSchema, schema);
+}
 function replaceTemplateVariables(
   template: string,
   variables: Record<string, string>
@@ -63,7 +70,7 @@ const formatComponentProps = (
     );
     return `${indentStr}${indentedJsonSchema}`;
   }
-  if (ajv.validateSchema(props)) {
+  if (isValidJSONSchema(props)) {
     const indentedJsonSchema = JSON.stringify(props, null, 2).replace(
       /\n/g,
       `\n${indentStr}`
