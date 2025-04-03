@@ -30,7 +30,7 @@ export default function SmokePage() {
   const { data: session } = useSession();
   const userId = session?.user.id;
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
-    [],
+    []
   );
   const {
     registerComponent,
@@ -100,10 +100,10 @@ export default function SmokePage() {
     getAirQuality,
     getForecast,
     getHistoricalWeather,
-    getCurrentWeather,
+    getCurrentWeather
   );
   const isAnyApiRunning = Object.values(apiStates).some(
-    (state) => state.isRunning,
+    (state) => state.isRunning
   );
 
   const updateApiStates = useCallback(() => {
@@ -145,9 +145,9 @@ export default function SmokePage() {
         wrappedApis.forecast.call,
         wrappedApis.history.call,
         wrappedApis.aqi.call,
-        wrappedApis.currentWeather.call,
+        wrappedApis.currentWeather.call
       ),
-    [wrappedApis],
+    [wrappedApis]
   );
 
   useEffect(() => {
@@ -156,18 +156,38 @@ export default function SmokePage() {
       component: WeatherDay,
       name: "WeatherDay",
       description: "A weather day",
-      propsDefinition: {
-        data: "{ date: string; day: { maxtemp_c: number; mintemp_c: number; avgtemp_c: number; maxwind_kph: number; totalprecip_mm: number; avghumidity: number; condition: { text: string; icon: string } } }",
-      },
+      propsSchema: z.object({
+        data: z.object({
+          date: z.string(),
+          day: z.object({
+            maxtemp_c: z.number(),
+            mintemp_c: z.number(),
+            avgtemp_c: z.number(),
+            maxwind_kph: z.number(),
+            totalprecip_mm: z.number(),
+            avghumidity: z.number(),
+            condition: z.object({
+              text: z.string(),
+              icon: z.string(),
+            }),
+          }),
+        }),
+      }),
       associatedTools: [tools.forecast, tools.history, tools.currentWeather],
     });
     registerComponent({
       component: AirQuality,
       name: "AirQuality",
       description: "Air quality",
-      propsDefinition: {
-        data: "{ aqi: number; pm2_5: number; pm10: number; o3: number; no2: number }",
-      },
+      propsSchema: z.object({
+        data: z.object({
+          aqi: z.number(),
+          pm2_5: z.number(),
+          pm10: z.number(),
+          o3: z.number(),
+          no2: z.number(),
+        }),
+      }),
       associatedTools: [tools.aqi],
     });
   }, [registerComponent, tools]);
@@ -377,20 +397,20 @@ function useWrappedApis(
   getAirQuality: (...args: any[]) => Promise<any>,
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
-  getCurrentWeather: (...args: any[]) => Promise<any>,
+  getCurrentWeather: (...args: any[]) => Promise<any>
 ) {
   const updateAqiState = useCallback(
     (
       isRunning: boolean,
       startTime: number | null,
       duration: number | null,
-      tokens: number | null,
+      tokens: number | null
     ) =>
       setApiStates((prev) => ({
         ...prev,
         aqi: { ...prev.aqi, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates],
+    [setApiStates]
   );
 
   const updateForecastState = useCallback(
@@ -398,13 +418,13 @@ function useWrappedApis(
       isRunning: boolean,
       startTime: number | null,
       duration: number | null,
-      tokens: number | null,
+      tokens: number | null
     ) =>
       setApiStates((prev) => ({
         ...prev,
         forecast: { ...prev.forecast, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates],
+    [setApiStates]
   );
 
   const updateHistoryState = useCallback(
@@ -412,13 +432,13 @@ function useWrappedApis(
       isRunning: boolean,
       startTime: number | null,
       duration: number | null,
-      tokens: number | null,
+      tokens: number | null
     ) =>
       setApiStates((prev) => ({
         ...prev,
         history: { ...prev.history, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates],
+    [setApiStates]
   );
 
   const updateCurrentWeatherState = useCallback(
@@ -426,7 +446,7 @@ function useWrappedApis(
       isRunning: boolean,
       startTime: number | null,
       duration: number | null,
-      tokens: number | null,
+      tokens: number | null
     ) =>
       setApiStates((prev) => ({
         ...prev,
@@ -438,7 +458,7 @@ function useWrappedApis(
           tokens,
         },
       })),
-    [setApiStates],
+    [setApiStates]
   );
 
   return useMemo(
@@ -457,7 +477,7 @@ function useWrappedApis(
       updateCurrentWeatherState,
       updateForecastState,
       updateHistoryState,
-    ],
+    ]
   );
 }
 
@@ -465,7 +485,7 @@ function makeWeatherTools(
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
   getAirQuality: (...args: any[]) => Promise<any>,
-  getCurrentWeather: (...args: any[]) => Promise<any>,
+  getCurrentWeather: (...args: any[]) => Promise<any>
 ): Record<string, TamboTool> {
   const weatherLocationSchema = z
     .object({
