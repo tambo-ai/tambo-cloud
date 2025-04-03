@@ -6,6 +6,12 @@ import {
 
 describe("component-formatting", () => {
   describe("generateAvailableComponentsList", () => {
+    it("Should generate a proper result for zero components", () => {
+      const components: AvailableComponents = {};
+      const result = generateAvailableComponentsList(components);
+      expect(result).toMatchInlineSnapshot(`""`);
+    });
+
     it("should generate list with simple components", () => {
       const components: AvailableComponents = {
         Button: {
