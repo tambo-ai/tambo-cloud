@@ -9,6 +9,6 @@
     "module": "CommonJS",
     "sourceMap": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "jest.config.ts"],
   "exclude": ["node_modules", "./dist", "./docs"]
 }
