@@ -35,7 +35,7 @@ describe("getComponentHydrationPromptTemplate", () => {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
 
-        - TestComponent:
+        - componentName: "TestComponent":
             description: A test component
             props:
             {
@@ -177,7 +177,7 @@ describe("getComponentHydrationPromptTemplate", () => {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
 
-        - TestComponent:
+        - componentName: "TestComponent":
             description: A test component
             props:
             {
@@ -322,7 +322,7 @@ describe("getComponentHydrationPromptTemplate", () => {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
 
-        - TestComponent:
+        - componentName: "TestComponent":
             description: A test component
             props:
             {
@@ -435,7 +435,7 @@ describe("getComponentHydrationPromptTemplate", () => {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
 
-        - TestComponent:
+        - componentName: "TestComponent":
             description: A test component
             props:
             {

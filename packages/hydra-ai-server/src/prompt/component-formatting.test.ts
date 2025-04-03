@@ -30,7 +30,7 @@ describe("component-formatting", () => {
       const result = generateAvailableComponentsList(components);
       expect(result).toMatchInlineSnapshot(`
         "
-        - Button:
+        - componentName: "Button":
             description: A simple button component
             props:
             {
@@ -53,7 +53,7 @@ describe("component-formatting", () => {
       const result = generateAvailableComponentsList(components);
       expect(result).toMatchInlineSnapshot(`
         "
-        - Divider:
+        - componentName: "Divider":
             description: A horizontal divider
             props:
 
@@ -85,7 +85,7 @@ describe("component-formatting", () => {
       const result = generateAvailableComponentsList(components);
       expect(result).toMatchInlineSnapshot(`
         "
-        - Input:
+        - componentName: "Input":
             description: An input field
             props:
             {
@@ -123,14 +123,14 @@ describe("component-formatting", () => {
       const result = generateAvailableComponentsList(components);
       expect(result).toMatchInlineSnapshot(`
         "
-        - Button:
+        - componentName: "Button":
             description: A button
             props:
             {
               "label": "string"
             }
 
-        - Text:
+        - componentName: "Text":
             description: A text component
             props:
 
@@ -154,7 +154,7 @@ describe("component-formatting", () => {
       expect(result).toMatchInlineSnapshot(`
         "You may use only the following components:
 
-        - Button:
+        - componentName: "Button":
             description: A button component
             props:
             {
@@ -193,7 +193,7 @@ describe("component-formatting", () => {
       expect(result).toMatchInlineSnapshot(`
         "You may use only the following components:
 
-        - Input:
+        - componentName: "Input":
             description: An input field
             props:
             {
@@ -225,7 +225,7 @@ describe("component-formatting", () => {
       expect(result).toMatchInlineSnapshot(`
         "You may use only the following components:
 
-        - Input:
+        - componentName: "Input":
             description: An input field
             props:
             {
