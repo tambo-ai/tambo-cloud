@@ -4,7 +4,11 @@ import {
   LegacyComponentDecision,
 } from "@tambo-ai-cloud/core";
 import { InputContext } from "../../model/input-context";
-import { OpenAIResponse } from "../../model/openai-response";
+import {
+  getOpenAIResponseMessage,
+  getOpenAIResponseToolCallRequest,
+  OpenAIResponse,
+} from "../../model/openai-response";
 import {
   decideComponentTool,
   generateDecisionPrompt,
@@ -45,11 +49,15 @@ export async function decideComponent(
     },
   });
 
-  const decision = decisionResponse.toolCallRequest?.parameters.find(
+  const decision = getOpenAIResponseToolCallRequest(
+    decisionResponse,
+  )?.parameters.find(
     ({ parameterName }) => parameterName === "decision",
   )?.parameterValue;
 
-  const componentName = decisionResponse.toolCallRequest?.parameters.find(
+  const componentName = getOpenAIResponseToolCallRequest(
+    decisionResponse,
+  )?.parameters.find(
     ({ parameterName }) => parameterName === "component",
   )?.parameterValue;
 
@@ -76,9 +84,9 @@ export async function decideComponent(
     }
     return await handleNoComponentCase(
       llmClient,
-      decisionResponse.toolCallRequest?.parameters.find(
+      getOpenAIResponseToolCallRequest(decisionResponse)?.parameters.find(
         ({ parameterName }) => parameterName === "reasoning",
-      )?.parameterValue ?? decisionResponse.message,
+      )?.parameterValue ?? getOpenAIResponseMessage(decisionResponse),
       context,
       threadId,
       stream,
@@ -127,7 +135,7 @@ async function handleNoComponentCase(
     reasoning: "",
     componentName: null,
     props: null,
-    message: noComponentResponse.message,
+    message: noComponentResponse.message.content ?? "",
     componentState: null, // TOOD: remove when optional
     ...(version === "v1" ? { suggestedActions: [] } : {}),
   };
@@ -148,7 +156,7 @@ async function* handleNoComponentStream(
   };
 
   for await (const chunk of responseStream) {
-    accumulatedDecision.message = chunk.message;
+    accumulatedDecision.message = getOpenAIResponseMessage(chunk);
     yield accumulatedDecision;
   }
 }

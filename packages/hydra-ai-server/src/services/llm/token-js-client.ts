@@ -1,9 +1,6 @@
 import { formatTemplate } from "@libretto/openai/lib/src/template";
 import { StreamCompletionResponse, TokenJS } from "@libretto/token.js";
-import {
-  ChatCompletionMessageParam,
-  ToolCallRequest,
-} from "@tambo-ai-cloud/core";
+import { ChatCompletionMessageParam } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { OpenAIResponse } from "../../model/openai-response";
@@ -89,27 +86,7 @@ export class TokenJSClient implements LLMClient {
       },
     });
 
-    const openAIResponse: OpenAIResponse = {
-      message: response.choices[0].message.content || "",
-      toolCallId: response.choices[0].message.tool_calls?.[0]?.id,
-    };
-
-    if (
-      (response.choices[0].finish_reason === "function_call" ||
-        response.choices[0].finish_reason === "tool_calls" ||
-        response.choices[0].finish_reason === "stop") &&
-      response.choices[0].message.tool_calls?.length
-    ) {
-      openAIResponse.toolCallRequest = this.toolCallRequestFromResponse(
-        response as OpenAI.Chat.Completions.ChatCompletion,
-      );
-    }
-    if (!openAIResponse.message && !openAIResponse.toolCallRequest) {
-      console.error(
-        "No message or tool call request found in response: ",
-        response.choices[0],
-      );
-    }
+    const openAIResponse = response.choices[0];
 
     return openAIResponse;
   }
@@ -128,7 +105,6 @@ export class TokenJSClient implements LLMClient {
       const content = chunk.choices[0]?.delta?.content;
       const toolCall = chunk.choices[0]?.delta?.tool_calls?.[0];
       const toolCallFunction = toolCall?.function;
-      const toolCallId = chunk.choices[0]?.delta?.tool_calls?.[0]?.id;
       if (content) {
         accumulatedMessage += content;
       }
@@ -146,45 +122,34 @@ export class TokenJSClient implements LLMClient {
         }
       }
 
-      let toolCallRequest: ToolCallRequest | undefined;
+      let toolCallRequest:
+        | OpenAI.Chat.Completions.ChatCompletionMessageToolCall
+        | undefined;
       if (accumulatedToolCall.name && accumulatedToolCall.arguments) {
         //don't return tool calls until they are complete
-        try {
-          const toolArgs = JSON.parse(accumulatedToolCall.arguments);
+        const toolArgs = tryParseJson(accumulatedToolCall.arguments);
+        if (toolArgs) {
           toolCallRequest = {
-            toolName: accumulatedToolCall.name,
-            tool_call_id: accumulatedToolCall.id ?? "",
-            parameters: Object.entries(toolArgs).map(([key, value]) => ({
-              parameterName: key,
-              parameterValue: value,
-            })),
+            function: {
+              name: accumulatedToolCall.name,
+              arguments: JSON.stringify(toolArgs),
+            },
+            id: accumulatedToolCall.id ?? "",
+            type: "function",
           };
-        } catch (_e) {
-          // Skip if JSON parsing fails (incomplete JSON)
         }
       }
 
-      yield { message: accumulatedMessage, toolCallRequest, toolCallId };
+      yield {
+        message: {
+          content: accumulatedMessage,
+          role: "assistant",
+          tool_calls: toolCallRequest ? [toolCallRequest] : undefined,
+        },
+        index: 0,
+        logprobs: null,
+      };
     }
-  }
-
-  private toolCallRequestFromResponse(
-    response: OpenAI.Chat.Completions.ChatCompletion,
-  ) {
-    const toolCall = response.choices[0].message.tool_calls?.[0];
-    if (!toolCall) {
-      throw new Error("No tool calls found in response");
-    }
-    const toolArgs = JSON.parse(toolCall.function.arguments);
-
-    return {
-      toolName: toolCall.function.name,
-      tool_call_id: toolCall.id,
-      parameters: Object.entries(toolArgs).map(([key, value]) => ({
-        parameterName: key,
-        parameterValue: value,
-      })),
-    };
   }
 }
 
@@ -225,5 +190,18 @@ function tryFormatTemplate(
     return formatTemplate(messages as any, promptTemplateParams);
   } catch (_e) {
     return messages;
+  }
+}
+
+function tryParseJson(text: string): any {
+  // we are assuming that JSON is only ever an object or an array,
+  // so we don't need to check for other types of JSON structures
+  if (!text.startsWith("{") && !text.startsWith("[")) {
+    return null;
+  }
+  try {
+    return JSON.parse(text);
+  } catch (_error) {
+    return null;
   }
 }

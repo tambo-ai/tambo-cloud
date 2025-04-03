@@ -11,7 +11,12 @@ import {
   AvailableComponents,
   ToolResponseBody,
 } from "../../model/component-metadata";
-import { OpenAIResponse } from "../../model/openai-response";
+import {
+  getOpenAIResponseMessage,
+  getOpenAIResponseToolCallId,
+  getOpenAIResponseToolCallRequest,
+  OpenAIResponse,
+} from "../../model/openai-response";
 import { getAvailableComponentsPromptTemplate } from "../../prompt/component-formatting";
 import { getComponentHydrationPromptTemplate } from "../../prompt/component-hydration";
 import { schemaV1, schemaV2 } from "../../prompt/schemas";
@@ -140,10 +145,6 @@ To respond to the user's message:
     );
   }
 
-  console.log(
-    "hydration with: ",
-    JSON.stringify(completeOptions.messages, null, 2),
-  );
   const generateComponentResponse = await llmClient.complete(completeOptions);
 
   const componentDecision: LegacyComponentDecision = {
@@ -153,13 +154,15 @@ To respond to the user's message:
     props: null,
     componentState: null, // TOOD: remove when optional
     ...(version === "v1" ? { suggestedActions: [] } : {}),
-    toolCallRequest: generateComponentResponse.toolCallRequest,
+    toolCallRequest: getOpenAIResponseToolCallRequest(
+      generateComponentResponse,
+    ),
   };
 
   if (!componentDecision.toolCallRequest) {
     const parsedData = (await parseAndValidate(
       version === "v1" ? schemaV1 : schemaV2,
-      generateComponentResponse.message,
+      getOpenAIResponseMessage(generateComponentResponse),
     )) as z.infer<typeof schemaV1> | z.infer<typeof schemaV2>;
 
     componentDecision.componentName = parsedData.componentName;
@@ -195,11 +198,11 @@ async function* handleComponentHydrationStream(
 
   for await (const chunk of responseStream) {
     try {
-      const message = chunk.message.length > 0 ? chunk.message : "{}";
+      const message = getOpenAIResponseMessage(chunk) || "{}";
       const parsedChunk = {
         ...parse(message),
-        toolCallRequest: chunk.toolCallRequest,
-        toolCallId: chunk.toolCallId,
+        toolCallRequest: getOpenAIResponseToolCallRequest(chunk),
+        toolCallId: getOpenAIResponseToolCallId(chunk),
       };
 
       accumulatedDecision = {
