@@ -1,5 +1,5 @@
 import { createPromptTemplate } from "@tambo-ai-cloud/core";
-import { AvailableComponents } from "../../model/component-metadata";
+import { AvailableComponents } from "../model/component-metadata";
 
 function replaceTemplateVariables(
   template: string,

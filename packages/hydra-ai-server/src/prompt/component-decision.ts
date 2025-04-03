@@ -1,7 +1,7 @@
 import { createPromptTemplate } from "@tambo-ai-cloud/core";
 import { JSONSchema7 } from "json-schema";
 import OpenAI from "openai";
-import { AvailableComponents } from "../../model/component-metadata";
+import { AvailableComponents } from "../model/component-metadata";
 import { generateAvailableComponentsPrompt } from "./component-formatting";
 
 export function generateDecisionPrompt(availableComponents: string) {

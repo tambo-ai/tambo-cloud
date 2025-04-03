@@ -2,7 +2,7 @@ import { ThreadMessage } from "@tambo-ai-cloud/core";
 import {
   AvailableComponent,
   AvailableComponents,
-} from "../../model/component-metadata";
+} from "../model/component-metadata";
 import { getAvailableComponentsPromptTemplate } from "./component-formatting";
 
 /**

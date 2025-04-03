@@ -3,7 +3,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import {
   AvailableComponents,
   ToolResponseBody,
-} from "../../model/component-metadata";
+} from "../model/component-metadata";
 import { generateAvailableComponentsPrompt } from "./component-formatting";
 import { schemaV1, schemaV2 } from "./schemas";
 
