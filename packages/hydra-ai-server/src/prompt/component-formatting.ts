@@ -1,68 +1,79 @@
 import { createPromptTemplate } from "@tambo-ai-cloud/core";
+import { z } from "zod";
+import zodToJsonSchema from "zod-to-json-schema";
 import { AvailableComponents } from "../model/component-metadata";
 
 function replaceTemplateVariables(
   template: string,
-  variables: Record<string, string>,
+  variables: Record<string, string>
 ): string {
   return Object.entries(variables).reduce(
     (result, [key, value]) => result.replace(`{${key}}`, value),
-    template,
+    template
   );
 }
 
-export function generateAvailableComponentsList(
-  availableComponents: AvailableComponents,
-): string {
-  return Object.values(availableComponents)
-    .map((component) => {
-      let propsStr = "";
-      if (component.props && Object.keys(component.props).length > 0) {
-        const propsWithDetails = Object.entries(component.props)
-          .map(([propName, propInfo]) => {
-            let typeStr = "";
-            let description = "";
-            let required = false;
+type PropInfo =
+  | string
+  | {
+      type?: string;
+      description?: string;
+      required?: boolean;
+    }
+  | null;
 
-            if (typeof propInfo === "string") {
-              typeStr = propInfo;
-            } else if (typeof propInfo === "object" && propInfo !== null) {
-              if ("type" in propInfo) {
-                typeStr = String(propInfo.type);
-              }
+const formatPropInfo = (propName: string, propInfo?: PropInfo): string => {
+  if (propInfo === null) {
+    return `${propName}: unknown`;
+  }
 
-              if ("description" in propInfo) {
-                description = String(propInfo.description);
-              }
+  const typeStr =
+    typeof propInfo === "string" ? propInfo : String(propInfo?.type || "");
 
-              if ("required" in propInfo) {
-                required = Boolean(propInfo.required);
-              }
-            }
-            let propStr = `${propName}: ${typeStr}`;
+  const description =
+    typeof propInfo === "object" && propInfo?.description
+      ? ` - ${propInfo.description}`
+      : "";
 
-            if (required) {
-              propStr += " (required)";
-            }
+  const required =
+    typeof propInfo === "object" && propInfo?.required ? " (required)" : "";
 
-            if (description) {
-              propStr += ` - ${description}`;
-            }
+  return `${propName}: ${typeStr}${required}${description}`;
+};
 
-            return propStr;
-          })
-          .join(", ");
+const formatComponentProps = (
+  props: Record<string, PropInfo> | z.ZodType | undefined
+): string => {
+  if (!props || Object.keys(props).length === 0) {
+    return "";
+  }
 
-        propsStr = ` (Props: ${propsWithDetails})`;
-      }
+  if (props instanceof z.ZodType) {
+    return ` (Props: ${JSON.stringify(zodToJsonSchema(props), null, 2)})`;
+  }
 
-      return `- ${component.name}: ${component.description}${propsStr}`;
-    })
-    .join("\n");
-}
+  const propsWithDetails = Object.entries(props)
+    .map(([propName, propInfo]) => formatPropInfo(propName, propInfo))
+    .join(", ");
+
+  return ` (Props: ${propsWithDetails})`;
+};
+
+const formatComponent = (component: {
+  name: string;
+  description: string;
+  props?: Record<string, PropInfo> | z.ZodType;
+}): string => {
+  const propsStr = formatComponentProps(component.props);
+  return `- ${component.name}: ${component.description}${propsStr}`;
+};
+
+export const generateAvailableComponentsList = (
+  availableComponents: AvailableComponents
+): string => Object.values(availableComponents).map(formatComponent).join("\n");
 
 export function getAvailableComponentsPromptTemplate(
-  availableComponents: AvailableComponents,
+  availableComponents: AvailableComponents
 ) {
   const availableComponentsStr =
     Object.keys(availableComponents).length > 0
@@ -71,12 +82,12 @@ export function getAvailableComponentsPromptTemplate(
   return createPromptTemplate(
     `You may use only the following components:
 {availableComponents}`,
-    { availableComponents: availableComponentsStr },
+    { availableComponents: availableComponentsStr }
   );
 }
 
 export function generateAvailableComponentsPrompt(
-  availableComponents: AvailableComponents,
+  availableComponents: AvailableComponents
 ): string {
   const template = getAvailableComponentsPromptTemplate(availableComponents);
   return replaceTemplateVariables(template.template, template.args);

@@ -3,7 +3,7 @@ import { AvailableComponents } from "../model/component-metadata";
 import { getComponentHydrationPromptTemplate } from "./component-hydration";
 
 describe("getComponentHydrationPromptTemplate", () => {
-  const mockAvailableComponents: AvailableComponents = {
+  const mockAvailableComponentsWithZod: AvailableComponents = {
     TestComponent: {
       name: "TestComponent",
       description: "A test component",
@@ -26,7 +26,7 @@ describe("getComponentHydrationPromptTemplate", () => {
     it("should generate prompt template without tool response", () => {
       const result = getComponentHydrationPromptTemplate(
         undefined,
-        mockAvailableComponents,
+        mockAvailableComponentsWithZod,
         "v1"
       );
 
@@ -34,7 +34,22 @@ describe("getComponentHydrationPromptTemplate", () => {
         {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
-        - TestComponent: A test component (Props: spa: , _def: , parse: , safeParse: , parseAsync: , safeParseAsync: , refine: , refinement: , superRefine: , optional: , nullable: , nullish: , array: , promise: , or: , and: , transform: , brand: , default: , catch: , describe: , pipe: , readonly: , isNullable: , isOptional: , ~standard: , _cached: , nonstrict: , augment: )",
+        - TestComponent: A test component (Props: {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        })",
             "zodTypePrompt": "
               Return a JSON object that matches the given Zod schema.
               If a field is Optional and there is no input don't include in the JSON response.
@@ -148,7 +163,7 @@ describe("getComponentHydrationPromptTemplate", () => {
     it("should generate prompt template with tool response", () => {
       const result = getComponentHydrationPromptTemplate(
         mockToolResponse,
-        mockAvailableComponents,
+        mockAvailableComponentsWithZod,
         "v1"
       );
 
@@ -156,7 +171,22 @@ describe("getComponentHydrationPromptTemplate", () => {
         {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
-        - TestComponent: A test component (Props: spa: , _def: , parse: , safeParse: , parseAsync: , safeParseAsync: , refine: , refinement: , superRefine: , optional: , nullable: , nullish: , array: , promise: , or: , and: , transform: , brand: , default: , catch: , describe: , pipe: , readonly: , isNullable: , isOptional: , ~standard: , _cached: , nonstrict: , augment: )",
+        - TestComponent: A test component (Props: {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        })",
             "toolResponseString": "{"data":{"result":"test result"},"type":"test"}",
             "zodTypePrompt": "
               Return a JSON object that matches the given Zod schema.
@@ -273,7 +303,7 @@ describe("getComponentHydrationPromptTemplate", () => {
     it("should generate prompt template without tool response", () => {
       const result = getComponentHydrationPromptTemplate(
         undefined,
-        mockAvailableComponents,
+        mockAvailableComponentsWithZod,
         "v2"
       );
 
@@ -281,7 +311,22 @@ describe("getComponentHydrationPromptTemplate", () => {
         {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
-        - TestComponent: A test component (Props: spa: , _def: , parse: , safeParse: , parseAsync: , safeParseAsync: , refine: , refinement: , superRefine: , optional: , nullable: , nullish: , array: , promise: , or: , and: , transform: , brand: , default: , catch: , describe: , pipe: , readonly: , isNullable: , isOptional: , ~standard: , _cached: , nonstrict: , augment: )",
+        - TestComponent: A test component (Props: {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        })",
             "zodTypePrompt": "
               Return a JSON object that matches the given Zod schema.
               If a field is Optional and there is no input don't include in the JSON response.
@@ -366,7 +411,7 @@ describe("getComponentHydrationPromptTemplate", () => {
     it("should generate prompt template with tool response", () => {
       const result = getComponentHydrationPromptTemplate(
         mockToolResponse,
-        mockAvailableComponents,
+        mockAvailableComponentsWithZod,
         "v2"
       );
 
@@ -374,7 +419,22 @@ describe("getComponentHydrationPromptTemplate", () => {
         {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
-        - TestComponent: A test component (Props: spa: , _def: , parse: , safeParse: , parseAsync: , safeParseAsync: , refine: , refinement: , superRefine: , optional: , nullable: , nullish: , array: , promise: , or: , and: , transform: , brand: , default: , catch: , describe: , pipe: , readonly: , isNullable: , isOptional: , ~standard: , _cached: , nonstrict: , augment: )",
+        - TestComponent: A test component (Props: {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        })",
             "toolResponseString": "{"data":{"result":"test result"},"type":"test"}",
             "zodTypePrompt": "
               Return a JSON object that matches the given Zod schema.
