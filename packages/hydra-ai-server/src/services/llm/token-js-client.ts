@@ -3,11 +3,11 @@ import { StreamCompletionResponse, TokenJS } from "@libretto/token.js";
 import { ChatCompletionMessageParam } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { OpenAIResponse } from "../../model/openai-response";
 import { Provider } from "../../model/providers";
 import {
   CompleteParams,
   LLMClient,
+  LLMResponse,
   StreamingCompleteParams,
 } from "./llm-client";
 
@@ -25,11 +25,11 @@ export class TokenJSClient implements LLMClient {
 
   async complete(
     params: StreamingCompleteParams,
-  ): Promise<AsyncIterableIterator<OpenAIResponse>>;
-  async complete(params: CompleteParams): Promise<OpenAIResponse>;
+  ): Promise<AsyncIterableIterator<LLMResponse>>;
+  async complete(params: CompleteParams): Promise<LLMResponse>;
   async complete(
     params: StreamingCompleteParams | CompleteParams,
-  ): Promise<OpenAIResponse | AsyncIterableIterator<OpenAIResponse>> {
+  ): Promise<LLMResponse | AsyncIterableIterator<LLMResponse>> {
     const componentTools = params.tools?.length ? params.tools : undefined;
 
     const nonStringParams = Object.entries(params.promptTemplateParams).filter(
@@ -86,14 +86,12 @@ export class TokenJSClient implements LLMClient {
       },
     });
 
-    const openAIResponse = response.choices[0];
-
-    return openAIResponse;
+    return response.choices[0];
   }
 
   private async *handleStreamingResponse(
     stream: StreamCompletionResponse,
-  ): AsyncIterableIterator<OpenAIResponse> {
+  ): AsyncIterableIterator<LLMResponse> {
     let accumulatedMessage = "";
     const accumulatedToolCall: {
       name?: string;

@@ -1,8 +1,7 @@
 import { ThreadMessage } from "@tambo-ai-cloud/core";
 import { InputContextAsArray } from "../../model/input-context";
-import { getOpenAIResponseMessage } from "../../model/openai-response";
 import { buildSuggestionPrompt } from "../../prompt/suggestion-generator";
-import { LLMClient } from "../llm/llm-client";
+import { getLLMResponseMessage, LLMClient } from "../llm/llm-client";
 import {
   SuggestionDecision,
   SuggestionsResponseSchema,
@@ -53,7 +52,7 @@ export async function generateSuggestions(
 
     // Use safeParse for better error handling
     const parsed = SuggestionsResponseSchema.safeParse(
-      JSON.parse(getOpenAIResponseMessage(response)),
+      JSON.parse(getLLMResponseMessage(response)),
     );
     if (!parsed.success) {
       console.error("Failed to parse suggestions:", parsed.error);

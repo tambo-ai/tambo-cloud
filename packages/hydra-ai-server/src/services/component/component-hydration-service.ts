@@ -11,16 +11,17 @@ import {
   AvailableComponents,
   ToolResponseBody,
 } from "../../model/component-metadata";
-import {
-  getOpenAIResponseMessage,
-  getOpenAIResponseToolCallId,
-  getOpenAIResponseToolCallRequest,
-  OpenAIResponse,
-} from "../../model/openai-response";
 import { getAvailableComponentsPromptTemplate } from "../../prompt/component-formatting";
 import { getComponentHydrationPromptTemplate } from "../../prompt/component-hydration";
 import { schemaV1, schemaV2 } from "../../prompt/schemas";
-import { CompleteParams, LLMClient } from "../llm/llm-client";
+import {
+  CompleteParams,
+  getLLMResponseMessage,
+  getLLMResponseToolCallId,
+  getLLMResponseToolCallRequest,
+  LLMClient,
+  LLMResponse,
+} from "../llm/llm-client";
 import { threadMessagesToChatHistory } from "../llm/threadMessagesToChatHistory";
 import { parseAndValidate } from "../parser/response-parser-service";
 import { convertMetadataToTools } from "../tool/tool-service";
@@ -154,15 +155,13 @@ To respond to the user's message:
     props: null,
     componentState: null, // TOOD: remove when optional
     ...(version === "v1" ? { suggestedActions: [] } : {}),
-    toolCallRequest: getOpenAIResponseToolCallRequest(
-      generateComponentResponse,
-    ),
+    toolCallRequest: getLLMResponseToolCallRequest(generateComponentResponse),
   };
 
   if (!componentDecision.toolCallRequest) {
     const parsedData = (await parseAndValidate(
       version === "v1" ? schemaV1 : schemaV2,
-      getOpenAIResponseMessage(generateComponentResponse),
+      getLLMResponseMessage(generateComponentResponse),
     )) as z.infer<typeof schemaV1> | z.infer<typeof schemaV2>;
 
     componentDecision.componentName = parsedData.componentName;
@@ -178,7 +177,7 @@ To respond to the user's message:
 }
 
 async function* handleComponentHydrationStream(
-  responseStream: AsyncIterableIterator<OpenAIResponse>,
+  responseStream: AsyncIterableIterator<LLMResponse>,
   componentName: string,
   threadId: string,
   version: "v1" | "v2" = "v1",
@@ -198,11 +197,11 @@ async function* handleComponentHydrationStream(
 
   for await (const chunk of responseStream) {
     try {
-      const message = getOpenAIResponseMessage(chunk) || "{}";
+      const message = getLLMResponseMessage(chunk) || "{}";
       const parsedChunk = {
         ...parse(message),
-        toolCallRequest: getOpenAIResponseToolCallRequest(chunk),
-        toolCallId: getOpenAIResponseToolCallId(chunk),
+        toolCallRequest: getLLMResponseToolCallRequest(chunk),
+        toolCallId: getLLMResponseToolCallId(chunk),
       };
 
       accumulatedDecision = {

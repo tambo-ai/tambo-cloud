@@ -5,17 +5,17 @@ import {
 } from "@tambo-ai-cloud/core";
 import { InputContext } from "../../model/input-context";
 import {
-  getOpenAIResponseMessage,
-  getOpenAIResponseToolCallRequest,
-  OpenAIResponse,
-} from "../../model/openai-response";
-import {
   decideComponentTool,
   generateDecisionPrompt,
   getNoComponentPromptTemplate,
 } from "../../prompt/component-decision";
 import { generateAvailableComponentsList } from "../../prompt/component-formatting";
-import { LLMClient } from "../llm/llm-client";
+import {
+  getLLMResponseMessage,
+  getLLMResponseToolCallRequest,
+  LLMClient,
+  LLMResponse,
+} from "../llm/llm-client";
 import { threadMessagesToChatHistory } from "../llm/threadMessagesToChatHistory";
 import { hydrateComponent } from "./component-hydration-service";
 
@@ -49,13 +49,13 @@ export async function decideComponent(
     },
   });
 
-  const decision = getOpenAIResponseToolCallRequest(
+  const decision = getLLMResponseToolCallRequest(
     decisionResponse,
   )?.parameters.find(
     ({ parameterName }) => parameterName === "decision",
   )?.parameterValue;
 
-  const componentName = getOpenAIResponseToolCallRequest(
+  const componentName = getLLMResponseToolCallRequest(
     decisionResponse,
   )?.parameters.find(
     ({ parameterName }) => parameterName === "component",
@@ -84,9 +84,9 @@ export async function decideComponent(
     }
     return await handleNoComponentCase(
       llmClient,
-      getOpenAIResponseToolCallRequest(decisionResponse)?.parameters.find(
+      getLLMResponseToolCallRequest(decisionResponse)?.parameters.find(
         ({ parameterName }) => parameterName === "reasoning",
-      )?.parameterValue ?? getOpenAIResponseMessage(decisionResponse),
+      )?.parameterValue ?? getLLMResponseMessage(decisionResponse),
       context,
       threadId,
       stream,
@@ -142,7 +142,7 @@ async function handleNoComponentCase(
 }
 
 async function* handleNoComponentStream(
-  responseStream: AsyncIterableIterator<OpenAIResponse>,
+  responseStream: AsyncIterableIterator<LLMResponse>,
   threadId: string,
   version: "v1" | "v2" = "v1",
 ): AsyncIterableIterator<LegacyComponentDecision> {
@@ -156,7 +156,7 @@ async function* handleNoComponentStream(
   };
 
   for await (const chunk of responseStream) {
-    accumulatedDecision.message = getOpenAIResponseMessage(chunk);
+    accumulatedDecision.message = getLLMResponseMessage(chunk);
     yield accumulatedDecision;
   }
 }

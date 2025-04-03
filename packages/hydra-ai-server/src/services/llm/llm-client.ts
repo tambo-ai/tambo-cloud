@@ -1,8 +1,11 @@
-import { ChatCompletionMessageParam } from "@tambo-ai-cloud/core";
+import { ChatCompletionChoice } from "@libretto/token.js";
+import {
+  ChatCompletionMessageParam,
+  ToolCallRequest,
+} from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { JSONSchema } from "openai/lib/jsonschema";
 import { ZodObject } from "zod";
-import { OpenAIResponse } from "../../model/openai-response";
 
 interface BaseResponseFormat {
   jsonMode?: boolean;
@@ -55,7 +58,36 @@ export type CompleteParams = CompleteBaseParams & ResponseFormat;
 export interface LLMClient {
   complete(
     params: StreamingCompleteParams,
-  ): Promise<AsyncIterableIterator<OpenAIResponse>>;
+  ): Promise<AsyncIterableIterator<LLMResponse>>;
 
-  complete(params: CompleteParams): Promise<OpenAIResponse>;
+  complete(params: CompleteParams): Promise<LLMResponse>;
+}
+export type LLMResponse = Omit<ChatCompletionChoice, "finish_reason">;
+
+export function getLLMResponseMessage(response: LLMResponse) {
+  return response.message?.content ?? "";
+}
+
+export function getLLMResponseToolCallId(response: LLMResponse) {
+  return response.message.tool_calls?.[0]?.id;
+}
+
+export function getLLMResponseToolCallRequest(
+  response: LLMResponse,
+): ToolCallRequest | undefined {
+  const toolCallRequest = response.message.tool_calls?.[0];
+  if (!toolCallRequest) {
+    return undefined;
+  }
+
+  const args = JSON.parse(toolCallRequest.function.arguments);
+  const parameters = Object.entries(args).map(([key, value]) => ({
+    parameterName: key,
+    parameterValue: value,
+  }));
+
+  return {
+    toolName: toolCallRequest.function.name,
+    parameters,
+  };
 }
