@@ -1,11 +1,11 @@
-import { type JSONSchema7 } from "json-schema";
-import { ComponentPropsMetadata } from "./component-props-metadata";
+import { z } from "zod";
 
-export interface ComponentMetadata {
-  name: string;
-  description: string;
-  props: ComponentPropsMetadata;
-}
+export const ComponentPropsMetadataSchema = z.any();
+export type ComponentPropsMetadata = z.infer<
+  typeof ComponentPropsMetadataSchema
+>;
+
+import { type JSONSchema7 } from "json-schema";
 
 export interface ComponentContextToolMetadata {
   name: string;
@@ -21,16 +21,10 @@ export interface ComponentContextToolMetadata {
   }[];
 }
 
-export interface ComponentContextTool<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Args extends unknown[] = any[],
-  Response extends ToolResponseBody = ToolResponseBody,
-> {
-  getComponentContext: (...args: Args) => Promise<Response>;
-  definition: ComponentContextToolMetadata;
-}
-
-export interface AvailableComponent extends ComponentMetadata {
+export interface AvailableComponent {
+  name: string;
+  description: string;
+  props: ComponentPropsMetadata;
   contextTools: ComponentContextToolMetadata[];
 }
 
