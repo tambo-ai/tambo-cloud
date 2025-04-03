@@ -34,22 +34,27 @@ describe("getComponentHydrationPromptTemplate", () => {
         {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
-        - TestComponent: A test component (Props: {
-          "type": "object",
-          "properties": {
-            "title": {
-              "type": "string"
-            },
-            "description": {
-              "type": "string"
+
+        - TestComponent:
+            description: A test component
+            props:
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
             }
-          },
-          "required": [
-            "title"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        })",
+        ",
             "zodTypePrompt": "
               Return a JSON object that matches the given Zod schema.
               If a field is Optional and there is no input don't include in the JSON response.
@@ -171,22 +176,27 @@ describe("getComponentHydrationPromptTemplate", () => {
         {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
-        - TestComponent: A test component (Props: {
-          "type": "object",
-          "properties": {
-            "title": {
-              "type": "string"
-            },
-            "description": {
-              "type": "string"
+
+        - TestComponent:
+            description: A test component
+            props:
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
             }
-          },
-          "required": [
-            "title"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        })",
+        ",
             "toolResponseString": "{"data":{"result":"test result"},"type":"test"}",
             "zodTypePrompt": "
               Return a JSON object that matches the given Zod schema.
@@ -311,22 +321,27 @@ describe("getComponentHydrationPromptTemplate", () => {
         {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
-        - TestComponent: A test component (Props: {
-          "type": "object",
-          "properties": {
-            "title": {
-              "type": "string"
-            },
-            "description": {
-              "type": "string"
+
+        - TestComponent:
+            description: A test component
+            props:
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
             }
-          },
-          "required": [
-            "title"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        })",
+        ",
             "zodTypePrompt": "
               Return a JSON object that matches the given Zod schema.
               If a field is Optional and there is no input don't include in the JSON response.
@@ -419,22 +434,27 @@ describe("getComponentHydrationPromptTemplate", () => {
         {
           "args": {
             "availableComponentsPrompt": "You may use only the following components:
-        - TestComponent: A test component (Props: {
-          "type": "object",
-          "properties": {
-            "title": {
-              "type": "string"
-            },
-            "description": {
-              "type": "string"
+
+        - TestComponent:
+            description: A test component
+            props:
+            {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": false,
+              "$schema": "http://json-schema.org/draft-07/schema#"
             }
-          },
-          "required": [
-            "title"
-          ],
-          "additionalProperties": false,
-          "$schema": "http://json-schema.org/draft-07/schema#"
-        })",
+        ",
             "toolResponseString": "{"data":{"result":"test result"},"type":"test"}",
             "zodTypePrompt": "
               Return a JSON object that matches the given Zod schema.

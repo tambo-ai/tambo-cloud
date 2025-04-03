@@ -1,7 +1,10 @@
 import { createPromptTemplate } from "@tambo-ai-cloud/core";
+import Ajv from "ajv";
 import { z } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
 import { AvailableComponents } from "../model/component-metadata";
+
+const ajv = new Ajv();
 
 function replaceTemplateVariables(
   template: string,
@@ -27,8 +30,11 @@ const formatPropInfo = (propName: string, propInfo?: PropInfo): string => {
     return `${propName}: unknown`;
   }
 
-  const typeStr =
-    typeof propInfo === "string" ? propInfo : String(propInfo?.type || "");
+  if (typeof propInfo === "string") {
+    return `${propName}: ${propInfo}`;
+  }
+
+  const typeStr = String(propInfo?.type || "");
 
   const description =
     typeof propInfo === "object" && propInfo?.description
@@ -42,14 +48,27 @@ const formatPropInfo = (propName: string, propInfo?: PropInfo): string => {
 };
 
 const formatComponentProps = (
-  props: Record<string, PropInfo> | z.ZodType | undefined
+  props: Record<string, PropInfo> | z.ZodType | undefined,
+  indentStr = ""
 ): string => {
   if (!props || Object.keys(props).length === 0) {
     return "";
   }
 
   if (props instanceof z.ZodType) {
-    return ` (Props: ${JSON.stringify(zodToJsonSchema(props), null, 2)})`;
+    const jsonSchema = zodToJsonSchema(props);
+    const indentedJsonSchema = JSON.stringify(jsonSchema, null, 2).replace(
+      /\n/g,
+      `\n${indentStr}`
+    );
+    return `${indentStr}${indentedJsonSchema}`;
+  }
+  if (ajv.validateSchema(props)) {
+    const indentedJsonSchema = JSON.stringify(props, null, 2).replace(
+      /\n/g,
+      `\n${indentStr}`
+    );
+    return `${indentStr}${indentedJsonSchema}`;
   }
 
   const propsWithDetails = Object.entries(props)
@@ -64,13 +83,18 @@ const formatComponent = (component: {
   description: string;
   props?: Record<string, PropInfo> | z.ZodType;
 }): string => {
-  const propsStr = formatComponentProps(component.props);
-  return `- ${component.name}: ${component.description}${propsStr}`;
+  const propsStr = formatComponentProps(component.props, "    ");
+  return `
+- componentName: "${component.name}":
+    description: ${component.description}
+    props:
+${propsStr}`;
 };
 
 export const generateAvailableComponentsList = (
   availableComponents: AvailableComponents
-): string => Object.values(availableComponents).map(formatComponent).join("\n");
+): string =>
+  Object.values(availableComponents).map(formatComponent).join("\n") + "\n";
 
 export function getAvailableComponentsPromptTemplate(
   availableComponents: AvailableComponents

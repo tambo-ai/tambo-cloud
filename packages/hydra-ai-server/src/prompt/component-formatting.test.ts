@@ -9,7 +9,10 @@ describe("component-formatting", () => {
     it("Should generate a proper result for zero components", () => {
       const components: AvailableComponents = {};
       const result = generateAvailableComponentsList(components);
-      expect(result).toMatchInlineSnapshot(`""`);
+      expect(result).toMatchInlineSnapshot(`
+        "
+        "
+      `);
     });
 
     it("should generate list with simple components", () => {
@@ -25,9 +28,16 @@ describe("component-formatting", () => {
       };
 
       const result = generateAvailableComponentsList(components);
-      expect(result).toMatchInlineSnapshot(
-        `"- Button: A simple button component (Props: label: string)"`
-      );
+      expect(result).toMatchInlineSnapshot(`
+        "
+        - Button:
+            description: A simple button component
+            props:
+            {
+              "label": "string"
+            }
+        "
+      `);
     });
 
     it("should handle components with no props", () => {
@@ -41,7 +51,14 @@ describe("component-formatting", () => {
       };
 
       const result = generateAvailableComponentsList(components);
-      expect(result).toMatchInlineSnapshot(`"- Divider: A horizontal divider"`);
+      expect(result).toMatchInlineSnapshot(`
+        "
+        - Divider:
+            description: A horizontal divider
+            props:
+
+        "
+      `);
     });
 
     it("should handle components with complex props", () => {
@@ -66,9 +83,25 @@ describe("component-formatting", () => {
       };
 
       const result = generateAvailableComponentsList(components);
-      expect(result).toMatchInlineSnapshot(
-        `"- Input: An input field (Props: value: string (required) - The input value, onChange: (value: string) => void (required) - Change handler)"`
-      );
+      expect(result).toMatchInlineSnapshot(`
+        "
+        - Input:
+            description: An input field
+            props:
+            {
+              "value": {
+                "type": "string",
+                "description": "The input value",
+                "required": true
+              },
+              "onChange": {
+                "type": "(value: string) => void",
+                "description": "Change handler",
+                "required": true
+              }
+            }
+        "
+      `);
     });
 
     it("should handle multiple components", () => {
@@ -89,8 +122,19 @@ describe("component-formatting", () => {
 
       const result = generateAvailableComponentsList(components);
       expect(result).toMatchInlineSnapshot(`
-        "- Button: A button (Props: label: string)
-        - Text: A text component"
+        "
+        - Button:
+            description: A button
+            props:
+            {
+              "label": "string"
+            }
+
+        - Text:
+            description: A text component
+            props:
+
+        "
       `);
     });
   });
@@ -109,7 +153,14 @@ describe("component-formatting", () => {
       const result = generateAvailableComponentsPrompt(components);
       expect(result).toMatchInlineSnapshot(`
         "You may use only the following components:
-        - Button: A button component (Props: label: string)"
+
+        - Button:
+            description: A button component
+            props:
+            {
+              "label": "string"
+            }
+        "
       `);
     });
 
@@ -120,6 +171,70 @@ describe("component-formatting", () => {
       expect(result).toMatchInlineSnapshot(`
         "You may use only the following components:
         No components available, do not try and generate a component."
+      `);
+    });
+
+    it("should handle required components", () => {
+      const components: AvailableComponents = {
+        Input: {
+          name: "Input",
+          description: "An input field",
+          props: {
+            value: {
+              type: "string",
+              required: true,
+            },
+          },
+          contextTools: [],
+        },
+      };
+
+      const result = generateAvailableComponentsPrompt(components);
+      expect(result).toMatchInlineSnapshot(`
+        "You may use only the following components:
+
+        - Input:
+            description: An input field
+            props:
+            {
+              "value": {
+                "type": "string",
+                "required": true
+              }
+            }
+        "
+      `);
+    });
+
+    it("should handle props with descsription", () => {
+      const components: AvailableComponents = {
+        Input: {
+          name: "Input",
+          description: "An input field",
+          props: {
+            value: {
+              type: "string",
+              description: "The input value",
+            },
+          },
+          contextTools: [],
+        },
+      };
+
+      const result = generateAvailableComponentsPrompt(components);
+      expect(result).toMatchInlineSnapshot(`
+        "You may use only the following components:
+
+        - Input:
+            description: An input field
+            props:
+            {
+              "value": {
+                "type": "string",
+                "description": "The input value"
+              }
+            }
+        "
       `);
     });
   });
