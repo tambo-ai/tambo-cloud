@@ -37,10 +37,6 @@ const suggestedActionsGuidelines = `When generating suggestedActions, consider t
 const basePromptV1 = `${basePrompt}\n${suggestedActionsGuidelines}`;
 const basePromptV2 = basePrompt;
 
-export function getBasePrompt(version: "v1" | "v2" = "v1"): string {
-  return version === "v1" ? basePromptV1 : basePromptV2;
-}
-
 const componentHydrationPromptWithToolResponse = (version: "v1" | "v2") =>
   `${version === "v1" ? basePromptV1 : basePromptV2}
 You have received a response from a tool. Use this data to help determine what props to pass in: {toolResponseString}
@@ -80,8 +76,7 @@ function getComponentHydrationPromptWithoutToolResponseTemplate(
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function generateZodTypePrompt(schema: z.ZodSchema<any>): string {
+function generateZodTypePrompt(schema: z.ZodSchema): string {
   return `
       Return a JSON object that matches the given Zod schema.
       If a field is Optional and there is no input don't include in the JSON response.
@@ -90,8 +85,7 @@ function generateZodTypePrompt(schema: z.ZodSchema<any>): string {
     `;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function generateFormatInstructions(schema: z.ZodSchema<any>): string {
+function generateFormatInstructions(schema: z.ZodSchema): string {
   return `You must format your output as a JSON value that adheres to a given "JSON Schema" instance.
 
     "JSON Schema" is a declarative language that allows you to annotate and validate JSON documents.

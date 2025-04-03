@@ -35,7 +35,7 @@ These are the available components:
   );
 }
 
-export const noComponentPrompt = `You are an AI assistant that interacts with users and helps them perform tasks. You have determined that you cannot generate any components to help the user with their latest query for the following reason:
+const noComponentPrompt = `You are an AI assistant that interacts with users and helps them perform tasks. You have determined that you cannot generate any components to help the user with their latest query for the following reason:
 <reasoning>{reasoning}</reasoning>.
 <availableComponents>
 {availableComponents}
