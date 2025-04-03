@@ -19,8 +19,8 @@ describe("component-formatting", () => {
       };
 
       const result = generateAvailableComponentsList(components);
-      expect(result).toBe(
-        "- Button: A simple button component (Props: label: string)",
+      expect(result).toMatchInlineSnapshot(
+        `"- Button: A simple button component (Props: label: string)"`
       );
     });
 
@@ -35,7 +35,7 @@ describe("component-formatting", () => {
       };
 
       const result = generateAvailableComponentsList(components);
-      expect(result).toBe("- Divider: A horizontal divider");
+      expect(result).toMatchInlineSnapshot(`"- Divider: A horizontal divider"`);
     });
 
     it("should handle components with complex props", () => {
@@ -60,8 +60,8 @@ describe("component-formatting", () => {
       };
 
       const result = generateAvailableComponentsList(components);
-      expect(result).toBe(
-        "- Input: An input field (Props: value: string (required) - The input value, onChange: (value: string) => void (required) - Change handler)",
+      expect(result).toMatchInlineSnapshot(
+        `"- Input: An input field (Props: value: string (required) - The input value, onChange: (value: string) => void (required) - Change handler)"`
       );
     });
 
@@ -82,9 +82,10 @@ describe("component-formatting", () => {
       };
 
       const result = generateAvailableComponentsList(components);
-      expect(result).toBe(
-        "- Button: A button (Props: label: string)\n- Text: A text component",
-      );
+      expect(result).toMatchInlineSnapshot(`
+        "- Button: A button (Props: label: string)
+        - Text: A text component"
+      `);
     });
   });
 
@@ -100,18 +101,20 @@ describe("component-formatting", () => {
       };
 
       const result = generateAvailableComponentsPrompt(components);
-      expect(result).toBe(
-        "You may use only the following components:\n- Button: A button component (Props: label: string)",
-      );
+      expect(result).toMatchInlineSnapshot(`
+        "You may use only the following components:
+        - Button: A button component (Props: label: string)"
+      `);
     });
 
     it("should handle empty components", () => {
       const components: AvailableComponents = {};
 
       const result = generateAvailableComponentsPrompt(components);
-      expect(result).toBe(
-        "You may use only the following components:\nNo components available, do not try and generate a component.",
-      );
+      expect(result).toMatchInlineSnapshot(`
+        "You may use only the following components:
+        No components available, do not try and generate a component."
+      `);
     });
   });
 });
