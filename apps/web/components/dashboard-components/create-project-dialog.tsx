@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { TextLink } from "@/components/ui/text-link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -96,14 +97,13 @@ export function CreateProjectDialog({
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
                     You can find or create your API key in the{" "}
-                    <a
+                    <TextLink
                       href="https://platform.openai.com/settings/organization/api-keys"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline font-medium"
                     >
                       OpenAI API keys page
-                    </a>
+                    </TextLink>
                     .
                   </p>
                 </FormItem>
