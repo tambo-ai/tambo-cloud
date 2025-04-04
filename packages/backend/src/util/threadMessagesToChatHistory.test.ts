@@ -56,6 +56,36 @@ describe("threadMessagesToChatHistory", () => {
         content: [{ type: "text", text: "tool response" }],
       });
     });
+    it("should handle tool calls without responses", () => {
+      const assistantMessage: ThreadMessage = {
+        ...baseThreadMessage,
+        id: "1",
+        role: MessageRole.Assistant,
+        tool_call_id: "test-tool-1",
+        toolCallRequest: {
+          toolName: "test_tool",
+          parameters: [{ parameterName: "param1", parameterValue: "value1" }],
+        },
+        content: [{ type: "text", text: "assistant message" }],
+      };
+
+      const result = threadMessagesToChatHistory([assistantMessage]);
+
+      // "text" should have a json object in it
+      expect(result).toMatchInlineSnapshot(`
+        [
+          {
+            "content": [
+              {
+                "text": "[{"id":"test-tool-1","type":"function","function":{"name":"test_tool","arguments":"{\\"param1\\":\\"value1\\"}"}}]",
+                "type": "text",
+              },
+            ],
+            "role": "assistant",
+          },
+        ]
+      `);
+    });
   });
 
   describe("assistant messages", () => {
