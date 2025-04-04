@@ -15,11 +15,11 @@ function isValidJSONSchema(schema: any) {
 }
 function replaceTemplateVariables(
   template: string,
-  variables: Record<string, string>
+  variables: Record<string, string>,
 ): string {
   return Object.entries(variables).reduce(
     (result, [key, value]) => result.replace(`{${key}}`, value),
-    template
+    template,
   );
 }
 
@@ -56,7 +56,7 @@ const formatPropInfo = (propName: string, propInfo?: PropInfo): string => {
 
 const formatComponentProps = (
   props: Record<string, PropInfo> | z.ZodType | undefined,
-  indentStr = ""
+  indentStr = "",
 ): string => {
   if (!props || Object.keys(props).length === 0) {
     return "";
@@ -66,14 +66,14 @@ const formatComponentProps = (
     const jsonSchema = zodToJsonSchema(props);
     const indentedJsonSchema = JSON.stringify(jsonSchema, null, 2).replace(
       /\n/g,
-      `\n${indentStr}`
+      `\n${indentStr}`,
     );
     return `${indentStr}${indentedJsonSchema}`;
   }
   if (isValidJSONSchema(props)) {
     const indentedJsonSchema = JSON.stringify(props, null, 2).replace(
       /\n/g,
-      `\n${indentStr}`
+      `\n${indentStr}`,
     );
     return `${indentStr}${indentedJsonSchema}`;
   }
@@ -99,12 +99,12 @@ ${propsStr}`;
 };
 
 export const generateAvailableComponentsList = (
-  availableComponents: AvailableComponents
+  availableComponents: AvailableComponents,
 ): string =>
   Object.values(availableComponents).map(formatComponent).join("\n") + "\n";
 
 export function getAvailableComponentsPromptTemplate(
-  availableComponents: AvailableComponents
+  availableComponents: AvailableComponents,
 ) {
   const availableComponentsStr =
     Object.keys(availableComponents).length > 0
@@ -113,12 +113,12 @@ export function getAvailableComponentsPromptTemplate(
   return createPromptTemplate(
     `You may use only the following components:
 {availableComponents}`,
-    { availableComponents: availableComponentsStr }
+    { availableComponents: availableComponentsStr },
   );
 }
 
 export function generateAvailableComponentsPrompt(
-  availableComponents: AvailableComponents
+  availableComponents: AvailableComponents,
 ): string {
   const template = getAvailableComponentsPromptTemplate(availableComponents);
   return replaceTemplateVariables(template.template, template.args);

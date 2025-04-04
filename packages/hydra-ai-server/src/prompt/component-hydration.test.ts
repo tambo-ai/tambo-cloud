@@ -27,7 +27,7 @@ describe("getComponentHydrationPromptTemplate", () => {
       const result = getComponentHydrationPromptTemplate(
         undefined,
         mockAvailableComponentsWithZod,
-        "v1"
+        "v1",
       );
 
       expect(result).toMatchInlineSnapshot(`
@@ -169,7 +169,7 @@ describe("getComponentHydrationPromptTemplate", () => {
       const result = getComponentHydrationPromptTemplate(
         mockToolResponse,
         mockAvailableComponentsWithZod,
-        "v1"
+        "v1",
       );
 
       expect(result).toMatchInlineSnapshot(`
@@ -314,7 +314,7 @@ describe("getComponentHydrationPromptTemplate", () => {
       const result = getComponentHydrationPromptTemplate(
         undefined,
         mockAvailableComponentsWithZod,
-        "v2"
+        "v2",
       );
 
       expect(result).toMatchInlineSnapshot(`
@@ -427,7 +427,7 @@ describe("getComponentHydrationPromptTemplate", () => {
       const result = getComponentHydrationPromptTemplate(
         mockToolResponse,
         mockAvailableComponentsWithZod,
-        "v2"
+        "v2",
       );
 
       expect(result).toMatchInlineSnapshot(`
