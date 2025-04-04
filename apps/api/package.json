@@ -1,7 +1,7 @@
 {
-  "name": "tambo-api",
+  "name": "hydra-api",
   "version": "0.0.1",
-  "description": "Tambo API server",
+  "description": "",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -20,7 +20,6 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "clean": "rm -rf dist",
     "check-types": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
     "lint": "eslint"
   },
   "dependencies": {

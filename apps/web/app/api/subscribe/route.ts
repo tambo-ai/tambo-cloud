@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const { email } = await req.json();
 
     const data = await resend.emails.send({
-      from: "Tambo AI <onboarding@tambo.ai>",
+      from: "Tambo AI <magan@tambo.co>",
       to: email,
       subject: "Welcome to Tambo AI Early Access",
       html: `

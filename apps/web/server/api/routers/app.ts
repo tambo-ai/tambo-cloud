@@ -17,7 +17,7 @@ export const appRouter = createTRPCRouter({
       const resend = new Resend(env.RESEND_API_KEY);
 
       const data = await resend.emails.send({
-        from: "Tambo AI <onboarding@tambo.ai>",
+        from: "Tambo AI <magan@tambo.co>",
         to: input.email,
         subject: "Welcome to Tambo AI Early Access",
         html: `
