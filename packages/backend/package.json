@@ -1,7 +1,7 @@
 {
   "name": "@tambo-ai-cloud/backend",
   "version": "0.0.6",
-  "description": "Server package for running hydra-ai",
+  "description": "Supporting package for running the Tambo AI service",
   "type": "module",
   "exports": {
     "import": "./src/index.ts"

@@ -245,7 +245,7 @@ function makeUserMessages(
     message.role === MessageRole.Assistant ||
     message.role === MessageRole.Tool
   ) {
-    throw new Error("Hydra messages should not be converted to user messages");
+    throw new Error("Tambo messages should not be converted to user messages");
   }
   const additionalContextMessage = generateAdditionalContext(message);
 
