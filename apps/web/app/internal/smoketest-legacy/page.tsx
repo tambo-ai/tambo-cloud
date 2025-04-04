@@ -8,6 +8,8 @@ import { api } from "@/trpc/react";
 import { ComponentContextTool } from "@tambo-ai-cloud/backend";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
+// Using the existing HydraClient but importing it from the renamed package
+// Using 'any' type for now since we don't have type declarations for the renamed package
 import { HydraClient } from "tambo-ai";
 import { X } from "lucide-react";
 import { ReactElement, useMemo, useState } from "react";
@@ -15,6 +17,17 @@ import { ReactElement, useMemo, useState } from "react";
 interface Message {
   role: "user" | "assistant";
   content: (string | ReactElement)[];
+  suggestedActions?: Array<{
+    label: string;
+    actionText: string;
+  }>;
+}
+
+// Type for response component
+interface ComponentResponse {
+  threadId?: string;
+  message: string;
+  component?: ReactElement;
   suggestedActions?: Array<{
     label: string;
     actionText: string;
@@ -59,13 +72,13 @@ export default function SmokePage() {
         try {
           const response = await tamboClient.generateComponent(
             input,
-            (msg) => {
+            (msg: string) => {
               console.log(msg);
             },
             threadId ?? undefined,
           );
           setThreadId(response.threadId ?? null);
-          return response;
+          return response as ComponentResponse;
         } catch (error) {
           setErrors((prev) => [...prev, error as Error]);
           throw error;
@@ -99,7 +112,8 @@ export default function SmokePage() {
       suggestedActions: response.suggestedActions,
     };
     if (response?.component) {
-      assistantMessage.content.push(response.component);
+      // Cast to string | ReactElement to match the Message type
+      assistantMessage.content.push(response.component as ReactElement);
     }
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInput("");
@@ -342,9 +356,13 @@ function useWeatherTambo({
   getAirQuality: (...args: any[]) => Promise<any>;
 }) {
   return useMemo(() => {
+    // Add non-null assertions to satisfy TypeScript
+    const apiKey = env.NEXT_PUBLIC_TAMBO_API_KEY!;
+    const apiUrl = env.NEXT_PUBLIC_TAMBO_API_URL!;
+
     const client = new HydraClient({
-      hydraApiKey: env.NEXT_PUBLIC_TAMBO_API_KEY,
-      hydraApiUrl: env.NEXT_PUBLIC_TAMBO_API_URL,
+      tamboApiKey: apiKey,
+      tamboApiUrl: apiUrl,
     });
     const tools: Record<string, ComponentContextTool> = {
       forecast: {
