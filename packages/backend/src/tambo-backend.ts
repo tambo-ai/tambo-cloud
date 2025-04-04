@@ -3,11 +3,14 @@ import {
   AvailableComponent,
   AvailableComponents,
   ToolResponseBody,
-} from "../model/component-metadata";
-import { InputContext, InputContextAsArray } from "../model/input-context";
-import { Provider } from "../model/providers";
-import { SuggestionDecision } from "../services/suggestion/suggestion.types";
-import AIService from "./ai-service";
+} from "./model/component-metadata";
+import { InputContext, InputContextAsArray } from "./model/input-context";
+import { Provider } from "./model/providers";
+import { decideComponent } from "./services/component/component-decision-service";
+import { hydrateComponent } from "./services/component/component-hydration-service";
+import { TokenJSClient } from "./services/llm/token-js-client";
+import { generateSuggestions } from "./services/suggestion/suggestion.service";
+import { SuggestionDecision } from "./services/suggestion/suggestion.types";
 
 interface HydraBackendOptions {
   version?: "v1" | "v2";
@@ -15,12 +18,12 @@ interface HydraBackendOptions {
   provider?: Provider;
 }
 
-export default class HydraBackend {
-  private aiService: AIService;
-
+export default class TamboBackend {
+  private llmClient: TokenJSClient;
+  private version: "v1" | "v2";
   constructor(
     openAIKey: string,
-    chainId: string,
+    private chainId: string,
     options: HydraBackendOptions = {},
   ) {
     const {
@@ -28,13 +31,8 @@ export default class HydraBackend {
       model = "gpt-4o-mini",
       provider = "openai",
     } = options;
-    this.aiService = new AIService(
-      openAIKey,
-      model,
-      provider,
-      chainId,
-      version,
-    );
+    this.version = version;
+    this.llmClient = new TokenJSClient(openAIKey, model, provider, chainId);
   }
 
   public async generateSuggestions(
@@ -64,7 +62,8 @@ export default class HydraBackend {
       threadId,
     };
 
-    return await this.aiService.generateSuggestions(
+    return await generateSuggestions(
+      this.llmClient,
       context,
       count,
       threadId,
@@ -101,8 +100,7 @@ export default class HydraBackend {
       threadId,
       additionalContext,
     };
-
-    return await this.aiService.chooseComponent(context, threadId, stream);
+    return await decideComponent(this.llmClient, context, threadId, stream);
   }
 
   public async hydrateComponentWithData(
@@ -131,14 +129,17 @@ export default class HydraBackend {
   ): Promise<
     LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
   > {
-    return await this.aiService.hydrateComponent(
+    return await hydrateComponent({
+      llmClient: this.llmClient,
       messageHistory,
-      component,
+      chosenComponent: component,
       toolResponse,
       toolCallId,
+      availableComponents: undefined,
       threadId,
       stream,
-    );
+      version: this.version,
+    });
   }
 }
 
