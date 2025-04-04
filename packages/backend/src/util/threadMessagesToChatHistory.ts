@@ -64,7 +64,7 @@ function makeToolMessages(
     return [toolMessage];
   }
   console.warn(
-    `no tool id in tool message ${message.id} converting to user message`,
+    `no tool id in tool message ${message.id}, converting to user message`,
   );
   // If there's no tool id the we just call it a user message
   const userToolMessage: ChatCompletionUserMessageParam = {
