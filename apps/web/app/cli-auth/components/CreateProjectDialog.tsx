@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { TextLink } from "@/components/ui/text-link";
 import { memo, useCallback } from "react";
 
 type CreateProjectDialogState = Readonly<{
@@ -164,13 +163,14 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
             </p>
             <p className="text-xs text-gray-500 mt-1">
               You can find or create your API key in the{" "}
-              <TextLink
+              <a
                 href="https://platform.openai.com/settings/organization/api-keys"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="text-link"
               >
                 OpenAI API keys page
-              </TextLink>
+              </a>
               .
             </p>
           </div>

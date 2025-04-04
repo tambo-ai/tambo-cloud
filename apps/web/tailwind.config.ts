@@ -1,6 +1,7 @@
 import { createPreset } from "fumadocs-ui/tailwind-plugin";
 import path from "path";
 import * as animate from "tailwindcss-animate";
+import type { PluginAPI } from "tailwindcss/types/config";
 
 // This is a hack to get the fumadocs-ui dist path in the monorepo, where the
 // package may be installed in a different location
@@ -106,5 +107,19 @@ module.exports = {
       },
     },
   },
-  plugins: [animate],
+  plugins: [
+    animate,
+    function ({ addUtilities }: PluginAPI) {
+      const newUtilities = {
+        ".text-link": {
+          color: "hsl(186 94% 13%)", // Using primary-dark color
+          fontWeight: "500", // medium
+          "&:hover": {
+            textDecoration: "underline",
+          },
+        },
+      };
+      addUtilities(newUtilities);
+    },
+  ],
 };
