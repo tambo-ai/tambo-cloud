@@ -7,14 +7,6 @@ import { ThreadsService } from "../threads/threads.service";
 import { ComponentsController } from "./components.controller";
 import { ComponentsService } from "./components.service";
 
-// Always need to mock superjson because it is an ESM module
-jest.mock("superjson", () => ({
-  default: {
-    parse: jest.fn(),
-    stringify: jest.fn(),
-  },
-}));
-
 describe("ComponentsController", () => {
   let controller: ComponentsController;
 
