@@ -30,7 +30,7 @@ export default function SmokePage() {
   const { data: session } = useSession();
   const userId = session?.user.id;
   const [errors, setErrors] = useState<(TRPCClientErrorLike<any> | Error)[]>(
-    []
+    [],
   );
   const {
     registerComponent,
@@ -100,10 +100,10 @@ export default function SmokePage() {
     getAirQuality,
     getForecast,
     getHistoricalWeather,
-    getCurrentWeather
+    getCurrentWeather,
   );
   const isAnyApiRunning = Object.values(apiStates).some(
-    (state) => state.isRunning
+    (state) => state.isRunning,
   );
 
   const updateApiStates = useCallback(() => {
@@ -145,9 +145,9 @@ export default function SmokePage() {
         wrappedApis.forecast.call,
         wrappedApis.history.call,
         wrappedApis.aqi.call,
-        wrappedApis.currentWeather.call
+        wrappedApis.currentWeather.call,
       ),
-    [wrappedApis]
+    [wrappedApis],
   );
 
   useEffect(() => {
@@ -397,20 +397,20 @@ function useWrappedApis(
   getAirQuality: (...args: any[]) => Promise<any>,
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
-  getCurrentWeather: (...args: any[]) => Promise<any>
+  getCurrentWeather: (...args: any[]) => Promise<any>,
 ) {
   const updateAqiState = useCallback(
     (
       isRunning: boolean,
       startTime: number | null,
       duration: number | null,
-      tokens: number | null
+      tokens: number | null,
     ) =>
       setApiStates((prev) => ({
         ...prev,
         aqi: { ...prev.aqi, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates]
+    [setApiStates],
   );
 
   const updateForecastState = useCallback(
@@ -418,13 +418,13 @@ function useWrappedApis(
       isRunning: boolean,
       startTime: number | null,
       duration: number | null,
-      tokens: number | null
+      tokens: number | null,
     ) =>
       setApiStates((prev) => ({
         ...prev,
         forecast: { ...prev.forecast, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates]
+    [setApiStates],
   );
 
   const updateHistoryState = useCallback(
@@ -432,13 +432,13 @@ function useWrappedApis(
       isRunning: boolean,
       startTime: number | null,
       duration: number | null,
-      tokens: number | null
+      tokens: number | null,
     ) =>
       setApiStates((prev) => ({
         ...prev,
         history: { ...prev.history, isRunning, startTime, duration, tokens },
       })),
-    [setApiStates]
+    [setApiStates],
   );
 
   const updateCurrentWeatherState = useCallback(
@@ -446,7 +446,7 @@ function useWrappedApis(
       isRunning: boolean,
       startTime: number | null,
       duration: number | null,
-      tokens: number | null
+      tokens: number | null,
     ) =>
       setApiStates((prev) => ({
         ...prev,
@@ -458,7 +458,7 @@ function useWrappedApis(
           tokens,
         },
       })),
-    [setApiStates]
+    [setApiStates],
   );
 
   return useMemo(
@@ -477,7 +477,7 @@ function useWrappedApis(
       updateCurrentWeatherState,
       updateForecastState,
       updateHistoryState,
-    ]
+    ],
   );
 }
 
@@ -485,7 +485,7 @@ function makeWeatherTools(
   getForecast: (...args: any[]) => Promise<any>,
   getHistoricalWeather: (...args: any[]) => Promise<any>,
   getAirQuality: (...args: any[]) => Promise<any>,
-  getCurrentWeather: (...args: any[]) => Promise<any>
+  getCurrentWeather: (...args: any[]) => Promise<any>,
 ): Record<string, TamboTool> {
   const weatherLocationSchema = z
     .object({
