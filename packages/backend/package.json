@@ -12,10 +12,11 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
+    "test:cov": "jest --coverage",
     "test:watch": "jest --watch",
     "check-types": "tsc --noEmit",
     "lint": "eslint",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist coverage"
   },
   "author": "",
   "license": "ISC",
