@@ -25,7 +25,7 @@ function getDb(databaseUrl: string): HydraDatabase {
 
     pool.on("release", () => {
       console.log(
-        `Connection released: now → ${pool.totalCount}/${pool.idleCount} (total/idle)`,
+        `Connection released: now → ${pool.totalCount}/${pool.idleCount} (total/idle) (released connection takes a few ms to be marked as idle)`,
       );
     });
 
