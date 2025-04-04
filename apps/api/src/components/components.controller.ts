@@ -8,7 +8,11 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiOperation, ApiSecurity } from "@nestjs/swagger";
-import { ChatMessage, generateChainId } from "@tambo-ai-cloud/backend";
+import {
+  ChatMessage,
+  generateChainId,
+  TamboBackend,
+} from "@tambo-ai-cloud/backend";
 import {
   ActionType,
   ContentPartType,
