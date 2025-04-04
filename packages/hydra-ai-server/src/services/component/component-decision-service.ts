@@ -4,15 +4,19 @@ import {
   LegacyComponentDecision,
 } from "@tambo-ai-cloud/core";
 import { InputContext } from "../../model/input-context";
-import { OpenAIResponse } from "../../model/openai-response";
-import { LLMClient } from "../llm/llm-client";
-import { threadMessagesToChatHistory } from "../llm/threadMessagesToChatHistory";
 import {
   decideComponentTool,
-  generateAvailableComponentsList,
   generateDecisionPrompt,
   getNoComponentPromptTemplate,
-} from "../prompt/prompt-service";
+} from "../../prompt/component-decision";
+import { generateAvailableComponentsList } from "../../prompt/component-formatting";
+import {
+  getLLMResponseMessage,
+  getLLMResponseToolCallRequest,
+  LLMClient,
+  LLMResponse,
+} from "../llm/llm-client";
+import { threadMessagesToChatHistory } from "../llm/threadMessagesToChatHistory";
 import { hydrateComponent } from "./component-hydration-service";
 
 // Public function
@@ -45,11 +49,15 @@ export async function decideComponent(
     },
   });
 
-  const decision = decisionResponse.toolCallRequest?.parameters.find(
+  const decision = getLLMResponseToolCallRequest(
+    decisionResponse,
+  )?.parameters.find(
     ({ parameterName }) => parameterName === "decision",
   )?.parameterValue;
 
-  const componentName = decisionResponse.toolCallRequest?.parameters.find(
+  const componentName = getLLMResponseToolCallRequest(
+    decisionResponse,
+  )?.parameters.find(
     ({ parameterName }) => parameterName === "component",
   )?.parameterValue;
 
@@ -76,16 +84,14 @@ export async function decideComponent(
     }
     return await handleNoComponentCase(
       llmClient,
-      decisionResponse.toolCallRequest?.parameters.find(
+      getLLMResponseToolCallRequest(decisionResponse)?.parameters.find(
         ({ parameterName }) => parameterName === "reasoning",
-      )?.parameterValue ?? decisionResponse.message,
+      )?.parameterValue ?? getLLMResponseMessage(decisionResponse),
       context,
       threadId,
       stream,
     );
   }
-
-  throw new Error(`Invalid decision: ${decisionResponse.message}`);
 }
 
 // Private function
@@ -129,14 +135,14 @@ async function handleNoComponentCase(
     reasoning: "",
     componentName: null,
     props: null,
-    message: noComponentResponse.message,
+    message: noComponentResponse.message.content ?? "",
     componentState: null, // TOOD: remove when optional
     ...(version === "v1" ? { suggestedActions: [] } : {}),
   };
 }
 
 async function* handleNoComponentStream(
-  responseStream: AsyncIterableIterator<OpenAIResponse>,
+  responseStream: AsyncIterableIterator<LLMResponse>,
   threadId: string,
   version: "v1" | "v2" = "v1",
 ): AsyncIterableIterator<LegacyComponentDecision> {
@@ -150,7 +156,7 @@ async function* handleNoComponentStream(
   };
 
   for await (const chunk of responseStream) {
-    accumulatedDecision.message = chunk.message;
+    accumulatedDecision.message = getLLMResponseMessage(chunk);
     yield accumulatedDecision;
   }
 }
