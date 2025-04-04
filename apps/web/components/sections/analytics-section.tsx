@@ -18,7 +18,7 @@ const content = {
   },
   cta: {
     buttonText: "Try Demo",
-    link: "https://canvas.usehydra.ai",
+    link: "https://canvas.usetambo.ai",
   },
 };
 

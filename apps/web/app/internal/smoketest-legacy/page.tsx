@@ -8,7 +8,7 @@ import { api } from "@/trpc/react";
 import { ComponentContextTool } from "@tambo-ai-cloud/backend";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
-import { HydraClient } from "hydra-ai";
+import { HydraClient } from "tambo-ai";
 import { X } from "lucide-react";
 import { ReactElement, useMemo, useState } from "react";
 
@@ -46,7 +46,7 @@ export default function SmokePage() {
     api.demo.currentWeather.useMutation({
       onError: (error) => setErrors((prev) => [...prev, error]),
     });
-  const hydraClient = useWeatherHydra({
+  const tamboClient = useWeatherTambo({
     getForecast,
     getCurrentWeather,
     getHistoricalWeather,
@@ -57,7 +57,7 @@ export default function SmokePage() {
     useMutation({
       mutationFn: async () => {
         try {
-          const response = await hydraClient.generateComponent(
+          const response = await tamboClient.generateComponent(
             input,
             (msg) => {
               console.log(msg);
@@ -330,7 +330,7 @@ const AirQuality = ({ data }: AirQualityProps): React.ReactNode => {
   );
 };
 
-function useWeatherHydra({
+function useWeatherTambo({
   getForecast,
   getCurrentWeather,
   getHistoricalWeather,

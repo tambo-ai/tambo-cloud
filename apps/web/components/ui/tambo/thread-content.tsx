@@ -74,7 +74,7 @@ const ThreadContent = React.forwardRef<HTMLDivElement, ThreadContentProps>(
               >
                 <Message
                   role={
-                    message.role === "hydra" || message.role === "assistant"
+                    message.role === "tambo" || message.role === "assistant"
                       ? "assistant"
                       : "user"
                   }
