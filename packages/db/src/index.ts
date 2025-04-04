@@ -18,18 +18,14 @@ function getDb(databaseUrl: string): HydraDatabase {
     });
 
     pool.on("acquire", () => {
-      const beforeTotal = pool.totalCount - 1;
-      const beforeIdle = pool.idleCount;
       console.log(
-        `Connection acquired: ${beforeTotal}/${beforeIdle} → ${pool.totalCount}/${pool.idleCount} (total/idle)`,
+        `Connection acquired: now → ${pool.totalCount}/${pool.idleCount} (total/idle)`,
       );
     });
 
     pool.on("release", () => {
-      const beforeTotal = pool.totalCount;
-      const beforeIdle = pool.idleCount - 1;
       console.log(
-        `Connection released: ${beforeTotal}/${beforeIdle} → ${pool.totalCount}/${pool.idleCount} (total/idle)`,
+        `Connection released: now → ${pool.totalCount}/${pool.idleCount} (total/idle)`,
       );
     });
 
