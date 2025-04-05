@@ -161,7 +161,7 @@ export const DataChartProps = z
     type: z
       .enum(["bar", "line", "pie"])
       .describe(
-        "Use a chart type that is appropriate for the data. Only use pie charts when less than 5 values."
+        "Use a chart type that is appropriate for the data. Only use pie charts when less than 5 values.",
       ),
   })
   .describe("A component for displaying data in various chart formats");
