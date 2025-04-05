@@ -103,6 +103,17 @@ export default function SmokePage() {
       role: "user",
       content: [input],
     };
+
+    // Define the assistantMessage using the response data
+    const assistantMessage: Message = {
+      role: "assistant",
+      content: [response.message, response.component].filter(Boolean) as (
+        | string
+        | ReactElement
+      )[],
+      suggestedActions: response.suggestedActions,
+    };
+
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInput("");
   };
