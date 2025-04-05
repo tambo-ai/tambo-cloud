@@ -9,7 +9,7 @@ import { ComponentContextTool } from "@tambo-ai-cloud/backend";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 // Using the existing HydraClient but importing it from the original package
-import { HydraClient, GenerateComponentResponse } from "hydra-ai";
+import { HydraClient } from "hydra-ai";
 import { X } from "lucide-react";
 import { ReactElement, useMemo, useState } from "react";
 
@@ -71,9 +71,9 @@ export default function SmokePage() {
         try {
           const response = await tamboClient.generateComponent(
             input,
-            ((response: GenerateComponentResponse) => {
+            (response: any) => {
               console.log(response.message);
-            }) as (response: GenerateComponentResponse) => void,
+            },
             threadId ?? undefined,
           );
           setThreadId(response.threadId ?? null);
@@ -360,8 +360,8 @@ function useWeatherHydra({
     const apiUrl = env.NEXT_PUBLIC_TAMBO_API_URL!;
 
     const client = new HydraClient({
-      apiKey,
-      apiUrl,
+      hydraApiKey: apiKey,
+      hydraApiUrl: apiUrl,
     });
     const tools: Record<string, ComponentContextTool> = {
       forecast: {
