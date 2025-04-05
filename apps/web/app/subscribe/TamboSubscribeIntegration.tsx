@@ -45,7 +45,10 @@ export function TamboSubscribeIntegration() {
   const handleWelcomeDialogClose = () => {
     setShowWelcomeDialog(false);
     if (!hasMessageBeenSent.current) {
-      sendThreadMessage("subscribe me pls.", { streamResponse: true });
+      sendThreadMessage("subscribe me pls.", {
+        streamResponse: true,
+        threadId: thread.id,
+      });
       hasMessageBeenSent.current = true;
     }
   };
