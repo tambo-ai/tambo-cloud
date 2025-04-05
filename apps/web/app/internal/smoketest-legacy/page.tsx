@@ -9,7 +9,7 @@ import { ComponentContextTool } from "@tambo-ai-cloud/backend";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 // Using the existing HydraClient but importing it from the original package
-import { HydraClient } from "hydra-ai";
+import { HydraClient, GenerateComponentResponse } from "hydra-ai";
 import { X } from "lucide-react";
 import { ReactElement, useMemo, useState } from "react";
 
@@ -24,16 +24,6 @@ interface Message {
 
 // Type for response component
 interface ComponentResponse {
-  threadId?: string;
-  message: string;
-  component?: ReactElement;
-  suggestedActions?: Array<{
-    label: string;
-    actionText: string;
-  }>;
-}
-
-interface GenerateComponentResponse {
   threadId?: string;
   message: string;
   component?: ReactElement;
