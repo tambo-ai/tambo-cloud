@@ -71,9 +71,9 @@ export default function SmokePage() {
         try {
           const response = await tamboClient.generateComponent(
             input,
-            (response: GenerateComponentResponse) => {
+            ((response: GenerateComponentResponse) => {
               console.log(response.message);
-            },
+            }) as (response: GenerateComponentResponse) => void,
             threadId ?? undefined,
           );
           setThreadId(response.threadId ?? null);
@@ -103,17 +103,6 @@ export default function SmokePage() {
       role: "user",
       content: [input],
     };
-
-    // Add assistant response
-    const assistantMessage: Message = {
-      role: "assistant",
-      content: [response.message],
-      suggestedActions: response.suggestedActions,
-    };
-    if (response?.component) {
-      // Cast to string | ReactElement to match the Message type
-      assistantMessage.content.push(response.component as ReactElement);
-    }
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInput("");
   };
@@ -360,8 +349,8 @@ function useWeatherHydra({
     const apiUrl = env.NEXT_PUBLIC_TAMBO_API_URL!;
 
     const client = new HydraClient({
-      hydraApiKey: apiKey,
-      hydraApiUrl: apiUrl,
+      apiKey,
+      apiUrl,
     });
     const tools: Record<string, ComponentContextTool> = {
       forecast: {
