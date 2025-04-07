@@ -167,20 +167,8 @@ async function* handleNoComponentStream(
   }
 }
 
-// Check if the object is a partial LegacyComponentDecision
-function isPartialLegacyComponentDecision(obj: unknown): boolean {
-  if (!obj || typeof obj !== "object") return false;
-
-  return [
-    "reasoning",
-    "componentName",
-    "props",
-    "componentState",
-    "suggestedActions",
-  ].some((prop) => prop in obj);
-}
-
 function extractMessageContent(content: string | null, log: boolean = true) {
+  // BUG: Sometimes the llm returns a json object representing a LegacyComponentDecision with a message field, rather than a string. Here we check for that case and extract the message field.
   if (!content) return "";
 
   try {
@@ -203,4 +191,17 @@ function extractMessageContent(content: string | null, log: boolean = true) {
     return content;
   }
   return content;
+}
+
+// Check if the object is a partial LegacyComponentDecision
+function isPartialLegacyComponentDecision(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object") return false;
+
+  return [
+    "reasoning",
+    "componentName",
+    "props",
+    "componentState",
+    "suggestedActions",
+  ].some((prop) => prop in obj);
 }
