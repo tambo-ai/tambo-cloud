@@ -177,7 +177,7 @@ function isPartialLegacyComponentDecision(obj: unknown): boolean {
   ].some((prop) => prop in obj);
 }
 
-function extractMessageContent(content: string | null): string {
+function extractMessageContent(content: string | null) {
   if (!content) return "";
 
   try {
