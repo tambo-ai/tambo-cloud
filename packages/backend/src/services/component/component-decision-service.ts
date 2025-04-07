@@ -156,10 +156,13 @@ async function* handleNoComponentStream(
     ...(version === "v1" ? { suggestedActions: [] } : {}),
   };
 
+  let hasLogged = false;
   for await (const chunk of responseStream) {
     accumulatedDecision.message = extractMessageContent(
       getLLMResponseMessage(chunk),
+      !hasLogged,
     );
+    hasLogged = true;
     yield accumulatedDecision;
   }
 }
@@ -177,11 +180,16 @@ function isPartialLegacyComponentDecision(obj: unknown): boolean {
   ].some((prop) => prop in obj);
 }
 
-function extractMessageContent(content: string | null) {
+function extractMessageContent(content: string | null, log: boolean = true) {
   if (!content) return "";
 
   try {
     const parsed = parse(content); // parse partial json
+    if (log) {
+      console.warn(
+        "noComponentResponse message is a json object, extracting message",
+      );
+    }
     if (parsed && typeof parsed === "object") {
       if ("message" in parsed) {
         return parsed.message;
@@ -194,4 +202,5 @@ function extractMessageContent(content: string | null) {
     // json parse failed, treat it as a regular string message
     return content;
   }
+  return content;
 }
