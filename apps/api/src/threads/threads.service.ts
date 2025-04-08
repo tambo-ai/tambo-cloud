@@ -1,4 +1,10 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { generateChainId, TamboBackend } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
@@ -39,6 +45,8 @@ import {
 
 @Injectable()
 export class ThreadsService {
+  private readonly FREE_MESSAGE_LIMIT = 50;
+
   constructor(
     // @Inject(TRANSACTION)
     // private readonly tx: HydraDatabase,
@@ -191,11 +199,56 @@ export class ThreadsService {
     return await operations.deleteThread(this.getDb(), id);
   }
 
+  private async checkMessageLimit(projectId: string): Promise<void> {
+    const usage = await this.getDb().query.projectMessageUsage.findFirst({
+      where: eq(schema.projectMessageUsage.projectId, projectId),
+    });
+
+    if (!usage) {
+      // Create initial usage record
+      await this.getDb().insert(schema.projectMessageUsage).values({
+        projectId,
+        messageCount: 1,
+      });
+      return;
+    }
+
+    if (!usage.hasApiKey && usage.messageCount >= this.FREE_MESSAGE_LIMIT) {
+      throw new HttpException(
+        {
+          message:
+            "You've used all 50 free messages! To continue using the service, please add your OpenAI API key at https://tambo.co/dashboard.",
+          type: "FREE_LIMIT_REACHED",
+          limit: this.FREE_MESSAGE_LIMIT,
+          settingsUrl: "https://tambo.co/dashboard",
+        },
+        HttpStatus.PAYMENT_REQUIRED,
+      );
+    }
+
+    // Increment message count
+    await this.getDb()
+      .update(schema.projectMessageUsage)
+      .set({
+        messageCount: usage.messageCount + 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.projectMessageUsage.projectId, projectId));
+  }
+
   async addMessage(
     threadId: string,
     messageDto: MessageRequest,
     tx?: HydraTransaction,
   ): Promise<ThreadMessageDto> {
+    const thread = await this.getDb().query.threads.findFirst({
+      where: eq(schema.threads.id, threadId),
+    });
+    if (!thread) {
+      throw new NotFoundException("Thread not found");
+    }
+    await this.checkMessageLimit(thread.projectId);
+
     const message = await operations.addMessage(tx ?? this.getDb(), {
       threadId,
       role: messageDto.role,

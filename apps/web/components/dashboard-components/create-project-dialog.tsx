@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -24,12 +24,12 @@ import * as z from "zod";
 interface CreateProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (projectName: string, providerKey: string) => Promise<void>;
+  onSubmit: (projectName: string, providerKey?: string) => Promise<void>;
 }
 
 const formSchema = z.object({
   projectName: z.string().min(1, "Project name is required"),
-  providerKey: z.string().min(1, "API key is required"),
+  providerKey: z.string().optional(),
 });
 
 export function CreateProjectDialog({
@@ -38,6 +38,8 @@ export function CreateProjectDialog({
   onSubmit,
 }: CreateProjectDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -49,7 +51,10 @@ export function CreateProjectDialog({
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsLoading(true);
-      await onSubmit(values.projectName.trim(), values.providerKey.trim());
+      await onSubmit(
+        values.projectName.trim(),
+        values.providerKey ? values.providerKey.trim() : undefined,
+      );
       form.reset();
     } finally {
       setIsLoading(false);
@@ -80,23 +85,47 @@ export function CreateProjectDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="providerKey"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your OpenAI API Key</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Provider API Key" />
-                  </FormControl>
-                  <FormMessage />
-                  <p className="text-sm text-muted-foreground">
-                    Hydra will use your API key to make AI calls on your behalf
-                    until we implement our payment system.
-                  </p>
-                </FormItem>
+
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full flex justify-between items-center py-2 text-sm font-medium"
+                onClick={() => setShowApiKey(!showApiKey)}
+              >
+                <span>Add OpenAI API Key (Optional)</span>
+                {showApiKey ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+
+              {showApiKey && (
+                <FormField
+                  control={form.control}
+                  name="providerKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="sk-..."
+                          type="password"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-sm text-muted-foreground">
+                        Optional: Add your OpenAI API key now, or use 50 free
+                        messages first. You can add your key later in project
+                        settings.
+                      </p>
+                    </FormItem>
+                  )}
+                />
               )}
-            />
+            </div>
+
             <DialogFooter>
               <Button
                 type="button"

@@ -191,6 +191,19 @@ export const providerKeyRelations = relations(providerKeys, ({ one }) => ({
   }),
 }));
 
+export const projectMessageUsage = pgTable(
+  "project_message_usage",
+  ({ text, timestamp, integer, boolean }) => ({
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    messageCount: integer("message_count").notNull().default(0),
+    hasApiKey: boolean("has_api_key").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  }),
+);
+
 export const projectRelations = relations(projects, ({ many, one }) => ({
   members: many(projectMembers),
   apiKeys: many(apiKeys),
@@ -198,6 +211,10 @@ export const projectRelations = relations(projects, ({ many, one }) => ({
   creator: one(authUsers, {
     fields: [projects.creatorId],
     references: [authUsers.id],
+  }),
+  messageUsage: one(projectMessageUsage, {
+    fields: [projects.id],
+    references: [projectMessageUsage.projectId],
   }),
 }));
 

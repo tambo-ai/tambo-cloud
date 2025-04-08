@@ -8,7 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { memo, useCallback } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { memo, useCallback, useState } from "react";
 
 type CreateProjectDialogState = Readonly<{
   isOpen: boolean;
@@ -34,7 +35,7 @@ interface CreateProjectDialogProps {
  */
 
 const isValidOpenAIKey = (key: string): boolean => {
-  return key.startsWith("sk-") && key.length >= 51;
+  return !key || (key.startsWith("sk-") && key.length >= 51);
 };
 
 export const CreateProjectDialog = memo(function CreateProjectDialog({
@@ -43,6 +44,8 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
   onStateChange,
   onConfirm,
 }: CreateProjectDialogProps) {
+  const [showApiKey, setShowApiKey] = useState(false);
+
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       onStateChange(
@@ -80,23 +83,15 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (
-        e.key === "Enter" &&
-        !isCreating &&
-        state.name.trim() &&
-        state.providerKey.trim()
-      ) {
+      if (e.key === "Enter" && !isCreating && state.name.trim()) {
         e.preventDefault();
         onConfirm();
       }
     },
-    [isCreating, state.name, state.providerKey, onConfirm],
+    [isCreating, state.name, onConfirm],
   );
 
-  const isFormValid =
-    state.name.trim() &&
-    state.providerKey.trim() &&
-    isValidOpenAIKey(state.providerKey);
+  const isFormValid = state.name.trim() && isValidOpenAIKey(state.providerKey);
 
   return (
     <Dialog open={state.isOpen} onOpenChange={handleOpenChange}>
@@ -104,7 +99,8 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
         <DialogHeader>
           <DialogTitle>Create New Project</DialogTitle>
           <DialogDescription>
-            Enter a name for your new project and your OpenAI API key.
+            Enter a name for your new project. You can optionally add your
+            OpenAI API key.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -136,32 +132,45 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
               name="project-name"
             />
           </div>
-          <div>
-            <label
-              htmlFor="providerKey"
-              className="text-sm font-medium block mb-2"
+
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full flex justify-between items-center py-2 text-sm font-medium"
+              onClick={() => setShowApiKey(!showApiKey)}
             >
-              OpenAI API Key
-            </label>
-            <input
-              id="providerKey"
-              type="password"
-              value={state.providerKey}
-              onChange={handleProviderKeyChange}
-              onKeyDown={handleKeyDown}
-              placeholder="sk-..."
-              className="w-full px-3 py-2 border rounded-md text-sm"
-              autoComplete="new-password"
-              name="openai-api-key"
-              pattern="sk-.*"
-              title="OpenAI API key must start with 'sk-'"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Enter a valid OpenAI API key (starts with sk-). tambo will use
-              your API key to make AI calls on your behalf until we implement
-              our payment system.
-            </p>
+              <span>Add OpenAI API Key (Optional)</span>
+              {showApiKey ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+
+            {showApiKey && (
+              <div>
+                <input
+                  id="providerKey"
+                  type="password"
+                  value={state.providerKey}
+                  onChange={handleProviderKeyChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="sk-..."
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                  autoComplete="new-password"
+                  name="openai-api-key"
+                  pattern="sk-.*"
+                  title="OpenAI API key must start with 'sk-'"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Optional: Add your OpenAI API key now, or use 50 free messages
+                  first. You can add your key later in project settings.
+                </p>
+              </div>
+            )}
           </div>
+
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               type="button"
