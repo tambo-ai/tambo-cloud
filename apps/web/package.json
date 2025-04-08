@@ -48,6 +48,7 @@
     "@vercel/og": "^0.6.8",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "composio-core": "^0.5.31",
     "deep-email-validator": "^0.1.21",
     "drizzle-orm": "^0.41.0",
     "embla-carousel-react": "^8.6.0",
