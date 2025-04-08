@@ -13,8 +13,11 @@ import { ThreadsService } from "./threads.service";
     CorrelationLoggerService,
     {
       provide: "OPENAI_API_KEY", //todo: weird api keys don't match?
-      useFactory: (configService: ConfigService) =>
-        configService.get("OPENAI_API_KEY"),
+      useFactory: (configService: ConfigService) => {
+        const userKey = configService.get("OPENAI_API_KEY");
+        const fallbackKey = configService.get("FALLBACK_OPENAI_API_KEY");
+        return userKey || fallbackKey;
+      },
       inject: [ConfigService],
     },
   ],

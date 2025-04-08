@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -28,13 +28,13 @@ interface CreateProjectDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (
     projectName: string,
-    providerKey: string,
+    providerKey?: string,
   ) => Promise<{ id: string }>;
 }
 
 const formSchema = z.object({
   projectName: z.string().min(1, "Project name is required"),
-  providerKey: z.string().min(1, "API key is required"),
+  providerKey: z.string().optional(),
 });
 
 // Animation variants
@@ -64,6 +64,8 @@ export function CreateProjectDialog({
   onSubmit,
 }: CreateProjectDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,7 +80,7 @@ export function CreateProjectDialog({
       setIsLoading(true);
       const project = await onSubmit(
         values.projectName.trim(),
-        values.providerKey.trim(),
+        values.providerKey ? values.providerKey.trim() : undefined,
       );
       form.reset();
 
@@ -109,7 +111,7 @@ export function CreateProjectDialog({
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit)}
-              className="space-y-6"
+              className="space-y-2"
             >
               <motion.div variants={itemVariants}>
                 <FormField
@@ -131,36 +133,62 @@ export function CreateProjectDialog({
                 />
               </motion.div>
               <motion.div variants={itemVariants}>
-                <FormField
-                  control={form.control}
-                  name="providerKey"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Your OpenAI API Key</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Provider API Key" />
-                      </FormControl>
-                      <FormMessage />
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Tambo will use your API key to make AI calls on your
-                        behalf until we implement our payment system.
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        You can find or create your API key in the{" "}
-                        <a
-                          href="https://platform.openai.com/settings/organization/api-keys"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-link"
-                        >
-                          OpenAI API keys page
-                        </a>
-                        .
-                      </p>
-                    </FormItem>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full flex items-center justify-between p-2 hover:bg-muted"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                >
+                  <span className="text-sm font-medium">
+                    {showApiKey
+                      ? "Hide API Key"
+                      : "Use Custom API Key (Optional)"}
+                  </span>
+                  {showApiKey ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
                   )}
-                />
+                </Button>
               </motion.div>
+              {showApiKey && (
+                <motion.div
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="w-full flex items-center justify-between p-2"
+                >
+                  <FormField
+                    control={form.control}
+                    name="providerKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Your OpenAI API Key</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="Provider API Key" />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Tambo will use your API key to make AI calls on your
+                          behalf until we implement our payment system.
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          You can find or create your API key in the{" "}
+                          <a
+                            href="https://platform.openai.com/settings/organization/api-keys"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-link"
+                          >
+                            OpenAI API keys page
+                          </a>
+                          .
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+                </motion.div>
+              )}
               <motion.div variants={itemVariants} className="pt-2">
                 <DialogFooter>
                   <Button
