@@ -1,4 +1,4 @@
-import { objectTemplate } from "@libretto/openai/lib/src/template";
+import { objectTemplate } from "@libretto/openai";
 import { StreamCompletionResponse, TokenJS } from "@libretto/token.js";
 import { tryParseJsonObject } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
