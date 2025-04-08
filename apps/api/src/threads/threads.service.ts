@@ -1,4 +1,11 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { generateChainId, TamboBackend } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
@@ -39,6 +46,8 @@ import {
 
 @Injectable()
 export class ThreadsService {
+  private readonly FREE_MESSAGE_LIMIT = 500;
+
   constructor(
     // @Inject(TRANSACTION)
     // private readonly tx: HydraDatabase,
@@ -46,6 +55,7 @@ export class ThreadsService {
     private readonly db: HydraDatabase,
     private projectsService: ProjectsService,
     private readonly logger: CorrelationLoggerService,
+    private readonly configService: ConfigService,
   ) {}
 
   getDb() {
@@ -73,7 +83,7 @@ export class ThreadsService {
     }
 
     // Get the provider key from the database
-    const { providerKey } = await this.validateProjectAndProviderKeys(
+    const providerKey = await this.validateProjectAndProviderKeys(
       threadData.projectId,
     );
 
@@ -189,6 +199,55 @@ export class ThreadsService {
 
   async remove(id: string) {
     return await operations.deleteThread(this.getDb(), id);
+  }
+
+  private async checkMessageLimit(projectId: string): Promise<void> {
+    const usage = await this.getDb().query.projectMessageUsage.findFirst({
+      where: eq(schema.projectMessageUsage.projectId, projectId),
+    });
+
+    // Check if we're using the fallback key
+    const project = await this.projectsService.findOneWithKeys(projectId);
+    if (!project) {
+      throw new NotFoundException("Project not found");
+    }
+    const providerKeys = project.getProviderKeys();
+    const usingFallbackKey = !providerKeys?.length;
+
+    if (!usage) {
+      // Create initial usage record
+      await this.getDb()
+        .insert(schema.projectMessageUsage)
+        .values({
+          projectId,
+          messageCount: usingFallbackKey ? 1 : 0,
+        });
+      return;
+    }
+
+    if (!usage.hasApiKey && usage.messageCount >= this.FREE_MESSAGE_LIMIT) {
+      throw new HttpException(
+        {
+          message:
+            "You've used all 50 free messages! To continue using the service, please add your OpenAI API key at https://tambo.co/dashboard.",
+          type: "FREE_LIMIT_REACHED",
+          limit: this.FREE_MESSAGE_LIMIT,
+          settingsUrl: "https://tambo.co/dashboard",
+        },
+        HttpStatus.PAYMENT_REQUIRED,
+      );
+    }
+
+    // Only increment message count if using fallback key
+    if (usingFallbackKey) {
+      await this.getDb()
+        .update(schema.projectMessageUsage)
+        .set({
+          messageCount: usage.messageCount + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.projectMessageUsage.projectId, projectId));
+    }
   }
 
   async addMessage(
@@ -367,9 +426,6 @@ export class ThreadsService {
         })),
       );
 
-      this.logger.log(
-        `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`,
-      );
       return savedSuggestions.map(this.mapSuggestionToDto);
     } catch (error: unknown) {
       const errorMessage =
@@ -431,6 +487,8 @@ export class ThreadsService {
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
+    await this.checkMessageLimit(projectId);
+
     const thread = await this.ensureThread(
       projectId,
       threadId,
@@ -868,21 +926,36 @@ export class ThreadsService {
     return newThread;
   }
 
-  private async validateProjectAndProviderKeys(projectId: string) {
+  private async validateProjectAndProviderKeys(
+    projectId: string,
+  ): Promise<string> {
     const project = await this.projectsService.findOneWithKeys(projectId);
     if (!project) {
       throw new NotFoundException("Project not found");
     }
+
     const providerKeys = project.getProviderKeys();
+
+    // If no provider keys are set, use the fallback key
     if (!providerKeys?.length) {
-      throw new NotFoundException("No provider keys found for project");
+      const fallbackKey = this.configService.get("FALLBACK_OPENAI_API_KEY");
+      if (!fallbackKey) {
+        throw new NotFoundException(
+          "No provider keys found for project and no fallback key configured",
+        );
+      }
+      return fallbackKey;
     }
+
+    // Use the last provider key if available
     const providerKey =
-      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+      providerKeys[providerKeys.length - 1].providerKeyEncrypted;
     if (!providerKey) {
       throw new NotFoundException("No provider key found for project");
     }
-    return decryptProviderKey(providerKey);
+
+    const { providerKey: decryptedKey } = decryptProviderKey(providerKey);
+    return decryptedKey;
   }
 
   private async addResponseToThread(
