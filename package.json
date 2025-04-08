@@ -43,5 +43,8 @@
     "npm": "10.9.2"
   },
   "packageManager": "npm@10.9.2",
-  "version": "0.34.0"
+  "version": "0.34.0",
+  "dependencies": {
+    "composio-core": "^0.5.31"
+  }
 }
