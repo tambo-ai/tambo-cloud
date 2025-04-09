@@ -5,13 +5,13 @@ interface AvailableToolsProps {
 }
 
 export function AvailableTools({ project }: AvailableToolsProps) {
-  const { data: tools, isLoading } = api.tools.list.useQuery();
+  const { data: apps, isLoading } = api.tools.list.useQuery();
 
   if (isLoading) {
     return <div className="animate-pulse h-8 bg-muted rounded" />;
   }
 
-  if (!tools?.length) {
+  if (!apps?.length) {
     return (
       <div className="text-sm text-muted-foreground">
         No tools available for this project
@@ -20,20 +20,50 @@ export function AvailableTools({ project }: AvailableToolsProps) {
   }
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium">Available Tools</h3>
-      <div className="space-y-1">
-        {tools.map((tool, index) => (
-          <div
-            key={index}
-            className="text-sm p-2 bg-muted/50 rounded-md flex items-center justify-between"
-          >
-            <span>{tool.function.name}</span>
-            <span className="text-xs text-muted-foreground">
-              {tool.function.description}
-            </span>
-          </div>
-        ))}
+    <div className="space-y-2 ">
+      <h3 className="text-sm font-medium">Available Apps</h3>
+      <div className="grid grid-cols-[auto_auto_auto_auto_1fr] grid-rows-[auto] gap-2 max-h-[300px] overflow-y-auto">
+        {apps
+          .filter((app) => app.enabled)
+          .map((app, index) => (
+            <div
+              key={app.appId}
+              className="grid grid-cols-subgrid col-span-full bg-muted/50"
+            >
+              <div className="flex items-center p-2">
+                <input type="checkbox" className="w-4 h-4" />
+              </div>
+              <div className="flex items-center p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={app.logo}
+                  alt={app.name}
+                  className="w-4 h-4 rounded-full"
+                />
+              </div>
+              <div className="flex items-center p-2">
+                <span>
+                  {app.name} {app.no_auth ? "(no auth)" : ""}
+                </span>
+              </div>
+              <div>
+                {(app.tags as any as string[])?.map((tag, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center px-2 py-0.5 mr-2 text-xs font-medium rounded-full bg-primary/10"
+                  >
+                    {tag.trim()}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex items-center p-2">
+                <span className="text-xs text-muted-foreground">
+                  {app.description}
+                </span>
+              </div>
+            </div>
+          ))}
       </div>
     </div>
   );

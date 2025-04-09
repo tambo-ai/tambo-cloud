@@ -13,8 +13,6 @@ export const projectRouter = createTRPCRouter({
       "current role: ",
       await ctx.db.execute(sql`select current_role;`),
     );
-    const pm = await ctx.db.query.projectMembers.findMany();
-    console.log(`got ${pm?.length} pms`, pm);
     return projects.map((project) => ({
       id: project.id,
       name: project.name,

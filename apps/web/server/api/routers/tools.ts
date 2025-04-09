@@ -1,13 +1,16 @@
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { OpenAIToolSet } from "composio-core";
-const toolset = new OpenAIToolSet();
+import { Composio, OpenAIToolSet } from "composio-core";
+const toolset = new OpenAIToolSet({
+  apiKey: process.env.COMPOSIO_API_KEY!,
+});
+
+const composio = new Composio({
+  apiKey: process.env.COMPOSIO_API_KEY!,
+});
 
 export const toolsRouter = createTRPCRouter({
   list: protectedProcedure.query(async () => {
-    const tools = await toolset.getTools({
-      apps: ["github", "gmail"],
-    });
-
-    return tools;
+    const apps = await composio.apps.list();
+    return apps;
   }),
 });
