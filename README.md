@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository is a monorepo for the Tambo Cloud platform, providing AI-assisted development tools for teams and individuals.
+This repository is a monorepo for the Tambo Cloud platform.
 
 ## Repository Structure
 
@@ -28,13 +28,6 @@ There also are some basic supporting packages only used during development:
 - [eslint-config](./packages/eslint-config) - ESLint configurations for the project, with specific configs for Next.js apps and libraries
 - [typescript-config](./packages/typescript-config) - TypeScript configurations with specific settings for Next.js apps and libraries
 
-## Key Features
-
-- **AI-Assisted Development**: Leverage LLMs to enhance your development workflow
-- **Project Management**: Create and manage AI projects through an intuitive dashboard
-- **API Integration**: Connect your applications with our secure API
-- **Collaborative Workspace**: Share projects and collaborate with team members
-
 ## Technology Stack
 
 - **Frontend**: Next.js, React, TypeScript, Tailwind CSS, Shadcn UI
@@ -46,8 +39,6 @@ There also are some basic supporting packages only used during development:
 ## Getting Started
 
 ### Quick Start
-
-We provide a setup script to help you get started quickly:
 
 ```bash
 # Make the script executable
@@ -167,16 +158,6 @@ After setting up your local environment, configure your Tambo API key:
 
 4. Verify your setup:
    - Visit: `http://localhost:3000/internal/smoketest`
-
-## Contributing
-
-This is a private repository for internal development. If you're a team member and need to contribute, please:
-
-1. Follow the setup instructions above
-2. Create a feature branch for your changes
-3. Follow the code style guidelines and existing patterns
-4. Run tests and linting before submitting changes
-5. Submit a pull request with a clear description of changes
 
 ## Frontend
 
