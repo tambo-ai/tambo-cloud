@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { generateChainId, TamboBackend } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
@@ -241,14 +242,6 @@ export class ThreadsService {
     messageDto: MessageRequest,
     tx?: HydraTransaction,
   ): Promise<ThreadMessageDto> {
-    const thread = await this.getDb().query.threads.findFirst({
-      where: eq(schema.threads.id, threadId),
-    });
-    if (!thread) {
-      throw new NotFoundException("Thread not found");
-    }
-    await this.checkMessageLimit(thread.projectId);
-
     const message = await operations.addMessage(tx ?? this.getDb(), {
       threadId,
       role: messageDto.role,
@@ -420,9 +413,6 @@ export class ThreadsService {
         })),
       );
 
-      this.logger.log(
-        `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`,
-      );
       return savedSuggestions.map(this.mapSuggestionToDto);
     } catch (error: unknown) {
       const errorMessage =
@@ -484,6 +474,8 @@ export class ThreadsService {
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
+    await this.checkMessageLimit(projectId);
+
     const thread = await this.ensureThread(
       projectId,
       threadId,
@@ -927,15 +919,27 @@ export class ThreadsService {
       throw new NotFoundException("Project not found");
     }
     const providerKeys = project.getProviderKeys();
+    // If no provider keys are set, use the fallback key
     if (!providerKeys?.length) {
-      throw new NotFoundException("No provider keys found for project");
+      // Inject ConfigService to get the fallback key
+      const configService = new ConfigService();
+      const fallbackKey = configService.get("FALLBACK_OPENAI_API_KEY");
+      if (!fallbackKey) {
+        throw new NotFoundException(
+          "No provider keys found for project and no fallback key configured",
+        );
+      }
+      return { providerKey: fallbackKey };
     }
+
+    // Use the last provider key if available
     const providerKey =
-      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+      providerKeys[providerKeys.length - 1].providerKeyEncrypted;
     if (!providerKey) {
       throw new NotFoundException("No provider key found for project");
     }
-    return decryptProviderKey(providerKey);
+    const decrypted = decryptProviderKey(providerKey);
+    return decrypted;
   }
 
   private async addResponseToThread(
