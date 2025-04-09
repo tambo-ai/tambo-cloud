@@ -1,7 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { type HydraDatabase, operations, schema } from "@tambo-ai-cloud/db";
-import { eq } from "drizzle-orm";
+import { type HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { APIKeyResponse } from "./dto/api-key-response.dto";
 import { ProjectResponse } from "./dto/project-response.dto";
@@ -234,29 +233,5 @@ export class ProjectsService {
       name: project.name,
       userId: project.userId,
     };
-  }
-
-  async updateApiKeyStatus(
-    projectId: string,
-    hasApiKey: boolean,
-  ): Promise<void> {
-    const usage = await this.db.query.projectMessageUsage.findFirst({
-      where: eq(schema.projectMessageUsage.projectId, projectId),
-    });
-
-    if (usage) {
-      await this.db
-        .update(schema.projectMessageUsage)
-        .set({
-          hasApiKey,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.projectMessageUsage.projectId, projectId));
-    } else {
-      await this.db.insert(schema.projectMessageUsage).values({
-        projectId,
-        hasApiKey,
-      });
-    }
   }
 }
