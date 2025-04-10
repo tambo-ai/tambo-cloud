@@ -48,7 +48,7 @@ export default function DashboardPage() {
 
   const handleCreateProject = async (
     projectName: string,
-    providerKey: string
+    providerKey: string,
   ) => {
     try {
       const project = await createProject(projectName);
@@ -71,14 +71,6 @@ export default function DashboardPage() {
       });
     }
   };
-
-  const LoadingCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {[1, 2, 3].map((i) => (
-        <Card key={i} className="h-48 bg-gray-100 animate-pulse" />
-      ))}
-    </div>
-  );
 
   const LoadingSpinner = () => (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -104,8 +96,6 @@ export default function DashboardPage() {
         <div className="container max-w-md py-8">
           <AuthForm routeOnSuccess="/dashboard" />
         </div>
-      ) : isProjectsLoading ? (
-        <LoadingCards />
       ) : (
         <>
           <div className="flex items-center justify-between py-4">
