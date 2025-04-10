@@ -7,6 +7,7 @@ import {
   ChatCompletionContentPart,
   GenerationStage,
   MessageRole,
+  ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -331,11 +332,6 @@ export const contacts = pgTable("contacts", ({ text, timestamp, uuid }) => ({
     .notNull(),
 }));
 
-enum ToolProviderType {
-  COMPOSIO = "composio",
-  MCP = "mcp",
-}
-
 export const toolProviders = pgTable(
   "tool_providers",
   ({ text, timestamp }) => ({
@@ -354,7 +350,7 @@ export const toolProviders = pgTable(
       .defaultNow()
       .notNull(),
     type: text("type", {
-      enum: Object.values<string>(ToolProviderType) as [ToolProviderType],
+      enum: Object.values(ToolProviderType) as [ToolProviderType],
     }).notNull(),
     url: text("url").notNull(),
     composio_app_name: text("composio_app_name"),
