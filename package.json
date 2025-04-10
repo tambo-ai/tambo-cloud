@@ -20,7 +20,8 @@
     "db:studio": "cd packages/db && npm run db:studio",
     "test:suggestions": "cd scripts && tsx test-suggestions.ts",
     "rename-to-tambo": "ts-node scripts/update-content.ts && ts-node scripts/rename-files.ts",
-    "rename-vnext": "ts-node scripts/rename-vnext.ts"
+    "rename-vnext": "ts-node scripts/rename-vnext.ts",
+    "cleanup-empty-dirs": "node scripts/cleanup-empty-dirs.js"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",
