@@ -1,7 +1,6 @@
 import { CopyButton } from "@/components/copy-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { InfoIcon } from "lucide-react";
 import { ProjectResponseDto } from "../../../app/(authed)/dashboard/types/types";
 
 interface ProjectInfoProps {
@@ -40,10 +39,7 @@ export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <InfoIcon className="h-4 w-4 text-muted-foreground" />
-          <h4 className="text-sm font-semibold font-heading">
-            Project Information
-          </h4>
+          <h4 className="text-xl font-semibold font-heading">{project.name}</h4>
         </motion.div>
 
         <motion.div

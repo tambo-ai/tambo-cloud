@@ -1,7 +1,6 @@
 "use client";
 
 import { Icons } from "@/components/icons";
-import { Header } from "@/components/sections/header";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -107,25 +106,14 @@ export default function DashboardPage() {
 
   // Show loading spinner while checking auth or loading projects
   if (isAuthLoading || isProjectsLoading) {
-    return (
-      <div className="container">
-        <Header showDashboardButton={false} showLogoutButton={false} />
-        <LoadingSpinner />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
-    <motion.div
-      className="container"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      <Header showDashboardButton={false} showLogoutButton={true} />
+    <motion.div initial="hidden" animate="visible" variants={containerVariants}>
       <>
         <motion.div
-          className="flex items-center justify-between py-4"
+          className="flex items-center justify-between pb-4"
           variants={itemVariants}
         >
           <h1 className="text-2xl font-heading font-bold">Projects</h1>
@@ -138,10 +126,7 @@ export default function DashboardPage() {
             Create Project
           </Button>
         </motion.div>
-        <motion.div
-          className="flex items-center justify-between py-4"
-          variants={itemVariants}
-        >
+        <motion.div variants={itemVariants}>
           <ProjectTable projects={projects || []} />
         </motion.div>
         <CreateProjectDialog

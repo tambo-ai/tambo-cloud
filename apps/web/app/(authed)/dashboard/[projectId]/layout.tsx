@@ -1,8 +1,6 @@
 "use client";
 
-import { Header } from "@/components/sections/header";
-import { Button } from "@/components/ui/button";
-import { api } from "@/trpc/react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -16,23 +14,12 @@ interface ProjectLayoutProps {
   }>;
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
+const fadeInVariants = {
+  hidden: { opacity: 0, y: 10 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      duration: 0.2,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
     y: 0,
-    opacity: 1,
-    transition: { duration: 0.4 },
+    transition: { duration: 0.3 },
   },
 };
 
@@ -43,88 +30,65 @@ export default function ProjectLayout({
   const { projectId } = use(params);
   const pathname = usePathname();
 
-  // Fetch project details
-  const { data: project } = api.project.getUserProjects.useQuery(undefined, {
-    select: (projects) => projects.find((p) => p.id === projectId),
-  });
+  // Determine active tab value
+  const activeTab = pathname.includes("/observability")
+    ? "observability"
+    : "details";
 
   return (
-    <motion.div
-      className="container flex flex-col min-h-screen"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      <Header showDashboardButton showLogoutButton />
+    <>
+      {/* Sticky Navigation Section */}
+      <div className="sticky top-[var(--header-height)] z-40 bg-background border-b -mt-6 mb-6">
+        <div className="container mx-auto pb-0 pt-4">
+          {/* Navigation Row */}
+          <motion.div
+            className="flex flex-col gap-4 pb-2"
+            initial="hidden"
+            animate="visible"
+            variants={fadeInVariants}
+          >
+            {/* Navigation Bar with Back Button and Tabs */}
+            <div className="flex items-center justify-between">
+              <Link
+                href="/dashboard"
+                className="flex items-center text-muted-foreground hover:text-foreground transition-colors group w-fit"
+              >
+                <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+                <span className="font-sentient text-sm">
+                  Return to All Projects
+                </span>
+              </Link>
 
-      {/* Back link */}
-      <motion.div className="mt-6" variants={itemVariants}>
-        <Button variant="ghost" size="sm" className="gap-2" asChild>
-          <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Projects
-          </Link>
-        </Button>
-      </motion.div>
-
-      {/* Project Metadata and Navigation */}
-      <motion.div
-        className="my-6 p-6 border rounded-lg"
-        variants={itemVariants}
-      >
-        <div className="flex flex-col space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-heading font-bold">
-                {project?.name || "Project"}
-              </h1>
-              <p className="text-sm text-muted-foreground">ID: {projectId}</p>
+              {/* Project Navigation Tabs */}
+              <Tabs defaultValue={activeTab} className="ml-auto">
+                <TabsList className="h-10 bg-transparent">
+                  <TabsTrigger
+                    value="details"
+                    className="font-sentient text-base rounded-none border-b-2 data-[state=active]:border-primary data-[state=inactive]:border-transparent"
+                    asChild
+                  >
+                    <Link href={`/dashboard/${projectId}`}>Details</Link>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="observability"
+                    className="font-sentient text-base rounded-none border-b-2 data-[state=active]:border-primary data-[state=inactive]:border-transparent"
+                    asChild
+                  >
+                    <Link href={`/dashboard/${projectId}/observability`}>
+                      Observability
+                    </Link>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex border-b">
-            <Link href={`/dashboard/${projectId}`} passHref>
-              <Button
-                variant={
-                  pathname === `/dashboard/${projectId}` ? "default" : "ghost"
-                }
-                className="rounded-none border-b-2 border-transparent transition-none px-4"
-                style={{
-                  borderBottomColor:
-                    pathname === `/dashboard/${projectId}`
-                      ? "currentColor"
-                      : "transparent",
-                }}
-              >
-                Details
-              </Button>
-            </Link>
-            <Link href={`/dashboard/${projectId}/observability`} passHref>
-              <Button
-                variant={
-                  pathname.includes("/observability") ? "default" : "ghost"
-                }
-                className="rounded-none border-b-2 border-transparent transition-none px-4"
-                style={{
-                  borderBottomColor: pathname.includes("/observability")
-                    ? "currentColor"
-                    : "transparent",
-                }}
-              >
-                Observability
-              </Button>
-            </Link>
-          </div>
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Main Content Area */}
-      <motion.div variants={itemVariants} style={{ flex: 1 }}>
-        <Suspense fallback={<div className="animate-pulse h-32"></div>}>
-          {children}
-        </Suspense>
-      </motion.div>
-    </motion.div>
+      {/* Content Area */}
+      <Suspense fallback={<div className="h-32 animate-pulse"></div>}>
+        {children}
+      </Suspense>
+    </>
   );
 }
