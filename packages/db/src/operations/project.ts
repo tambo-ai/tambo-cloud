@@ -6,7 +6,7 @@ import {
   ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { createHash, randomBytes } from "crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
 
@@ -54,6 +54,7 @@ export async function getProjectsForUser(db: HydraDb, userId: string) {
           .from(schema.projectMembers)
           .where(eq(schema.projectMembers.userId, userId)),
       ),
+    orderBy: (projects, { desc }) => [desc(projects.updatedAt)],
   });
 }
 
