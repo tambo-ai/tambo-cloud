@@ -1,5 +1,6 @@
 "use client";
 
+import { Header } from "@/components/sections/header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
@@ -30,16 +31,25 @@ export default function ProjectLayout({
   const { projectId } = use(params);
   const pathname = usePathname();
 
+  // Control header and nav bar appearance
+  const headerTransparent = false;
+
   // Determine active tab value
   const activeTab = pathname.includes("/observability")
     ? "observability"
     : "details";
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header
+        showDashboardButton
+        showLogoutButton
+        transparent={headerTransparent}
+      />
+
       {/* Sticky Navigation Section */}
-      <div className="sticky top-[var(--header-height)] z-40 bg-background border-b -mt-6 mb-6">
-        <div className="container mx-auto pb-0 pt-4">
+      <div className="sticky top-[var(--header-height)] z-40 bg-background border-b">
+        <div className="container mx-auto px-4 pb-0 pt-4 md:px-6">
           {/* Navigation Row */}
           <motion.div
             className="flex flex-col gap-4 pb-2"
@@ -53,7 +63,7 @@ export default function ProjectLayout({
                 href="/dashboard"
                 className="flex items-center text-muted-foreground hover:text-foreground transition-colors group w-fit"
               >
-                <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+                <ArrowLeft className="h-4 w-4 mr-1 group-hover:-translate-x-0.5 transition-transform" />
                 <span className="font-sentient text-sm">
                   Return to All Projects
                 </span>
@@ -85,10 +95,18 @@ export default function ProjectLayout({
         </div>
       </div>
 
-      {/* Content Area */}
-      <Suspense fallback={<div className="h-32 animate-pulse"></div>}>
-        {children}
-      </Suspense>
-    </>
+      {/* Scrollable Content Area */}
+      <div className="container mx-auto px-4 py-6 md:px-6">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={fadeInVariants}
+        >
+          <Suspense fallback={<div className="h-32 animate-pulse"></div>}>
+            {children}
+          </Suspense>
+        </motion.div>
+      </div>
+    </div>
   );
 }
