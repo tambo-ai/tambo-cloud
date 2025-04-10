@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 interface McpServerRowProps {
   server: {
     id: string;
-    url: string;
+    url: string | null;
   };
   projectId: string;
   onRefresh: () => Promise<void>;
@@ -74,7 +74,7 @@ export function McpServerRow({
       onCancel?.();
       return;
     }
-    setUrl(server.url);
+    setUrl(server.url || "");
     setIsEditing(false);
   };
 
