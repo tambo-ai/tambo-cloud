@@ -5,18 +5,71 @@ import { Composio } from "composio-core";
 import { z } from "zod";
 
 export const toolsRouter = createTRPCRouter({
-  listApps: protectedProcedure.query(async () => {
-    const composio = new Composio({
-      apiKey: env.COMPOSIO_API_KEY,
-    });
+  listApps: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await operations.ensureProjectAccess(
+        ctx.db,
+        input.projectId,
+        ctx.session.user.id,
+      );
+      const composio = new Composio({
+        apiKey: env.COMPOSIO_API_KEY,
+      });
 
-    const apps = await composio.apps.list();
-    return apps;
-  }),
+      const enabledApps = await operations.getComposioApps(
+        ctx.db,
+        input.projectId,
+      );
+      const enabledAppNames = enabledApps.map((app) => app.composio_app_name);
+
+      const apps = await composio.apps.list();
+      return apps
+        .map((app) => ({
+          appId: app.appId,
+          name: app.name,
+          no_auth: app.no_auth,
+          // mistyped in the SDK
+          tags: app.tags as unknown as string[],
+          logo: app.logo,
+          description: app.description,
+          enabled: enabledAppNames.includes(app.name),
+        }))
+        .sort((a, b) => {
+          // sort enabled apps to the top
+          if (a.enabled && !b.enabled) {
+            return -1;
+          }
+          if (!a.enabled && b.enabled) {
+            return 1;
+          }
+          return a.name.localeCompare(b.name);
+        });
+    }),
+  enableApp: protectedProcedure
+    .input(z.object({ projectId: z.string(), appId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await operations.ensureProjectAccess(
+        ctx.db,
+        input.projectId,
+        ctx.session.user.id,
+      );
+      await operations.enableComposioApp(ctx.db, input.projectId, input.appId);
+    }),
+  disableApp: protectedProcedure
+    .input(z.object({ projectId: z.string(), appId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await operations.ensureProjectAccess(
+        ctx.db,
+        input.projectId,
+        ctx.session.user.id,
+      );
+      await operations.disableComposioApp(ctx.db, input.projectId, input.appId);
+    }),
   listMcpServers: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
-      operations.ensureProjectAccess(
+      await operations.ensureProjectAccess(
         ctx.db,
         input.projectId,
         ctx.session.user.id,
@@ -31,7 +84,7 @@ export const toolsRouter = createTRPCRouter({
   addMcpServer: protectedProcedure
     .input(z.object({ projectId: z.string(), url: z.string().url() }))
     .mutation(async ({ ctx, input }) => {
-      operations.ensureProjectAccess(
+      await operations.ensureProjectAccess(
         ctx.db,
         input.projectId,
         ctx.session.user.id,
@@ -43,7 +96,7 @@ export const toolsRouter = createTRPCRouter({
   deleteMcpServer: protectedProcedure
     .input(z.object({ projectId: z.string(), serverId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      operations.ensureProjectAccess(
+      await operations.ensureProjectAccess(
         ctx.db,
         input.projectId,
         ctx.session.user.id,
@@ -62,7 +115,7 @@ export const toolsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      operations.ensureProjectAccess(
+      await operations.ensureProjectAccess(
         ctx.db,
         input.projectId,
         ctx.session.user.id,

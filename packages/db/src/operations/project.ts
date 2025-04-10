@@ -306,6 +306,7 @@ export async function getProjectMcpServers(db: HydraDb, projectId: string) {
     where: and(
       eq(schema.toolProviders.projectId, projectId),
       eq(schema.toolProviders.type, ToolProviderType.MCP),
+      isNotNull(schema.toolProviders.url),
     ),
   });
 }
@@ -370,4 +371,43 @@ export async function updateMcpServer(
     });
 
   return server;
+}
+
+export async function getComposioApps(db: HydraDb, projectId: string) {
+  const toolProviders = await db.query.toolProviders.findMany({
+    where: and(
+      eq(schema.toolProviders.projectId, projectId),
+      eq(schema.toolProviders.type, ToolProviderType.COMPOSIO),
+    ),
+  });
+
+  return toolProviders;
+}
+
+export async function enableComposioApp(
+  db: HydraDb,
+  projectId: string,
+  appName: string,
+) {
+  return await db.insert(schema.toolProviders).values({
+    projectId,
+    type: ToolProviderType.COMPOSIO,
+    composio_app_name: appName,
+  });
+}
+
+export async function disableComposioApp(
+  db: HydraDb,
+  projectId: string,
+  appName: string,
+) {
+  return await db
+    .delete(schema.toolProviders)
+    .where(
+      and(
+        eq(schema.toolProviders.projectId, projectId),
+        eq(schema.toolProviders.type, ToolProviderType.COMPOSIO),
+        eq(schema.toolProviders.composio_app_name, appName),
+      ),
+    );
 }
