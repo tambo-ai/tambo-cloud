@@ -352,7 +352,7 @@ export const toolProviders = pgTable(
     type: text("type", {
       enum: Object.values(ToolProviderType) as [ToolProviderType],
     }).notNull(),
-    url: text("url").notNull(),
+    url: text("url"),
     composio_app_name: text("composio_app_name"),
   }),
 );
