@@ -341,7 +341,7 @@ export function APIKeyList({ project }: APIKeyListProps) {
                 {apiKeys.map((key, index) => (
                   <motion.div
                     key={key.id}
-                    className="p-3 rounded-md border bg-muted/30 space-y-1"
+                    className="p-3 rounded-md border space-y-1"
                     custom={index}
                     variants={listItemVariants}
                     initial="hidden"
