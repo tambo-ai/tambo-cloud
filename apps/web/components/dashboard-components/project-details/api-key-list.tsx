@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Copy, KeyRound, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, Plus, Trash2 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { ProjectResponseDto } from "../../../app/(authed)/dashboard/types/types";
@@ -151,7 +151,6 @@ export function APIKeyList({ project }: APIKeyListProps) {
       <CardContent className="p-4 space-y-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-muted-foreground" />
             <h4 className="text-sm font-heading font-semibold">API Keys</h4>
           </div>
           <AnimatePresence mode="wait">
@@ -184,7 +183,7 @@ export function APIKeyList({ project }: APIKeyListProps) {
               animate={{ opacity: 1, height: "auto", marginBottom: 16 }}
               exit={{ opacity: 0, height: 0, marginBottom: 0 }}
               transition={{ duration: 0.3 }}
-              className="p-3 border rounded-md bg-muted/30 space-y-3"
+              className="p-3 border rounded-md space-y-3"
             >
               <motion.h5
                 initial={{ opacity: 0 }}
@@ -322,7 +321,7 @@ export function APIKeyList({ project }: APIKeyListProps) {
               {[1, 2].map((i) => (
                 <motion.div
                   key={i}
-                  className="h-16 bg-muted animate-pulse rounded-md"
+                  className="h-16 animate-pulse rounded-md"
                   initial={{ opacity: 0.3, y: 5 }}
                   animate={{
                     opacity: [0.3, 0.6, 0.3],
