@@ -5,7 +5,7 @@ interface AvailableToolsProps {
 }
 
 export function AvailableTools({ project }: AvailableToolsProps) {
-  const { data: apps, isLoading } = api.tools.list.useQuery();
+  const { data: apps, isLoading } = api.tools.listApps.useQuery();
 
   if (isLoading) {
     return <div className="animate-pulse h-8 bg-muted rounded" />;

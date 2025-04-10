@@ -11,6 +11,7 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ProjectResponseDto } from "../../../app/(authed)/dashboard/types/types";
 import { APIKeyList } from "./api-key-list";
+import { AvailableMcpServers } from "./available-mcp-servers";
 import { AvailableTools } from "./available-tools";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 import { ProjectInfo } from "./project-info";
@@ -83,7 +84,8 @@ export function ProjectDetailsDialog({
             <ProjectInfo project={project} />
             <ProviderKeySection project={project} />
             <APIKeyList project={project} />
-            <AvailableTools project={project} />
+            {project.mcpEnabled && <AvailableMcpServers project={project} />}
+            {project.composioEnabled && <AvailableTools project={project} />}
           </div>
         </div>
 
