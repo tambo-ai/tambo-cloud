@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { RefreshCw } from "lucide-react";
 import { use, useEffect, useId, useState } from "react";
-import { redirect } from "next/navigation";
 
 interface ProjectPageProps {
   params: Promise<{
@@ -20,12 +19,7 @@ interface ProjectPageProps {
   }>;
 }
 
-export default function ProjectPageRedirect({ params }: ProjectPageProps) {
-  const { projectId } = use(params);
-  redirect(`/dashboard/${projectId}`);
-}
-
-function ProjectPage({ params }: ProjectPageProps) {
+export default function ProjectPage({ params }: ProjectPageProps) {
   const { projectId } = use(params);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const { toast } = useToast();
