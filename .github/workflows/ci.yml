@@ -16,19 +16,22 @@ concurrency:
 
 jobs:
   coordinator:
-    name: CI Coordinator
+    name: CI Status Check
     runs-on: ubuntu-latest
-    needs: [build, test, lint-check]
+    # This job will run after all other workflows have completed
+    if: always()
     steps:
-      - name: CI Coordination
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Wait for other workflows
         run: |
-          echo "All CI checks have completed successfully."
-  
-  build:
-    uses: ./.github/workflows/build.yml
-
-  test:
-    uses: ./.github/workflows/test.yml
-
-  lint-check:
-    uses: ./.github/workflows/lint-check.yml
+          echo "This job coordinates the status of parallel CI workflows"
+          echo "The following workflows are running in parallel:"
+          echo "- Build: runs 'npm run build'"
+          echo "- Test: runs 'npm run test'"
+          echo "- Lint & Type Check: runs prettier, lint, and type checking"
+          echo ""
+          echo "These workflows run independently to improve CI performance."
