@@ -69,5 +69,6 @@ export const env = createEnv({
     NEXT_PUBLIC_TAMBO_API_URL: process.env.NEXT_PUBLIC_TAMBO_API_URL,
     NEXT_PUBLIC_SMOKETEST_PROJECT_ID:
       process.env.NEXT_PUBLIC_SMOKETEST_PROJECT_ID,
+    COMPOSIO_API_KEY: process.env.COMPOSIO_API_KEY,
   },
 });
