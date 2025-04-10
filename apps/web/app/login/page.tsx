@@ -3,10 +3,11 @@
 import { AuthForm } from "@/components/auth/auth-form";
 import { useSession } from "@/hooks/auth";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { Header } from "@/components/sections/header";
 
-export default function LoginPage() {
+// Separate component that uses the useSearchParams hook
+function LoginContent() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -20,11 +21,22 @@ export default function LoginPage() {
   }, [session, router, returnUrl]);
 
   return (
+    <div className="container max-w-md py-8">
+      <AuthForm routeOnSuccess={returnUrl} />
+    </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function LoginPage() {
+  return (
     <div className="container">
       <Header showDashboardButton={false} showLogoutButton={false} />
-      <div className="container max-w-md py-8">
-        <AuthForm routeOnSuccess={returnUrl} />
-      </div>
+      <Suspense
+        fallback={<div className="container max-w-md py-8">Loading...</div>}
+      >
+        <LoginContent />
+      </Suspense>
     </div>
   );
 }
