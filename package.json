@@ -8,7 +8,7 @@
     "lint": "turbo lint",
     "lint:fix": "turbo lint -- --fix",
     "test": "turbo test",
-    "format": "prettier --write .",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "prettier-check": "prettier --check .",
     "check-types": "turbo check-types",
     "hydra-api:start": "turbo run start --filter=hydra-api",
@@ -43,5 +43,5 @@
     "npm": "10.9.2"
   },
   "packageManager": "npm@10.9.2",
-  "version": "0.33.2"
+  "version": "0.34.0"
 }

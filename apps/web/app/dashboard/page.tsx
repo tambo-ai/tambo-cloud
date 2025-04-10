@@ -1,27 +1,30 @@
 "use client";
 
 import { AuthForm } from "@/components/auth/auth-form";
+import { Icons } from "@/components/icons";
 import { Header } from "@/components/sections/header";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useSession } from "@/hooks/auth";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CreateProjectDialog } from "../../components/dashboard-components/create-project-dialog";
-import { ProjectCard } from "../../components/dashboard-components/project-card";
+import { ProjectDetailsDialog } from "../../components/dashboard-components/project-details/project-details-dialog";
+import { ProjectTable } from "../../components/dashboard-components/project-table";
 import { ProjectResponseDto } from "./types/types";
 
 export default function DashboardPage() {
-  //  const [projects, setProjects] = useState([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] =
+    useState<ProjectResponseDto | null>(null);
   const { toast } = useToast();
-  const { data: session } = useSession();
+  const { data: session, isLoading: isAuthLoading } = useSession();
   const isAuthenticated = !!session;
 
   const {
     data: projects,
-    isLoading,
+    isLoading: isProjectsLoading,
     error: projectLoadingError,
     refetch: refetchProjects,
   } = api.project.getUserProjects.useQuery(undefined, {
@@ -40,7 +43,6 @@ export default function DashboardPage() {
 
   const { mutateAsync: createProject } =
     api.project.createProject.useMutation();
-
   const { mutateAsync: addProviderKey } =
     api.project.addProviderKey.useMutation();
 
@@ -70,21 +72,19 @@ export default function DashboardPage() {
     }
   };
 
-  const LoadingCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {[1, 2, 3].map((i) => (
-        <Card key={i} className="h-48 bg-gray-100 animate-pulse" />
-      ))}
+  const LoadingSpinner = () => (
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <Icons.spinner className="h-8 w-8 animate-spin text-muted-foreground" />
+      <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
     </div>
   );
 
-  if (isAuthenticated == null) {
+  // Show loading spinner while checking auth
+  if (isAuthLoading) {
     return (
-      <div className="container max-w-6xl py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-semibold">Projects</h1>
-        </div>
-        <LoadingCards />
+      <div className="container">
+        <Header showDashboardButton={false} showLogoutButton={false} />
+        <LoadingSpinner />
       </div>
     );
   }
@@ -92,41 +92,40 @@ export default function DashboardPage() {
   return (
     <div className="container">
       <Header showDashboardButton={false} showLogoutButton={true} />
-      <div className="flex justify-between items-center my-8"></div>
       {!isAuthenticated ? (
         <div className="container max-w-md py-8">
           <AuthForm routeOnSuccess="/dashboard" />
         </div>
-      ) : isLoading ? (
-        <LoadingCards />
       ) : (
         <>
-          <div className="flex justify-between items-center w-full mb-8 border-b p-4 pb-2 gap-4">
-            <span className="text-sm text-muted-foreground">
-              {projects?.length} project{projects?.length !== 1 ? "s" : ""}
-            </span>
+          <div className="flex items-center justify-between py-4">
+            <h1 className="text-2xl font-heading font-bold">Projects</h1>
             <Button
               onClick={() => setIsCreateDialogOpen(true)}
-              className="text-xs px-3"
+              className="text-sm px-4 gap-2"
               variant="default"
             >
-              + New
+              <Plus className="h-4 w-4" />
+              Create Project
             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects?.map((project: ProjectResponseDto) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onProjectDeleted={refetchProjects}
-              />
-            ))}
-          </div>
+          <ProjectTable
+            projects={projects || []}
+            onShowDetails={(project) => setSelectedProject(project)}
+          />
           <CreateProjectDialog
             open={isCreateDialogOpen}
             onOpenChange={setIsCreateDialogOpen}
             onSubmit={handleCreateProject}
           />
+          {selectedProject && (
+            <ProjectDetailsDialog
+              project={selectedProject}
+              open={!!selectedProject}
+              onOpenChange={(open) => !open && setSelectedProject(null)}
+              onProjectDeleted={refetchProjects}
+            />
+          )}
         </>
       )}
     </div>
