@@ -30,9 +30,6 @@ export default function ProjectLayout({
   const { projectId } = use(params);
   const pathname = usePathname();
 
-  // Control header and nav bar appearance
-  const headerTransparent = false;
-
   // Determine active tab value
   const activeTab = pathname.includes("/observability")
     ? "observability"
