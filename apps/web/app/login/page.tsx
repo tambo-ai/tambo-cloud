@@ -23,9 +23,7 @@ export default function LoginPage() {
     <div className="container">
       <Header showDashboardButton={false} showLogoutButton={false} />
       <div className="container max-w-md py-8">
-        <AuthForm
-          routeOnSuccess={`/login?returnUrl=${encodeURIComponent(returnUrl)}`}
-        />
+        <AuthForm routeOnSuccess={returnUrl} />
       </div>
     </div>
   );
