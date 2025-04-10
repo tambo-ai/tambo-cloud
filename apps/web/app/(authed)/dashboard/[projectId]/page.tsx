@@ -1,17 +1,16 @@
 "use client";
 
-import { Header } from "@/components/sections/header";
-import { ThreadList } from "@/components/thread/thread-list";
-import { ThreadMessages } from "@/components/thread/thread-messages";
+import { APIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
+import { DeleteAlertDialog } from "@/components/dashboard-components/project-details/delete-alert-dialog";
+import { ProjectInfo } from "@/components/dashboard-components/project-details/project-info";
+import { ProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
-import { RefreshCw } from "lucide-react";
-import { use, useEffect, useId, useState } from "react";
+import { AlertTriangle, Trash2 } from "lucide-react";
+import { use, useState } from "react";
 
 interface ProjectPageProps {
   params: Promise<{
@@ -19,79 +18,68 @@ interface ProjectPageProps {
   }>;
 }
 
+interface AlertState {
+  show: boolean;
+  title: string;
+  description: string;
+  data?: { id: string };
+}
+
 export default function ProjectPage({ params }: ProjectPageProps) {
   const { projectId } = use(params);
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const { toast } = useToast();
-  const [showInternalMessages, setShowInternalMessages] = useState(false);
-  const checkboxId = useId();
+  const [alertState, setAlertState] = useState<AlertState>({
+    show: false,
+    title: "",
+    description: "",
+  });
+
   // Fetch project details
   const { data: project, isLoading: isLoadingProject } =
     api.project.getUserProjects.useQuery(undefined, {
       select: (projects) => projects.find((p) => p.id === projectId),
     });
 
-  // Fetch threads for the project
-  const {
-    data: threads,
-    isLoading: isLoadingThreads,
-    error: threadsError,
-    refetch: refetchThreads,
-  } = api.thread.getThreads.useQuery({ projectId });
+  const { mutateAsync: deleteProject, isPending: isDeleting } =
+    api.project.removeProject.useMutation();
 
-  const simpleThreads = threads?.map((thread) => ({
-    id: thread.id,
-    projectId,
-    createdAt: thread.createdAt.toLocaleString(),
-    updatedAt: thread.updatedAt.toLocaleString(),
-  }));
-
-  // Fetch selected thread details
-  const { data: selectedThread, error: threadError } =
-    api.thread.getThread.useQuery(
-      {
-        threadId: selectedThreadId!,
-        projectId,
-        includeInternal: showInternalMessages,
-      },
-      {
-        enabled: !!selectedThreadId,
-      },
-    );
-
-  // Handle errors with useEffect
-  useEffect(() => {
-    if (threadsError) {
+  const handleDeleteProject = async () => {
+    try {
+      await deleteProject(projectId);
+      toast({
+        title: "Success",
+        description: "Project deleted successfully",
+      });
+      // Navigate to dashboard after deletion
+      window.location.href = "/dashboard";
+    } catch (_error) {
       toast({
         title: "Error",
-        description: "Failed to load threads",
+        description: "Failed to delete project",
         variant: "destructive",
       });
-    }
-  }, [threadsError, toast]);
-
-  useEffect(() => {
-    if (threadError) {
-      toast({
-        title: "Error",
-        description: "Failed to load thread details",
-        variant: "destructive",
+    } finally {
+      setAlertState({
+        show: false,
+        title: "",
+        description: "",
+        data: undefined,
       });
     }
-  }, [threadError, toast]);
+  };
 
   if (isLoadingProject) {
     return (
-      <div className="container">
-        <Card className="h-32 animate-pulse" />
+      <div>
+        <Card className="h-32 animate-pulse mt-6" />
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="container">
-        <Card className="p-6">
+      <div>
+        <Card className="p-6 mt-6">
           <h2 className="text-lg font-semibold">Project not found</h2>
         </Card>
       </div>
@@ -99,76 +87,63 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   }
 
   return (
-    <div className="container flex flex-col min-h-screen">
-      <Header showDashboardButton showLogoutButton />
+    <div className="flex flex-col">
+      {/* Main Content Area */}
+      <div className="space-y-6 mb-6">
+        <ProjectInfo
+          project={project}
+          createdAt={new Date().toLocaleDateString()}
+        />
 
-      {/* Project Metadata */}
-      <div className="my-6 p-6 border rounded-lg">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">{project.name}</h1>
-            <p className="text-sm text-muted-foreground">ID: {project.id}</p>
+        {/* Flex container for side-by-side layout */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="w-full lg:w-1/2">
+            <ProviderKeySection project={project} />
+          </div>
+          <div className="w-full lg:w-1/2">
+            <APIKeyList project={project} />
           </div>
         </div>
-      </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Thread List */}
-        <div className="border rounded-lg p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Threads</h2>
+        <div className="pt-2">
+          <Separator className="mb-4" />
+          <div className="bg-destructive/5 p-4 rounded-md border border-destructive/20">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <h4 className="text-sm font-heading font-semibold text-destructive">
+                Danger Zone
+              </h4>
+            </div>
+            <p className="text-xs font-sans text-muted-foreground mb-3">
+              Deleting this project will permanently remove all associated data,
+              API keys, and settings. This action cannot be undone.
+            </p>
             <Button
-              variant="ghost"
+              variant="destructive"
               size="sm"
-              onClick={async () => await refetchThreads()}
-              disabled={isLoadingThreads}
+              className="gap-2 font-sans"
+              onClick={() =>
+                setAlertState({
+                  show: true,
+                  title: "Delete Project",
+                  description:
+                    "Are you sure you want to delete this project? This action cannot be undone.",
+                })
+              }
+              disabled={isDeleting}
             >
-              <RefreshCw
-                className={cn("h-4 w-4", isLoadingThreads && "animate-spin")}
-              />
+              <Trash2 className="h-4 w-4" />
+              {isDeleting ? "Deleting..." : "Delete Project"}
             </Button>
           </div>
-          {isLoadingThreads ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="h-16 animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <ThreadList
-              threads={simpleThreads || []}
-              selectedThreadId={selectedThreadId}
-              onThreadSelect={setSelectedThreadId}
-              isLoading={isLoadingThreads}
-            />
-          )}
-        </div>
-
-        {/* Thread Messages */}
-        <div className="border rounded-lg p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold mb-4">Messages</h2>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={showInternalMessages}
-                onCheckedChange={(checked) =>
-                  setShowInternalMessages(!!checked)
-                }
-                id={checkboxId}
-              />
-              <Label htmlFor={checkboxId}>Show internal messages</Label>
-            </div>
-          </div>
-          {selectedThread ? (
-            <ThreadMessages thread={selectedThread} />
-          ) : (
-            <p className="text-muted-foreground text-center py-8">
-              Select a thread to view messages
-            </p>
-          )}
         </div>
       </div>
+
+      <DeleteAlertDialog
+        alertState={alertState}
+        setAlertState={setAlertState}
+        onConfirm={handleDeleteProject}
+      />
     </div>
   );
 }
