@@ -22,17 +22,6 @@ interface Message {
   }>;
 }
 
-// Type for response component
-interface ComponentResponse {
-  threadId?: string;
-  message: string;
-  component?: ReactElement;
-  suggestedActions?: Array<{
-    label: string;
-    actionText: string;
-  }>;
-}
-
 export default function SmokePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -58,7 +47,7 @@ export default function SmokePage() {
     api.demo.currentWeather.useMutation({
       onError: (error) => setErrors((prev) => [...prev, error]),
     });
-  const tamboClient = useWeatherHydra({
+  const hydraClient = useWeatherHydra({
     getForecast,
     getCurrentWeather,
     getHistoricalWeather,
@@ -69,15 +58,15 @@ export default function SmokePage() {
     useMutation({
       mutationFn: async () => {
         try {
-          const response = await tamboClient.generateComponent(
+          const response = await hydraClient.generateComponent(
             input,
-            (response: any) => {
-              console.log(response.message);
+            (msg) => {
+              console.log(msg);
             },
             threadId ?? undefined,
           );
           setThreadId(response.threadId ?? null);
-          return response as ComponentResponse;
+          return response;
         } catch (error) {
           setErrors((prev) => [...prev, error as Error]);
           throw error;
@@ -104,16 +93,15 @@ export default function SmokePage() {
       content: [input],
     };
 
-    // Define the assistantMessage using the response data
+    // Add assistant response
     const assistantMessage: Message = {
       role: "assistant",
-      content: [response.message, response.component].filter(Boolean) as (
-        | string
-        | ReactElement
-      )[],
+      content: [response.message],
       suggestedActions: response.suggestedActions,
     };
-
+    if (response?.component) {
+      assistantMessage.content.push(response.component);
+    }
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInput("");
   };
@@ -355,13 +343,9 @@ function useWeatherHydra({
   getAirQuality: (...args: any[]) => Promise<any>;
 }) {
   return useMemo(() => {
-    // Add non-null assertions to satisfy TypeScript
-    const apiKey = env.NEXT_PUBLIC_TAMBO_API_KEY!;
-    const apiUrl = env.NEXT_PUBLIC_TAMBO_API_URL!;
-
     const client = new HydraClient({
-      hydraApiKey: apiKey,
-      hydraApiUrl: apiUrl,
+      hydraApiKey: env.NEXT_PUBLIC_TAMBO_API_KEY,
+      hydraApiUrl: env.NEXT_PUBLIC_TAMBO_API_URL,
     });
     const tools: Record<string, ComponentContextTool> = {
       forecast: {
