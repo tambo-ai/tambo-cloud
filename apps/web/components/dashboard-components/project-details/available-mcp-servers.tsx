@@ -7,16 +7,6 @@ interface AvailableMcpServersProps {
   project: { id: string; name: string };
 }
 
-interface McpServer {
-  id: string;
-  url: string;
-  projectId: string;
-  type: string;
-  createdAt: Date;
-  updatedAt: Date;
-  composio_app_name: string | null;
-}
-
 export function AvailableMcpServers({ project }: AvailableMcpServersProps) {
   const [isAddingNew, setIsAddingNew] = useState(false);
 
