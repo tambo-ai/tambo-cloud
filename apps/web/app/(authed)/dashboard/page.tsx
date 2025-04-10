@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD:apps/web/app/(authed)/dashboard/page.tsx
-=======
-import { AuthForm } from "@/components/auth/auth-form";
 import { Icons } from "@/components/icons";
->>>>>>> origin/main:apps/web/app/dashboard/page.tsx
 import { Header } from "@/components/sections/header";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/auth";
@@ -22,12 +18,7 @@ export default function DashboardPage() {
   const [selectedProject, setSelectedProject] =
     useState<ProjectResponseDto | null>(null);
   const { toast } = useToast();
-<<<<<<< HEAD:apps/web/app/(authed)/dashboard/page.tsx
-  const { data: session } = useSession();
-=======
   const { data: session, isLoading: isAuthLoading } = useSession();
-  const isAuthenticated = !!session;
->>>>>>> origin/main:apps/web/app/dashboard/page.tsx
 
   const {
     data: projects,
@@ -86,15 +77,8 @@ export default function DashboardPage() {
     </div>
   );
 
-<<<<<<< HEAD:apps/web/app/(authed)/dashboard/page.tsx
-  return (
-    <div className="container">
-      <Header showDashboardButton={false} showLogoutButton={true} />
-      {isLoading ? (
-        <LoadingTable />
-=======
-  // Show loading spinner while checking auth
-  if (isAuthLoading) {
+  // Show loading spinner while checking auth or loading projects
+  if (isAuthLoading || isProjectsLoading) {
     return (
       <div className="container">
         <Header showDashboardButton={false} showLogoutButton={false} />
@@ -106,43 +90,36 @@ export default function DashboardPage() {
   return (
     <div className="container">
       <Header showDashboardButton={false} showLogoutButton={true} />
-      {!isAuthenticated ? (
-        <div className="container max-w-md py-8">
-          <AuthForm routeOnSuccess="/dashboard" />
+      <>
+        <div className="flex items-center justify-between py-4">
+          <h1 className="text-2xl font-heading font-bold">Projects</h1>
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="text-sm px-4 gap-2"
+            variant="default"
+          >
+            <Plus className="h-4 w-4" />
+            Create Project
+          </Button>
         </div>
->>>>>>> origin/main:apps/web/app/dashboard/page.tsx
-      ) : (
-        <>
-          <div className="flex items-center justify-between py-4">
-            <h1 className="text-2xl font-heading font-bold">Projects</h1>
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="text-sm px-4 gap-2"
-              variant="default"
-            >
-              <Plus className="h-4 w-4" />
-              Create Project
-            </Button>
-          </div>
-          <ProjectTable
-            projects={projects || []}
-            onShowDetails={(project) => setSelectedProject(project)}
+        <ProjectTable
+          projects={projects || []}
+          onShowDetails={(project) => setSelectedProject(project)}
+        />
+        <CreateProjectDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onSubmit={handleCreateProject}
+        />
+        {selectedProject && (
+          <ProjectDetailsDialog
+            project={selectedProject}
+            open={!!selectedProject}
+            onOpenChange={(open) => !open && setSelectedProject(null)}
+            onProjectDeleted={refetchProjects}
           />
-          <CreateProjectDialog
-            open={isCreateDialogOpen}
-            onOpenChange={setIsCreateDialogOpen}
-            onSubmit={handleCreateProject}
-          />
-          {selectedProject && (
-            <ProjectDetailsDialog
-              project={selectedProject}
-              open={!!selectedProject}
-              onOpenChange={(open) => !open && setSelectedProject(null)}
-              onProjectDeleted={refetchProjects}
-            />
-          )}
-        </>
-      )}
+        )}
+      </>
     </div>
   );
 }
