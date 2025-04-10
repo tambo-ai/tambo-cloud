@@ -5,7 +5,9 @@ interface AvailableToolsProps {
 }
 
 export function AvailableTools({ project }: AvailableToolsProps) {
-  const { data: apps, isLoading } = api.tools.listApps.useQuery();
+  const { data: apps, isLoading } = api.tools.listApps.useQuery({
+    projectId: project.id,
+  });
 
   if (isLoading) {
     return <div className="animate-pulse h-8 bg-muted rounded" />;
@@ -25,7 +27,7 @@ export function AvailableTools({ project }: AvailableToolsProps) {
       <div className="grid grid-cols-[auto_auto_auto_auto_1fr] grid-rows-[auto] gap-2 max-h-[300px] overflow-y-auto">
         {apps
           .filter((app) => app.enabled)
-          .map((app, index) => (
+          .map((app) => (
             <div
               key={app.appId}
               className="grid grid-cols-subgrid col-span-full bg-muted/50"
