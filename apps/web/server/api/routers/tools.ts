@@ -1,17 +1,15 @@
+import { env } from "@/lib/env";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { operations } from "@tambo-ai-cloud/db";
-import { Composio, OpenAIToolSet } from "composio-core";
+import { Composio } from "composio-core";
 import { z } from "zod";
-const toolset = new OpenAIToolSet({
-  apiKey: process.env.COMPOSIO_API_KEY!,
-});
-
-const composio = new Composio({
-  apiKey: process.env.COMPOSIO_API_KEY!,
-});
 
 export const toolsRouter = createTRPCRouter({
   listApps: protectedProcedure.query(async () => {
+    const composio = new Composio({
+      apiKey: env.COMPOSIO_API_KEY,
+    });
+
     const apps = await composio.apps.list();
     return apps;
   }),

@@ -24,6 +24,7 @@ export const env = createEnv({
     RESEND_AUDIENCE_ID: z.string().min(1).optional(),
     // for smoketesting
     WEATHER_API_KEY: z.string().min(1).optional(),
+    COMPOSIO_API_KEY: z.string().min(1).optional(),
   },
   /*
    * Environment variables available on the client (and server).
