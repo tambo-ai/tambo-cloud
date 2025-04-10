@@ -6,12 +6,34 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/auth";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
+import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CreateProjectDialog } from "../../../components/dashboard-components/create-project-dialog";
 import { ProjectDetailsDialog } from "../../../components/dashboard-components/project-details/project-details-dialog";
 import { ProjectTable } from "../../../components/dashboard-components/project-table";
 import { ProjectResponseDto } from "./types/types";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      duration: 0.3,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.5 },
+  },
+};
 
 export default function DashboardPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -46,7 +68,7 @@ export default function DashboardPage() {
 
   const handleCreateProject = async (
     projectName: string,
-    providerKey: string,
+    providerKey: string
   ) => {
     try {
       const project = await createProject(projectName);
@@ -61,20 +83,26 @@ export default function DashboardPage() {
         title: "Success",
         description: "Project created successfully",
       });
+      return project;
     } catch (error) {
       toast({
         title: "Error",
         description: `Failed to create project: ${error}`,
         variant: "destructive",
       });
+      throw error;
     }
   };
 
   const LoadingSpinner = () => (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-col items-center justify-center min-h-[60vh]"
+    >
       <Icons.spinner className="h-8 w-8 animate-spin text-muted-foreground" />
       <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
-    </div>
+    </motion.div>
   );
 
   // Show loading spinner while checking auth or loading projects
@@ -88,10 +116,18 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container">
+    <motion.div
+      className="container"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       <Header showDashboardButton={false} showLogoutButton={true} />
       <>
-        <div className="flex items-center justify-between py-4">
+        <motion.div
+          className="flex items-center justify-between py-4"
+          variants={itemVariants}
+        >
           <h1 className="text-2xl font-heading font-bold">Projects</h1>
           <Button
             onClick={() => setIsCreateDialogOpen(true)}
@@ -101,11 +137,13 @@ export default function DashboardPage() {
             <Plus className="h-4 w-4" />
             Create Project
           </Button>
-        </div>
-        <ProjectTable
-          projects={projects || []}
-          onShowDetails={(project) => setSelectedProject(project)}
-        />
+        </motion.div>
+        <motion.div
+          className="flex items-center justify-between py-4"
+          variants={itemVariants}
+        >
+          <ProjectTable projects={projects || []} />
+        </motion.div>
         <CreateProjectDialog
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
@@ -120,6 +158,6 @@ export default function DashboardPage() {
           />
         )}
       </>
-    </div>
+    </motion.div>
   );
 }
