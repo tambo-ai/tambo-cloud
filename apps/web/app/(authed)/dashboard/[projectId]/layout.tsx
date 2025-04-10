@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from "@/components/sections/header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
@@ -40,16 +39,10 @@ export default function ProjectLayout({
     : "details";
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Header
-        showDashboardButton
-        showLogoutButton
-        transparent={headerTransparent}
-      />
-
+    <div className="flex flex-col bg-background">
       {/* Sticky Navigation Section */}
       <div className="sticky top-[var(--header-height)] z-40 bg-background border-b">
-        <div className="container mx-auto px-4 pb-0 pt-4 md:px-6">
+        <div className="container mx-auto px-4 md:px-6 pb-0">
           {/* Navigation Row */}
           <motion.div
             className="flex flex-col gap-4 pb-2"
