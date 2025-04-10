@@ -1,5 +1,5 @@
 import { getServerSupabaseclient } from "@/server/supabase";
-import { redirect } from "next/navigation";
+import { AuthedLayoutWrapper } from "../../components/auth/AuthedLayoutWrapper";
 
 export default async function AuthedLayout({
   children,
@@ -12,10 +12,7 @@ export default async function AuthedLayout({
     data: { session },
   } = await supabase.auth.getSession();
 
-  // If user is not authenticated, redirect to login page with returnUrl
-  if (!session) {
-    redirect(`/login?returnUrl=${encodeURIComponent("/dashboard")}`);
-  }
-
-  return <>{children}</>;
+  return (
+    <AuthedLayoutWrapper hasSession={!!session}>{children}</AuthedLayoutWrapper>
+  );
 }
