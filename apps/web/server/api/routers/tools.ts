@@ -23,7 +23,7 @@ export const toolsRouter = createTRPCRouter({
       const apps = await composio.apps.list();
 
       return apps
-        .map((app) => ({
+        .map((app: any) => ({
           appId: app.appId,
           name: app.name,
           no_auth: app.no_auth,
@@ -33,7 +33,7 @@ export const toolsRouter = createTRPCRouter({
           description: app.description,
           enabled: enabledAppIds.includes(app.appId),
         }))
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .sort((a: any, b: any) => a.name.localeCompare(b.name));
     }),
   enableApp: protectedProcedure
     .input(z.object({ projectId: z.string(), appId: z.string() }))

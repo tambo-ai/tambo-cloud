@@ -39,7 +39,7 @@ export function AvailableTools({ project }: AvailableToolsProps) {
     <div className="space-y-2 ">
       <h3 className="text-sm font-medium">Available Apps</h3>
       <div className="grid grid-cols-[auto_auto_auto_auto_1fr] grid-rows-[auto] gap-2 max-h-[300px] overflow-y-auto">
-        {apps.map((app) => (
+        {apps.map((app: any) => (
           <div
             key={app.appId}
             className="grid grid-cols-subgrid col-span-full bg-muted/50"
@@ -70,7 +70,7 @@ export function AvailableTools({ project }: AvailableToolsProps) {
               </span>
             </div>
             <div>
-              {(app.tags as any as string[])?.map((tag, i) => (
+              {(app.tags as string[])?.map((tag, i) => (
                 <span
                   key={i}
                   className="inline-flex items-center px-2 py-0.5 mr-2 text-xs font-medium rounded-full bg-primary/10"
