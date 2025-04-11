@@ -60,7 +60,7 @@ export const validateSafeURL = async (
     }
 
     return { safe: true };
-  } catch (error) {
+  } catch (_error) {
     return {
       safe: false,
       reason: "Unable to verify URL safety",
