@@ -1,7 +1,9 @@
 import { getComposio } from "@/lib/composio";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { operations } from "@tambo-ai-cloud/db";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { validateSafeURL } from "../../../lib/urlSecurity";
 
 export const toolsRouter = createTRPCRouter({
   listApps: protectedProcedure
@@ -70,14 +72,41 @@ export const toolsRouter = createTRPCRouter({
       return servers;
     }),
   addMcpServer: protectedProcedure
-    .input(z.object({ projectId: z.string(), url: z.string().url() }))
+    .input(
+      z.object({
+        projectId: z.string(),
+        url: z
+          .string()
+          .url()
+          .refine(async (url) => {
+            try {
+              const parsedUrl = new URL(url);
+              return (await validateSafeURL(parsedUrl.hostname)).safe;
+            } catch {
+              return false;
+            }
+          }, "URL appears to be unsafe: must not point to internal, local, or private networks"),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       await operations.ensureProjectAccess(
         ctx.db,
         input.projectId,
         ctx.session.user.id,
       );
+
       const { projectId, url } = input;
+      const parsedUrl = new URL(url);
+
+      // Perform additional safety checks
+      const safetyCheck = await validateSafeURL(parsedUrl.hostname);
+      if (!safetyCheck.safe) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `URL validation failed: ${safetyCheck.reason}`,
+        });
+      }
+
       const server = await operations.createMcpServer(ctx.db, projectId, url);
       return server;
     }),
