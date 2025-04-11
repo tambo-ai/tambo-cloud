@@ -23,6 +23,7 @@ import type { DBSuggestion } from "@tambo-ai-cloud/db/src/schema";
 import { eq } from "drizzle-orm";
 import { decryptProviderKey } from "../common/key.utils";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
+import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
 import { AvailableComponentDto } from "../components/dto/generate-component.dto";
 import { ProjectsService } from "../projects/projects.service";
@@ -56,6 +57,7 @@ export class ThreadsService {
     private projectsService: ProjectsService,
     private readonly logger: CorrelationLoggerService,
     private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   getDb() {
@@ -226,10 +228,38 @@ export class ThreadsService {
     }
 
     if (!usage.hasApiKey && usage.messageCount >= this.FREE_MESSAGE_LIMIT) {
+      // Only send email if we haven't sent one before
+      if (!usage.notificationSentAt) {
+        // Get project owner's email from auth.users
+        const projectOwner = await this.getDb().query.projectMembers.findFirst({
+          where: eq(schema.projectMembers.projectId, projectId),
+          with: {
+            user: true,
+          },
+        });
+
+        const ownerEmail = projectOwner?.user?.email;
+
+        if (ownerEmail) {
+          await this.emailService.sendMessageLimitNotification(
+            projectId,
+            ownerEmail,
+          );
+
+          // Update the notification sent timestamp
+          await this.getDb()
+            .update(schema.projectMessageUsage)
+            .set({
+              notificationSentAt: new Date(),
+            })
+            .where(eq(schema.projectMessageUsage.projectId, projectId));
+        }
+      }
+
       throw new HttpException(
         {
           message:
-            "You've used all 50 free messages! To continue using the service, please add your OpenAI API key at https://tambo.co/dashboard.",
+            "You have used all 500 free messages. To continue using this service, please contact your provider or, if you are the developer, set up your OpenAI API key at https://tambo.co/dashboard.",
           type: "FREE_LIMIT_REACHED",
           limit: this.FREE_MESSAGE_LIMIT,
           settingsUrl: "https://tambo.co/dashboard",
