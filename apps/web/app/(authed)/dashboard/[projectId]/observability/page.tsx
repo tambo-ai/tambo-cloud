@@ -77,7 +77,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       },
       {
         enabled: !!selectedThreadId,
-      }
+      },
     );
 
   // Handle errors with useEffect

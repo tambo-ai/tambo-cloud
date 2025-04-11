@@ -28,7 +28,7 @@ interface CreateProjectDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (
     projectName: string,
-    providerKey: string
+    providerKey: string,
   ) => Promise<{ id: string }>;
 }
 
@@ -78,7 +78,7 @@ export function CreateProjectDialog({
       setIsLoading(true);
       const project = await onSubmit(
         values.projectName.trim(),
-        values.providerKey.trim()
+        values.providerKey.trim(),
       );
       form.reset();
 
