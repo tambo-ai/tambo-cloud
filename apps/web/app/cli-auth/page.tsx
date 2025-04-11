@@ -223,7 +223,7 @@ export default function CLIAuthPage() {
         });
       }
     },
-    [supabase.auth, toast],
+    [supabase.auth, toast]
   );
 
   const handleCreateProject = useCallback(async () => {
@@ -293,7 +293,7 @@ export default function CLIAuthPage() {
         });
       }
     },
-    [generateApiKey, selectedProject, nextKeyName, toast],
+    [generateApiKey, selectedProject, nextKeyName, toast]
   );
 
   const handleDeleteKeyClick = useCallback((keyId: string, keyName: string) => {

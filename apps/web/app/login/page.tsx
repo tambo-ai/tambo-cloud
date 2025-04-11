@@ -1,10 +1,10 @@
 "use client";
 
 import { AuthForm } from "@/components/auth/auth-form";
+import { Header } from "@/components/sections/header";
 import { useSession } from "@/hooks/auth";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
-import { Header } from "@/components/sections/header";
+import { Suspense, useEffect } from "react";
 
 // Separate component that uses the useSearchParams hook
 function LoginContent() {
@@ -21,7 +21,7 @@ function LoginContent() {
   }, [session, router, returnUrl]);
 
   return (
-    <div className="container max-w-md py-8">
+    <div className="container max-w-md py-8 flex items-center justify-center">
       <AuthForm routeOnSuccess={returnUrl} />
     </div>
   );
@@ -30,13 +30,19 @@ function LoginContent() {
 // Main component with Suspense boundary
 export default function LoginPage() {
   return (
-    <div className="container">
+    <div className="container flex flex-col min-h-screen">
       <Header showDashboardButton={false} showLogoutButton={false} />
-      <Suspense
-        fallback={<div className="container max-w-md py-8">Loading...</div>}
-      >
-        <LoginContent />
-      </Suspense>
+      <div className="flex-1 flex items-center justify-center">
+        <Suspense
+          fallback={
+            <div className="container max-w-md py-8 flex items-center justi fy-center">
+              Loading...
+            </div>
+          }
+        >
+          <LoginContent />
+        </Suspense>
+      </div>
     </div>
   );
 }
