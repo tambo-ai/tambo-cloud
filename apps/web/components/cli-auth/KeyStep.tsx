@@ -6,23 +6,14 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { useCallback, useState } from "react";
 
-type ApiKey = Readonly<{
-  id: string;
-  name: string;
-  partiallyHiddenKey: string | null;
-  createdAt: Date;
-}>;
-
 interface KeyStepProps {
   apiKey: string;
   countdown: number;
-  existingKeys: readonly ApiKey[] | undefined;
   isLoading: boolean;
   error: unknown;
   isGenerating: boolean;
   onBack: () => void;
   onGenerate: () => Promise<void>;
-  onDeleteClick: (keyId: string, keyName: string) => void;
   providerKey: string | null;
   onProviderKeyChange: (key: string) => Promise<void>;
   projectName: string;
@@ -31,22 +22,20 @@ interface KeyStepProps {
 /**
  * KeyStep Component
  *
- * Handles the display and management of API keys:
- * - Shows existing API keys with options to delete
+ * Handles API key generation and OpenAI key management:
  * - Provides interface to generate new keys
  * - Displays newly generated keys with copy functionality
  * - Shows countdown for auto-close after key generation
+ * - Manages OpenAI API key configuration
  */
 export function KeyStep({
   apiKey,
   countdown,
-  existingKeys,
   isLoading,
   error,
   isGenerating,
   onBack,
   onGenerate,
-  onDeleteClick,
   providerKey,
   onProviderKeyChange,
   projectName,
@@ -122,7 +111,7 @@ export function KeyStep({
         <div className="space-y-1">
           <h2 className="text-xl font-medium">{projectName}</h2>
           <p className="text-sm text-muted-foreground">
-            Manage API keys for this project
+            Your new API key has been generated
           </p>
         </div>
 
@@ -169,6 +158,30 @@ export function KeyStep({
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="py-8 flex flex-col items-center gap-4">
+        <Icons.spinner className="h-6 w-6 animate-spin" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-8 text-center space-y-4">
+        <p className="text-sm text-red-500">An error occurred</p>
+        <Button
+          variant="outline"
+          onClick={() => window.location.reload()}
+          className="text-sm"
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
@@ -198,9 +211,7 @@ export function KeyStep({
 
       <div className="space-y-1">
         <h2 className="text-xl font-medium">{projectName}</h2>
-        <p className="text-sm text-muted-foreground">
-          Manage API keys for this project
-        </p>
+        <p className="text-sm text-muted-foreground">Configure your API keys</p>
       </div>
 
       <Card className="p-4 bg-muted space-y-4">
@@ -249,140 +260,44 @@ export function KeyStep({
             autoFocus
           />
         ) : (
-          <p className="text-sm text-muted-foreground font-mono break-all">
-            {providerKey
-              ? `${providerKey.slice(0, 4)}${"*".repeat(20)}`
-              : "No API key set"}
+          <p className="text-sm text-muted-foreground">
+            {providerKey ? "••••••••" : "No API key set"}
           </p>
         )}
       </Card>
 
-      {isLoading ? (
-        <div className="py-4 flex justify-center">
-          <Icons.spinner className="h-6 w-6 animate-spin" />
-        </div>
-      ) : error ? (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Failed to load existing API keys</AlertDescription>
-        </Alert>
-      ) : existingKeys && existingKeys.length > 0 ? (
-        <div className="space-y-3">
-          <div className="text-sm font-medium">Existing tambo API Keys</div>
-          <div className="space-y-2 max-h-[240px] overflow-y-auto pr-2">
-            {existingKeys.map((key) => (
-              <Card
-                key={key.id}
-                className="p-3 bg-muted flex items-center justify-between gap-4"
+      <Card className="p-4">
+        <Button
+          onClick={onGenerate}
+          disabled={isGenerating}
+          className="w-full h-12"
+        >
+          {isGenerating ? (
+            <>
+              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mr-2"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">{key.name}</p>
-                  <p className="text-xs text-muted-foreground font-mono truncate">
-                    {key.partiallyHiddenKey}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Created{" "}
-                    {new Date(key.createdAt).toLocaleDateString("en-US", {
-                      month: "numeric",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDeleteClick(key.id, key.name)}
-                  className="h-8 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M3 6h18" />
-                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                    <line x1="10" y1="11" x2="10" y2="17" />
-                    <line x1="14" y1="11" x2="14" y2="17" />
-                  </svg>
-                  <span className="sr-only">Delete API key</span>
-                </Button>
-              </Card>
-            ))}
-          </div>
-          <div className="relative py-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Generate New Key
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <Card className="py-8 text-center space-y-4">
-          <div className="flex flex-col items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-muted-foreground"
-            >
-              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-            </svg>
-            <p className="text-sm text-muted-foreground">
-              You don&apos;t have any API keys yet
-            </p>
-          </div>
-        </Card>
-      )}
-
-      <Button
-        onClick={onGenerate}
-        disabled={isGenerating}
-        className="w-full h-12 text-base font-medium transition-all hover:scale-[1.02]"
-      >
-        {isGenerating ? (
-          <>
-            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            Generating...
-          </>
-        ) : (
-          <>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mr-2"
-            >
-              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-            </svg>
-            Generate New API Key
-          </>
-        )}
-      </Button>
+                <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18" />
+              </svg>
+              Generate New API Key
+            </>
+          )}
+        </Button>
+      </Card>
     </div>
   );
 }
