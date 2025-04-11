@@ -1,9 +1,10 @@
-// This is a temporary mock file to make the build pass
-// It will be replaced with the actual implementation later
+import { parse, getHostname, getDomain } from "tldts";
 
 export function isUrlAllowed(url: string): boolean {
-  // Simple mock implementation
-  return !url.includes("dangerous-domain.com");
+  const parsedUrl = parse(url);
+  // Block known dangerous domains
+  const blockedDomains = ["dangerous-domain.com"];
+  return !blockedDomains.includes(parsedUrl.domain || "");
 }
 
 export function validateUrl(url: string): {
@@ -25,13 +26,21 @@ export function validateUrl(url: string): {
 export async function validateSafeURL(
   url: string,
 ): Promise<{ safe: boolean; reason?: string }> {
-  // Mock implementation for the build
-  return {
-    safe:
-      !url.includes("localhost") &&
-      !url.includes("127.0.0.1") &&
-      !url.includes("192.168.") &&
-      !url.includes("10.") &&
-      !url.includes("172.16."),
-  };
+  const hostname = getHostname(url);
+
+  // Check for internal/private networks
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname?.startsWith("192.168.") ||
+    hostname?.startsWith("10.") ||
+    hostname?.startsWith("172.16.")
+  ) {
+    return {
+      safe: false,
+      reason: "Internal or private network addresses are not allowed",
+    };
+  }
+
+  return { safe: true };
 }

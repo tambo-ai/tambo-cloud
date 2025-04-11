@@ -2,6 +2,7 @@ Always read code first before making changes.
 Write functional code, with minimal abstraction.
 Ask for review before implementing changes.
 Run npm lint before completing changes.
+Always install dependencies via npm, never create mock implementations of packages. If a dependency is needed, add it to package.json and run npm install.
 
 ## Fumadocs MDX Component Guidelines
 
