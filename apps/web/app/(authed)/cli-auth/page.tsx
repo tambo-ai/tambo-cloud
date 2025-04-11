@@ -7,7 +7,41 @@ import { ProjectStep } from "@/components/cli-auth/ProjectStep";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/hooks/auth";
 import { api } from "@/trpc/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useState } from "react";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      duration: 0.3,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 },
+  },
+};
+
+const contentVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { delay: 0.2, duration: 0.4 },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.2 },
+  },
+};
 
 export default function CLIAuthPage() {
   const [step, setStep] = useState<"select" | "key">("select");
@@ -151,59 +185,94 @@ export default function CLIAuthPage() {
   }
 
   return (
-    <div>
-      <Card className="container max-w-lg text-center shadow-md">
-        <CardHeader>
-          <CardTitle>Setup tambo ai</CardTitle>
-          <ProgressIndicator
-            steps={steps}
-            currentStep={
-              step === "select" ? "select a project" : "generate key"
-            }
-            onStepClick={
-              step === "key"
-                ? (clickedStep) =>
-                    clickedStep === "select a project" && handleBack()
-                : undefined
-            }
-          />
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4"></div>
-          {isAuthLoading || (step === "select" && projectsQuery.isLoading) ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-pulse h-8 w-8 rounded-full bg-muted" />
-            </div>
-          ) : step === "select" ? (
-            <ProjectStep
-              projects={projectsQuery.data}
-              isLoading={false}
-              error={projectsQuery.error}
-              onProjectSelect={handleProjectSelect}
-              onCreateClick={() =>
-                setCreateDialogState({ ...createDialogState, isOpen: true })
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="min-h-[70vh] flex items-center justify-center"
+    >
+      <motion.div variants={cardVariants}>
+        <Card className="container max-w-lg text-center shadow-md">
+          <CardHeader>
+            <CardTitle>Setup tambo ai</CardTitle>
+            <ProgressIndicator
+              steps={steps}
+              currentStep={
+                step === "select" ? "select a project" : "generate key"
+              }
+              onStepClick={
+                step === "key"
+                  ? (clickedStep) =>
+                      clickedStep === "select a project" && handleBack()
+                  : undefined
               }
             />
-          ) : (
-            <KeyStep
-              apiKey={apiKey}
-              countdown={countdown}
-              error={providerKeysQuery.error}
-              isGenerating={isGenerating}
-              onBack={handleBack}
-              onGenerate={handleGenerate}
-              projectName={selectedProjectName}
-            />
-          )}
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4"></div>
+            <AnimatePresence mode="wait">
+              {isAuthLoading ||
+              (step === "select" && projectsQuery.isLoading) ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center justify-center py-8"
+                >
+                  <div className="animate-pulse h-8 w-8 rounded-full bg-muted" />
+                </motion.div>
+              ) : step === "select" ? (
+                <motion.div
+                  key="project-step"
+                  variants={contentVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                >
+                  <ProjectStep
+                    projects={projectsQuery.data}
+                    isLoading={false}
+                    error={projectsQuery.error}
+                    onProjectSelect={handleProjectSelect}
+                    onCreateClick={() =>
+                      setCreateDialogState({
+                        ...createDialogState,
+                        isOpen: true,
+                      })
+                    }
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="key-step"
+                  variants={contentVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                >
+                  <KeyStep
+                    apiKey={apiKey}
+                    countdown={countdown}
+                    error={providerKeysQuery.error}
+                    isGenerating={isGenerating}
+                    onBack={handleBack}
+                    onGenerate={handleGenerate}
+                    projectName={selectedProjectName}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <CreateProjectDialog
-            state={createDialogState}
-            isCreating={isCreatingProject}
-            onStateChange={setCreateDialogState}
-            onConfirm={handleCreateProject}
-          />
-        </CardContent>
-      </Card>
-    </div>
+            <CreateProjectDialog
+              state={createDialogState}
+              isCreating={isCreatingProject}
+              onStateChange={setCreateDialogState}
+              onConfirm={handleCreateProject}
+            />
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
