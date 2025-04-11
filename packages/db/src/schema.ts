@@ -210,6 +210,7 @@ export const projectMessageUsage = pgTable(
     hasApiKey: boolean("has_api_key").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    notificationSentAt: timestamp("notification_sent_at"),
   }),
 );
 
