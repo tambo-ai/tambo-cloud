@@ -80,8 +80,7 @@ export const toolsRouter = createTRPCRouter({
           .url()
           .refine(async (url) => {
             try {
-              const parsedUrl = new URL(url);
-              return (await validateSafeURL(parsedUrl.hostname)).safe;
+              return (await validateSafeURL(url)).safe;
             } catch {
               return false;
             }
