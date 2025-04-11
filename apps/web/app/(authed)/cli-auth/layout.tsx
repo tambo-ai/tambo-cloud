@@ -14,8 +14,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         showLogoutButton={true}
         transparent={false}
       />
-
-      {children}
+      <div className="flex-1 flex items-center justify-center">{children}</div>
     </div>
   );
 }

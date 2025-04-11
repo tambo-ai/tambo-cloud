@@ -151,8 +151,8 @@ export default function CLIAuthPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Card className="container max-w-lg text-center">
+    <div>
+      <Card className="container max-w-lg text-center shadow-md">
         <CardHeader>
           <CardTitle>Setup tambo ai</CardTitle>
           <ProgressIndicator
