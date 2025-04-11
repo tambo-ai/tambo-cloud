@@ -6,6 +6,10 @@ This repository is a monorepo for the Tambo Cloud platform.
 
 ## Repository Structure
 
+The repository is organized into two main directories:
+
+### Applications
+
 The main applications are located in the [apps](./apps) directory:
 
 - [web](./apps/web) - The Next.js frontend application, including the landing page and project dashboard
@@ -126,40 +130,6 @@ turbo dev      # Development mode
 turbo build    # Build all packages
 turbo lint     # Lint all packages
 ```
-
-## Development Guidelines
-
-### Dependencies Management
-
-- **IMPORTANT: Never mock dependencies** - Always install actual dependencies via npm. Creating mock implementations of packages is strictly prohibited.
-
-  ```bash
-  # Correct way to add a dependency
-  npm install package-name
-
-  # For dev dependencies
-  npm install -D package-name
-  ```
-
-- **Always add dependencies to the appropriate `package.json` file:**
-
-  - Add application-specific dependencies to the respective app's `package.json`
-  - Add shared dependencies to the respective package's `package.json`
-  - Add development tools used across the monorepo to the root `package.json`
-
-- **Why this matters:**
-  - Mocking dependencies creates inconsistencies between development and production
-  - Makes it difficult to track what's actually being used in the project
-  - Causes maintenance issues when upgrading or auditing dependencies
-  - Can lead to unexpected behavior and hard-to-debug issues
-
-### Checking for Mock Dependencies
-
-Before submitting a PR, ensure:
-
-- All required packages are properly installed
-- No mock implementations of npm packages exist in your code
-- All dependencies are correctly documented in the appropriate `package.json` files
 
 ## API Key Setup
 
