@@ -1,7 +1,6 @@
-import { env } from "@/lib/env";
+import { getComposio } from "@/lib/composio";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { operations } from "@tambo-ai-cloud/db";
-import { Composio } from "composio-core";
 import { z } from "zod";
 
 export const toolsRouter = createTRPCRouter({
@@ -13,17 +12,14 @@ export const toolsRouter = createTRPCRouter({
         input.projectId,
         ctx.session.user.id,
       );
-      const composio = new Composio({
-        apiKey: env.COMPOSIO_API_KEY,
-      });
-
+      const composio = getComposio();
       const enabledApps = await operations.getComposioApps(
         ctx.db,
         input.projectId,
       );
-      const enabledAppNames = enabledApps.map((app) => app.composio_app_name);
-
+      const enabledAppIds = enabledApps.map((app) => app.composioAppId);
       const apps = await composio.apps.list();
+
       return apps
         .map((app) => ({
           appId: app.appId,
@@ -33,18 +29,9 @@ export const toolsRouter = createTRPCRouter({
           tags: app.tags as unknown as string[],
           logo: app.logo,
           description: app.description,
-          enabled: enabledAppNames.includes(app.name),
+          enabled: enabledAppIds.includes(app.appId),
         }))
-        .sort((a, b) => {
-          // sort enabled apps to the top
-          if (a.enabled && !b.enabled) {
-            return -1;
-          }
-          if (!a.enabled && b.enabled) {
-            return 1;
-          }
-          return a.name.localeCompare(b.name);
-        });
+        .sort((a, b) => a.name.localeCompare(b.name));
     }),
   enableApp: protectedProcedure
     .input(z.object({ projectId: z.string(), appId: z.string() }))
@@ -54,6 +41,7 @@ export const toolsRouter = createTRPCRouter({
         input.projectId,
         ctx.session.user.id,
       );
+      console.log("Enabling app:", input.appId, " / ");
       await operations.enableComposioApp(ctx.db, input.projectId, input.appId);
     }),
   disableApp: protectedProcedure

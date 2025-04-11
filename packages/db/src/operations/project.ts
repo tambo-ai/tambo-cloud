@@ -387,19 +387,24 @@ export async function getComposioApps(db: HydraDb, projectId: string) {
 export async function enableComposioApp(
   db: HydraDb,
   projectId: string,
-  appName: string,
+  appId: string,
 ) {
-  return await db.insert(schema.toolProviders).values({
-    projectId,
-    type: ToolProviderType.COMPOSIO,
-    composio_app_name: appName,
-  });
+  try {
+    return await db.insert(schema.toolProviders).values({
+      projectId,
+      type: ToolProviderType.COMPOSIO,
+      composioAppId: appId,
+    });
+  } catch (error) {
+    console.log("Error enabling Composio app:", error);
+    throw error;
+  }
 }
 
 export async function disableComposioApp(
   db: HydraDb,
   projectId: string,
-  appName: string,
+  appId: string,
 ) {
   return await db
     .delete(schema.toolProviders)
@@ -407,7 +412,7 @@ export async function disableComposioApp(
       and(
         eq(schema.toolProviders.projectId, projectId),
         eq(schema.toolProviders.type, ToolProviderType.COMPOSIO),
-        eq(schema.toolProviders.composio_app_name, appName),
+        eq(schema.toolProviders.composioAppId, appId),
       ),
     );
 }
