@@ -8,7 +8,7 @@ import {
   tryParseJsonObject,
 } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
-import { ResponseFormatJSONObject } from "openai/resources";
+import type { ResponseFormatJSONObject } from "openai/resources";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { Provider } from "../../model/providers";
 import {
