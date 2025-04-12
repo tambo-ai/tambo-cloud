@@ -14,7 +14,7 @@ export class ComponentDecisionDto {
     type: "object",
     additionalProperties: true,
   })
-  props!: Record<string, any>;
+  props!: Record<string, unknown> | null;
   message!: string;
   suggestedActions?: SuggestedActionDto[];
   toolCallRequest?: ToolCallRequestDto;
@@ -28,7 +28,7 @@ export class ComponentDecisionV2Dto implements ComponentDecisionV2 {
     type: "object",
     additionalProperties: true,
   })
-  props!: Record<string, any>;
+  props!: Record<string, unknown> | null;
   message!: string;
   @ApiProperty({
     type: "object",
@@ -40,7 +40,7 @@ export class ComponentDecisionV2Dto implements ComponentDecisionV2 {
 
 export class ToolParameter {
   parameterName!: string;
-  parameterValue!: any;
+  parameterValue!: unknown;
 }
 
 @ApiSchema({ name: "ToolCallRequest" })
