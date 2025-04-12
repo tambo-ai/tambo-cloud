@@ -11,7 +11,7 @@ export interface LegacyComponentDecision {
 
 export interface ComponentDecisionV2 {
   componentName: string | null;
-  props: Record<string, unknown>;
+  props: Record<string, unknown> | null;
   message: string;
   componentState: Record<string, unknown> | null;
   reasoning: string;
