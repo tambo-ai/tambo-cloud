@@ -2,12 +2,14 @@ import {
   formatTemplate,
   ObjectTemplate,
 } from "@libretto/openai/lib/src/template";
-import { TokenJS, StreamCompletionResponse } from "@libretto/token.js";
+import { StreamCompletionResponse, TokenJS } from "@libretto/token.js";
 import {
   ChatCompletionMessageParam,
   tryParseJsonObject,
 } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
+// Import as type for compatibility with response_format in OpenAI API
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ResponseFormatJSONObject } from "openai/resources";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { Provider } from "../../model/providers";
