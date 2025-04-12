@@ -1,6 +1,6 @@
 export interface LegacyComponentDecision {
   componentName: string | null;
-  props: any | null;
+  props: Record<string, unknown> | null;
   message: string;
   suggestedActions?: SuggestedAction[];
   toolCallRequest?: ToolCallRequest;
@@ -23,7 +23,7 @@ export interface ToolCallRequest {
   tool_call_id?: string;
   parameters: {
     parameterName: string;
-    parameterValue: any;
+    parameterValue: unknown;
   }[];
 }
 
