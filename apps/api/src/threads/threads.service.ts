@@ -244,6 +244,7 @@ export class ThreadsService {
           await this.emailService.sendMessageLimitNotification(
             projectId,
             ownerEmail,
+            project.name,
           );
 
           // Update the notification sent timestamp
