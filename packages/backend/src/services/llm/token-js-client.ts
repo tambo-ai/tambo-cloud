@@ -57,19 +57,20 @@ export class TokenJSClient implements LLMClient {
     );
 
     if (params.stream) {
+      // Type assertion is necessary due to incompatible ChatCompletionMessageParam types
+      // between @tambo-ai-cloud/core and @libretto/token.js
       const stream = await this.client.chat.completions.create({
         provider: this.provider,
         model: this.model,
-        messages: messagesFormatted,
+        messages: messagesFormatted as any, // Type assertion for compatibility
         temperature: 0,
-        response_format: extractResponseFormat(params),
+        response_format: extractResponseFormat(params) as any, // Type assertion for response_format compatibility
         tools: componentTools,
         tool_choice: params.tool_choice,
         libretto: {
           promptTemplateName: params.promptTemplateName,
           templateParams: params.promptTemplateParams,
-          templateChat:
-            params.messages as OpenAI.Chat.Completions.ChatCompletionMessage[],
+          templateChat: params.messages as any, // Type assertion for compatibility
           chainId: this.chainId,
         },
         stream: true,
@@ -78,19 +79,20 @@ export class TokenJSClient implements LLMClient {
       return this.handleStreamingResponse(stream);
     }
 
+    // Type assertion is necessary due to incompatible ChatCompletionMessageParam types
+    // between @tambo-ai-cloud/core and @libretto/token.js
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,
-      messages: messagesFormatted,
+      messages: messagesFormatted as any, // Type assertion for compatibility
       temperature: 0,
-      response_format: extractResponseFormat(params),
+      response_format: extractResponseFormat(params) as any, // Type assertion for response_format compatibility
       tool_choice: params.tool_choice,
       tools: componentTools,
       libretto: {
         promptTemplateName: params.promptTemplateName,
         templateParams: params.promptTemplateParams,
-        templateChat:
-          params.messages as OpenAI.Chat.Completions.ChatCompletionMessage[],
+        templateChat: params.messages as any, // Type assertion for compatibility
         chainId: this.chainId,
       },
     });
@@ -102,7 +104,7 @@ export class TokenJSClient implements LLMClient {
   }
 
   private async *handleStreamingResponse(
-    stream: StreamCompletionResponse,
+    stream: any, // Using 'any' due to incompatible types between different OpenAI package versions
   ): AsyncIterableIterator<LLMResponse> {
     let accumulatedMessage = "";
     const accumulatedToolCall: {
@@ -111,6 +113,20 @@ export class TokenJSClient implements LLMClient {
       id?: string;
     } = {};
 
+    // Check if the stream is actually an AsyncIterable
+    if (!stream[Symbol.asyncIterator]) {
+      // Handle non-streaming response
+      if (stream.choices && stream.choices.length > 0) {
+        yield {
+          message: stream.choices[0].message,
+          index: 0,
+          logprobs: null,
+        };
+      }
+      return;
+    }
+
+    // Process the streaming response
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
       const toolCall = chunk.choices[0]?.delta?.tool_calls?.[0];
