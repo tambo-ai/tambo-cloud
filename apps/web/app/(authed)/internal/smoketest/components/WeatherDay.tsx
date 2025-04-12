@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import Image from "next/image";
 import {
   Select,
   SelectContent,
@@ -72,18 +73,7 @@ export const WeatherDay = ({ data }: WeatherDayProps): ReactNode => {
             {data.date ? new Date(data.date).toLocaleDateString() : ""}
           </p>
           <div className="flex items-center gap-2">
-            {data.day?.condition?.icon && (
-              <img
-                src={data.day.condition.icon}
-                alt={data.day.condition?.text ?? "Weather condition"}
-                width={64}
-                height={64}
-              />
-            )}
-            <p className="text-sm text-muted-foreground">
-              {data.day?.condition?.text ?? ""}
-            </p>
-          </div>
+              <Image\n                src={data.day.condition.icon}\n                alt={data.day.condition?.text ?? "Weather condition"}\n                width={64}\n                height={64}\n                quality={85}\n              />
         </div>
 
         <div className="text-right">
