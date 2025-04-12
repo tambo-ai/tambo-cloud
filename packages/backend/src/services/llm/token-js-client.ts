@@ -1,15 +1,14 @@
 import {
   formatTemplate,
   ObjectTemplate,
-  StreamCompletionResponse,
-  ResponseFormatJSONObject,
 } from "@libretto/openai/lib/src/template";
-import { TokenJS } from "@libretto/token.js";
+import { TokenJS, StreamCompletionResponse } from "@libretto/token.js";
 import {
   ChatCompletionMessageParam,
   tryParseJsonObject,
 } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
+import { ResponseFormatJSONObject } from "openai/resources";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { Provider } from "../../model/providers";
 import {
