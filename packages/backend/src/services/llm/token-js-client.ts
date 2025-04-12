@@ -1,6 +1,8 @@
 import {
   formatTemplate,
   ObjectTemplate,
+  StreamCompletionResponse,
+  ResponseFormatJSONObject,
 } from "@libretto/openai/lib/src/template";
 import { TokenJS } from "@libretto/token.js";
 import {
@@ -63,12 +65,12 @@ export class TokenJSClient implements LLMClient {
       const stream = await this.client.chat.completions.create({
         provider: this.provider,
         model: this.model,
-        messages: messagesFormatted as any,
+        messages: messagesFormatted,
         temperature: 0,
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
         // and @libretto/token.js interface requirements
-        response_format: extractResponseFormat(params) as any,
+        response_format: extractResponseFormat(params),
         tools: componentTools,
         tool_choice: params.tool_choice,
         libretto: {
@@ -77,7 +79,7 @@ export class TokenJSClient implements LLMClient {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore - Type assertion needed for templateChat due to the same incompatibility
           // with ChatCompletionMessageParam types between packages
-          templateChat: params.messages as any,
+          templateChat: params.messages,
           chainId: this.chainId,
         },
         stream: true,
@@ -93,12 +95,12 @@ export class TokenJSClient implements LLMClient {
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,
-      messages: messagesFormatted as any,
+      messages: messagesFormatted,
       temperature: 0,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
       // and @libretto/token.js interface requirements
-      response_format: extractResponseFormat(params) as any,
+      response_format: extractResponseFormat(params),
       tool_choice: params.tool_choice,
       tools: componentTools,
       libretto: {
@@ -107,7 +109,7 @@ export class TokenJSClient implements LLMClient {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Type assertion needed for templateChat due to the same incompatibility
         // with ChatCompletionMessageParam types between packages
-        templateChat: params.messages as any,
+        templateChat: params.messages,
         chainId: this.chainId,
       },
     });
@@ -119,11 +121,7 @@ export class TokenJSClient implements LLMClient {
   }
 
   private async *handleStreamingResponse(
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - Using 'any' type due to incompatible stream response types between
-    // different versions of the OpenAI SDK and @libretto/token.js. The stream object structure
-    // is dynamically checked for compatibility during processing.
-    stream: any,
+    stream: StreamCompletionResponse,
   ): AsyncIterableIterator<LLMResponse> {
     let accumulatedMessage = "";
     const accumulatedToolCall: {
@@ -131,19 +129,6 @@ export class TokenJSClient implements LLMClient {
       arguments?: string;
       id?: string;
     } = {};
-
-    // Check if the stream is actually an AsyncIterable
-    if (!stream[Symbol.asyncIterator]) {
-      // Handle non-streaming response
-      if (stream.choices && stream.choices.length > 0) {
-        yield {
-          message: stream.choices[0].message,
-          index: 0,
-          logprobs: null,
-        };
-      }
-      return;
-    }
 
     // Process the streaming response
     for await (const chunk of stream) {
