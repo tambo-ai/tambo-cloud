@@ -1,4 +1,7 @@
-import { formatTemplate } from "@libretto/openai/lib/src/template";
+import {
+  formatTemplate,
+  ObjectTemplate,
+} from "@libretto/openai/lib/src/template";
 import { StreamCompletionResponse, TokenJS } from "@libretto/token.js";
 import {
   ChatCompletionMessageParam,
@@ -198,7 +201,10 @@ function tryFormatTemplate(
   promptTemplateParams: Record<string, unknown>,
 ) {
   try {
-    return formatTemplate(messages as any, promptTemplateParams);
+    return formatTemplate(
+      messages as ObjectTemplate<ChatCompletionMessageParam[]>,
+      promptTemplateParams,
+    );
   } catch (_e) {
     return messages;
   }
