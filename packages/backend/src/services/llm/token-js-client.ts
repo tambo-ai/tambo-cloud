@@ -77,10 +77,8 @@ export class TokenJSClient implements LLMClient {
         libretto: {
           promptTemplateName: params.promptTemplateName,
           templateParams: params.promptTemplateParams,
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore - Type assertion needed for templateChat due to the same incompatibility
-          // with ChatCompletionMessageParam types between packages
-          templateChat: params.messages,
+          templateChat:
+            params.messages as OpenAI.Chat.Completions.ChatCompletionMessage[],
           chainId: this.chainId,
         },
         stream: true,
@@ -109,10 +107,8 @@ export class TokenJSClient implements LLMClient {
       libretto: {
         promptTemplateName: params.promptTemplateName,
         templateParams: params.promptTemplateParams,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - Type assertion needed for templateChat due to the same incompatibility
-        // with ChatCompletionMessageParam types between packages
-        templateChat: params.messages,
+        templateChat:
+          params.messages as OpenAI.Chat.Completions.ChatCompletionMessage[],
         chainId: this.chainId,
       },
     });
