@@ -57,21 +57,20 @@ export class TokenJSClient implements LLMClient {
     );
 
     if (params.stream) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore - Type assertion is necessary due to incompatible ChatCompletionMessageParam types
+      // Type assertion is necessary due to incompatible ChatCompletionMessageParam types
       // between @tambo-ai-cloud/core and @libretto/token.js. The underlying structure is compatible,
       // but TypeScript cannot verify this compatibility between the different package versions.
       const stream = await this.client.chat.completions.create({
         provider: this.provider,
         model: this.model,
-        messages: messagesFormatted,
+        messages:
+          messagesFormatted as unknown as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
         temperature: 0,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
+        // Type assertion needed for response_format due to differences in OpenAI SDK versions
         // and @libretto/token.js interface requirements
         response_format: extractResponseFormat(
           params,
-        ) as ResponseFormatJSONObject,
+        ) as unknown as ResponseFormatJSONObject,
         tools: componentTools,
         tool_choice: params.tool_choice,
         libretto: {
@@ -87,21 +86,20 @@ export class TokenJSClient implements LLMClient {
       return this.handleStreamingResponse(stream);
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - Type assertion is necessary due to incompatible ChatCompletionMessageParam types
+    // Type assertion is necessary due to incompatible ChatCompletionMessageParam types
     // between @tambo-ai-cloud/core and @libretto/token.js. The underlying structure is compatible,
     // but TypeScript cannot verify this compatibility between the different package versions.
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,
-      messages: messagesFormatted,
+      messages:
+        messagesFormatted as unknown as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
       temperature: 0,
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
+      // Type assertion needed for response_format due to differences in OpenAI SDK versions
       // and @libretto/token.js interface requirements
       response_format: extractResponseFormat(
         params,
-      ) as ResponseFormatJSONObject,
+      ) as unknown as ResponseFormatJSONObject,
       tool_choice: params.tool_choice,
       tools: componentTools,
       libretto: {
