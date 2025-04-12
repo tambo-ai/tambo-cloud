@@ -18,6 +18,9 @@ import { SubscribeForm, SubscribeFormProps } from "./SubscribeForm";
 export function TamboSubscribeIntegration() {
   const { registerComponent, thread } = useTambo();
   const contextKey = "subscribe-form";
+  // This hook is still necessary even though we don't use its return values directly.
+  // It registers the thread input context with the Tambo system, which is required
+  // for the MessageInput component below to function properly with the same contextKey.
   useTamboThreadInput(contextKey);
   const { sendThreadMessage } = useTamboThread();
   const isRegistered = useRef(false);
