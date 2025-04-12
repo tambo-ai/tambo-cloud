@@ -49,17 +49,23 @@ export async function decideComponent(
       ...availableComponentsArgs,
     },
   });
-  const decision = getLLMResponseToolCallRequest(
+  const decisionValue = getLLMResponseToolCallRequest(
     decisionResponse,
   )?.parameters.find(
     ({ parameterName }) => parameterName === "decision",
   )?.parameterValue;
 
-  const componentName = getLLMResponseToolCallRequest(
+  const decision =
+    typeof decisionValue === "string" ? decisionValue : undefined;
+
+  const componentNameValue = getLLMResponseToolCallRequest(
     decisionResponse,
   )?.parameters.find(
     ({ parameterName }) => parameterName === "component",
   )?.parameterValue;
+
+  const componentName =
+    typeof componentNameValue === "string" ? componentNameValue : undefined;
 
   // BUG: sometimes the component name is null, which is not a valid component name
   const shouldGenerate =
@@ -82,11 +88,21 @@ export async function decideComponent(
         `Component "${componentName}" not found, possibly hallucinated.`,
       );
     }
+
+    const reasoningValue = getLLMResponseToolCallRequest(
+      decisionResponse,
+    )?.parameters.find(
+      ({ parameterName }) => parameterName === "reasoning",
+    )?.parameterValue;
+
+    const reasoning =
+      typeof reasoningValue === "string"
+        ? reasoningValue
+        : getLLMResponseMessage(decisionResponse);
+
     return await handleNoComponentCase(
       llmClient,
-      getLLMResponseToolCallRequest(decisionResponse)?.parameters.find(
-        ({ parameterName }) => parameterName === "reasoning",
-      )?.parameterValue ?? getLLMResponseMessage(decisionResponse),
+      reasoning,
       context,
       threadId,
       stream,
