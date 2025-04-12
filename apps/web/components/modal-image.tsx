@@ -32,13 +32,13 @@ export function ModalImage({
       />
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="absolute z-100 top-0 left-0 max-w-[90vw] max-h-[90vh] p-0 overflow-hidden">
-          <Image 
-            src={src} 
-            alt={alt} 
-            width={1000} 
-            height={800} 
-            className="w-full h-full object-contain" 
-            quality={85} 
+          <Image
+            src={src}
+            alt={alt}
+            width={1000}
+            height={800}
+            className="w-full h-full object-contain"
+            quality={85}
           />
         </DialogContent>
       </Dialog>
