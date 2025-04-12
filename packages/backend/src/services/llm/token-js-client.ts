@@ -56,6 +56,7 @@ export class TokenJSClient implements LLMClient {
     );
 
     if (params.stream) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore - Type assertion is necessary due to incompatible ChatCompletionMessageParam types
       // between @tambo-ai-cloud/core and @libretto/token.js. The underlying structure is compatible,
       // but TypeScript cannot verify this compatibility between the different package versions.
@@ -64,6 +65,7 @@ export class TokenJSClient implements LLMClient {
         model: this.model,
         messages: messagesFormatted as any,
         temperature: 0,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
         // and @libretto/token.js interface requirements
         response_format: extractResponseFormat(params) as any,
@@ -72,6 +74,7 @@ export class TokenJSClient implements LLMClient {
         libretto: {
           promptTemplateName: params.promptTemplateName,
           templateParams: params.promptTemplateParams,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore - Type assertion needed for templateChat due to the same incompatibility
           // with ChatCompletionMessageParam types between packages
           templateChat: params.messages as any,
@@ -83,6 +86,7 @@ export class TokenJSClient implements LLMClient {
       return this.handleStreamingResponse(stream);
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore - Type assertion is necessary due to incompatible ChatCompletionMessageParam types
     // between @tambo-ai-cloud/core and @libretto/token.js. The underlying structure is compatible,
     // but TypeScript cannot verify this compatibility between the different package versions.
@@ -91,6 +95,7 @@ export class TokenJSClient implements LLMClient {
       model: this.model,
       messages: messagesFormatted as any,
       temperature: 0,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
       // and @libretto/token.js interface requirements
       response_format: extractResponseFormat(params) as any,
@@ -99,6 +104,7 @@ export class TokenJSClient implements LLMClient {
       libretto: {
         promptTemplateName: params.promptTemplateName,
         templateParams: params.promptTemplateParams,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Type assertion needed for templateChat due to the same incompatibility
         // with ChatCompletionMessageParam types between packages
         templateChat: params.messages as any,
@@ -113,6 +119,7 @@ export class TokenJSClient implements LLMClient {
   }
 
   private async *handleStreamingResponse(
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore - Using 'any' type due to incompatible stream response types between
     // different versions of the OpenAI SDK and @libretto/token.js. The stream object structure
     // is dynamically checked for compatibility during processing.
