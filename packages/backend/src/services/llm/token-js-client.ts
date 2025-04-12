@@ -69,7 +69,9 @@ export class TokenJSClient implements LLMClient {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
         // and @libretto/token.js interface requirements
-        response_format: extractResponseFormat(params),
+        response_format: extractResponseFormat(
+          params,
+        ) as ResponseFormatJSONObject,
         tools: componentTools,
         tool_choice: params.tool_choice,
         libretto: {
@@ -99,7 +101,9 @@ export class TokenJSClient implements LLMClient {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
       // and @libretto/token.js interface requirements
-      response_format: extractResponseFormat(params),
+      response_format: extractResponseFormat(
+        params,
+      ) as ResponseFormatJSONObject,
       tool_choice: params.tool_choice,
       tools: componentTools,
       libretto: {
