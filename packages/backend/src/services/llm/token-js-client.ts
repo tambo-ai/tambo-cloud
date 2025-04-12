@@ -56,7 +56,7 @@ export class TokenJSClient implements LLMClient {
     );
 
     if (params.stream) {
-      // @ts-expect-error - Type assertion is necessary due to incompatible ChatCompletionMessageParam types
+      // @ts-ignore - Type assertion is necessary due to incompatible ChatCompletionMessageParam types
       // between @tambo-ai-cloud/core and @libretto/token.js. The underlying structure is compatible,
       // but TypeScript cannot verify this compatibility between the different package versions.
       const stream = await this.client.chat.completions.create({
@@ -64,7 +64,7 @@ export class TokenJSClient implements LLMClient {
         model: this.model,
         messages: messagesFormatted as any,
         temperature: 0,
-        // @ts-expect-error - Type assertion needed for response_format due to differences in OpenAI SDK versions
+        // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
         // and @libretto/token.js interface requirements
         response_format: extractResponseFormat(params) as any,
         tools: componentTools,
@@ -72,7 +72,7 @@ export class TokenJSClient implements LLMClient {
         libretto: {
           promptTemplateName: params.promptTemplateName,
           templateParams: params.promptTemplateParams,
-          // @ts-expect-error - Type assertion needed for templateChat due to the same incompatibility
+          // @ts-ignore - Type assertion needed for templateChat due to the same incompatibility
           // with ChatCompletionMessageParam types between packages
           templateChat: params.messages as any,
           chainId: this.chainId,
@@ -83,7 +83,7 @@ export class TokenJSClient implements LLMClient {
       return this.handleStreamingResponse(stream);
     }
 
-    // @ts-expect-error - Type assertion is necessary due to incompatible ChatCompletionMessageParam types
+    // @ts-ignore - Type assertion is necessary due to incompatible ChatCompletionMessageParam types
     // between @tambo-ai-cloud/core and @libretto/token.js. The underlying structure is compatible,
     // but TypeScript cannot verify this compatibility between the different package versions.
     const response = await this.client.chat.completions.create({
@@ -91,7 +91,7 @@ export class TokenJSClient implements LLMClient {
       model: this.model,
       messages: messagesFormatted as any,
       temperature: 0,
-      // @ts-expect-error - Type assertion needed for response_format due to differences in OpenAI SDK versions
+      // @ts-ignore - Type assertion needed for response_format due to differences in OpenAI SDK versions
       // and @libretto/token.js interface requirements
       response_format: extractResponseFormat(params) as any,
       tool_choice: params.tool_choice,
@@ -99,7 +99,7 @@ export class TokenJSClient implements LLMClient {
       libretto: {
         promptTemplateName: params.promptTemplateName,
         templateParams: params.promptTemplateParams,
-        // @ts-expect-error - Type assertion needed for templateChat due to the same incompatibility
+        // @ts-ignore - Type assertion needed for templateChat due to the same incompatibility
         // with ChatCompletionMessageParam types between packages
         templateChat: params.messages as any,
         chainId: this.chainId,
@@ -113,7 +113,7 @@ export class TokenJSClient implements LLMClient {
   }
 
   private async *handleStreamingResponse(
-    // @ts-expect-error - Using 'any' type due to incompatible stream response types between
+    // @ts-ignore - Using 'any' type due to incompatible stream response types between
     // different versions of the OpenAI SDK and @libretto/token.js. The stream object structure
     // is dynamically checked for compatibility during processing.
     stream: any,
