@@ -57,13 +57,16 @@ export class TokenJSClient implements LLMClient {
     );
 
     if (params.stream) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore - Type incompatibilities between ChatCompletionMessageParam types from different module paths
       const stream = await this.client.chat.completions.create({
         provider: this.provider,
         model: this.model,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Type incompatibilities between ChatCompletionMessageParam types from different module paths
         messages: messagesFormatted,
         temperature: 0,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - ResponseFormatJSONObject incompatibility between different OpenAI SDK versions
         response_format: extractResponseFormat(params),
         tools: componentTools,
@@ -71,6 +74,7 @@ export class TokenJSClient implements LLMClient {
         libretto: {
           promptTemplateName: params.promptTemplateName,
           templateParams: params.promptTemplateParams,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore - Type incompatibilities between ChatCompletionMessage types from different module paths
           templateChat: params.messages,
           chainId: this.chainId,
@@ -81,13 +85,16 @@ export class TokenJSClient implements LLMClient {
       return this.handleStreamingResponse(stream);
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore - Type incompatibilities between ChatCompletionMessageParam types from different module paths
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore - Type incompatibilities between ChatCompletionMessageParam types from different module paths
       messages: messagesFormatted,
       temperature: 0,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore - ResponseFormatJSONObject incompatibility between different OpenAI SDK versions
       response_format: extractResponseFormat(params),
       tool_choice: params.tool_choice,
@@ -95,6 +102,7 @@ export class TokenJSClient implements LLMClient {
       libretto: {
         promptTemplateName: params.promptTemplateName,
         templateParams: params.promptTemplateParams,
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore - Type incompatibilities between ChatCompletionMessage types from different module paths
         templateChat: params.messages,
         chainId: this.chainId,
