@@ -17,7 +17,7 @@ const Commands = {
 };
 
 function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
+  const [_copied, setCopied] = useState(false);
 
   const copy = async () => {
     await navigator.clipboard.writeText(text);

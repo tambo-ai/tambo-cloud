@@ -7,7 +7,7 @@ import { env } from "@/lib/env";
  * Improves FID (First Input Delay) by preloading critical scripts
  */
 export function PreloadResources() {
-  const baseUrl = env.NEXT_PUBLIC_APP_URL || siteConfig.url;
+  const _baseUrl = env.NEXT_PUBLIC_APP_URL || siteConfig.url;
 
   return (
     <>
