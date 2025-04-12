@@ -118,7 +118,7 @@ export class TokenJSClient implements LLMClient {
   }
 
   private async *handleStreamingResponse(
-    stream: StreamCompletionResponse,
+    response: StreamCompletionResponse | { choices: Array<LLMResponse> },
   ): AsyncIterableIterator<LLMResponse> {
     let accumulatedMessage = "";
     const accumulatedToolCall: {
@@ -127,58 +127,69 @@ export class TokenJSClient implements LLMClient {
       id?: string;
     } = {};
 
-    // Process the streaming response
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content;
-      const toolCall = chunk.choices[0]?.delta?.tool_calls?.[0];
-      const toolCallFunction = toolCall?.function;
-      if (content) {
-        accumulatedMessage += content;
-      }
+    // Check if response is an AsyncIterable (StreamCompletionResponse)
+    if (Symbol.asyncIterator in response) {
+      // Process the streaming response
+      for await (const chunk of response) {
+        const content = chunk.choices[0]?.delta?.content;
+        const toolCall = chunk.choices[0]?.delta?.tool_calls?.[0];
+        const toolCallFunction = toolCall?.function;
+        if (content) {
+          accumulatedMessage += content;
+        }
 
-      if (toolCall) {
-        if (toolCallFunction?.name) {
-          accumulatedToolCall.name = toolCallFunction.name;
+        if (toolCall) {
+          if (toolCallFunction?.name) {
+            accumulatedToolCall.name = toolCallFunction.name;
+          }
+          if (toolCall.id) {
+            accumulatedToolCall.id = toolCall.id;
+          }
+          if (toolCallFunction?.arguments) {
+            accumulatedToolCall.arguments =
+              (accumulatedToolCall.arguments || "") +
+              toolCallFunction.arguments;
+          }
         }
-        if (toolCall.id) {
-          accumulatedToolCall.id = toolCall.id;
-        }
-        if (toolCallFunction?.arguments) {
-          accumulatedToolCall.arguments =
-            (accumulatedToolCall.arguments || "") + toolCallFunction.arguments;
-        }
-      }
 
-      let toolCallRequest:
-        | OpenAI.Chat.Completions.ChatCompletionMessageToolCall
-        | undefined;
-      if (accumulatedToolCall.name && accumulatedToolCall.arguments) {
-        //don't return tool calls until they are complete and parseable
-        const toolArgs = tryParseJsonObject(
-          accumulatedToolCall.arguments,
-          false,
-        );
-        if (toolArgs) {
-          toolCallRequest = {
-            function: {
-              name: accumulatedToolCall.name,
-              arguments: accumulatedToolCall.arguments,
-            },
-            id: accumulatedToolCall.id ?? "",
-            type: "function",
-          };
+        let toolCallRequest:
+          | OpenAI.Chat.Completions.ChatCompletionMessageToolCall
+          | undefined;
+        if (accumulatedToolCall.name && accumulatedToolCall.arguments) {
+          //don't return tool calls until they are complete and parseable
+          const toolArgs = tryParseJsonObject(
+            accumulatedToolCall.arguments,
+            false,
+          );
+          if (toolArgs) {
+            toolCallRequest = {
+              function: {
+                name: accumulatedToolCall.name,
+                arguments: accumulatedToolCall.arguments,
+              },
+              id: accumulatedToolCall.id ?? "",
+              type: "function",
+            };
+          }
         }
-      }
 
-      yield {
-        message: {
-          content: accumulatedMessage,
-          role: "assistant",
-          tool_calls: toolCallRequest ? [toolCallRequest] : undefined,
-        },
-        index: 0,
-        logprobs: null,
-      };
+        yield {
+          message: {
+            content: accumulatedMessage,
+            role: "assistant",
+            tool_calls: toolCallRequest ? [toolCallRequest] : undefined,
+          },
+          index: 0,
+          logprobs: null,
+        };
+      }
+    } else {
+      // Handle non-streaming response
+      if (response.choices && response.choices.length > 0) {
+        yield response.choices[0];
+      } else {
+        throw new Error("No choices returned from TokenJS");
+      }
     }
   }
 }
