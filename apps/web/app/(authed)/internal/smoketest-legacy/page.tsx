@@ -223,11 +223,6 @@ interface WeatherDay {
 
 interface WeatherDayProps {
   readonly data: WeatherDay;
-
-
-
-interface WeatherDayProps {
-  readonly data: WeatherDay;
 }
 
 const WeatherDay = ({ data }: WeatherDayProps): React.ReactNode => {
@@ -279,8 +274,8 @@ const WeatherDay = ({ data }: WeatherDayProps): React.ReactNode => {
       </div>
     </Card>
   );
-
 };
+
 interface AirQualityProps {
   readonly data: {
     aqi: number;
@@ -290,6 +285,7 @@ interface AirQualityProps {
     no2: number;
   };
 }
+
 const AirQuality = ({ data }: AirQualityProps): React.ReactNode => {
   const getAqiLevel = (aqi: number) => {
     if (aqi <= 50) return "Good";
