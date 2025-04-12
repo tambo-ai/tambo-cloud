@@ -18,7 +18,8 @@ import { SubscribeForm, SubscribeFormProps } from "./SubscribeForm";
 export function TamboSubscribeIntegration() {
   const { registerComponent, thread } = useTambo();
   const contextKey = "subscribe-form";
-  const { _setValue, _submit } = useTamboThreadInput(contextKey);
+  const { setValue: _setValue, submit: _submit } =
+    useTamboThreadInput(contextKey);
   const { sendThreadMessage } = useTamboThread();
   const isRegistered = useRef(false);
   const hasMessageBeenSent = useRef(false);
