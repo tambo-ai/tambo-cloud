@@ -7,7 +7,7 @@ import { AvailableComponents } from "../model/component-metadata";
 
 const ajv = new Ajv({ strict: true });
 
-function isValidJSONSchema(schema: any) {
+function isValidJSONSchema(schema: unknown) {
   if (!schema || typeof schema !== "object") {
     return false;
   }
