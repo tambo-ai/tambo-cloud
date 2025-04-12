@@ -62,9 +62,7 @@ export class TokenJSClient implements LLMClient {
         model: this.model,
         messages: messagesFormatted,
         temperature: 0,
-        response_format: extractResponseFormat(
-          params,
-        ) as ResponseFormatJSONObject,
+        response_format: extractResponseFormat(params),
         tools: componentTools,
         tool_choice: params.tool_choice,
         libretto: {
@@ -85,9 +83,7 @@ export class TokenJSClient implements LLMClient {
       model: this.model,
       messages: messagesFormatted,
       temperature: 0,
-      response_format: extractResponseFormat(
-        params,
-      ) as ResponseFormatJSONObject,
+      response_format: extractResponseFormat(params),
       tool_choice: params.tool_choice,
       tools: componentTools,
       libretto: {
@@ -201,10 +197,17 @@ function tryFormatTemplate(
   promptTemplateParams: Record<string, unknown>,
 ) {
   try {
-    return formatTemplate(
-      messages as ObjectTemplate<ChatCompletionMessageParam[]>,
+    // Create a wrapper object that's compatible with ObjectTemplate
+    const template = { messages };
+    
+    // Format the template with the wrapper object
+    const formattedTemplate = formatTemplate(
+      template as ObjectTemplate<typeof template>,
       promptTemplateParams,
     );
+    
+    // Return the formatted messages
+    return formattedTemplate.messages;
   } catch (_e) {
     return messages;
   }
