@@ -204,9 +204,10 @@ export class ThreadsService {
   }
 
   private async checkMessageLimit(projectId: string): Promise<void> {
-    const usage = await this.getDb().query.projectMessageUsage.findFirst({
-      where: eq(schema.projectMessageUsage.projectId, projectId),
-    });
+    const usage = await operations.getProjectMessageUsage(
+      this.getDb(),
+      projectId,
+    );
 
     // Check if we're using the fallback key
     const project = await this.projectsService.findOneWithKeys(projectId);
@@ -218,12 +219,9 @@ export class ThreadsService {
 
     if (!usage) {
       // Create initial usage record
-      await this.getDb()
-        .insert(schema.projectMessageUsage)
-        .values({
-          projectId,
-          messageCount: usingFallbackKey ? 1 : 0,
-        });
+      await operations.updateProjectMessageUsage(this.getDb(), projectId, {
+        messageCount: usingFallbackKey ? 1 : 0,
+      });
       return;
     }
 
@@ -248,12 +246,9 @@ export class ThreadsService {
           );
 
           // Update the notification sent timestamp
-          await this.getDb()
-            .update(schema.projectMessageUsage)
-            .set({
-              notificationSentAt: new Date(),
-            })
-            .where(eq(schema.projectMessageUsage.projectId, projectId));
+          await operations.updateProjectMessageUsage(this.getDb(), projectId, {
+            notificationSentAt: new Date(),
+          });
         }
       }
 
@@ -271,13 +266,7 @@ export class ThreadsService {
 
     // Only increment message count if using fallback key
     if (usingFallbackKey) {
-      await this.getDb()
-        .update(schema.projectMessageUsage)
-        .set({
-          messageCount: usage.messageCount + 1,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.projectMessageUsage.projectId, projectId));
+      await operations.incrementMessageCount(this.getDb(), projectId);
     }
   }
 
