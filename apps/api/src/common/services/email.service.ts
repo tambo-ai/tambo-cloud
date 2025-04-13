@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Resend } from "resend";
+import { FREE_MESSAGE_LIMIT } from "../../threads/types/errors";
 
 @Injectable()
 export class EmailService {
@@ -48,7 +49,7 @@ export class EmailService {
                         <td>
                           <h1 style="color: #111827; font-size: 24px; font-weight: 600; margin: 0 0 20px;">Message Limit Reached</h1>
                           <p style="color: #374151; font-size: 16px; line-height: 24px; margin: 0 0 20px;">
-                            You've reached your free message limit of 500 messages for your project:
+                            You've reached your free message limit of ${FREE_MESSAGE_LIMIT} messages for your project:
                           </p>
                           <div style="background-color: #F3F4F6; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
                             <strong style="color: #111827; font-size: 18px;">${projectName}</strong>

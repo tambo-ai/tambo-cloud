@@ -1,10 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { generateChainId, TamboBackend } from "@tambo-ai-cloud/backend";
 import {
@@ -40,6 +34,8 @@ import { SuggestionDto } from "./dto/suggestion.dto";
 import { SuggestionsGenerateDto } from "./dto/suggestions-generate.dto";
 import { Thread, ThreadRequest, ThreadWithMessagesDto } from "./dto/thread.dto";
 import {
+  FREE_MESSAGE_LIMIT,
+  FreeLimitReachedError,
   InvalidSuggestionRequestError,
   SuggestionGenerationError,
   SuggestionNotFoundException,
@@ -47,8 +43,6 @@ import {
 
 @Injectable()
 export class ThreadsService {
-  private readonly FREE_MESSAGE_LIMIT = 500;
-
   constructor(
     // @Inject(TRANSACTION)
     // private readonly tx: HydraDatabase,
@@ -225,7 +219,7 @@ export class ThreadsService {
       return;
     }
 
-    if (!usage.hasApiKey && usage.messageCount >= this.FREE_MESSAGE_LIMIT) {
+    if (!usage.hasApiKey && usage.messageCount >= FREE_MESSAGE_LIMIT) {
       // Only send email if we haven't sent one before
       if (!usage.notificationSentAt) {
         // Get project owner's email from auth.users
@@ -252,16 +246,7 @@ export class ThreadsService {
         }
       }
 
-      throw new HttpException(
-        {
-          message:
-            "You have used all 500 free messages. To continue using this service, please contact your provider or, if you are the developer, set up your OpenAI API key at https://tambo.co/dashboard.",
-          type: "FREE_LIMIT_REACHED",
-          limit: this.FREE_MESSAGE_LIMIT,
-          settingsUrl: "https://tambo.co/dashboard",
-        },
-        HttpStatus.PAYMENT_REQUIRED,
-      );
+      throw new FreeLimitReachedError();
     }
 
     // Only increment message count if using fallback key
