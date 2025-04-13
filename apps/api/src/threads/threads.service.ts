@@ -431,6 +431,9 @@ export class ThreadsService {
         })),
       );
 
+      this.logger.log(
+        `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`,
+      );
       return savedSuggestions.map(this.mapSuggestionToDto);
     } catch (error: unknown) {
       const errorMessage =
