@@ -20,6 +20,24 @@ import {
   StreamingCompleteParams,
 } from "./llm-client";
 
+/**
+ * Validates and transforms message roles to ensure they are supported by the OpenAI API.
+ * Unsupported roles (like 'chat_history') are converted to 'user' role.
+ */
+function validateMessageRole(message: ChatCompletionMessageParam): ChatCompletionMessageParam {
+  const validRoles = ['system', 'assistant', 'user', 'function', 'tool', 'developer'];
+  
+  if (!validRoles.includes(message.role)) {
+    // Convert unsupported roles (including 'chat_history') to 'user'
+    return {
+      ...message,
+      role: 'user',
+    };
+  }
+  
+  return message;
+}
+
 export class TokenJSClient implements LLMClient {
   private client: TokenJS;
 
@@ -234,9 +252,10 @@ function tryFormatTemplate(
       promptTemplateParams,
     );
 
-    // Return the formatted messages
-    return formattedTemplate.messages;
+    // Validate message roles before returning
+    return formattedTemplate.messages.map(validateMessageRole);
   } catch (_e) {
-    return messages;
+    // If formatting fails, validate the original messages
+    return messages.map(validateMessageRole);
   }
 }
