@@ -51,7 +51,10 @@ export async function finishInProgressMessage(
     statusMessage: string;
   },
   logger?: Logger,
-): Promise<{ resultingGenerationStage: any; resultingStatusMessage: any }> {
+): Promise<{
+  resultingGenerationStage: GenerationStage;
+  resultingStatusMessage: string;
+}> {
   try {
     const result = await db.transaction(
       async (tx) => {
