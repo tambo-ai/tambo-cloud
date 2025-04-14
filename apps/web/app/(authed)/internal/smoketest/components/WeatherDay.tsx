@@ -77,7 +77,6 @@ export const WeatherDay = ({ data }: WeatherDayProps): ReactNode => {
               // Check if the icon URL is protocol-relative (starts with '//')
               // If so, use a regular img tag instead of Next.js Image component
               (data.day.condition.icon.startsWith("//") ? (
-                // @ts-expect-error - Using regular img tag for protocol-relative URLs
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={data.day.condition.icon}
