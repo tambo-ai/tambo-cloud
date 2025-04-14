@@ -68,7 +68,25 @@ export class MCPClient {
 
     while (hasMore) {
       const response = await this.client.listTools({ cursor }, {});
-      allTools.push(...response.tools);
+      allTools.push(
+        ...response.tools.map((tool): MCPToolSpec => {
+          if (
+            tool.inputSchema.type !== "object" ||
+            !tool.inputSchema.properties ||
+            typeof tool.inputSchema.properties !== "object"
+          ) {
+            throw new Error(
+              `Input schema for tool ${tool.name} is not an object`,
+            );
+          }
+
+          return {
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema as JSONSchema7,
+          };
+        }),
+      );
 
       if (response.nextCursor) {
         cursor = response.nextCursor;

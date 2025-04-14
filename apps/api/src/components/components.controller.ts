@@ -185,6 +185,7 @@ export class ComponentsController {
         toolResponse,
         undefined,
         resolvedThreadId,
+        [],
       );
 
       await this.threadsService.updateGenerationStage(

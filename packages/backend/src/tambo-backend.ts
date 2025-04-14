@@ -143,6 +143,7 @@ export default class TamboBackend {
       threadId,
       stream,
       version: this.version,
+      systemTools,
     });
   }
 }

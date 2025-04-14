@@ -75,6 +75,7 @@ export async function decideComponent(
       availableComponents: context.availableComponents,
       threadId,
       stream,
+      systemTools: [], // TODO: add system tools?
     });
   } else {
     if (componentName) {
