@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import {
   ActionType,
   ChatCompletionContentPart,
@@ -16,7 +17,6 @@ import type {
 } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
-import { CorrelationLoggerService } from "src/common/services/logger.service";
 import { AdvanceThreadDto } from "./dto/advance-thread.dto";
 import {
   ChatCompletionContentPartDto,
@@ -50,10 +50,10 @@ export async function finishInProgressMessage(
     generationStage: GenerationStage;
     statusMessage: string;
   },
-  logger: CorrelationLoggerService,
+  logger?: Logger,
 ): Promise<{ resultingGenerationStage: any; resultingStatusMessage: any }> {
-  return await db
-    .transaction(
+  try {
+    const result = await db.transaction(
       async (tx) => {
         await verifyLatestMessageConsistency(
           tx,
@@ -88,21 +88,22 @@ export async function finishInProgressMessage(
       {
         isolationLevel: "read committed",
       },
-    )
-    .catch((error) => {
-      logger.error(
-        "Transaction failed: Finalizing streamed message",
-        error.stack,
-      );
-      throw error;
-    });
+    );
+    return result;
+  } catch (error) {
+    logger?.error(
+      "Transaction failed: Finalizing streamed message",
+      (error as Error).stack,
+    );
+    throw error;
+  }
 }
 export async function addInProgressMessage(
   db: HydraDb,
   threadId: string,
   addedUserMessage: ThreadMessageDto,
   toolCallId: string | undefined,
-  logger: CorrelationLoggerService,
+  logger: Logger,
 ) {
   try {
     const message = await db.transaction(
@@ -129,7 +130,7 @@ export async function addInProgressMessage(
     );
     return message;
   } catch (error) {
-    logger.error(
+    logger?.error(
       "Transaction failed: Creating in-progress message",
       (error as Error).stack,
     );
@@ -210,7 +211,7 @@ export async function addAssistantResponse(
   thread: Thread,
   addedUserMessage: AddedMessage,
   responseMessage: LegacyComponentDecision,
-  logger: CorrelationLoggerService,
+  logger?: Logger,
 ): Promise<{
   responseMessageDto: ThreadMessageDto;
   resultingGenerationStage: GenerationStage;
@@ -254,7 +255,7 @@ export async function addAssistantResponse(
 
     return result;
   } catch (error) {
-    logger.error(
+    logger?.error(
       "Transaction failed: Adding response to thread",
       (error as Error).stack,
     );
@@ -265,7 +266,7 @@ export async function addUserMessage(
   db: HydraDb,
   thread: Thread,
   advanceRequestDto: AdvanceThreadDto,
-  logger: CorrelationLoggerService,
+  logger?: Logger,
 ) {
   try {
     const result = await db.transaction(
@@ -306,7 +307,7 @@ export async function addUserMessage(
 
     return result;
   } catch (error) {
-    logger.error(
+    logger?.error(
       "Transaction failed: Adding user message",
       (error as Error).stack,
     );
