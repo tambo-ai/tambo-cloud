@@ -24,7 +24,7 @@ export class TokenJSClient implements LLMClient {
     private provider: Provider,
     private chainId: string,
   ) {
-    this.client = new TokenJS({ apiKey });
+    this.client = new TokenJS({ apiKey, refusal: null });
   }
 
   async complete(
