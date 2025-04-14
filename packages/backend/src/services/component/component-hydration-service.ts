@@ -4,6 +4,7 @@ import {
   LegacyComponentDecision,
   ThreadMessage,
 } from "@tambo-ai-cloud/core";
+import OpenAI from "openai";
 import { parse } from "partial-json";
 import { z } from "zod";
 import {
@@ -37,6 +38,7 @@ export async function hydrateComponent({
   threadId,
   stream,
   version = "v1",
+  systemTools: _systemTools,
 }: {
   llmClient: LLMClient;
   messageHistory: ThreadMessage[];
@@ -47,6 +49,7 @@ export async function hydrateComponent({
   threadId: string;
   stream?: boolean;
   version?: "v1" | "v2";
+  systemTools: OpenAI.Chat.Completions.ChatCompletionTool[];
 }): Promise<
   LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
 > {
@@ -62,7 +65,7 @@ export async function hydrateComponent({
   }
 
   //only define tools if we don't have a tool response
-  const tools = toolResponse
+  const userTools = toolResponse
     ? undefined
     : convertMetadataToTools(chosenComponent.contextTools);
 
@@ -128,7 +131,7 @@ To respond to the user's message:
       ...componentHydrationArgs,
       ...availableComponentsArgs,
     },
-    tools,
+    tools: userTools,
     jsonMode: true,
   };
 

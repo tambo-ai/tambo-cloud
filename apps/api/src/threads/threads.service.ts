@@ -13,6 +13,7 @@ import {
 import type { HydraDatabase } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
+import { getSystemTools } from "src/common/systemTools";
 import { decryptProviderKey } from "../common/key.utils";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { EmailService } from "../common/services/email.service";
@@ -514,6 +515,13 @@ export class ThreadsService {
       if (!componentDef) {
         throw new Error("Component definition not found");
       }
+
+      const {
+        composioClient: _composioClient,
+        mcpToolSources: _mcpToolSources,
+        tools,
+      } = await getSystemTools(this.getDb(), projectId);
+
       if (stream) {
         const streamedResponseMessage =
           await tamboBackend.hydrateComponentWithData(
@@ -522,6 +530,7 @@ export class ThreadsService {
             toolResponse,
             latestMessage.tool_call_id,
             thread.id,
+            tools,
             true,
           );
         return this.handleAdvanceThreadStream(
@@ -537,6 +546,7 @@ export class ThreadsService {
         toolResponse,
         latestMessage.tool_call_id,
         thread.id,
+        tools,
       );
     } else {
       await updateGenerationStage(

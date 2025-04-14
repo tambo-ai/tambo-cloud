@@ -1,6 +1,7 @@
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import { OpenAIToolSet } from "composio-core";
-import { MCPClient, MCPToolSpec } from "./MCPClient";
+import OpenAI from "openai";
+import { MCPClient } from "./MCPClient";
 
 /** Get the tools available for the project */
 export async function getSystemTools(db: HydraDatabase, projectId: string) {
@@ -11,8 +12,8 @@ export async function getSystemTools(db: HydraDatabase, projectId: string) {
     projectId,
   );
 
-  const mcpToolNames = mcpTools.map((tool) => tool.name);
-  const composioToolNames = composioTools.map((tool) => tool.name);
+  const mcpToolNames = mcpTools.map((tool) => tool.function.name);
+  const composioToolNames = composioTools.map((tool) => tool.function.name);
   // make sure there are no name conflicts
   const toolNames = [...mcpToolNames, ...composioToolNames];
   if (new Set(toolNames).size !== toolNames.length) {
@@ -35,12 +36,12 @@ async function getMcpTools(
   db: HydraDatabase,
   projectId: string,
 ): Promise<{
-  mcpTools: MCPToolSpec[];
+  mcpTools: OpenAI.Chat.Completions.ChatCompletionTool[];
   mcpToolSources: Record<string, MCPClient>;
 }> {
   const mcpServers = await operations.getProjectMcpServers(db, projectId);
 
-  const mcpTools: MCPToolSpec[] = [];
+  const mcpTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
   const mcpToolSources: Record<string, MCPClient> = {};
   for (const mcpServer of mcpServers) {
     if (!mcpServer.url) {
@@ -48,7 +49,18 @@ async function getMcpTools(
     }
     const mcpClient = await MCPClient.create(mcpServer.url);
     const tools = await mcpClient.listTools();
-    mcpTools.push(...tools);
+    mcpTools.push(
+      ...tools.map(
+        (tool): OpenAI.Chat.Completions.ChatCompletionTool => ({
+          type: "function",
+          function: {
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.inputSchema?.properties,
+          },
+        }),
+      ),
+    );
 
     for (const tool of tools) {
       mcpToolSources[tool.name] = mcpClient;
@@ -60,8 +72,11 @@ async function getMcpTools(
 async function getComposioTools(
   db: HydraDatabase,
   projectId: string,
-): Promise<{ composioTools: MCPToolSpec[]; composioClient: OpenAIToolSet }> {
-  const composioTools: MCPToolSpec[] = [];
+): Promise<{
+  composioTools: OpenAI.Chat.Completions.ChatCompletionTool[];
+  composioClient: OpenAIToolSet;
+}> {
+  const composioTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
   const composioApps = await operations.getComposioApps(db, projectId);
   const appIds = composioApps
     .map((app) => app.composioAppId)
@@ -72,9 +87,12 @@ async function getComposioTools(
 
   for (const tool of tools) {
     composioTools.push({
-      name: tool.function.name,
-      description: tool.function.description,
-      inputSchema: tool.function.parameters,
+      type: "function",
+      function: {
+        name: tool.function.name,
+        description: tool.function.description,
+        parameters: tool.function.parameters,
+      },
     });
   }
   return { composioTools, composioClient };

@@ -1,4 +1,5 @@
 import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
+import OpenAI from "openai";
 import {
   AvailableComponent,
   AvailableComponents,
@@ -109,6 +110,7 @@ export default class TamboBackend {
     toolResponse: ToolResponseBody,
     toolCallId: string | undefined,
     threadId: string,
+    systemTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     stream: true,
   ): Promise<AsyncIterableIterator<LegacyComponentDecision>>;
   public async hydrateComponentWithData(
@@ -117,6 +119,7 @@ export default class TamboBackend {
     toolResponse: ToolResponseBody,
     toolCallId: string | undefined,
     threadId: string,
+    systemTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     stream?: false | undefined,
   ): Promise<LegacyComponentDecision>;
   public async hydrateComponentWithData(
@@ -125,6 +128,7 @@ export default class TamboBackend {
     toolResponse: ToolResponseBody,
     toolCallId: string | undefined,
     threadId: string,
+    systemTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     stream?: boolean,
   ): Promise<
     LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
