@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/hooks/auth";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Animation variants
 const containerVariants = {
@@ -59,6 +60,8 @@ export default function CLIAuthPage() {
   });
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const { data: session, isLoading: isAuthLoading } = useSession();
+  const router = useRouter();
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // tRPC queries and mutations
   const projectsQuery = api.project.getUserProjects.useQuery(undefined, {
@@ -76,6 +79,15 @@ export default function CLIAuthPage() {
   );
 
   const steps = ["select a project", "generate key"];
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   const handleGenerate = useCallback(async () => {
     if (!selectedProjectId || isGenerating) return;
@@ -95,13 +107,27 @@ export default function CLIAuthPage() {
 
       setApiKey(result.apiKey);
 
+      // Clear existing timer if any
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+
       // Start countdown
-      const timer = setInterval(() => {
+      timerRef.current = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
-            clearInterval(timer);
-            setStep("select");
-            return 60;
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+
+            // Set countdown to 0 to show it before redirect
+            setTimeout(() => {
+              // Redirect to project page after showing 0
+              router.push(`/dashboard/${selectedProjectId}`);
+            }, 500);
+
+            return 0;
           }
           return prev - 1;
         });
@@ -111,7 +137,7 @@ export default function CLIAuthPage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [selectedProjectId, generateApiKeyMutation, isGenerating]);
+  }, [selectedProjectId, generateApiKeyMutation, isGenerating, router]);
 
   const handleProjectSelect = useCallback(
     (projectId: string) => {
@@ -131,6 +157,11 @@ export default function CLIAuthPage() {
   );
 
   const handleBack = useCallback(() => {
+    // Clear the timer when going back to project selection
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     setStep("select");
     setApiKey("");
     setCountdown(60);
