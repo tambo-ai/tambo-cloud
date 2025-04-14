@@ -58,6 +58,10 @@ const itemVariants = {
   },
 };
 
+const isValidOpenAIKey = (key: string): boolean => {
+  return !key || (key.startsWith("sk-") && key.length >= 51);
+};
+
 export function CreateProjectDialog({
   open,
   onOpenChange,
@@ -131,64 +135,88 @@ export function CreateProjectDialog({
                     </FormItem>
                   )}
                 />
+                <div className="space-y-1 p-2">
+                  <p className="text-xs text-muted-foreground">
+                    Start with 500 free messages, or add your own LLM Provider
+                    Key. You can add one at any time in the project settings.
+                  </p>
+                </div>
               </motion.div>
               <motion.div variants={itemVariants}>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full flex items-center justify-between p-2 hover:bg-muted"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                >
-                  <span className="text-sm font-medium">
-                    {showApiKey
-                      ? "Hide API Key"
-                      : "Use Custom API Key (Optional)"}
-                  </span>
-                  {showApiKey ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
+                <div>
+                  <label
+                    htmlFor="providerKey"
+                    className="flex justify-between items-center text-sm font-medium mb-2"
+                  >
+                    <span>LLM Provider (Optional)</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 -mr-2"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                    >
+                      {showApiKey ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </label>
+
+                  {showApiKey && (
+                    <motion.div
+                      variants={itemVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <FormField
+                        control={form.control}
+                        name="providerKey"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>OpenAI API Key</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="password"
+                                placeholder="sk-..."
+                                autoComplete="new-password"
+                                pattern="sk-.*"
+                                title="OpenAI API key must start with 'sk-'"
+                                onChange={(e) => {
+                                  const newKey = e.target.value;
+                                  if (newKey && !isValidOpenAIKey(newKey)) {
+                                    e.target.setCustomValidity(
+                                      "Please enter a valid OpenAI API key (starts with sk-)",
+                                    );
+                                  } else {
+                                    e.target.setCustomValidity("");
+                                  }
+                                  field.onChange(e);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Create or find your key in the{" "}
+                              <a
+                                href="https://platform.openai.com/settings/organization/api-keys"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-link"
+                              >
+                                OpenAI API keys page
+                              </a>
+                              .
+                            </p>
+                          </FormItem>
+                        )}
+                      />
+                    </motion.div>
                   )}
-                </Button>
+                </div>
               </motion.div>
-              {showApiKey && (
-                <motion.div
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  className="w-full flex items-center justify-between p-2"
-                >
-                  <FormField
-                    control={form.control}
-                    name="providerKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Your OpenAI API Key</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Provider API Key" />
-                        </FormControl>
-                        <FormMessage />
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Tambo will use your API key to make AI calls on your
-                          behalf until we implement our payment system.
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          You can find or create your API key in the{" "}
-                          <a
-                            href="https://platform.openai.com/settings/organization/api-keys"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-link"
-                          >
-                            OpenAI API keys page
-                          </a>
-                          .
-                        </p>
-                      </FormItem>
-                    )}
-                  />
-                </motion.div>
-              )}
               <motion.div variants={itemVariants} className="pt-2">
                 <DialogFooter>
                   <Button

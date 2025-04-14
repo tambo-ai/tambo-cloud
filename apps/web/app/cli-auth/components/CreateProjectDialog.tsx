@@ -97,11 +97,7 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
     <Dialog open={state.isOpen} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
-          <DialogDescription>
-            Enter a name for your new project. You can optionally add your
-            OpenAI API key.
-          </DialogDescription>
+          <DialogTitle className="font-heading">Create New Project</DialogTitle>
         </DialogHeader>
         <form
           className="py-4 space-y-4"
@@ -126,19 +122,22 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
               value={state.name}
               onChange={handleNameChange}
               onKeyDown={handleKeyDown}
-              placeholder="My Project"
+              placeholder="Project Name"
               className="w-full px-3 py-2 border rounded-md text-sm"
               autoFocus
               name="project-name"
             />
+            <p className="p-2 text-xs text-muted-foreground">
+              Start with 500 free messages, or add your own LLM Provider Key.
+              You can add one at any time in the project settings.
+            </p>
           </div>
-
           <div>
             <label
               htmlFor="providerKey"
               className="flex justify-between items-center text-sm font-medium mb-2"
             >
-              <span>OpenAI API Key (Optional)</span>
+              <span>LLM Provider (Optional)</span>
               <Button
                 type="button"
                 variant="ghost"
@@ -156,6 +155,12 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
 
             {showApiKey && (
               <div>
+                <label
+                  htmlFor="providerKey"
+                  className="text-sm font-medium block mb-2"
+                >
+                  OpenAI API Key
+                </label>
                 <input
                   id="providerKey"
                   type="password"
@@ -169,10 +174,8 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
                   pattern="sk-.*"
                   title="OpenAI API key must start with 'sk-'"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Optional: Add your OpenAI API key now or use 500 free messages
-                  first. You can add the key later in project settings. Create
-                  or find your key in the{" "}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Create or find your key in the{" "}
                   <a
                     href="https://platform.openai.com/settings/organization/api-keys"
                     target="_blank"
@@ -203,7 +206,7 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
                   Creating...
                 </>
               ) : (
-                "Create Project"
+                "Create"
               )}
             </Button>
           </DialogFooter>
