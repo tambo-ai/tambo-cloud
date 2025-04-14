@@ -133,20 +133,26 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full flex justify-between items-center py-2 text-sm font-medium"
-              onClick={() => setShowApiKey(!showApiKey)}
+          <div>
+            <label
+              htmlFor="providerKey"
+              className="flex justify-between items-center text-sm font-medium mb-2"
             >
-              <span>Add OpenAI API Key (Optional)</span>
-              {showApiKey ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
+              <span>OpenAI API Key (Optional)</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 -mr-2"
+                onClick={() => setShowApiKey(!showApiKey)}
+              >
+                {showApiKey ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </label>
 
             {showApiKey && (
               <div>
@@ -164,11 +170,9 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
                   title="OpenAI API key must start with 'sk-'"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Optional: Add your OpenAI API key now, or use 50 free messages
-                  first. You can add your key later in project settings.
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  You can find or create your API key in the{" "}
+                  Optional: Add your OpenAI API key now or use 500 free messages
+                  first. You can add the key later in project settings. Create
+                  or find your key in the{" "}
                   <a
                     href="https://platform.openai.com/settings/organization/api-keys"
                     target="_blank"
