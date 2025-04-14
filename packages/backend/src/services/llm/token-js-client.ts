@@ -23,19 +23,34 @@ import {
 /**
  * Validates and transforms message roles to ensure they are supported by the OpenAI API.
  * Unsupported roles (like 'chat_history') are converted to 'user' role.
+ * Ensures content is properly defined according to the role requirements.
  */
 function validateMessageRole(message: ChatCompletionMessageParam): ChatCompletionMessageParam {
   const validRoles = ['system', 'assistant', 'user', 'function', 'tool', 'developer'];
   
-  if (!validRoles.includes(message.role)) {
-    // Convert unsupported roles (including 'chat_history') to 'user'
-    return {
-      ...message,
-      role: 'user',
-    };
+  // Create a copy of the message
+  const validatedMessage = { ...message };
+  
+  // Convert unsupported roles to 'user'
+  if (!validRoles.includes(validatedMessage.role)) {
+    validatedMessage.role = 'user';
   }
   
-  return message;
+  // Handle undefined content
+  if (validatedMessage.content === undefined) {
+    // For 'assistant' with tool_calls or function_call, content can be null
+    if (validatedMessage.role === 'assistant' && (
+      validatedMessage.tool_calls || 
+      ('function_call' in validatedMessage && validatedMessage.function_call)
+    )) {
+      validatedMessage.content = null;
+    } else {
+      // For all other roles, provide an empty string
+      validatedMessage.content = "";
+    }
+  }
+  
+  return validatedMessage;
 }
 
 export class TokenJSClient implements LLMClient {
