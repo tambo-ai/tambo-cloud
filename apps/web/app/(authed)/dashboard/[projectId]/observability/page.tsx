@@ -1,6 +1,5 @@
 "use client";
 
-import { Header } from "@/components/sections/header";
 import { ThreadList } from "@/components/thread/thread-list";
 import { ThreadMessages } from "@/components/thread/thread-messages";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
+import { motion } from "framer-motion";
 import { RefreshCw } from "lucide-react";
 import { use, useEffect, useId, useState } from "react";
 
@@ -18,6 +18,27 @@ interface ProjectPageProps {
     projectId: string;
   }>;
 }
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      duration: 0.3,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.5 },
+  },
+};
 
 export default function ProjectPage({ params }: ProjectPageProps) {
   const { projectId } = use(params);
@@ -82,40 +103,33 @@ export default function ProjectPage({ params }: ProjectPageProps) {
 
   if (isLoadingProject) {
     return (
-      <div className="container">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <Card className="h-32 animate-pulse" />
-      </div>
+      </motion.div>
     );
   }
 
   if (!project) {
     return (
-      <div className="container">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <Card className="p-6">
           <h2 className="text-lg font-semibold">Project not found</h2>
         </Card>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="container flex flex-col min-h-screen">
-      <Header showDashboardButton showLogoutButton />
-
-      {/* Project Metadata */}
-      <div className="my-6 p-6 border rounded-lg">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">{project.name}</h1>
-            <p className="text-sm text-muted-foreground">ID: {project.id}</p>
-          </div>
-        </div>
-      </div>
-
+    <motion.div
+      className="flex flex-col"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
       {/* Main Content Area */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Thread List */}
-        <div className="border rounded-lg p-4">
+        <motion.div className="border rounded-lg p-4" variants={itemVariants}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Threads</h2>
             <Button
@@ -143,10 +157,10 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               isLoading={isLoadingThreads}
             />
           )}
-        </div>
+        </motion.div>
 
         {/* Thread Messages */}
-        <div className="border rounded-lg p-4">
+        <motion.div className="border rounded-lg p-4" variants={itemVariants}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold mb-4">Messages</h2>
             <div className="flex items-center gap-2">
@@ -167,8 +181,8 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               Select a thread to view messages
             </p>
           )}
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

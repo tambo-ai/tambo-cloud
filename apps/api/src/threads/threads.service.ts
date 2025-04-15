@@ -1,8 +1,8 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { generateChainId, TamboBackend } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
-  ChatCompletionContentPart,
   ComponentDecisionV2,
   ContentPartType,
   GenerationStage,
@@ -10,12 +10,12 @@ import {
   MessageRole,
   ThreadMessage,
 } from "@tambo-ai-cloud/core";
-import type { HydraDatabase, HydraTransaction } from "@tambo-ai-cloud/db";
+import type { HydraDatabase } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
-import type { DBSuggestion } from "@tambo-ai-cloud/db/src/schema";
 import { eq } from "drizzle-orm";
 import { decryptProviderKey } from "../common/key.utils";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
+import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
 import { AvailableComponentDto } from "../components/dto/generate-component.dto";
 import { ProjectsService } from "../projects/projects.service";
@@ -23,15 +23,25 @@ import {
   AdvanceThreadDto,
   AdvanceThreadResponseDto,
 } from "./dto/advance-thread.dto";
-import {
-  ChatCompletionContentPartDto,
-  MessageRequest,
-  ThreadMessageDto,
-} from "./dto/message.dto";
+import { MessageRequest, ThreadMessageDto } from "./dto/message.dto";
 import { SuggestionDto } from "./dto/suggestion.dto";
 import { SuggestionsGenerateDto } from "./dto/suggestions-generate.dto";
 import { Thread, ThreadRequest, ThreadWithMessagesDto } from "./dto/thread.dto";
 import {
+  addAssistantResponse,
+  addInProgressMessage,
+  addMessage,
+  addUserMessage,
+  convertContentPartToDto,
+  extractToolResponse,
+  finishInProgressMessage,
+  threadMessageDtoToThreadMessage,
+  updateGenerationStage,
+  updateMessage,
+} from "./threads.utils";
+import {
+  FREE_MESSAGE_LIMIT,
+  FreeLimitReachedError,
   InvalidSuggestionRequestError,
   SuggestionGenerationError,
   SuggestionNotFoundException,
@@ -46,6 +56,8 @@ export class ThreadsService {
     private readonly db: HydraDatabase,
     private projectsService: ProjectsService,
     private readonly logger: CorrelationLoggerService,
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   getDb() {
@@ -73,7 +85,7 @@ export class ThreadsService {
     }
 
     // Get the provider key from the database
-    const { providerKey } = await this.validateProjectAndProviderKeys(
+    const providerKey = await this.validateProjectAndProviderKeys(
       threadData.projectId,
     );
 
@@ -179,51 +191,82 @@ export class ThreadsService {
     id: string,
     generationStage: GenerationStage,
     statusMessage?: string,
-    tx?: HydraTransaction,
   ) {
-    return await operations.updateThread(tx ?? this.getDb(), id, {
+    return await updateGenerationStage(
+      this.getDb(),
+      id,
       generationStage,
       statusMessage,
-    });
+    );
   }
 
   async remove(id: string) {
     return await operations.deleteThread(this.getDb(), id);
   }
 
+  private async checkMessageLimit(projectId: string): Promise<void> {
+    const usage = await operations.getProjectMessageUsage(
+      this.getDb(),
+      projectId,
+    );
+
+    // Check if we're using the fallback key
+    const project = await this.projectsService.findOneWithKeys(projectId);
+    if (!project) {
+      throw new NotFoundException("Project not found");
+    }
+    const providerKeys = project.getProviderKeys();
+    const usingFallbackKey = !providerKeys?.length;
+
+    if (!usage) {
+      // Create initial usage record
+      await operations.updateProjectMessageUsage(this.getDb(), projectId, {
+        messageCount: usingFallbackKey ? 1 : 0,
+      });
+      return;
+    }
+
+    if (!usage.hasApiKey && usage.messageCount >= FREE_MESSAGE_LIMIT) {
+      // Only send email if we haven't sent one before
+      if (!usage.notificationSentAt) {
+        // Get project owner's email from auth.users
+        const projectOwner = await this.getDb().query.projectMembers.findFirst({
+          where: eq(schema.projectMembers.projectId, projectId),
+          with: {
+            user: true,
+          },
+        });
+
+        const ownerEmail = projectOwner?.user?.email;
+
+        if (ownerEmail) {
+          await this.emailService.sendMessageLimitNotification(
+            projectId,
+            ownerEmail,
+            project.name,
+          );
+
+          // Update the notification sent timestamp
+          await operations.updateProjectMessageUsage(this.getDb(), projectId, {
+            notificationSentAt: new Date(),
+          });
+        }
+      }
+
+      throw new FreeLimitReachedError();
+    }
+
+    // Only increment message count if using fallback key
+    if (usingFallbackKey) {
+      await operations.incrementMessageCount(this.getDb(), projectId);
+    }
+  }
+
   async addMessage(
     threadId: string,
     messageDto: MessageRequest,
-    tx?: HydraTransaction,
   ): Promise<ThreadMessageDto> {
-    const message = await operations.addMessage(tx ?? this.getDb(), {
-      threadId,
-      role: messageDto.role,
-      content: convertContentDtoToContentPart(messageDto.content),
-      componentDecision: messageDto.component ?? undefined,
-      metadata: messageDto.metadata,
-      actionType: messageDto.actionType ?? undefined,
-      toolCallRequest: messageDto.toolCallRequest ?? undefined,
-      toolCallId: messageDto?.tool_call_id,
-      componentState: messageDto.componentState ?? {},
-    });
-    return {
-      id: message.id,
-      threadId,
-      role: message.role,
-      content: convertContentPartToDto(message.content),
-      metadata: message.metadata ?? undefined,
-      component: message.componentDecision ?? undefined,
-      actionType: message.actionType ?? undefined,
-      createdAt: message.createdAt,
-      toolCallRequest: message.toolCallRequest ?? undefined,
-      tool_call_id: message.toolCallId ?? undefined,
-      componentState: message.componentState ?? {},
-      // TODO: promote suggestionActions to the message level in the db, this is just
-      // relying on the internal ComponentDecision type
-      // suggestions: (message.componentDecision as ComponentDecision)
-      //   ?.suggestedActions,
-    };
+    return await addMessage(this.getDb(), threadId, messageDto);
   }
 
   async getMessages(
@@ -245,34 +288,6 @@ export class ThreadsService {
       componentState: message.componentState ?? {},
       component: message.componentDecision as ComponentDecisionV2 | undefined,
     }));
-  }
-
-  async updateMessage(
-    messageId: string,
-    messageDto: MessageRequest,
-    tx?: HydraTransaction,
-  ): Promise<ThreadMessageDto> {
-    const message = await operations.updateMessage(
-      tx ?? this.getDb(),
-      messageId,
-      {
-        content: convertContentDtoToContentPart(messageDto.content),
-        componentDecision: messageDto.component ?? undefined,
-        metadata: messageDto.metadata,
-        actionType: messageDto.actionType ?? undefined,
-        toolCallRequest: messageDto.toolCallRequest,
-        toolCallId: messageDto.tool_call_id ?? undefined,
-      },
-    );
-    return {
-      ...message,
-      content: convertContentPartToDto(message.content),
-      metadata: message.metadata ?? undefined,
-      toolCallRequest: message.toolCallRequest ?? undefined,
-      tool_call_id: message.toolCallId ?? undefined,
-      actionType: message.actionType ?? undefined,
-      componentState: message.componentState ?? {},
-    };
   }
 
   async deleteMessage(messageId: string) {
@@ -320,7 +335,7 @@ export class ThreadsService {
       this.logger.log(
         `Found ${suggestions.length} suggestions for message: ${messageId}`,
       );
-      return suggestions.map(this.mapSuggestionToDto);
+      return suggestions.map(mapSuggestionToDto);
     } catch (error: unknown) {
       if (error instanceof SuggestionNotFoundException) {
         throw error;
@@ -370,7 +385,7 @@ export class ThreadsService {
       this.logger.log(
         `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`,
       );
-      return savedSuggestions.map(this.mapSuggestionToDto);
+      return savedSuggestions.map(mapSuggestionToDto);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -384,15 +399,6 @@ export class ThreadsService {
         availableComponents: generateSuggestionsDto.availableComponents,
       });
     }
-  }
-
-  private mapSuggestionToDto(suggestion: DBSuggestion): SuggestionDto {
-    return {
-      id: suggestion.id,
-      messageId: suggestion.messageId,
-      title: suggestion.title,
-      detailedSuggestion: suggestion.detailedSuggestion,
-    };
   }
 
   async updateComponentState(
@@ -431,6 +437,8 @@ export class ThreadsService {
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
+    await this.checkMessageLimit(projectId);
+
     const thread = await this.ensureThread(
       projectId,
       threadId,
@@ -438,49 +446,12 @@ export class ThreadsService {
     );
 
     // Ensure only one request per thread adds its user message and continues
-    const addedUserMessage = await this.getDb()
-      .transaction(
-        async (tx) => {
-          const [currentThread] = await tx
-            .select()
-            .from(schema.threads)
-            .where(eq(schema.threads.id, thread.id))
-            .for("update");
-
-          if (
-            currentThread.generationStage ===
-              GenerationStage.STREAMING_RESPONSE ||
-            currentThread.generationStage ===
-              GenerationStage.HYDRATING_COMPONENT ||
-            currentThread.generationStage === GenerationStage.CHOOSING_COMPONENT
-          ) {
-            throw new Error(
-              "Thread is already in processing, only one response can be generated at a time",
-            );
-          }
-
-          await operations.updateThread(tx, thread.id, {
-            generationStage: GenerationStage.CHOOSING_COMPONENT,
-            statusMessage: "Starting processing...",
-          });
-
-          return await this.addMessage(
-            thread.id,
-            advanceRequestDto.messageToAppend,
-            tx,
-          );
-        },
-        {
-          isolationLevel: "repeatable read",
-        },
-      )
-      .catch((error) => {
-        this.logger.error(
-          "Transaction failed: Adding user message",
-          error.stack,
-        );
-        throw error;
-      });
+    const addedUserMessage = await addUserMessage(
+      this.getDb(),
+      thread,
+      advanceRequestDto,
+      this.logger,
+    );
 
     // Use the shared method to create the TamboBackend instance
     const tamboBackend = await this.createHydraBackendForThread(thread.id, {
@@ -523,7 +494,8 @@ export class ThreadsService {
     let responseMessage: LegacyComponentDecision;
 
     if (latestMessage.role === MessageRole.Tool) {
-      await this.updateGenerationStage(
+      await updateGenerationStage(
+        this.getDb(),
         thread.id,
         GenerationStage.HYDRATING_COMPONENT,
         `Hydrating ${latestMessage.component?.componentName}...`,
@@ -568,7 +540,8 @@ export class ThreadsService {
         );
       }
     } else {
-      await this.updateGenerationStage(
+      await updateGenerationStage(
+        this.getDb(),
         thread.id,
         GenerationStage.CHOOSING_COMPONENT,
         `Choosing component...`,
@@ -597,92 +570,24 @@ export class ThreadsService {
       }
     }
 
+    const db = this.getDb();
     const {
       responseMessageDto,
       resultingGenerationStage,
       resultingStatusMessage,
-    } = await this.getDb()
-      .transaction(
-        async (tx) => {
-          await this.verifyLatestMessageConsistency(
-            tx,
-            thread.id,
-            addedUserMessage,
-          );
-
-          const responseMessageDto = await this.addResponseToThread(
-            thread.id,
-            responseMessage,
-            tx,
-          );
-
-          const resultingGenerationStage = responseMessage.toolCallRequest
-            ? GenerationStage.FETCHING_CONTEXT
-            : GenerationStage.COMPLETE;
-          const resultingStatusMessage = responseMessage.toolCallRequest
-            ? `Fetching context...`
-            : `Generation complete`;
-
-          await this.updateGenerationStage(
-            thread.id,
-            resultingGenerationStage,
-            resultingStatusMessage,
-            tx,
-          );
-
-          return {
-            responseMessageDto,
-            resultingGenerationStage,
-            resultingStatusMessage,
-          };
-        },
-        {
-          isolationLevel: "repeatable read",
-        },
-      )
-      .catch((error) => {
-        this.logger.error(
-          "Transaction failed: Adding response to thread",
-          error.stack,
-        );
-        throw error;
-      });
+    } = await addAssistantResponse(
+      db,
+      thread,
+      addedUserMessage,
+      responseMessage,
+      this.logger,
+    );
 
     return {
       responseMessageDto,
       generationStage: resultingGenerationStage,
       statusMessage: resultingStatusMessage,
     };
-  }
-
-  private async verifyLatestMessageConsistency(
-    tx: HydraTransaction,
-    threadId: string,
-    addedUserMessage: ThreadMessageDto,
-    inProgressMessageId?: string,
-  ) {
-    const latestMessages = await tx.query.messages.findMany({
-      where: eq(schema.messages.threadId, threadId),
-      orderBy: (messages, { desc }) => [desc(messages.createdAt)],
-    });
-
-    // If we have an in-progress message (streaming), we need to check the message before it
-    // Otherwise, we check the latest message
-    const messageToCheck = inProgressMessageId
-      ? latestMessages[1] // Check message before our in-progress message
-      : latestMessages[0]; // Check latest message directly
-
-    if (
-      !(
-        messageToCheck.id === addedUserMessage.id &&
-        messageToCheck.createdAt.toISOString() ===
-          addedUserMessage.createdAt.toISOString()
-      )
-    ) {
-      throw new Error(
-        "Latest message before write is not the same as the added user message",
-      );
-    }
   }
 
   private async *handleAdvanceThreadStream(
@@ -701,50 +606,20 @@ export class ThreadsService {
     let lastUpdateTime = 0;
     const updateIntervalMs = 500;
 
-    await this.updateGenerationStage(
+    await updateGenerationStage(
+      this.getDb(),
       threadId,
       GenerationStage.STREAMING_RESPONSE,
       `Streaming response...`,
     );
 
-    const inProgressMessage = await this.getDb()
-      .transaction(
-        async (tx) => {
-          await this.verifyLatestMessageConsistency(
-            tx,
-            threadId,
-            addedUserMessage,
-          );
-
-          return await this.addMessage(
-            threadId,
-            {
-              role: MessageRole.Assistant,
-              content: [
-                {
-                  type: ContentPartType.Text,
-                  text: "streaming in progress...",
-                },
-              ],
-              actionType: undefined,
-              toolCallRequest: undefined,
-              tool_call_id: toolCallId,
-              metadata: {},
-            },
-            tx,
-          );
-        },
-        {
-          isolationLevel: "repeatable read",
-        },
-      )
-      .catch((error) => {
-        this.logger.error(
-          "Transaction failed: Creating in-progress message",
-          error.stack,
-        );
-        throw error;
-      });
+    const inProgressMessage = await addInProgressMessage(
+      this.getDb(),
+      threadId,
+      addedUserMessage,
+      toolCallId,
+      this.logger,
+    );
 
     for await (const chunk of stream) {
       finalResponse = {
@@ -773,7 +648,8 @@ export class ThreadsService {
 
       // Update db message on interval
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
-        await this.updateMessage(
+        await updateMessage(
+          this.getDb(),
           inProgressMessage.id,
           finalResponse!.responseMessageDto,
         );
@@ -789,50 +665,14 @@ export class ThreadsService {
 
     if (finalResponse) {
       const { resultingGenerationStage, resultingStatusMessage } =
-        await this.getDb()
-          .transaction(
-            async (tx) => {
-              await this.verifyLatestMessageConsistency(
-                tx,
-                threadId,
-                addedUserMessage,
-                inProgressMessage.id,
-              );
-
-              await this.updateMessage(
-                inProgressMessage.id,
-                finalResponse.responseMessageDto,
-                tx,
-              );
-
-              const resultingGenerationStage = finalResponse.responseMessageDto
-                .toolCallRequest
-                ? GenerationStage.FETCHING_CONTEXT
-                : GenerationStage.COMPLETE;
-              const resultingStatusMessage = finalResponse.responseMessageDto
-                .toolCallRequest
-                ? `Fetching context...`
-                : `Complete`;
-
-              await this.updateGenerationStage(
-                threadId,
-                resultingGenerationStage,
-                resultingStatusMessage,
-                tx,
-              );
-              return { resultingGenerationStage, resultingStatusMessage };
-            },
-            {
-              isolationLevel: "read committed",
-            },
-          )
-          .catch((error) => {
-            this.logger.error(
-              "Transaction failed: Finalizing streamed message",
-              error.stack,
-            );
-            throw error;
-          });
+        await finishInProgressMessage(
+          this.getDb(),
+          threadId,
+          addedUserMessage,
+          inProgressMessage,
+          finalResponse,
+          this.logger,
+        );
 
       yield {
         responseMessageDto: finalResponse.responseMessageDto,
@@ -868,135 +708,44 @@ export class ThreadsService {
     return newThread;
   }
 
-  private async validateProjectAndProviderKeys(projectId: string) {
+  private async validateProjectAndProviderKeys(
+    projectId: string,
+  ): Promise<string> {
     const project = await this.projectsService.findOneWithKeys(projectId);
     if (!project) {
       throw new NotFoundException("Project not found");
     }
+
     const providerKeys = project.getProviderKeys();
+
+    // If no provider keys are set, use the fallback key
     if (!providerKeys?.length) {
-      throw new NotFoundException("No provider keys found for project");
+      const fallbackKey = this.configService.get("FALLBACK_OPENAI_API_KEY");
+      if (!fallbackKey) {
+        throw new NotFoundException(
+          "No provider keys found for project and no fallback key configured",
+        );
+      }
+      return fallbackKey;
     }
+
+    // Use the last provider key if available
     const providerKey =
-      providerKeys[providerKeys.length - 1].providerKeyEncrypted; // Use the last provider key
+      providerKeys[providerKeys.length - 1].providerKeyEncrypted;
     if (!providerKey) {
       throw new NotFoundException("No provider key found for project");
     }
-    return decryptProviderKey(providerKey);
-  }
 
-  private async addResponseToThread(
-    threadId: string,
-    component: LegacyComponentDecision,
-    tx?: HydraTransaction,
-  ) {
-    // Make sure to only include the fields that are needed for message history
-    const serializedMessage: ComponentDecisionV2 = {
-      message: component.message,
-      componentName: component.componentName,
-      props: component.props,
-      componentState: component.componentState,
-      reasoning: component.reasoning,
-    };
-    return await this.addMessage(
-      threadId,
-      {
-        role: MessageRole.Assistant,
-        content: [
-          {
-            type: ContentPartType.Text,
-            text: component.message,
-          },
-        ],
-        component: serializedMessage,
-        actionType: component.toolCallRequest ? ActionType.ToolCall : undefined,
-        toolCallRequest: component.toolCallRequest,
-        tool_call_id: component.toolCallRequest?.tool_call_id,
-        componentState: component.componentState ?? {},
-      },
-      tx,
-    );
+    const { providerKey: decryptedKey } = decryptProviderKey(providerKey);
+    return decryptedKey;
   }
 }
 
-function convertContentDtoToContentPart(
-  content: string | ChatCompletionContentPartDto[],
-): ChatCompletionContentPart[] {
-  if (!Array.isArray(content)) {
-    return [{ type: ContentPartType.Text, text: content }];
-  }
-  return content.map((part): ChatCompletionContentPart => {
-    switch (part.type) {
-      case ContentPartType.Text:
-        if (!part.text) {
-          throw new Error("Text content is required for text type");
-        }
-        return {
-          type: ContentPartType.Text,
-          text: part.text,
-        };
-      case ContentPartType.ImageUrl:
-        return {
-          type: ContentPartType.ImageUrl,
-          image_url: part.image_url ?? {
-            url: "",
-            detail: "auto",
-          },
-        };
-      case ContentPartType.InputAudio:
-        return {
-          type: ContentPartType.InputAudio,
-          input_audio: part.input_audio ?? {
-            data: "",
-            format: "wav",
-          },
-        };
-      default:
-        throw new Error(`Unknown content part type: ${part.type}`);
-    }
-  });
-}
-
-function threadMessageDtoToThreadMessage(
-  messages: ThreadMessageDto[],
-): ThreadMessage[] {
-  return messages.map(
-    (message): ThreadMessage => ({
-      ...message,
-      content: convertContentDtoToContentPart(message.content),
-    }),
-  );
-}
-
-function convertContentPartToDto(
-  part: ChatCompletionContentPart[] | string,
-): ChatCompletionContentPartDto[] {
-  if (typeof part === "string") {
-    return [{ type: ContentPartType.Text, text: part }];
-  }
-  return part as ChatCompletionContentPartDto[];
-}
-
-function extractToolResponse(message: MessageRequest): any {
-  // need to prioritize toolResponse over content, because that is where the API started.
-  if (message.toolResponse) {
-    return message.toolResponse;
-  }
-  if (message.content.every((part) => part.type === ContentPartType.Text)) {
-    return tryParseJson(message.content.map((part) => part.text).join(""));
-  }
-  return null;
-}
-
-function tryParseJson(text: string): any {
-  // we are assuming that JSON is only ever an object or an array,
-  // so we don't need to check for other types of JSON structures
-  if (!text.startsWith("{") && !text.startsWith("[")) {
-    return text;
-  }
-  try {
-    return JSON.parse(text);
-  } catch (_error) {
-    return text;
-  }
+function mapSuggestionToDto(suggestion: schema.DBSuggestion): SuggestionDto {
+  return {
+    id: suggestion.id,
+    messageId: suggestion.messageId,
+    title: suggestion.title,
+    detailedSuggestion: suggestion.detailedSuggestion,
+  };
 }

@@ -7,6 +7,7 @@ import {
   ChatCompletionContentPart,
   GenerationStage,
   MessageRole,
+  ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -199,6 +200,20 @@ export const providerKeyRelations = relations(providerKeys, ({ one }) => ({
   }),
 }));
 
+export const projectMessageUsage = pgTable(
+  "project_message_usage",
+  ({ text, timestamp, integer, boolean }) => ({
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    messageCount: integer("message_count").notNull().default(0),
+    hasApiKey: boolean("has_api_key").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    notificationSentAt: timestamp("notification_sent_at"),
+  }),
+);
+
 export const projectRelations = relations(projects, ({ many, one }) => ({
   members: many(projectMembers),
   apiKeys: many(apiKeys),
@@ -206,6 +221,10 @@ export const projectRelations = relations(projects, ({ many, one }) => ({
   creator: one(authUsers, {
     fields: [projects.creatorId],
     references: [authUsers.id],
+  }),
+  messageUsage: one(projectMessageUsage, {
+    fields: [projects.id],
+    references: [projectMessageUsage.projectId],
   }),
   toolProviders: many(toolProviders),
 }));
@@ -331,11 +350,6 @@ export const contacts = pgTable("contacts", ({ text, timestamp, uuid }) => ({
     .notNull(),
 }));
 
-enum ToolProviderType {
-  COMPOSIO = "composio",
-  MCP = "mcp",
-}
-
 export const toolProviders = pgTable(
   "tool_providers",
   ({ text, timestamp }) => ({
@@ -354,10 +368,10 @@ export const toolProviders = pgTable(
       .defaultNow()
       .notNull(),
     type: text("type", {
-      enum: Object.values<string>(ToolProviderType) as [ToolProviderType],
+      enum: Object.values(ToolProviderType) as [ToolProviderType],
     }).notNull(),
-    url: text("url").notNull(),
-    composio_app_name: text("composio_app_name"),
+    url: text("url"),
+    composioAppId: text("composio_app_id"),
   }),
 );
 
