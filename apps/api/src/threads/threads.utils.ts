@@ -23,7 +23,6 @@ import {
   MessageRequest,
   ThreadMessageDto,
 } from "./dto/message.dto";
-import { Thread } from "./dto/thread.dto";
 
 /** TODO: align with ThreadMessage */
 interface AddedMessage {
@@ -211,7 +210,7 @@ export async function updateGenerationStage(
 }
 export async function addAssistantResponse(
   db: HydraDatabase,
-  thread: Thread,
+  threadId: string,
   addedUserMessage: AddedMessage,
   responseMessage: LegacyComponentDecision,
   logger?: Logger,
@@ -223,12 +222,12 @@ export async function addAssistantResponse(
   try {
     const result = await db.transaction(
       async (tx) => {
-        await verifyLatestMessageConsistency(tx, thread.id, addedUserMessage);
+        await verifyLatestMessageConsistency(tx, threadId, addedUserMessage);
 
         const responseMessageDto = await addResponseToThread(
           tx,
           responseMessage,
-          thread.id,
+          threadId,
         );
 
         const resultingGenerationStage = responseMessage.toolCallRequest
@@ -240,7 +239,7 @@ export async function addAssistantResponse(
 
         await updateGenerationStage(
           tx ?? db,
-          thread.id,
+          threadId,
           resultingGenerationStage,
           resultingStatusMessage,
         );

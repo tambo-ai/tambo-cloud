@@ -9,6 +9,7 @@ import {
   LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
+  ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import type { HydraDatabase } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
@@ -427,14 +428,14 @@ export class ThreadsService {
    * Advance the thread by one step.
    * @param projectId - The project ID.
    * @param advanceRequestDto - The advance request DTO, including optional message to append, context key, and available components.
-   * @param threadId - The thread ID.
+   * @param unresolvedThreadId - The thread ID, if any
    * @param stream - Whether to stream the response.
    * @returns The the generated response thread message, generation stage, and status message.
    */
   async advanceThread(
     projectId: string,
     advanceRequestDto: AdvanceThreadDto,
-    threadId?: string,
+    unresolvedThreadId?: string,
     stream?: boolean,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
@@ -443,7 +444,7 @@ export class ThreadsService {
 
     const thread = await this.ensureThread(
       projectId,
-      threadId,
+      unresolvedThreadId,
       advanceRequestDto.contextKey,
     );
 
@@ -510,18 +511,121 @@ export class ThreadsService {
       );
     }
 
-    let responseMessage: LegacyComponentDecision;
     const {
       composioClient: _composioClient,
       mcpToolSources: mcpToolSources,
       tools: systemTools,
     } = await getSystemTools(db, projectId);
 
+    const responseMessage = await this.handleUnstreamedResponse(
+      latestMessage,
+      db,
+      thread.id,
+      advanceRequestDto,
+      tamboBackend,
+      messages,
+      systemTools,
+      availableComponentMap,
+    );
+    const {
+      responseMessageDto,
+      resultingGenerationStage,
+      resultingStatusMessage,
+    } = await addAssistantResponse(
+      db,
+      thread.id,
+      addedUserMessage,
+      responseMessage,
+      this.logger,
+    );
+
+    const toolCallRequest = responseMessage.toolCallRequest;
+    if (toolCallRequest && mcpToolSources[toolCallRequest.toolName]) {
+      return await this.handleMcpToolCall(
+        toolCallRequest,
+        mcpToolSources,
+        responseMessage,
+        advanceRequestDto,
+        projectId,
+        thread.id,
+      );
+    }
+
+    return {
+      responseMessageDto,
+      generationStage: resultingGenerationStage,
+      statusMessage: resultingStatusMessage,
+    };
+  }
+
+  private async handleMcpToolCall(
+    toolCallRequest: ToolCallRequest,
+    mcpToolSources: Record<string, MCPClient>,
+    componentDecision: LegacyComponentDecision,
+    advanceRequestDto: AdvanceThreadDto,
+    projectId: string,
+    threadId: string,
+  ): Promise<
+    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
+  > {
+    const toolCallId = toolCallRequest.tool_call_id;
+    const toolSource = mcpToolSources[toolCallRequest.toolName];
+    console.log(
+      "here is where I call the tool source: ",
+      toolCallRequest.toolName,
+      toolCallId,
+    );
+    const result = await toolSource.callTool(
+      toolCallRequest.toolName,
+      Object.fromEntries(
+        toolCallRequest.parameters.map((p) => [
+          p.parameterName,
+          p.parameterValue,
+        ]),
+      ),
+    );
+    console.log("back from the tool: ", result);
+    const messageWithToolResponse: AdvanceThreadDto = {
+      messageToAppend: {
+        actionType: ActionType.ToolResponse,
+        component: componentDecision,
+        role: MessageRole.Tool,
+        content: [
+          {
+            type: ContentPartType.Text,
+            text: JSON.stringify(result),
+          },
+        ],
+      },
+      additionalContext: advanceRequestDto.additionalContext,
+      availableComponents: advanceRequestDto.availableComponents,
+      contextKey: advanceRequestDto.contextKey,
+    };
+
+    return await this.advanceThread(
+      projectId,
+      messageWithToolResponse,
+      threadId,
+      false,
+    );
+  }
+
+  private async handleUnstreamedResponse(
+    latestMessage: ThreadMessageDto,
+    db: HydraDatabase,
+    threadId: string,
+    advanceRequestDto: AdvanceThreadDto,
+    tamboBackend: TamboBackend,
+    messages: ThreadMessageDto[],
+    systemTools,
+    availableComponentMap: Record<string, AvailableComponentDto>,
+  ): Promise<LegacyComponentDecision> {
+    let responseMessage: LegacyComponentDecision;
     // Not streaming, so we can just return the response message
     if (latestMessage.role === MessageRole.Tool) {
       await updateGenerationStage(
         db,
-        thread.id,
+        threadId,
         GenerationStage.HYDRATING_COMPONENT,
         `Hydrating ${latestMessage.component?.componentName}...`,
       );
@@ -545,14 +649,14 @@ export class ThreadsService {
         componentDef,
         toolResponse,
         latestMessage.tool_call_id,
-        thread.id,
+        threadId,
         systemTools,
       );
     } else {
       console.log("Choosing component...");
       await updateGenerationStage(
         db,
-        thread.id,
+        threadId,
         GenerationStage.CHOOSING_COMPONENT,
         `Choosing component...`,
       );
@@ -560,79 +664,13 @@ export class ThreadsService {
       responseMessage = await tamboBackend.generateComponent(
         threadMessageDtoToThreadMessage(messages),
         availableComponentMap,
-        thread.id,
+        threadId,
         systemTools,
         false,
         advanceRequestDto.additionalContext,
       );
     }
-    const {
-      responseMessageDto,
-      resultingGenerationStage,
-      resultingStatusMessage,
-    } = await addAssistantResponse(
-      db,
-      thread,
-      addedUserMessage,
-      responseMessage,
-      this.logger,
-    );
-
-    const toolCallRequest = responseMessage.toolCallRequest;
-    if (toolCallRequest && mcpToolSources[toolCallRequest.toolName]) {
-      const toolCallId = toolCallRequest.tool_call_id;
-      const toolSource = mcpToolSources[toolCallRequest.toolName];
-      console.log(
-        "here is where I call the tool source: ",
-        toolCallRequest.toolName,
-        toolCallId,
-      );
-      const result = await toolSource.callTool(
-        toolCallRequest.toolName,
-        Object.fromEntries(
-          toolCallRequest.parameters.map((p) => [
-            p.parameterName,
-            p.parameterValue,
-          ]),
-        ),
-      );
-      console.log("back from the tool: ", result);
-      const messageWithToolResponse: AdvanceThreadDto = {
-        messageToAppend: {
-          actionType: ActionType.ToolResponse,
-          component: {
-            componentName: responseMessage.componentName,
-            componentState: responseMessage.componentState,
-            reasoning: responseMessage.reasoning,
-            props: responseMessage.props,
-            message: responseMessage.message,
-          },
-          role: MessageRole.Tool,
-          content: [
-            {
-              type: ContentPartType.Text,
-              text: JSON.stringify(result),
-            },
-          ],
-        },
-        additionalContext: advanceRequestDto.additionalContext,
-        availableComponents: advanceRequestDto.availableComponents,
-        contextKey: advanceRequestDto.contextKey,
-      };
-
-      return await this.advanceThread(
-        projectId,
-        messageWithToolResponse,
-        thread.id,
-        false,
-      );
-    }
-
-    return {
-      responseMessageDto,
-      generationStage: resultingGenerationStage,
-      statusMessage: resultingStatusMessage,
-    };
+    return responseMessage;
   }
 
   private async handleStreamingResponse(
@@ -690,8 +728,8 @@ export class ThreadsService {
         streamedResponseMessage,
         addedUserMessage,
         mcpToolSources,
-        latestMessage.tool_call_id,
         advanceRequestDto,
+        latestMessage.tool_call_id,
       );
     }
 
@@ -723,7 +761,6 @@ export class ThreadsService {
       streamedResponseMessage,
       addedUserMessage,
       mcpToolSources,
-      undefined,
       advanceRequestDto,
     );
   }
@@ -734,8 +771,8 @@ export class ThreadsService {
     stream: AsyncIterableIterator<LegacyComponentDecision>,
     addedUserMessage: ThreadMessageDto,
     mcpTools: Record<string, MCPClient> = {},
+    originalRequest: AdvanceThreadDto,
     toolCallId?: string,
-    originalRequest?: AdvanceThreadDto,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     let finalResponse:
       | {
@@ -828,72 +865,20 @@ export class ThreadsService {
       toolCallRequest?.tool_call_id,
       toolCallRequest && toolCallRequest.toolName in mcpTools,
     );
-    if (toolCallRequest && mcpTools[toolCallRequest.toolName]) {
-      const functionName = toolCallRequest.toolName;
-      const toolCallId = finalResponse.responseMessageDto.tool_call_id;
-      const toolSource = mcpTools[functionName];
-      console.log(
-        "here is where I call the tool source: ",
-        functionName,
-        toolCallId,
-      );
-      const result = await toolSource.callTool(
-        functionName,
-        Object.fromEntries(
-          toolCallRequest.parameters.map((p) => [
-            p.parameterName,
-            p.parameterValue,
-          ]),
-        ),
-      );
-      console.log("back from the tool: ", result);
-      const component = finalResponse.responseMessageDto.component;
-      if (!component) {
-        throw new Error(
-          `Component not generated for tool call ${toolCallRequest.toolName}`,
-        );
-      }
-      const messageWithToolResponse: AdvanceThreadDto = {
-        messageToAppend: {
-          actionType: ActionType.ToolResponse,
-          component: {
-            componentName: component.componentName,
-            componentState: component.componentState,
-            reasoning: component.reasoning,
-            props: component.props,
-            message: component.message,
-          },
-          role: MessageRole.Tool,
-          content: [
-            {
-              type: ContentPartType.Text,
-              text: JSON.stringify(result),
-            },
-          ],
-        },
-        additionalContext: originalRequest?.additionalContext,
-        availableComponents: originalRequest?.availableComponents,
-        contextKey: originalRequest?.contextKey,
-      };
-      console.log("streaming next message...", messageWithToolResponse);
-
-      // now pretend like the tool call is a user message
-      const nextStream = await this.advanceThread(
+    const componentDecision = finalResponse.responseMessageDto.component;
+    if (
+      componentDecision &&
+      toolCallRequest &&
+      mcpTools[toolCallRequest.toolName]
+    ) {
+      return await this.handleMcpToolCall(
+        toolCallRequest,
+        mcpTools,
+        componentDecision,
+        originalRequest,
         projectId,
-        messageWithToolResponse,
         threadId,
-        true,
       );
-      console.log("got stream: ", nextStream);
-      for await (const chunk of nextStream as AsyncIterableIterator<AdvanceThreadResponseDto>) {
-        console.log(
-          "yielding advanceThread response chunk...",
-          chunk.responseMessageDto.component?.componentName,
-          chunk.responseMessageDto.content[0]?.text,
-        );
-        yield chunk;
-      }
-      return;
     }
 
     yield {
