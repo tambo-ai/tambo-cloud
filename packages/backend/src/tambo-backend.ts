@@ -8,6 +8,7 @@ import { InputContext, InputContextAsArray } from "./model/input-context";
 import { Provider } from "./model/providers";
 import { decideComponent } from "./services/component/component-decision-service";
 import { hydrateComponent } from "./services/component/component-hydration-service";
+import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
 import { TokenJSClient } from "./services/llm/token-js-client";
 import { generateSuggestions } from "./services/suggestion/suggestion.service";
 import { SuggestionDecision } from "./services/suggestion/suggestion.types";
@@ -20,7 +21,7 @@ interface HydraBackendOptions {
 
 interface RunDecisionLoopParams {
   messageHistory: ThreadMessage[];
-  availableComponents: AvailableComponents;
+  availableComponents: AvailableComponent[];
   threadId: string;
   stream: boolean;
   toolResponse?: ToolResponseBody;
@@ -155,8 +156,12 @@ export default class TamboBackend {
   public async runDecisionLoop(
     params: RunDecisionLoopParams,
   ): Promise<AsyncIterableIterator<LegacyComponentDecision> | undefined> {
-    console.log("runDecisionLoop", params);
-    return undefined;
+    return await runDecisionLoop(
+      this.llmClient,
+      params.messageHistory,
+      params.availableComponents,
+      params.stream,
+    );
   }
 }
 
