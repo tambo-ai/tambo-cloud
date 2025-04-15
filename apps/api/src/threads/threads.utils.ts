@@ -267,7 +267,7 @@ export async function addAssistantResponse(
 }
 export async function addUserMessage(
   db: HydraDb,
-  thread: Thread,
+  threadId: string,
   advanceRequestDto: AdvanceThreadDto,
   logger?: Logger,
 ) {
@@ -277,7 +277,7 @@ export async function addUserMessage(
         const [currentThread] = await tx
           .select()
           .from(schema.threads)
-          .where(eq(schema.threads.id, thread.id))
+          .where(eq(schema.threads.id, threadId))
           .for("update");
 
         if (
@@ -292,14 +292,14 @@ export async function addUserMessage(
           );
         }
 
-        await operations.updateThread(tx, thread.id, {
+        await operations.updateThread(tx, threadId, {
           generationStage: GenerationStage.CHOOSING_COMPONENT,
           statusMessage: "Starting processing...",
         });
 
         return await addMessage(
           tx,
-          thread.id,
+          threadId,
           advanceRequestDto.messageToAppend,
         );
       },
