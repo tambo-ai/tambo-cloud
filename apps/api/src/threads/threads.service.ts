@@ -41,6 +41,7 @@ import {
   convertContentPartToDto,
   extractToolResponse,
   finishInProgressMessage,
+  processThreadMessage,
   threadMessageDtoToThreadMessage,
   updateGenerationStage,
   updateMessage,
@@ -497,7 +498,6 @@ export class ThreadsService {
     if (messages.length === 0) {
       throw new Error("No messages found");
     }
-    const latestMessage = messages[messages.length - 1];
 
     if (stream) {
       return await this.handleStreamingResponse(
@@ -505,8 +505,7 @@ export class ThreadsService {
         thread.id,
         db,
         tamboBackend,
-        messages,
-        latestMessage,
+        threadMessageDtoToThreadMessage(messages),
         addedUserMessage,
         advanceRequestDto,
         availableComponentMap,
@@ -515,13 +514,12 @@ export class ThreadsService {
 
     const systemTools = await getSystemTools(db, projectId);
 
-    const responseMessage = await this.processResponse(
-      latestMessage,
+    const responseMessage = await processThreadMessage(
       db,
       thread.id,
+      threadMessageDtoToThreadMessage(messages),
       advanceRequestDto,
       tamboBackend,
-      messages,
       systemTools,
       availableComponentMap,
     );
@@ -606,77 +604,19 @@ export class ThreadsService {
     );
   }
 
-  private async processResponse(
-    latestMessage: ThreadMessageDto,
-    db: HydraDatabase,
-    threadId: string,
-    advanceRequestDto: AdvanceThreadDto,
-    tamboBackend: TamboBackend,
-    messages: ThreadMessageDto[],
-    systemTools: SystemTools,
-    availableComponentMap: Record<string, AvailableComponentDto>,
-  ): Promise<LegacyComponentDecision> {
-    // Not streaming, so we can just return the response message
-    if (latestMessage.role === MessageRole.Tool) {
-      await updateGenerationStage(
-        db,
-        threadId,
-        GenerationStage.HYDRATING_COMPONENT,
-        `Hydrating ${latestMessage.component?.componentName}...`,
-      );
-      // Since we don't a store tool responses in the db, assumes that the tool response is the messageToAppend
-      const toolResponse = extractToolResponse(
-        advanceRequestDto.messageToAppend,
-      );
-      if (!toolResponse) {
-        throw new Error("No tool response found");
-      }
-
-      const componentDef = advanceRequestDto.availableComponents?.find(
-        (c) => c.name === latestMessage.component?.componentName,
-      );
-      if (!componentDef) {
-        throw new Error("Component definition not found");
-      }
-
-      return await tamboBackend.hydrateComponentWithData(
-        threadMessageDtoToThreadMessage(messages),
-        componentDef,
-        toolResponse,
-        latestMessage.tool_call_id,
-        threadId,
-        systemTools,
-      );
-    }
-    await updateGenerationStage(
-      db,
-      threadId,
-      GenerationStage.CHOOSING_COMPONENT,
-      `Choosing component...`,
-    );
-
-    return await tamboBackend.generateComponent(
-      threadMessageDtoToThreadMessage(messages),
-      availableComponentMap,
-      threadId,
-      systemTools,
-      false,
-      advanceRequestDto.additionalContext,
-    );
-  }
-
   private async handleStreamingResponse(
     projectId: string,
     threadId: string,
     db: HydraDatabase,
     tamboBackend: TamboBackend,
-    messages: ThreadMessageDto[],
-    latestMessage: ThreadMessageDto,
+    messages: ThreadMessage[],
     addedUserMessage: ThreadMessageDto,
     advanceRequestDto: AdvanceThreadDto,
     availableComponentMap: Record<string, AvailableComponentDto>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
     const systemTools = await getSystemTools(db, projectId);
+    const latestMessage = messages[messages.length - 1];
+    const toolCallId = latestMessage.tool_call_id;
     if (latestMessage.role === MessageRole.Tool) {
       await updateGenerationStage(
         db,
@@ -701,7 +641,7 @@ export class ThreadsService {
 
       const streamedResponseMessage =
         await tamboBackend.hydrateComponentWithData(
-          threadMessageDtoToThreadMessage(messages),
+          messages,
           componentDef,
           toolResponse,
           latestMessage.tool_call_id,
@@ -716,7 +656,7 @@ export class ThreadsService {
         addedUserMessage,
         systemTools,
         advanceRequestDto,
-        latestMessage.tool_call_id,
+        toolCallId,
       );
     }
 
@@ -728,7 +668,7 @@ export class ThreadsService {
     );
 
     const streamedResponseMessage = await tamboBackend.generateComponent(
-      threadMessageDtoToThreadMessage(messages),
+      messages,
       availableComponentMap,
       threadId,
       systemTools,
@@ -743,6 +683,7 @@ export class ThreadsService {
       addedUserMessage,
       systemTools,
       advanceRequestDto,
+      toolCallId,
     );
   }
 
@@ -755,13 +696,6 @@ export class ThreadsService {
     originalRequest: AdvanceThreadDto,
     toolCallId?: string,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
-    let finalResponse:
-      | {
-          responseMessageDto: ThreadMessageDto;
-          generationStage: GenerationStage;
-          statusMessage: string;
-        }
-      | undefined;
     let lastUpdateTime = 0;
     const updateIntervalMs = 500;
 
@@ -779,6 +713,23 @@ export class ThreadsService {
       toolCallId,
       this.logger,
     );
+    let finalResponse: {
+      responseMessageDto: ThreadMessageDto;
+      generationStage: GenerationStage;
+      statusMessage: string;
+    } = {
+      responseMessageDto: {
+        // Only bring in the bare minimum fields from the inProgressMessage
+        componentState: inProgressMessage.componentState,
+        content: inProgressMessage.content,
+        createdAt: inProgressMessage.createdAt,
+        id: inProgressMessage.id,
+        role: inProgressMessage.role,
+        threadId: inProgressMessage.threadId,
+      },
+      generationStage: GenerationStage.IDLE,
+      statusMessage: "",
+    };
 
     for await (const chunk of stream) {
       finalResponse = {
@@ -810,7 +761,7 @@ export class ThreadsService {
         await updateMessage(
           this.getDb(),
           inProgressMessage.id,
-          finalResponse!.responseMessageDto,
+          finalResponse.responseMessageDto,
         );
         lastUpdateTime = currentTime;
       }
@@ -822,13 +773,6 @@ export class ThreadsService {
       };
     }
 
-    if (!finalResponse) {
-      // should never happen!
-      console.error(
-        "no final response while streaming! this should never happen!",
-      );
-      return;
-    }
     const { resultingGenerationStage, resultingStatusMessage } =
       await finishInProgressMessage(
         this.getDb(),

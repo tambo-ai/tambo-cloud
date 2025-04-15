@@ -1,4 +1,5 @@
 import { Logger } from "@nestjs/common";
+import { SystemTools, TamboBackend } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
   ChatCompletionContentPart,
@@ -17,6 +18,7 @@ import type {
 } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
+import { AvailableComponentDto } from "src/components/dto/generate-component.dto";
 import { AdvanceThreadDto } from "./dto/advance-thread.dto";
 import {
   ChatCompletionContentPartDto,
@@ -448,4 +450,64 @@ function tryParseJson(text: string): any {
   } catch (_error) {
     return text;
   }
+}
+
+/** Processes the "next" thread message, hydrating the component if necessary */
+export async function processThreadMessage(
+  db: HydraDatabase,
+  threadId: string,
+  messages: ThreadMessage[],
+  advanceRequestDto: AdvanceThreadDto,
+  tamboBackend: TamboBackend,
+  systemTools: SystemTools,
+  availableComponentMap: Record<string, AvailableComponentDto>,
+): Promise<LegacyComponentDecision> {
+  const latestMessage = messages[messages.length - 1];
+  // For tool responses, we can fully hydrate the component and return it
+  if (latestMessage.role === MessageRole.Tool) {
+    await updateGenerationStage(
+      db,
+      threadId,
+      GenerationStage.HYDRATING_COMPONENT,
+      `Hydrating ${latestMessage.component?.componentName}...`,
+    );
+    // Since we don't a store tool responses in the db, assumes that the tool response is the messageToAppend
+    const toolResponse = extractToolResponse(advanceRequestDto.messageToAppend);
+    if (!toolResponse) {
+      throw new Error("No tool response found");
+    }
+
+    const componentDef = advanceRequestDto.availableComponents?.find(
+      (c) => c.name === latestMessage.component?.componentName,
+    );
+    if (!componentDef) {
+      throw new Error("Component definition not found");
+    }
+
+    return await tamboBackend.hydrateComponentWithData(
+      messages,
+      componentDef,
+      toolResponse,
+      latestMessage.tool_call_id,
+      threadId,
+      systemTools,
+    );
+  }
+
+  // For non-tool responses, we need to generate a component
+  await updateGenerationStage(
+    db,
+    threadId,
+    GenerationStage.CHOOSING_COMPONENT,
+    `Choosing component...`,
+  );
+
+  return await tamboBackend.generateComponent(
+    messages,
+    availableComponentMap,
+    threadId,
+    systemTools,
+    false,
+    advanceRequestDto.additionalContext,
+  );
 }
