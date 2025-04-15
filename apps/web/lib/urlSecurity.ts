@@ -39,7 +39,7 @@ export const validateSafeURL = async (
   urlOrFragment: string,
 ): Promise<{ safe: boolean; reason?: string }> => {
   // Skip validation if local MCP servers are allowed
-  if (env.ALLOW_LOCAL_MCP_SERVERS === "true") {
+  if (env.ALLOW_LOCAL_MCP_SERVERS) {
     return { safe: true };
   }
 
