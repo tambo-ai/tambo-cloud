@@ -684,6 +684,11 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     availableComponentMap: Record<string, AvailableComponentDto>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
+    const {
+      composioClient: _composioClient,
+      mcpToolSources: mcpToolSources,
+      tools: systemTools,
+    } = await getSystemTools(db, projectId);
     if (latestMessage.role === MessageRole.Tool) {
       await updateGenerationStage(
         db,
@@ -705,12 +710,6 @@ export class ThreadsService {
       if (!componentDef) {
         throw new Error("Component definition not found");
       }
-
-      const {
-        composioClient: _composioClient,
-        mcpToolSources: mcpToolSources,
-        tools: systemTools,
-      } = await getSystemTools(db, projectId);
 
       const streamedResponseMessage =
         await tamboBackend.hydrateComponentWithData(
@@ -740,11 +739,6 @@ export class ThreadsService {
       GenerationStage.CHOOSING_COMPONENT,
       `Choosing component...`,
     );
-    const {
-      composioClient: _composioClient,
-      mcpToolSources: mcpToolSources,
-      tools: systemTools,
-    } = await getSystemTools(db, projectId);
 
     const streamedResponseMessage = await tamboBackend.generateComponent(
       threadMessageDtoToThreadMessage(messages),
