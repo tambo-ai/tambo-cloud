@@ -272,7 +272,7 @@ export class ThreadsService {
   async addMessage(
     threadId: string,
     messageDto: MessageRequest,
-  ): Promise<ThreadMessageDto> {
+  ): Promise<ThreadMessage> {
     return await addMessage(this.getDb(), threadId, messageDto);
   }
 
@@ -551,7 +551,10 @@ export class ThreadsService {
     }
 
     return {
-      responseMessageDto,
+      responseMessageDto: {
+        ...responseMessageDto,
+        content: convertContentPartToDto(responseMessageDto.content),
+      },
       generationStage: resultingGenerationStage,
       statusMessage: resultingStatusMessage,
     };
@@ -610,7 +613,7 @@ export class ThreadsService {
     db: HydraDatabase,
     tamboBackend: TamboBackend,
     messages: ThreadMessage[],
-    addedUserMessage: ThreadMessageDto,
+    addedUserMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
     availableComponentMap: Record<string, AvailableComponentDto>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
@@ -691,7 +694,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: AsyncIterableIterator<LegacyComponentDecision>,
-    addedUserMessage: ThreadMessageDto,
+    addedUserMessage: ThreadMessage,
     systemTools: SystemTools,
     originalRequest: AdvanceThreadDto,
     toolCallId?: string,
@@ -721,7 +724,7 @@ export class ThreadsService {
       responseMessageDto: {
         // Only bring in the bare minimum fields from the inProgressMessage
         componentState: inProgressMessage.componentState,
-        content: inProgressMessage.content,
+        content: convertContentPartToDto(inProgressMessage.content),
         createdAt: inProgressMessage.createdAt,
         id: inProgressMessage.id,
         role: inProgressMessage.role,

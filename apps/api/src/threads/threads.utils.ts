@@ -9,7 +9,6 @@ import {
   LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
-  ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import type {
   HydraDatabase,
@@ -26,26 +25,11 @@ import {
   ThreadMessageDto,
 } from "./dto/message.dto";
 
-/** TODO: align with ThreadMessage */
-interface AddedMessage {
-  id: string;
-  threadId: string;
-  role: MessageRole;
-  content: ChatCompletionContentPartDto[];
-  metadata?: Record<string, unknown>;
-  component?: ComponentDecisionV2;
-  actionType?: ActionType;
-  createdAt: Date;
-  toolCallRequest?: ToolCallRequest;
-  tool_call_id?: string;
-  componentState: Record<string, unknown>;
-}
-
 export async function finishInProgressMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessageDto,
-  inProgressMessage: AddedMessage,
+  addedUserMessage: ThreadMessage,
+  inProgressMessage: ThreadMessage,
   finalResponse: {
     responseMessageDto: ThreadMessageDto;
     generationStage: GenerationStage;
@@ -105,7 +89,7 @@ export async function finishInProgressMessage(
 export async function addInProgressMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessageDto,
+  addedUserMessage: ThreadMessage,
   toolCallId: string | undefined,
   logger: Logger,
 ) {
@@ -145,7 +129,7 @@ export async function addInProgressMessage(
 async function verifyLatestMessageConsistency(
   db: HydraTransaction,
   threadId: string,
-  addedUserMessage: ThreadMessageDto,
+  addedUserMessage: ThreadMessage,
   inProgressMessageId?: string | undefined,
 ) {
   const latestMessages = await db.query.messages.findMany({
@@ -213,11 +197,11 @@ export async function updateGenerationStage(
 export async function addAssistantResponse(
   db: HydraDatabase,
   threadId: string,
-  addedUserMessage: AddedMessage,
+  addedUserMessage: ThreadMessage,
   responseMessage: LegacyComponentDecision,
   logger?: Logger,
 ): Promise<{
-  responseMessageDto: ThreadMessageDto;
+  responseMessageDto: ThreadMessage;
   resultingGenerationStage: GenerationStage;
   resultingStatusMessage: string;
 }> {
@@ -345,7 +329,7 @@ export async function addMessage(
   db: HydraDb,
   threadId: string,
   messageDto: MessageRequest,
-): Promise<AddedMessage> {
+): Promise<ThreadMessage> {
   const message = await operations.addMessage(db, {
     threadId,
     role: messageDto.role,
@@ -369,7 +353,7 @@ export async function addMessage(
 
     component: message.componentDecision ?? undefined,
 
-    content: convertContentPartToDto(message.content),
+    content: message.content,
 
     tool_call_id: message.toolCallId ?? undefined,
   };
