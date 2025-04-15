@@ -1,6 +1,10 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { generateChainId, TamboBackend } from "@tambo-ai-cloud/backend";
+import {
+  generateChainId,
+  SystemTools,
+  TamboBackend,
+} from "@tambo-ai-cloud/backend";
 import {
   ActionType,
   ComponentDecisionV2,
@@ -14,7 +18,6 @@ import {
 import type { HydraDatabase } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
-import { MCPClient } from "src/common/MCPClient";
 import { getSystemTools } from "src/common/systemTools";
 import { decryptProviderKey } from "../common/key.utils";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
@@ -511,11 +514,7 @@ export class ThreadsService {
       );
     }
 
-    const {
-      composioClient: _composioClient,
-      mcpToolSources: mcpToolSources,
-      tools: systemTools,
-    } = await getSystemTools(db, projectId);
+    const systemTools = await getSystemTools(db, projectId);
 
     const responseMessage = await this.handleUnstreamedResponse(
       latestMessage,
@@ -540,10 +539,13 @@ export class ThreadsService {
     );
 
     const toolCallRequest = responseMessage.toolCallRequest;
-    if (toolCallRequest && mcpToolSources[toolCallRequest.toolName]) {
-      return await this.handleMcpToolCall(
+    if (
+      toolCallRequest &&
+      toolCallRequest.toolName in systemTools.mcpToolSources
+    ) {
+      return await this.handleSystemToolCall(
         toolCallRequest,
-        mcpToolSources,
+        systemTools,
         responseMessage,
         advanceRequestDto,
         projectId,
@@ -558,9 +560,9 @@ export class ThreadsService {
     };
   }
 
-  private async handleMcpToolCall(
+  private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
-    mcpToolSources: Record<string, MCPClient>,
+    systemTools: SystemTools,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
     projectId: string,
@@ -569,7 +571,7 @@ export class ThreadsService {
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
     const toolCallId = toolCallRequest.tool_call_id;
-    const toolSource = mcpToolSources[toolCallRequest.toolName];
+    const toolSource = systemTools.mcpToolSources[toolCallRequest.toolName];
     console.log(
       "here is where I call the tool source: ",
       toolCallRequest.toolName,
@@ -684,11 +686,7 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     availableComponentMap: Record<string, AvailableComponentDto>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
-    const {
-      composioClient: _composioClient,
-      mcpToolSources: mcpToolSources,
-      tools: systemTools,
-    } = await getSystemTools(db, projectId);
+    const systemTools = await getSystemTools(db, projectId);
     if (latestMessage.role === MessageRole.Tool) {
       await updateGenerationStage(
         db,
@@ -726,7 +724,7 @@ export class ThreadsService {
         threadId,
         streamedResponseMessage,
         addedUserMessage,
-        mcpToolSources,
+        systemTools,
         advanceRequestDto,
         latestMessage.tool_call_id,
       );
@@ -754,7 +752,7 @@ export class ThreadsService {
       threadId,
       streamedResponseMessage,
       addedUserMessage,
-      mcpToolSources,
+      systemTools,
       advanceRequestDto,
     );
   }
@@ -764,7 +762,7 @@ export class ThreadsService {
     threadId: string,
     stream: AsyncIterableIterator<LegacyComponentDecision>,
     addedUserMessage: ThreadMessageDto,
-    mcpTools: Record<string, MCPClient> = {},
+    systemTools: SystemTools,
     originalRequest: AdvanceThreadDto,
     toolCallId?: string,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
@@ -857,17 +855,17 @@ export class ThreadsService {
       "checking for tool call request",
       toolCallRequest?.toolName,
       toolCallRequest?.tool_call_id,
-      toolCallRequest && toolCallRequest.toolName in mcpTools,
+      toolCallRequest && toolCallRequest.toolName in systemTools.mcpToolSources,
     );
     const componentDecision = finalResponse.responseMessageDto.component;
     if (
       componentDecision &&
       toolCallRequest &&
-      mcpTools[toolCallRequest.toolName]
+      toolCallRequest.toolName in systemTools.mcpToolSources
     ) {
-      return await this.handleMcpToolCall(
+      return await this.handleSystemToolCall(
         toolCallRequest,
-        mcpTools,
+        systemTools,
         componentDecision,
         originalRequest,
         projectId,

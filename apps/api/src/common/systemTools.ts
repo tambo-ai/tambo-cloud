@@ -1,10 +1,13 @@
+import { MCPClient, SystemTools } from "@tambo-ai-cloud/backend";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import { OpenAIToolSet } from "composio-core";
 import OpenAI from "openai";
-import { MCPClient } from "./MCPClient";
 
 /** Get the tools available for the project */
-export async function getSystemTools(db: HydraDatabase, projectId: string) {
+export async function getSystemTools(
+  db: HydraDatabase,
+  projectId: string,
+): Promise<SystemTools> {
   const { mcpTools, mcpToolSources } = await getMcpTools(db, projectId);
 
   const { composioTools, composioClient } = await getComposioTools(

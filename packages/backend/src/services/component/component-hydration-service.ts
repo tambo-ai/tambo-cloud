@@ -4,7 +4,6 @@ import {
   LegacyComponentDecision,
   ThreadMessage,
 } from "@tambo-ai-cloud/core";
-import OpenAI from "openai";
 import { parse } from "partial-json";
 import { z } from "zod";
 import {
@@ -15,6 +14,7 @@ import {
 import { getAvailableComponentsPromptTemplate } from "../../prompt/component-formatting";
 import { getComponentHydrationPromptTemplate } from "../../prompt/component-hydration";
 import { schemaV1, schemaV2 } from "../../prompt/schemas";
+import { SystemTools } from "../../systemTools";
 import { parseAndValidate } from "../../util/parseResponse";
 import { threadMessagesToChatHistory } from "../../util/threadMessagesToChatHistory";
 import {
@@ -49,7 +49,7 @@ export async function hydrateComponent({
   threadId: string;
   stream?: boolean;
   version?: "v1" | "v2";
-  systemTools: OpenAI.Chat.Completions.ChatCompletionTool[];
+  systemTools?: SystemTools;
 }): Promise<
   LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
 > {
@@ -116,16 +116,6 @@ To respond to the user's message:
     { role: "chat_history", content: "{userMessageWithInstructions}" },
   ] as ChatCompletionMessageParam[]);
 
-  // if (systemTools.length > 0) {
-  //   console.log(
-  //     "systemTools",
-  //     JSON.stringify(
-  //       systemTools.map((t) => t.function),
-  //       null,
-  //       2,
-  //     ),
-  //   );
-  // }
   const completeOptions: CompleteParams = {
     messages: messages,
     promptTemplateName: toolResponseString
@@ -141,7 +131,7 @@ To respond to the user's message:
       ...componentHydrationArgs,
       ...availableComponentsArgs,
     },
-    tools: [...userTools, ...systemTools],
+    tools: [...userTools, ...(systemTools?.tools ?? [])],
     jsonMode: true,
   };
 
