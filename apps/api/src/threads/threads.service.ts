@@ -530,15 +530,14 @@ export class ThreadsService {
           addedUserMessage,
           latestMessage.tool_call_id,
         );
-      } else {
-        responseMessage = await tamboBackend.hydrateComponentWithData(
-          threadMessageDtoToThreadMessage(messages),
-          componentDef,
-          toolResponse,
-          latestMessage.tool_call_id,
-          thread.id,
-        );
       }
+      responseMessage = await tamboBackend.hydrateComponentWithData(
+        threadMessageDtoToThreadMessage(messages),
+        componentDef,
+        toolResponse,
+        latestMessage.tool_call_id,
+        thread.id,
+      );
     } else {
       await updateGenerationStage(
         this.getDb(),
@@ -559,15 +558,14 @@ export class ThreadsService {
           streamedResponseMessage,
           addedUserMessage,
         );
-      } else {
-        responseMessage = await tamboBackend.generateComponent(
-          threadMessageDtoToThreadMessage(messages),
-          availableComponentMap,
-          thread.id,
-          false,
-          advanceRequestDto.additionalContext,
-        );
       }
+      responseMessage = await tamboBackend.generateComponent(
+        threadMessageDtoToThreadMessage(messages),
+        availableComponentMap,
+        thread.id,
+        false,
+        advanceRequestDto.additionalContext,
+      );
     }
 
     const db = this.getDb();
