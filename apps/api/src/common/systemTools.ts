@@ -79,10 +79,13 @@ async function getComposioTools(
   projectId: string,
 ): Promise<{
   composioTools: OpenAI.Chat.Completions.ChatCompletionTool[];
-  composioClient: OpenAIToolSet;
+  composioClient?: OpenAIToolSet;
 }> {
-  const composioTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
   const composioApps = await operations.getComposioApps(db, projectId);
+  if (!composioApps.length) {
+    return { composioTools: [], composioClient: undefined };
+  }
+  const composioTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
   const appIds = composioApps
     .map((app) => app.composioAppId)
     .filter((appId): appId is string => !!appId);
