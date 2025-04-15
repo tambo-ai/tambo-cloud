@@ -616,7 +616,6 @@ export class ThreadsService {
     systemTools: SystemTools,
     availableComponentMap: Record<string, AvailableComponentDto>,
   ): Promise<LegacyComponentDecision> {
-    let responseMessage: LegacyComponentDecision;
     // Not streaming, so we can just return the response message
     if (latestMessage.role === MessageRole.Tool) {
       await updateGenerationStage(
@@ -640,7 +639,7 @@ export class ThreadsService {
         throw new Error("Component definition not found");
       }
 
-      responseMessage = await tamboBackend.hydrateComponentWithData(
+      return await tamboBackend.hydrateComponentWithData(
         threadMessageDtoToThreadMessage(messages),
         componentDef,
         toolResponse,
@@ -648,24 +647,22 @@ export class ThreadsService {
         threadId,
         systemTools,
       );
-    } else {
-      await updateGenerationStage(
-        db,
-        threadId,
-        GenerationStage.CHOOSING_COMPONENT,
-        `Choosing component...`,
-      );
-
-      responseMessage = await tamboBackend.generateComponent(
-        threadMessageDtoToThreadMessage(messages),
-        availableComponentMap,
-        threadId,
-        systemTools,
-        false,
-        advanceRequestDto.additionalContext,
-      );
     }
-    return responseMessage;
+    await updateGenerationStage(
+      db,
+      threadId,
+      GenerationStage.CHOOSING_COMPONENT,
+      `Choosing component...`,
+    );
+
+    return await tamboBackend.generateComponent(
+      threadMessageDtoToThreadMessage(messages),
+      availableComponentMap,
+      threadId,
+      systemTools,
+      false,
+      advanceRequestDto.additionalContext,
+    );
   }
 
   private async handleStreamingResponse(
