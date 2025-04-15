@@ -1,5 +1,9 @@
 import OpenAI from "openai";
-import { ComponentContextToolMetadata } from "../../model/component-metadata";
+import {
+  AvailableComponent,
+  ComponentContextToolMetadata,
+  ComponentPropsMetadata,
+} from "../../model/component-metadata";
 
 // Public functions
 export function convertMetadataToTools(
@@ -46,6 +50,36 @@ export function convertMetadataToTools(
           .filter((parameter) => parameter.isRequired)
           .map((parameter) => parameter.name),
         additionalProperties: false,
+      },
+    },
+  }));
+}
+
+export function convertComponentsToUITools(components: AvailableComponent[]) {
+  return components.map((component) => ({
+    type: "function" as const,
+    function: {
+      name: `show_${component.name.toLowerCase().replace(/-/g, "_")}`,
+      description: `Show the ${component.name} UI component the user. Here is a description of the component: ${component.description}`,
+      parameters: {
+        type: "object",
+        properties: Object.entries(component.props).reduce<
+          Record<string, { type: string; description: string }>
+        >(
+          (acc, [key, value]) => ({
+            ...acc,
+            [key]: {
+              type: (value as ComponentPropsMetadata).type,
+              description:
+                (value as ComponentPropsMetadata).description ||
+                `Parameter ${key} for ${component.name}`,
+            },
+          }),
+          {},
+        ),
+        required: Object.keys(component.props).filter(
+          (key) => (component.props[key] as ComponentPropsMetadata).isRequired,
+        ),
       },
     },
   }));
