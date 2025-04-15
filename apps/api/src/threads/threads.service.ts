@@ -443,6 +443,8 @@ export class ThreadsService {
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
+    const db = this.getDb();
+
     await this.checkMessageLimit(projectId);
 
     const thread = await this.ensureThread(
@@ -453,7 +455,7 @@ export class ThreadsService {
 
     // Ensure only one request per thread adds its user message and continues
     const addedUserMessage = await addUserMessage(
-      this.getDb(),
+      db,
       thread.id,
       advanceRequestDto,
       this.logger,
@@ -496,8 +498,6 @@ export class ThreadsService {
       throw new Error("No messages found");
     }
     const latestMessage = messages[messages.length - 1];
-
-    const db = this.getDb();
 
     console.log("latestMessage.role", latestMessage.role);
     if (stream) {
@@ -619,7 +619,7 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     tamboBackend: TamboBackend,
     messages: ThreadMessageDto[],
-    systemTools,
+    systemTools: SystemTools,
     availableComponentMap: Record<string, AvailableComponentDto>,
   ): Promise<LegacyComponentDecision> {
     let responseMessage: LegacyComponentDecision;

@@ -102,7 +102,7 @@ export class MCPClient {
    * @returns The result from the tool execution
    * @throws Will throw an error if the tool call fails or if arguments are invalid
    */
-  async callTool(name: string, args: Record<string, any>) {
+  async callTool(name: string, args: Record<string, unknown>) {
     const result = await this.client.callTool({
       name,
       arguments: args,
