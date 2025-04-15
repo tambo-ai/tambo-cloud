@@ -499,7 +499,6 @@ export class ThreadsService {
     }
     const latestMessage = messages[messages.length - 1];
 
-    console.log("latestMessage.role", latestMessage.role);
     if (stream) {
       return await this.handleStreamingResponse(
         projectId,
@@ -516,7 +515,7 @@ export class ThreadsService {
 
     const systemTools = await getSystemTools(db, projectId);
 
-    const responseMessage = await this.handleUnstreamedResponse(
+    const responseMessage = await this.processResponse(
       latestMessage,
       db,
       thread.id,
@@ -570,13 +569,8 @@ export class ThreadsService {
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
-    const toolCallId = toolCallRequest.tool_call_id;
     const toolSource = systemTools.mcpToolSources[toolCallRequest.toolName];
-    console.log(
-      "here is where I call the tool source: ",
-      toolCallRequest.toolName,
-      toolCallId,
-    );
+
     const result = await toolSource.callTool(
       toolCallRequest.toolName,
       Object.fromEntries(
@@ -586,7 +580,7 @@ export class ThreadsService {
         ]),
       ),
     );
-    console.log("back from the tool: ", result);
+
     const messageWithToolResponse: AdvanceThreadDto = {
       messageToAppend: {
         actionType: ActionType.ToolResponse,
@@ -612,7 +606,7 @@ export class ThreadsService {
     );
   }
 
-  private async handleUnstreamedResponse(
+  private async processResponse(
     latestMessage: ThreadMessageDto,
     db: HydraDatabase,
     threadId: string,
@@ -655,7 +649,6 @@ export class ThreadsService {
         systemTools,
       );
     } else {
-      console.log("Choosing component...");
       await updateGenerationStage(
         db,
         threadId,
@@ -730,7 +723,6 @@ export class ThreadsService {
       );
     }
 
-    console.log("Choosing component...");
     await updateGenerationStage(
       db,
       threadId,
@@ -746,7 +738,7 @@ export class ThreadsService {
       true,
       advanceRequestDto.additionalContext,
     );
-    console.log("streaming component response...");
+
     return this.handleAdvanceThreadStream(
       projectId,
       threadId,
@@ -833,12 +825,11 @@ export class ThreadsService {
       };
     }
 
-    console.log(
-      "final response",
-      finalResponse?.responseMessageDto.toolCallRequest,
-    );
     if (!finalResponse) {
       // should never happen!
+      console.error(
+        "no final response while streaming! this should never happen!",
+      );
       return;
     }
     const { resultingGenerationStage, resultingStatusMessage } =
@@ -851,12 +842,6 @@ export class ThreadsService {
         this.logger,
       );
     const toolCallRequest = finalResponse.responseMessageDto.toolCallRequest;
-    console.log(
-      "checking for tool call request",
-      toolCallRequest?.toolName,
-      toolCallRequest?.tool_call_id,
-      toolCallRequest && toolCallRequest.toolName in systemTools.mcpToolSources,
-    );
     const componentDecision = finalResponse.responseMessageDto.component;
     if (
       componentDecision &&

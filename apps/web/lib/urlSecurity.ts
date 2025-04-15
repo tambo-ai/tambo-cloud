@@ -45,7 +45,6 @@ export const validateSafeURL = async (
 
   // use tldts to check for host safety
   const tld = parseTld(urlOrFragment);
-  console.log("tld", tld);
 
   if (!tld.isIcann || !tld.hostname) {
     return {
