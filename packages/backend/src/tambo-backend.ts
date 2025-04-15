@@ -22,7 +22,6 @@ interface HydraBackendOptions {
 interface RunDecisionLoopParams {
   messageHistory: ThreadMessage[];
   availableComponents: AvailableComponent[];
-  threadId: string;
   stream: boolean;
   toolResponse?: ToolResponseBody;
   toolCallId?: string;
