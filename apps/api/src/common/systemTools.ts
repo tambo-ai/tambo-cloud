@@ -56,7 +56,12 @@ async function getMcpTools(
           function: {
             name: tool.name,
             description: tool.description,
-            parameters: tool.inputSchema?.properties,
+            parameters: tool.inputSchema?.properties
+              ? {
+                  type: "object",
+                  properties: tool.inputSchema?.properties,
+                }
+              : undefined,
           },
         }),
       ),
