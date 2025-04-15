@@ -154,8 +154,8 @@ export default class TamboBackend {
 
   public async runDecisionLoop(
     params: RunDecisionLoopParams,
-  ): Promise<AsyncIterableIterator<LegacyComponentDecision> | undefined> {
-    return await runDecisionLoop(
+  ): Promise<AsyncIterableIterator<LegacyComponentDecision>> {
+    return runDecisionLoop(
       this.llmClient,
       params.messageHistory,
       params.availableComponents,

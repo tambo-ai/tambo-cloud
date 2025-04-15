@@ -492,7 +492,6 @@ export class ThreadsService {
     const latestMessage = messages[messages.length - 1];
 
     let responseMessage: LegacyComponentDecision;
-
     if (latestMessage.role === MessageRole.Tool) {
       await updateGenerationStage(
         this.getDb(),
@@ -511,14 +510,15 @@ export class ThreadsService {
       const componentDef = advanceRequestDto.availableComponents?.find(
         (c) => c.name === latestMessage.component?.componentName,
       );
-      if (!componentDef) {
-        throw new Error("Component definition not found");
-      }
+      // if (!componentDef) {
+      //   throw new Error("Component definition not found");
+      // }
+
       if (stream) {
         const streamedResponseMessage =
           await tamboBackend.hydrateComponentWithData(
             threadMessageDtoToThreadMessage(messages),
-            componentDef,
+            componentDef!,
             toolResponse,
             latestMessage.tool_call_id,
             thread.id,
@@ -531,13 +531,21 @@ export class ThreadsService {
           latestMessage.tool_call_id,
         );
       } else {
-        responseMessage = await tamboBackend.hydrateComponentWithData(
-          threadMessageDtoToThreadMessage(messages),
-          componentDef,
+        let finalResponse: LegacyComponentDecision | undefined;
+        for await (const response of await tamboBackend.runDecisionLoop({
+          messageHistory: threadMessageDtoToThreadMessage(messages),
+          availableComponents: advanceRequestDto.availableComponents ?? [],
+          stream: false,
           toolResponse,
-          latestMessage.tool_call_id,
-          thread.id,
-        );
+          toolCallId: latestMessage.tool_call_id,
+          additionalContext: advanceRequestDto.additionalContext,
+        })) {
+          finalResponse = response;
+        }
+        if (!finalResponse) {
+          throw new Error("No response received from decision loop");
+        }
+        responseMessage = finalResponse;
       }
     } else {
       await updateGenerationStage(
@@ -560,13 +568,20 @@ export class ThreadsService {
           addedUserMessage,
         );
       } else {
-        responseMessage = await tamboBackend.generateComponent(
-          threadMessageDtoToThreadMessage(messages),
-          availableComponentMap,
-          thread.id,
-          false,
-          advanceRequestDto.additionalContext,
-        );
+        let finalResponse: LegacyComponentDecision | undefined;
+        for await (const response of await tamboBackend.runDecisionLoop({
+          messageHistory: threadMessageDtoToThreadMessage(messages),
+          availableComponents: advanceRequestDto.availableComponents ?? [],
+          stream: false,
+          additionalContext: advanceRequestDto.additionalContext,
+        })) {
+          finalResponse = response;
+        }
+        if (!finalResponse) {
+          throw new Error("No response received from decision loop");
+        }
+        responseMessage = finalResponse;
+        console.log("responseMessage", responseMessage);
       }
     }
 

@@ -55,11 +55,14 @@ export function convertMetadataToTools(
   }));
 }
 
-export function convertComponentsToUITools(components: AvailableComponent[]) {
+export function convertComponentsToUITools(
+  components: AvailableComponent[],
+  toolNamePrefix: string = "show_",
+) {
   return components.map((component) => ({
     type: "function" as const,
     function: {
-      name: `show_${component.name.toLowerCase().replace(/-/g, "_")}`,
+      name: `${toolNamePrefix}${component.name}`,
       description: `Show the ${component.name} UI component the user. Here is a description of the component: ${component.description}`,
       parameters: {
         type: "object",

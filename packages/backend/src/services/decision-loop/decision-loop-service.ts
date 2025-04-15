@@ -13,13 +13,17 @@ import {
   convertMetadataToTools,
 } from "../tool/tool-service";
 
-export async function runDecisionLoop(
+export async function* runDecisionLoop(
   llmClient: LLMClient,
   messageHistory: ThreadMessage[],
   availableComponents: AvailableComponent[],
   stream: boolean,
-) {
-  const componentTools = convertComponentsToUITools(availableComponents);
+): AsyncIterableIterator<LegacyComponentDecision> {
+  const toolNamePrefix = "show_";
+  const componentTools = convertComponentsToUITools(
+    availableComponents,
+    toolNamePrefix,
+  );
   const standardTools = convertMetadataToTools(
     availableComponents.flatMap((component) => component.contextTools),
   );
@@ -45,10 +49,7 @@ export async function runDecisionLoop(
 
   const toolCall = response.message?.tool_calls?.[0];
   if (toolCall) {
-    const toolName = toolCall.function.name;
-    const toolArgs = JSON.parse(toolCall.function.arguments);
-    console.log(`Tool called: ${toolName}`);
-    console.log(`Tool arguments: ${JSON.stringify(toolArgs)}`);
+    console.log("toolCall", JSON.stringify(toolCall));
   }
 
   const isUITool =
@@ -60,8 +61,12 @@ export async function runDecisionLoop(
 
   const decision: LegacyComponentDecision = {
     reasoning: "",
-    message: response.message?.content || "",
-    componentName: isUITool ? toolCall?.function.name : "",
+    message: response.message?.content?.trim()
+      ? response.message.content
+      : "...",
+    componentName: isUITool
+      ? toolCall?.function.name.replace(toolNamePrefix, "")
+      : "",
     props: isUITool ? toolArgs : null,
     componentState: null,
     toolCallRequest:
@@ -72,5 +77,5 @@ export async function runDecisionLoop(
 
   console.log("decision", decision);
 
-  return;
+  yield decision;
 }
