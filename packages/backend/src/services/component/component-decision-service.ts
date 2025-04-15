@@ -3,6 +3,7 @@ import {
   ChatCompletionMessageParam,
   LegacyComponentDecision,
 } from "@tambo-ai-cloud/core";
+import OpenAI from "openai";
 import { parse } from "partial-json";
 import { InputContext } from "../../model/input-context";
 import {
@@ -25,6 +26,7 @@ export async function decideComponent(
   llmClient: LLMClient,
   context: InputContext,
   threadId: string,
+  systemTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   stream?: boolean,
 ): Promise<
   LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
@@ -75,7 +77,7 @@ export async function decideComponent(
       availableComponents: context.availableComponents,
       threadId,
       stream,
-      systemTools: [], // TODO: add system tools?
+      systemTools,
     });
   } else {
     if (componentName) {

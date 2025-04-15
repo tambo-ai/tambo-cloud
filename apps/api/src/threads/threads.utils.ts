@@ -288,7 +288,7 @@ export async function addUserMessage(
           currentThread.generationStage === GenerationStage.CHOOSING_COMPONENT
         ) {
           throw new Error(
-            "Thread is already in processing, only one response can be generated at a time",
+            `Thread is already in processing (${currentThread.generationStage}), only one response can be generated at a time`,
           );
         }
 

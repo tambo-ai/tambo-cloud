@@ -38,7 +38,7 @@ export async function hydrateComponent({
   threadId,
   stream,
   version = "v1",
-  systemTools: _systemTools,
+  systemTools,
 }: {
   llmClient: LLMClient;
   messageHistory: ThreadMessage[];
@@ -66,7 +66,7 @@ export async function hydrateComponent({
 
   //only define tools if we don't have a tool response
   const userTools = toolResponse
-    ? undefined
+    ? []
     : convertMetadataToTools(chosenComponent.contextTools);
 
   const chosenComponentDescription = JSON.stringify(
@@ -116,6 +116,16 @@ To respond to the user's message:
     { role: "chat_history", content: "{userMessageWithInstructions}" },
   ] as ChatCompletionMessageParam[]);
 
+  // if (systemTools.length > 0) {
+  //   console.log(
+  //     "systemTools",
+  //     JSON.stringify(
+  //       systemTools.map((t) => t.function),
+  //       null,
+  //       2,
+  //     ),
+  //   );
+  // }
   const completeOptions: CompleteParams = {
     messages: messages,
     promptTemplateName: toolResponseString
@@ -131,7 +141,7 @@ To respond to the user's message:
       ...componentHydrationArgs,
       ...availableComponentsArgs,
     },
-    tools: userTools,
+    tools: [...userTools, ...systemTools],
     jsonMode: true,
   };
 

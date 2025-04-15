@@ -106,6 +106,7 @@ export class ComponentsController {
       legacyChatMessagesToThreadMessages(messageHistory, resolvedThreadId),
       availableComponents ?? {},
       resolvedThreadId,
+      [],
     );
     await this.addDecisionToThread(resolvedThreadId, component);
 

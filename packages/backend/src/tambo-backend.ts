@@ -76,6 +76,7 @@ export default class TamboBackend {
     messageHistory: ThreadMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
+    systemTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     stream: true,
     additionalContext?: string,
   ): Promise<AsyncIterableIterator<LegacyComponentDecision>>;
@@ -83,6 +84,7 @@ export default class TamboBackend {
     messageHistory: ThreadMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
+    systemTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     stream?: false | undefined,
     additionalContext?: string,
   ): Promise<LegacyComponentDecision>;
@@ -90,6 +92,7 @@ export default class TamboBackend {
     messageHistory: ThreadMessage[],
     availableComponents: AvailableComponents,
     threadId: string,
+    systemTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     stream?: boolean,
     additionalContext?: string,
   ): Promise<
@@ -101,7 +104,13 @@ export default class TamboBackend {
       threadId,
       additionalContext,
     };
-    return await decideComponent(this.llmClient, context, threadId, stream);
+    return await decideComponent(
+      this.llmClient,
+      context,
+      threadId,
+      systemTools,
+      stream,
+    );
   }
 
   public async hydrateComponentWithData(
