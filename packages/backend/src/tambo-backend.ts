@@ -18,6 +18,16 @@ interface HydraBackendOptions {
   provider?: Provider;
 }
 
+interface RunDecisionLoopParams {
+  messageHistory: ThreadMessage[];
+  availableComponents: AvailableComponents;
+  threadId: string;
+  stream: boolean;
+  toolResponse?: ToolResponseBody;
+  toolCallId?: string;
+  additionalContext?: string;
+}
+
 export default class TamboBackend {
   private llmClient: TokenJSClient;
   private version: "v1" | "v2";
@@ -140,6 +150,13 @@ export default class TamboBackend {
       stream,
       version: this.version,
     });
+  }
+
+  public async runDecisionLoop(
+    params: RunDecisionLoopParams,
+  ): Promise<AsyncIterableIterator<LegacyComponentDecision> | undefined> {
+    console.log("runDecisionLoop", params);
+    return undefined;
   }
 }
 
