@@ -9,6 +9,7 @@ import {
   LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
+  ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import type {
   HydraDatabase,
@@ -503,4 +504,67 @@ export async function processThreadMessage(
     false,
     advanceRequestDto.additionalContext,
   );
+}
+export async function* convertDecisionStreamToMessageStream(
+  stream: AsyncIterableIterator<LegacyComponentDecision>,
+  db: HydraDatabase,
+  inProgressMessage: ThreadMessage,
+  toolCallId?: string,
+): AsyncIterableIterator<ThreadMessageDto> {
+  let lastUpdateTime = 0;
+  const updateIntervalMs = 500;
+  let finalThreadMessage: ThreadMessageDto = {
+    // Only bring in the bare minimum fields from the inProgressMessage
+    componentState: inProgressMessage.componentState,
+    content: convertContentPartToDto(inProgressMessage.content),
+    createdAt: inProgressMessage.createdAt,
+    id: inProgressMessage.id,
+    role: inProgressMessage.role,
+    threadId: inProgressMessage.threadId,
+  };
+  let finalToolCallRequest: ToolCallRequest | undefined;
+  let finalToolCallId: string | undefined;
+
+  for await (const chunk of stream) {
+    finalThreadMessage = {
+      ...inProgressMessage,
+      content: [
+        {
+          type: ContentPartType.Text,
+          text:
+            chunk.message.length > 0
+              ? chunk.message
+              : "streaming in progress...",
+        },
+      ],
+      component: chunk,
+      actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
+      // do NOT set the toolCallRequest or tool_call_id here, we will set them in the final response,
+      // once the call is fully formed, and we know we do not call any system tools
+    };
+    if (chunk.toolCallRequest) {
+      finalToolCallRequest = chunk.toolCallRequest;
+      // toolCallId is set when streaming the response to a tool response
+      // chunk.toolCallId is set when streaming the response to a component
+      finalToolCallId = toolCallId ?? chunk.toolCallId;
+    }
+    const currentTime = Date.now();
+
+    // Update db message on interval
+    if (currentTime - lastUpdateTime >= updateIntervalMs) {
+      await updateMessage(db, inProgressMessage.id, finalThreadMessage);
+      lastUpdateTime = currentTime;
+    }
+
+    yield finalThreadMessage;
+  }
+
+  // now that we're done streaming, add the tool call request and tool call id to the response
+  finalThreadMessage = {
+    ...finalThreadMessage,
+    toolCallRequest: finalToolCallRequest,
+    tool_call_id: finalToolCallId,
+  };
+
+  yield finalThreadMessage;
 }
