@@ -30,7 +30,7 @@ export async function finishInProgressMessage(
   db: HydraDb,
   threadId: string,
   addedUserMessage: ThreadMessage,
-  inProgressMessage: ThreadMessage,
+  inProgressMessageId: string,
   finalThreadMessage: ThreadMessageDto,
   logger?: Logger,
 ): Promise<{
@@ -44,10 +44,10 @@ export async function finishInProgressMessage(
           tx,
           threadId,
           addedUserMessage,
-          inProgressMessage.id,
+          inProgressMessageId,
         );
 
-        await updateMessage(tx, inProgressMessage.id, finalThreadMessage);
+        await updateMessage(tx, inProgressMessageId, finalThreadMessage);
 
         const resultingGenerationStage = finalThreadMessage.toolCallRequest
           ? GenerationStage.FETCHING_CONTEXT
@@ -507,12 +507,9 @@ export async function processThreadMessage(
 }
 export async function* convertDecisionStreamToMessageStream(
   stream: AsyncIterableIterator<LegacyComponentDecision>,
-  db: HydraDatabase,
   inProgressMessage: ThreadMessage,
   toolCallId?: string,
 ): AsyncIterableIterator<ThreadMessageDto> {
-  let lastUpdateTime = 0;
-  const updateIntervalMs = 500;
   let finalThreadMessage: ThreadMessageDto = {
     // Only bring in the bare minimum fields from the inProgressMessage
     componentState: inProgressMessage.componentState,
@@ -547,13 +544,6 @@ export async function* convertDecisionStreamToMessageStream(
       // toolCallId is set when streaming the response to a tool response
       // chunk.toolCallId is set when streaming the response to a component
       finalToolCallId = toolCallId ?? chunk.toolCallId;
-    }
-    const currentTime = Date.now();
-
-    // Update db message on interval
-    if (currentTime - lastUpdateTime >= updateIntervalMs) {
-      await updateMessage(db, inProgressMessage.id, finalThreadMessage);
-      lastUpdateTime = currentTime;
     }
 
     yield finalThreadMessage;

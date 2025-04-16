@@ -48,6 +48,7 @@ import {
   processThreadMessage,
   threadMessageDtoToThreadMessage,
   updateGenerationStage,
+  updateMessage,
 } from "./threads.utils";
 import {
   FREE_MESSAGE_LIMIT,
@@ -729,12 +730,21 @@ export class ThreadsService {
 
     // we hold on to the final thread message, in case we have to switch to a tool call
     let finalThreadMessage: ThreadMessageDto | undefined;
+    let lastUpdateTime = 0;
+    const updateIntervalMs = 500;
+
     for await (const threadMessage of convertDecisionStreamToMessageStream(
       stream,
-      db,
       inProgressMessage,
       toolCallId,
     )) {
+      // Update db message on interval
+      const currentTime = Date.now();
+      if (currentTime - lastUpdateTime >= updateIntervalMs) {
+        await updateMessage(db, inProgressMessage.id, threadMessage);
+        lastUpdateTime = currentTime;
+      }
+
       // do not yield the final thread message if it is a tool call, because we
       // might have to switch to an internal tool call
       if (!threadMessage.toolCallRequest) {
