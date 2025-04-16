@@ -20,8 +20,8 @@ export async function* runDecisionLoop(
   messageHistory: ThreadMessage[],
   availableComponents: AvailableComponent[],
   stream: boolean,
+  uiToolNamePrefix: string = "show_",
 ): AsyncIterableIterator<LegacyComponentDecision> {
-  const uiToolNamePrefix = "show_";
   const componentTools = convertComponentsToUITools(
     availableComponents,
     uiToolNamePrefix,
