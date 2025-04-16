@@ -18,8 +18,8 @@
     "db:check": "cd packages/db && npm run db:check",
     "db:studio": "cd packages/db && npm run db:studio",
     "test:suggestions": "cd scripts && tsx test-suggestions.ts",
-    "rename-to-tambo": "ts-node scripts/update-content.ts && ts-node scripts/rename-files.ts",
-    "rename-vnext": "ts-node scripts/rename-vnext.ts"
+    "rename-to-tambo": "tsx scripts/update-content.ts && tsx scripts/rename-files.ts",
+    "rename-vnext": "tsx scripts/rename-vnext.ts"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",
