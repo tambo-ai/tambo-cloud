@@ -523,7 +523,6 @@ export class ThreadsService {
       advanceRequestDto,
       tamboBackend,
       systemTools,
-      availableComponentMap,
     );
     const {
       responseMessageDto,

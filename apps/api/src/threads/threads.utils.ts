@@ -17,7 +17,6 @@ import type {
 } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
-import { AvailableComponentDto } from "src/components/dto/generate-component.dto";
 import { AdvanceThreadDto } from "./dto/advance-thread.dto";
 import {
   ChatCompletionContentPartDto,
@@ -454,6 +453,24 @@ function tryParseJson(text: string): any {
   }
 }
 
+/** Gets the final decision from an AsyncIterableIterator of decisions */
+async function getFinalDecision(
+  iteratorPromise: Promise<AsyncIterableIterator<LegacyComponentDecision>>,
+): Promise<LegacyComponentDecision> {
+  let finalDecision: LegacyComponentDecision | undefined;
+  const iterator = await iteratorPromise;
+
+  for await (const decision of iterator) {
+    finalDecision = decision;
+  }
+
+  if (!finalDecision) {
+    throw new Error("No decision was generated from the decision loop");
+  }
+
+  return finalDecision;
+}
+
 /** Processes the "next" thread message, hydrating the component if necessary */
 export async function processThreadMessage(
   db: HydraDatabase,
@@ -462,10 +479,8 @@ export async function processThreadMessage(
   advanceRequestDto: AdvanceThreadDto,
   tamboBackend: TamboBackend,
   systemTools: SystemTools,
-  availableComponentMap: Record<string, AvailableComponentDto>,
 ): Promise<LegacyComponentDecision> {
   const latestMessage = messages[messages.length - 1];
-  // For tool responses, we can fully hydrate the component and return it
   if (latestMessage.role === MessageRole.Tool) {
     await updateGenerationStage(
       db,
@@ -480,20 +495,14 @@ export async function processThreadMessage(
       throw new Error("No tool response found");
     }
 
-    const componentDef = advanceRequestDto.availableComponents?.find(
-      (c) => c.name === latestMessage.component?.componentName,
-    );
-    if (!componentDef) {
-      throw new Error("Component definition not found");
-    }
-
-    return await tamboBackend.hydrateComponentWithData(
-      messages,
-      componentDef,
-      toolResponse,
-      latestMessage.tool_call_id,
-      threadId,
-      systemTools,
+    return await getFinalDecision(
+      tamboBackend.runDecisionLoop({
+        messageHistory: messages,
+        availableComponents: advanceRequestDto.availableComponents ?? [],
+        stream: false,
+        systemTools,
+        additionalContext: advanceRequestDto.additionalContext,
+      }),
     );
   }
 
@@ -505,12 +514,13 @@ export async function processThreadMessage(
     `Choosing component...`,
   );
 
-  return await tamboBackend.generateComponent(
-    messages,
-    availableComponentMap,
-    threadId,
-    systemTools,
-    false,
-    advanceRequestDto.additionalContext,
+  return await getFinalDecision(
+    tamboBackend.runDecisionLoop({
+      messageHistory: messages,
+      availableComponents: advanceRequestDto.availableComponents ?? [],
+      stream: false,
+      systemTools,
+      additionalContext: advanceRequestDto.additionalContext,
+    }),
   );
 }
