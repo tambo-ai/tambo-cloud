@@ -547,6 +547,7 @@ export class ThreadsService {
         advanceRequestDto,
         projectId,
         thread.id,
+        false,
       );
     }
 
@@ -567,6 +568,7 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     projectId: string,
     threadId: string,
+    stream: boolean,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -603,7 +605,7 @@ export class ThreadsService {
       projectId,
       messageWithToolResponse,
       threadId,
-      false,
+      stream,
     );
   }
 
@@ -734,6 +736,8 @@ export class ThreadsService {
       generationStage: GenerationStage.IDLE,
       statusMessage: "",
     };
+    let finalToolCallRequest: ToolCallRequest | undefined;
+    let finalToolCallId: string | undefined;
 
     for await (const chunk of stream) {
       finalResponse = {
@@ -750,14 +754,18 @@ export class ThreadsService {
           ],
           component: chunk,
           actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
-          toolCallRequest: chunk.toolCallRequest,
-          // toolCallId is set when streaming the response to a tool response
-          // chunk.toolCallId is set when streaming the response to a component
-          tool_call_id: toolCallId ?? chunk.toolCallId,
+          // do NOT set the toolCallRequest or tool_call_id here, we will set them in the final response,
+          // once the call is fully formed, and we know we do not call any system tools
         },
         generationStage: GenerationStage.STREAMING_RESPONSE,
         statusMessage: `Streaming response...`,
       };
+      if (chunk.toolCallRequest) {
+        finalToolCallRequest = chunk.toolCallRequest;
+        // toolCallId is set when streaming the response to a tool response
+        // chunk.toolCallId is set when streaming the response to a component
+        finalToolCallId = toolCallId ?? chunk.toolCallId;
+      }
       const currentTime = Date.now();
 
       // Update db message on interval
@@ -786,20 +794,21 @@ export class ThreadsService {
         finalResponse,
         this.logger,
       );
-    const toolCallRequest = finalResponse.responseMessageDto.toolCallRequest;
     const componentDecision = finalResponse.responseMessageDto.component;
     if (
       componentDecision &&
-      toolCallRequest &&
-      toolCallRequest.toolName in systemTools.mcpToolSources
+      finalToolCallRequest &&
+      finalToolCallRequest.toolName in systemTools.mcpToolSources
     ) {
+      // Note that this effectively consumes finalToolCallRequest and finalToolCallId
       const result = await this.handleSystemToolCall(
-        toolCallRequest,
+        finalToolCallRequest,
         systemTools,
         componentDecision,
         originalRequest,
         projectId,
         threadId,
+        true,
       );
       if (Symbol.asyncIterator in result) {
         for await (const chunk of result) {
@@ -811,6 +820,14 @@ export class ThreadsService {
       return;
     }
 
+    finalResponse = {
+      ...finalResponse,
+      responseMessageDto: {
+        ...finalResponse.responseMessageDto,
+        toolCallRequest: finalToolCallRequest,
+        tool_call_id: finalToolCallId,
+      },
+    };
     yield {
       responseMessageDto: finalResponse.responseMessageDto,
       generationStage: resultingGenerationStage,
