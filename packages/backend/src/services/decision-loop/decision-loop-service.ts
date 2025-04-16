@@ -6,6 +6,7 @@ import {
 } from "@tambo-ai-cloud/core";
 import { AvailableComponent } from "../../model/component-metadata";
 import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
+import { SystemTools } from "../../systemTools";
 import { extractMessageContent } from "../../util/response-parsing";
 import { threadMessagesToChatHistory } from "../../util/threadMessagesToChatHistory";
 import { getLLMResponseToolCallRequest, LLMClient } from "../llm/llm-client";
@@ -20,6 +21,7 @@ export async function* runDecisionLoop(
   messageHistory: ThreadMessage[],
   availableComponents: AvailableComponent[],
   stream: boolean,
+  systemTools: SystemTools | undefined,
   uiToolNamePrefix: string = "show_",
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const componentTools = convertComponentsToUITools(
@@ -44,7 +46,7 @@ export async function* runDecisionLoop(
   ]);
   const response = await llmClient.complete({
     messages: promptMessages,
-    tools: toolsWithStandardParameters,
+    tools: [...toolsWithStandardParameters, ...(systemTools?.tools ?? [])],
     promptTemplateName: "decision-loop",
     promptTemplateParams: {
       chat_history: chatHistory,

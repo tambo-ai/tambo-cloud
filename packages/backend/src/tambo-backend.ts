@@ -24,6 +24,7 @@ interface RunDecisionLoopParams {
   messageHistory: ThreadMessage[];
   availableComponents: AvailableComponent[];
   stream: boolean;
+  systemTools?: SystemTools;
   toolResponse?: ToolResponseBody;
   toolCallId?: string;
   additionalContext?: string;
@@ -174,6 +175,7 @@ export default class TamboBackend {
       params.messageHistory,
       params.availableComponents,
       params.stream,
+      params.systemTools,
     );
   }
 }
