@@ -26,10 +26,11 @@ export async function* runDecisionLoop(
     availableComponents,
     uiToolNamePrefix,
   );
-  const standardTools = convertMetadataToTools(
+  const contextTools = convertMetadataToTools(
     availableComponents.flatMap((component) => component.contextTools),
   );
-  const tools = [...componentTools, ...standardTools];
+  const tools = [...componentTools, ...contextTools];
+  // Add standard parameters to all tools
   const toolsWithStandardParameters = addParametersToTools(
     tools,
     standardToolParameters,
@@ -57,7 +58,6 @@ export async function* runDecisionLoop(
   if (toolCall) {
     console.log("toolCall", JSON.stringify(toolCall));
   }
-
   const isUITool =
     toolCall &&
     componentTools.some(
