@@ -30,11 +30,7 @@ export async function finishInProgressMessage(
   threadId: string,
   addedUserMessage: ThreadMessage,
   inProgressMessage: ThreadMessage,
-  finalResponse: {
-    responseMessageDto: ThreadMessageDto;
-    generationStage: GenerationStage;
-    statusMessage: string;
-  },
+  finalThreadMessage: ThreadMessageDto,
   logger?: Logger,
 ): Promise<{
   resultingGenerationStage: GenerationStage;
@@ -50,18 +46,12 @@ export async function finishInProgressMessage(
           inProgressMessage.id,
         );
 
-        await updateMessage(
-          tx,
-          inProgressMessage.id,
-          finalResponse.responseMessageDto,
-        );
+        await updateMessage(tx, inProgressMessage.id, finalThreadMessage);
 
-        const resultingGenerationStage = finalResponse.responseMessageDto
-          .toolCallRequest
+        const resultingGenerationStage = finalThreadMessage.toolCallRequest
           ? GenerationStage.FETCHING_CONTEXT
           : GenerationStage.COMPLETE;
-        const resultingStatusMessage = finalResponse.responseMessageDto
-          .toolCallRequest
+        const resultingStatusMessage = finalThreadMessage.toolCallRequest
           ? `Fetching context...`
           : `Complete`;
 

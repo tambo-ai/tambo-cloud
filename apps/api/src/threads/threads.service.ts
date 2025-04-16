@@ -728,46 +728,34 @@ export class ThreadsService {
       toolCallId,
       logger,
     );
-    let finalResponse: {
-      responseMessageDto: ThreadMessageDto;
-      generationStage: GenerationStage;
-      statusMessage: string;
-    } = {
-      responseMessageDto: {
-        // Only bring in the bare minimum fields from the inProgressMessage
-        componentState: inProgressMessage.componentState,
-        content: convertContentPartToDto(inProgressMessage.content),
-        createdAt: inProgressMessage.createdAt,
-        id: inProgressMessage.id,
-        role: inProgressMessage.role,
-        threadId: inProgressMessage.threadId,
-      },
-      generationStage: GenerationStage.IDLE,
-      statusMessage: "",
+    let finalThreadMessage: ThreadMessageDto = {
+      // Only bring in the bare minimum fields from the inProgressMessage
+      componentState: inProgressMessage.componentState,
+      content: convertContentPartToDto(inProgressMessage.content),
+      createdAt: inProgressMessage.createdAt,
+      id: inProgressMessage.id,
+      role: inProgressMessage.role,
+      threadId: inProgressMessage.threadId,
     };
     let finalToolCallRequest: ToolCallRequest | undefined;
     let finalToolCallId: string | undefined;
 
     for await (const chunk of stream) {
-      finalResponse = {
-        responseMessageDto: {
-          ...inProgressMessage,
-          content: [
-            {
-              type: ContentPartType.Text,
-              text:
-                chunk.message.length > 0
-                  ? chunk.message
-                  : "streaming in progress...",
-            },
-          ],
-          component: chunk,
-          actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
-          // do NOT set the toolCallRequest or tool_call_id here, we will set them in the final response,
-          // once the call is fully formed, and we know we do not call any system tools
-        },
-        generationStage: GenerationStage.STREAMING_RESPONSE,
-        statusMessage: `Streaming response...`,
+      finalThreadMessage = {
+        ...inProgressMessage,
+        content: [
+          {
+            type: ContentPartType.Text,
+            text:
+              chunk.message.length > 0
+                ? chunk.message
+                : "streaming in progress...",
+          },
+        ],
+        component: chunk,
+        actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
+        // do NOT set the toolCallRequest or tool_call_id here, we will set them in the final response,
+        // once the call is fully formed, and we know we do not call any system tools
       };
       if (chunk.toolCallRequest) {
         finalToolCallRequest = chunk.toolCallRequest;
@@ -779,29 +767,27 @@ export class ThreadsService {
 
       // Update db message on interval
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
-        await updateMessage(
-          db,
-          inProgressMessage.id,
-          finalResponse.responseMessageDto,
-        );
+        await updateMessage(db, inProgressMessage.id, finalThreadMessage);
         lastUpdateTime = currentTime;
       }
 
       yield {
-        responseMessageDto: finalResponse.responseMessageDto,
+        responseMessageDto: finalThreadMessage,
         generationStage: GenerationStage.STREAMING_RESPONSE,
         statusMessage: `Streaming response...`,
       };
     }
 
     // now that we're done streaming, add the tool call request and tool call id to the response
-    finalResponse = {
-      ...finalResponse,
-      responseMessageDto: {
-        ...finalResponse.responseMessageDto,
-        toolCallRequest: finalToolCallRequest,
-        tool_call_id: finalToolCallId,
-      },
+    finalThreadMessage = {
+      ...finalThreadMessage,
+      toolCallRequest: finalToolCallRequest,
+      tool_call_id: finalToolCallId,
+    };
+    yield {
+      responseMessageDto: finalThreadMessage,
+      generationStage: GenerationStage.STREAMING_RESPONSE,
+      statusMessage: `Streaming response...`,
     };
 
     const { resultingGenerationStage, resultingStatusMessage } =
@@ -810,10 +796,10 @@ export class ThreadsService {
         threadId,
         addedUserMessage,
         inProgressMessage,
-        finalResponse,
+        finalThreadMessage,
         logger,
       );
-    const componentDecision = finalResponse.responseMessageDto.component;
+    const componentDecision = finalThreadMessage.component;
     if (
       componentDecision &&
       finalToolCallRequest &&
@@ -840,7 +826,7 @@ export class ThreadsService {
     }
 
     yield {
-      responseMessageDto: finalResponse.responseMessageDto,
+      responseMessageDto: finalThreadMessage,
       generationStage: resultingGenerationStage,
       statusMessage: resultingStatusMessage,
     };
