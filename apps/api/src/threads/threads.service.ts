@@ -5,9 +5,7 @@ import {
   TamboBackend,
 } from "@tambo-ai-cloud/backend";
 import {
-  ActionType,
   ComponentDecisionV2,
-  ContentPartType,
   GenerationStage,
   LegacyComponentDecision,
   MessageRole,
@@ -28,11 +26,7 @@ import {
   AdvanceThreadDto,
   AdvanceThreadResponseDto,
 } from "./dto/advance-thread.dto";
-import {
-  ChatCompletionContentPartDto,
-  MessageRequest,
-  ThreadMessageDto,
-} from "./dto/message.dto";
+import { MessageRequest, ThreadMessageDto } from "./dto/message.dto";
 import { SuggestionDto } from "./dto/suggestion.dto";
 import { SuggestionsGenerateDto } from "./dto/suggestions-generate.dto";
 import { Thread, ThreadRequest, ThreadWithMessagesDto } from "./dto/thread.dto";
@@ -41,10 +35,12 @@ import {
   addInProgressMessage,
   addMessage,
   addUserMessage,
+  callSystemTool,
   convertContentPartToDto,
   convertDecisionStreamToMessageStream,
   extractToolResponse,
   finishInProgressMessage,
+  mapSuggestionToDto,
   processThreadMessage,
   threadMessageDtoToThreadMessage,
   updateGenerationStage,
@@ -503,7 +499,7 @@ export class ThreadsService {
     }
 
     if (stream) {
-      return await this.handleStreamingResponse(
+      return await this.generateStreamingResponse(
         projectId,
         thread.id,
         db,
@@ -593,40 +589,12 @@ export class ThreadsService {
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
-    const toolSource = systemTools.mcpToolSources[toolCallRequest.toolName];
-
-    const result = await toolSource.callTool(
-      toolCallRequest.toolName,
-      Object.fromEntries(
-        toolCallRequest.parameters.map((p) => [
-          p.parameterName,
-          p.parameterValue,
-        ]),
-      ),
+    const messageWithToolResponse: AdvanceThreadDto = await callSystemTool(
+      systemTools,
+      toolCallRequest,
+      componentDecision,
+      advanceRequestDto,
     );
-
-    const responseContent: ChatCompletionContentPartDto[] =
-      typeof result === "string"
-        ? [{ type: ContentPartType.Text, text: result }]
-        : Array.isArray(result.content)
-          ? result.content
-          : [];
-
-    // TODO: handle cases where MCP server returns *only* resource types
-    if (responseContent.length === 0) {
-      throw new Error("No response content found");
-    }
-    const messageWithToolResponse: AdvanceThreadDto = {
-      messageToAppend: {
-        actionType: ActionType.ToolResponse,
-        component: componentDecision,
-        role: MessageRole.Tool,
-        content: responseContent,
-      },
-      additionalContext: advanceRequestDto.additionalContext,
-      availableComponents: advanceRequestDto.availableComponents,
-      contextKey: advanceRequestDto.contextKey,
-    };
 
     return await this.advanceThread(
       projectId,
@@ -636,7 +604,7 @@ export class ThreadsService {
     );
   }
 
-  private async handleStreamingResponse(
+  private async generateStreamingResponse(
     projectId: string,
     threadId: string,
     db: HydraDatabase,
@@ -795,7 +763,7 @@ export class ThreadsService {
       finalToolCallRequest.toolName in systemTools.mcpToolSources
     ) {
       // Note that this effectively consumes finalToolCallRequest and finalToolCallId
-      const result = await this.handleSystemToolCall(
+      const toolResponseMessageStream = await this.handleSystemToolCall(
         finalToolCallRequest,
         systemTools,
         componentDecision,
@@ -804,7 +772,7 @@ export class ThreadsService {
         threadId,
         true,
       );
-      for await (const chunk of result) {
+      for await (const chunk of toolResponseMessageStream) {
         yield chunk;
       }
       return;
@@ -875,13 +843,4 @@ export class ThreadsService {
     const { providerKey: decryptedKey } = decryptProviderKey(providerKey);
     return decryptedKey;
   }
-}
-
-function mapSuggestionToDto(suggestion: schema.DBSuggestion): SuggestionDto {
-  return {
-    id: suggestion.id,
-    messageId: suggestion.messageId,
-    title: suggestion.title,
-    detailedSuggestion: suggestion.detailedSuggestion,
-  };
 }

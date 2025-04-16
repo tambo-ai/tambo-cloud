@@ -25,6 +25,7 @@ import {
   MessageRequest,
   ThreadMessageDto,
 } from "./dto/message.dto";
+import { SuggestionDto } from "./dto/suggestion.dto";
 
 export async function finishInProgressMessage(
   db: HydraDb,
@@ -557,4 +558,56 @@ export async function* convertDecisionStreamToMessageStream(
   };
 
   yield finalThreadMessage;
+}
+export async function callSystemTool(
+  systemTools: SystemTools,
+  toolCallRequest: ToolCallRequest,
+  componentDecision: LegacyComponentDecision,
+  advanceRequestDto: AdvanceThreadDto,
+) {
+  const toolSource = systemTools.mcpToolSources[toolCallRequest.toolName];
+
+  const result = await toolSource.callTool(
+    toolCallRequest.toolName,
+    Object.fromEntries(
+      toolCallRequest.parameters.map((p) => [
+        p.parameterName,
+        p.parameterValue,
+      ]),
+    ),
+  );
+
+  const responseContent: ChatCompletionContentPartDto[] =
+    typeof result === "string"
+      ? [{ type: ContentPartType.Text, text: result }]
+      : Array.isArray(result.content)
+        ? result.content
+        : [];
+
+  // TODO: handle cases where MCP server returns *only* resource types
+  if (responseContent.length === 0) {
+    throw new Error("No response content found");
+  }
+  const messageWithToolResponse: AdvanceThreadDto = {
+    messageToAppend: {
+      actionType: ActionType.ToolResponse,
+      component: componentDecision,
+      role: MessageRole.Tool,
+      content: responseContent,
+    },
+    additionalContext: advanceRequestDto.additionalContext,
+    availableComponents: advanceRequestDto.availableComponents,
+    contextKey: advanceRequestDto.contextKey,
+  };
+  return messageWithToolResponse;
+}
+export function mapSuggestionToDto(
+  suggestion: schema.DBSuggestion,
+): SuggestionDto {
+  return {
+    id: suggestion.id,
+    messageId: suggestion.messageId,
+    title: suggestion.title,
+    detailedSuggestion: suggestion.detailedSuggestion,
+  };
 }
