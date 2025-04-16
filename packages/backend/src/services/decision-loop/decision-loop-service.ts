@@ -19,11 +19,13 @@ export async function* runDecisionLoop(
   availableComponents: AvailableComponent[],
   stream: boolean,
 ): AsyncIterableIterator<LegacyComponentDecision> {
-  const toolNamePrefix = "show_";
+  const uiToolNamePrefix = "show_";
   const componentTools = convertComponentsToUITools(
     availableComponents,
-    toolNamePrefix,
+    uiToolNamePrefix,
   );
+  console.log("componentTools", JSON.stringify(componentTools));
+
   const standardTools = convertMetadataToTools(
     availableComponents.flatMap((component) => component.contextTools),
   );
@@ -65,7 +67,7 @@ export async function* runDecisionLoop(
       ? response.message.content
       : "...",
     componentName: isUITool
-      ? toolCall?.function.name.replace(toolNamePrefix, "")
+      ? toolCall?.function.name.replace(uiToolNamePrefix, "")
       : "",
     props: isUITool ? toolArgs : null,
     componentState: null,

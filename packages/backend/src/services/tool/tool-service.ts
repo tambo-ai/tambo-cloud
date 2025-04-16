@@ -58,7 +58,7 @@ export function convertMetadataToTools(
 export function convertComponentsToUITools(
   components: AvailableComponent[],
   toolNamePrefix: string = "show_",
-) {
+): OpenAI.Chat.Completions.ChatCompletionTool[] {
   return components.map((component) => ({
     type: "function" as const,
     function: {
@@ -66,23 +66,14 @@ export function convertComponentsToUITools(
       description: `Show the ${component.name} UI component the user. Here is a description of the component: ${component.description}`,
       parameters: {
         type: "object",
-        properties: Object.entries(component.props).reduce<
-          Record<string, { type: string; description: string }>
-        >(
-          (acc, [key, value]) => ({
-            ...acc,
-            [key]: {
-              type: (value as ComponentPropsMetadata).type,
-              description:
-                (value as ComponentPropsMetadata).description ||
-                `Parameter ${key} for ${component.name}`,
-            },
-          }),
-          {},
-        ),
-        required: Object.keys(component.props).filter(
-          (key) => (component.props[key] as ComponentPropsMetadata).isRequired,
-        ),
+        properties:
+          typeof component.props === "object" && "properties" in component.props
+            ? component.props.properties
+            : component.props,
+        required: Object.entries(component.props)
+          .filter(([_, value]) => (value as ComponentPropsMetadata).isRequired)
+          .map(([key]) => key),
+        additionalProperties: false,
       },
     },
   }));
