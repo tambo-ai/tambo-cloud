@@ -77,6 +77,8 @@ export class TokenJSClient implements LLMClient {
       return this.handleStreamingResponse(stream);
     }
 
+    console.log("messagesFormatted", messagesFormatted);
+
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,
@@ -159,7 +161,7 @@ export class TokenJSClient implements LLMClient {
           content: accumulatedMessage,
           role: "assistant",
           tool_calls: toolCallRequest ? [toolCallRequest] : undefined,
-          refusal: null, // Added to comply with updated ChatCompletionMessage interface
+          refusal: null,
         },
         index: 0,
         logprobs: null,

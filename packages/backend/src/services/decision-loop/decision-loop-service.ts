@@ -6,6 +6,7 @@ import {
 } from "@tambo-ai-cloud/core";
 import { AvailableComponent } from "../../model/component-metadata";
 import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
+import { extractMessageContent } from "../../util/response-parsing";
 import { threadMessagesToChatHistory } from "../../util/threadMessagesToChatHistory";
 import { getLLMResponseToolCallRequest, LLMClient } from "../llm/llm-client";
 import {
@@ -14,7 +15,6 @@ import {
   convertMetadataToTools,
   standardToolParameters,
 } from "../tool/tool-service";
-
 export async function* runDecisionLoop(
   llmClient: LLMClient,
   messageHistory: ThreadMessage[],
@@ -67,7 +67,10 @@ export async function* runDecisionLoop(
 
   const decision: LegacyComponentDecision = {
     reasoning: "",
-    message: response.message?.content?.trim() || toolArgs.displayMessage || "",
+    message: extractMessageContent(
+      response.message?.content?.trim() || toolArgs.displayMessage || "",
+      false,
+    ),
     componentName: isUITool
       ? toolCall?.function.name.replace(uiToolNamePrefix, "")
       : "",
