@@ -572,6 +572,24 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: boolean,
+  ): Promise<AdvanceThreadResponseDto>;
+  private async handleSystemToolCall(
+    toolCallRequest: ToolCallRequest,
+    systemTools: SystemTools,
+    componentDecision: LegacyComponentDecision,
+    advanceRequestDto: AdvanceThreadDto,
+    projectId: string,
+    threadId: string,
+    stream: true,
+  ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
+  private async handleSystemToolCall(
+    toolCallRequest: ToolCallRequest,
+    systemTools: SystemTools,
+    componentDecision: LegacyComponentDecision,
+    advanceRequestDto: AdvanceThreadDto,
+    projectId: string,
+    threadId: string,
+    stream: boolean,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -766,7 +784,7 @@ export class ThreadsService {
         db,
         threadId,
         userMessage,
-        inProgressMessage,
+        inProgressMessage.id,
         finalThreadMessage,
         logger,
       );
@@ -786,12 +804,8 @@ export class ThreadsService {
         threadId,
         true,
       );
-      if (Symbol.asyncIterator in result) {
-        for await (const chunk of result) {
-          yield chunk;
-        }
-      } else {
-        yield result;
+      for await (const chunk of result) {
+        yield chunk;
       }
       return;
     }
