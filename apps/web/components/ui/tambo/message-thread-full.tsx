@@ -1,7 +1,6 @@
 "use client";
 
 import { MessageInput } from "@/components/ui/tambo/message-input";
-import { MessageSuggestions } from "@/components/ui/tambo/message-suggestions";
 import { ThreadContent } from "@/components/ui/tambo/thread-content";
 import { ThreadHistory } from "@/components/ui/tambo/thread-history";
 import { cn } from "@/lib/utils";
@@ -46,14 +45,13 @@ const MessageThreadFull = React.forwardRef<
       ref={ref}
       className={cn(
         "flex flex-col bg-white rounded-lg shadow-sm overflow-hidden bg-background border border-gray-200",
-        "h-[calc(100vh-var(--header-height)-4rem)] sm:h-[85vh] md:h-[80vh]",
-        "w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl mx-auto",
+        "h-full",
+        "w-full",
         className,
       )}
       {...props}
     >
-      <div className="p-3 sm:p-4 border-b border-gray-200 flex items-center justify-between">
-        <h2 className="font-semibold text-base sm:text-lg">Try tambo-ai</h2>
+      <div className="p-3 sm:p-4 border-b border-gray-200 flex items-center justify-end">
         <ThreadHistory
           contextKey={contextKey}
           position={{ side: "left", align: "start" }}
@@ -65,7 +63,7 @@ const MessageThreadFull = React.forwardRef<
       >
         <ThreadContent className="py-3 sm:py-4" />
       </div>
-      <MessageSuggestions />
+      {/* <MessageSuggestions /> */}
       <div className="p-3 sm:p-4 border-t border-gray-200">
         <MessageInput contextKey={contextKey} />
       </div>
