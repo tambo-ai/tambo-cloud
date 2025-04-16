@@ -1,4 +1,5 @@
 import { Logger } from "@nestjs/common";
+import { SystemTools, TamboBackend } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
   ChatCompletionContentPart,
@@ -8,7 +9,6 @@ import {
   LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
-  ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import type {
   HydraDatabase,
@@ -17,34 +17,19 @@ import type {
 } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
+import { AvailableComponentDto } from "src/components/dto/generate-component.dto";
 import { AdvanceThreadDto } from "./dto/advance-thread.dto";
 import {
   ChatCompletionContentPartDto,
   MessageRequest,
   ThreadMessageDto,
 } from "./dto/message.dto";
-import { Thread } from "./dto/thread.dto";
-
-/** TODO: align with ThreadMessage */
-interface AddedMessage {
-  id: string;
-  threadId: string;
-  role: MessageRole;
-  content: ChatCompletionContentPartDto[];
-  metadata?: Record<string, unknown>;
-  component?: ComponentDecisionV2;
-  actionType?: ActionType;
-  createdAt: Date;
-  toolCallRequest?: ToolCallRequest;
-  tool_call_id?: string;
-  componentState: Record<string, unknown>;
-}
 
 export async function finishInProgressMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessageDto,
-  inProgressMessage: AddedMessage,
+  addedUserMessage: ThreadMessage,
+  inProgressMessage: ThreadMessage,
   finalResponse: {
     responseMessageDto: ThreadMessageDto;
     generationStage: GenerationStage;
@@ -104,7 +89,7 @@ export async function finishInProgressMessage(
 export async function addInProgressMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessageDto,
+  addedUserMessage: ThreadMessage,
   toolCallId: string | undefined,
   logger: Logger,
 ) {
@@ -144,7 +129,7 @@ export async function addInProgressMessage(
 async function verifyLatestMessageConsistency(
   db: HydraTransaction,
   threadId: string,
-  addedUserMessage: ThreadMessageDto,
+  addedUserMessage: ThreadMessage,
   inProgressMessageId?: string | undefined,
 ) {
   const latestMessages = await db.query.messages.findMany({
@@ -211,24 +196,24 @@ export async function updateGenerationStage(
 }
 export async function addAssistantResponse(
   db: HydraDatabase,
-  thread: Thread,
-  addedUserMessage: AddedMessage,
+  threadId: string,
+  addedUserMessage: ThreadMessage,
   responseMessage: LegacyComponentDecision,
   logger?: Logger,
 ): Promise<{
-  responseMessageDto: ThreadMessageDto;
+  responseMessageDto: ThreadMessage;
   resultingGenerationStage: GenerationStage;
   resultingStatusMessage: string;
 }> {
   try {
     const result = await db.transaction(
       async (tx) => {
-        await verifyLatestMessageConsistency(tx, thread.id, addedUserMessage);
+        await verifyLatestMessageConsistency(tx, threadId, addedUserMessage);
 
         const responseMessageDto = await addResponseToThread(
           tx,
           responseMessage,
-          thread.id,
+          threadId,
         );
 
         const resultingGenerationStage = responseMessage.toolCallRequest
@@ -240,7 +225,7 @@ export async function addAssistantResponse(
 
         await updateGenerationStage(
           tx ?? db,
-          thread.id,
+          threadId,
           resultingGenerationStage,
           resultingStatusMessage,
         );
@@ -267,7 +252,7 @@ export async function addAssistantResponse(
 }
 export async function addUserMessage(
   db: HydraDb,
-  thread: Thread,
+  threadId: string,
   advanceRequestDto: AdvanceThreadDto,
   logger?: Logger,
 ) {
@@ -277,7 +262,7 @@ export async function addUserMessage(
         const [currentThread] = await tx
           .select()
           .from(schema.threads)
-          .where(eq(schema.threads.id, thread.id))
+          .where(eq(schema.threads.id, threadId))
           .for("update");
 
         if (
@@ -288,18 +273,18 @@ export async function addUserMessage(
           currentThread.generationStage === GenerationStage.CHOOSING_COMPONENT
         ) {
           throw new Error(
-            "Thread is already in processing, only one response can be generated at a time",
+            `Thread is already in processing (${currentThread.generationStage}), only one response can be generated at a time`,
           );
         }
 
-        await operations.updateThread(tx, thread.id, {
+        await operations.updateThread(tx, threadId, {
           generationStage: GenerationStage.CHOOSING_COMPONENT,
           statusMessage: "Starting processing...",
         });
 
         return await addMessage(
           tx,
-          thread.id,
+          threadId,
           advanceRequestDto.messageToAppend,
         );
       },
@@ -344,7 +329,7 @@ export async function addMessage(
   db: HydraDb,
   threadId: string,
   messageDto: MessageRequest,
-): Promise<AddedMessage> {
+): Promise<ThreadMessage> {
   const message = await operations.addMessage(db, {
     threadId,
     role: messageDto.role,
@@ -368,7 +353,7 @@ export async function addMessage(
 
     component: message.componentDecision ?? undefined,
 
-    content: convertContentPartToDto(message.content),
+    content: message.content,
 
     tool_call_id: message.toolCallId ?? undefined,
   };
@@ -379,36 +364,45 @@ function convertContentDtoToContentPart(
   if (!Array.isArray(content)) {
     return [{ type: ContentPartType.Text, text: content }];
   }
-  return content.map((part): ChatCompletionContentPart => {
-    switch (part.type) {
-      case ContentPartType.Text:
-        if (!part.text) {
-          throw new Error("Text content is required for text type");
-        }
-        return {
-          type: ContentPartType.Text,
-          text: part.text,
-        };
-      case ContentPartType.ImageUrl:
-        return {
-          type: ContentPartType.ImageUrl,
-          image_url: part.image_url ?? {
-            url: "",
-            detail: "auto",
-          },
-        };
-      case ContentPartType.InputAudio:
-        return {
-          type: ContentPartType.InputAudio,
-          input_audio: part.input_audio ?? {
-            data: "",
-            format: "wav",
-          },
-        };
-      default:
-        throw new Error(`Unknown content part type: ${part.type}`);
-    }
-  });
+  return content
+    .map((part): ChatCompletionContentPart | null => {
+      switch (part.type) {
+        case ContentPartType.Text:
+          if (!part.text) {
+            throw new Error("Text content is required for text type");
+          }
+          return {
+            type: ContentPartType.Text,
+            text: part.text,
+          };
+        case ContentPartType.ImageUrl:
+          return {
+            type: ContentPartType.ImageUrl,
+            image_url: part.image_url ?? {
+              url: "",
+              detail: "auto",
+            },
+          };
+        case ContentPartType.InputAudio:
+          return {
+            type: ContentPartType.InputAudio,
+            input_audio: part.input_audio ?? {
+              data: "",
+              format: "wav",
+            },
+          };
+        case "resource" as ContentPartType:
+          // TODO: we get back "resource" from MCP servers, but it is not supported yet
+          console.warn(
+            "Ignoring 'resource' content part: it is not supported yet",
+            part,
+          );
+          return null;
+        default:
+          throw new Error(`Unknown content part type: ${part.type}`);
+      }
+    })
+    .filter((part): part is ChatCompletionContentPart => !!part);
 }
 export function threadMessageDtoToThreadMessage(
   messages: ThreadMessageDto[],
@@ -433,8 +427,17 @@ export function extractToolResponse(message: MessageRequest): any {
   if (message.toolResponse) {
     return message.toolResponse;
   }
-  if (message.content.every((part) => part.type === ContentPartType.Text)) {
-    return tryParseJson(message.content.map((part) => part.text).join(""));
+  // TODO: we get back "resource" from MCP servers, but it is not supported yet
+  const nonResourceContent = message.content.filter(
+    (part) => (part.type as string) !== "resource",
+  );
+  if (nonResourceContent.every((part) => part.type === ContentPartType.Text)) {
+    const contentString = nonResourceContent.map((part) => part.text).join("");
+    const jsonResponse = tryParseJson(contentString);
+    if (jsonResponse) {
+      return jsonResponse;
+    }
+    return contentString;
   }
   return null;
 }
@@ -449,4 +452,65 @@ function tryParseJson(text: string): any {
   } catch (_error) {
     return text;
   }
+}
+
+/** Processes the "next" thread message, hydrating the component if necessary */
+export async function processThreadMessage(
+  db: HydraDatabase,
+  threadId: string,
+  messages: ThreadMessage[],
+  advanceRequestDto: AdvanceThreadDto,
+  tamboBackend: TamboBackend,
+  systemTools: SystemTools,
+  availableComponentMap: Record<string, AvailableComponentDto>,
+): Promise<LegacyComponentDecision> {
+  const latestMessage = messages[messages.length - 1];
+  // For tool responses, we can fully hydrate the component and return it
+  if (latestMessage.role === MessageRole.Tool) {
+    await updateGenerationStage(
+      db,
+      threadId,
+      GenerationStage.HYDRATING_COMPONENT,
+      `Hydrating ${latestMessage.component?.componentName}...`,
+    );
+    // Since we don't a store tool responses in the db, assumes that the tool response is the messageToAppend
+    const toolResponse = extractToolResponse(advanceRequestDto.messageToAppend);
+
+    if (!toolResponse) {
+      throw new Error("No tool response found");
+    }
+
+    const componentDef = advanceRequestDto.availableComponents?.find(
+      (c) => c.name === latestMessage.component?.componentName,
+    );
+    if (!componentDef) {
+      throw new Error("Component definition not found");
+    }
+
+    return await tamboBackend.hydrateComponentWithData(
+      messages,
+      componentDef,
+      toolResponse,
+      latestMessage.tool_call_id,
+      threadId,
+      systemTools,
+    );
+  }
+
+  // For non-tool responses, we need to generate a component
+  await updateGenerationStage(
+    db,
+    threadId,
+    GenerationStage.CHOOSING_COMPONENT,
+    `Choosing component...`,
+  );
+
+  return await tamboBackend.generateComponent(
+    messages,
+    availableComponentMap,
+    threadId,
+    systemTools,
+    false,
+    advanceRequestDto.additionalContext,
+  );
 }

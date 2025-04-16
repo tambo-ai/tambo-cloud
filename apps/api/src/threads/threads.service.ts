@@ -1,6 +1,9 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { generateChainId, TamboBackend } from "@tambo-ai-cloud/backend";
+import {
+  generateChainId,
+  SystemTools,
+  TamboBackend,
+} from "@tambo-ai-cloud/backend";
 import {
   ActionType,
   ComponentDecisionV2,
@@ -9,6 +12,7 @@ import {
   LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
+  ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import type { HydraDatabase } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
@@ -17,13 +21,18 @@ import { decryptProviderKey } from "../common/key.utils";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
+import { getSystemTools } from "../common/systemTools";
 import { AvailableComponentDto } from "../components/dto/generate-component.dto";
 import { ProjectsService } from "../projects/projects.service";
 import {
   AdvanceThreadDto,
   AdvanceThreadResponseDto,
 } from "./dto/advance-thread.dto";
-import { MessageRequest, ThreadMessageDto } from "./dto/message.dto";
+import {
+  ChatCompletionContentPartDto,
+  MessageRequest,
+  ThreadMessageDto,
+} from "./dto/message.dto";
 import { SuggestionDto } from "./dto/suggestion.dto";
 import { SuggestionsGenerateDto } from "./dto/suggestions-generate.dto";
 import { Thread, ThreadRequest, ThreadWithMessagesDto } from "./dto/thread.dto";
@@ -35,6 +44,7 @@ import {
   convertContentPartToDto,
   extractToolResponse,
   finishInProgressMessage,
+  processThreadMessage,
   threadMessageDtoToThreadMessage,
   updateGenerationStage,
   updateMessage,
@@ -56,7 +66,6 @@ export class ThreadsService {
     private readonly db: HydraDatabase,
     private projectsService: ProjectsService,
     private readonly logger: CorrelationLoggerService,
-    private readonly configService: ConfigService,
     private readonly emailService: EmailService,
   ) {}
 
@@ -265,7 +274,7 @@ export class ThreadsService {
   async addMessage(
     threadId: string,
     messageDto: MessageRequest,
-  ): Promise<ThreadMessageDto> {
+  ): Promise<ThreadMessage> {
     return await addMessage(this.getDb(), threadId, messageDto);
   }
 
@@ -424,31 +433,33 @@ export class ThreadsService {
   /**
    * Advance the thread by one step.
    * @param projectId - The project ID.
-   * @param threadId - The thread ID.
    * @param advanceRequestDto - The advance request DTO, including optional message to append, context key, and available components.
+   * @param unresolvedThreadId - The thread ID, if any
    * @param stream - Whether to stream the response.
    * @returns The the generated response thread message, generation stage, and status message.
    */
   async advanceThread(
     projectId: string,
     advanceRequestDto: AdvanceThreadDto,
-    threadId?: string,
+    unresolvedThreadId?: string,
     stream?: boolean,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
+    const db = this.getDb();
+
     await this.checkMessageLimit(projectId);
 
     const thread = await this.ensureThread(
       projectId,
-      threadId,
+      unresolvedThreadId,
       advanceRequestDto.contextKey,
     );
 
     // Ensure only one request per thread adds its user message and continues
     const addedUserMessage = await addUserMessage(
-      this.getDb(),
-      thread,
+      db,
+      thread.id,
       advanceRequestDto,
       this.logger,
     );
@@ -489,13 +500,140 @@ export class ThreadsService {
     if (messages.length === 0) {
       throw new Error("No messages found");
     }
-    const latestMessage = messages[messages.length - 1];
 
-    let responseMessage: LegacyComponentDecision;
+    if (stream) {
+      return await this.handleStreamingResponse(
+        projectId,
+        thread.id,
+        db,
+        tamboBackend,
+        threadMessageDtoToThreadMessage(messages),
+        addedUserMessage,
+        advanceRequestDto,
+        availableComponentMap,
+      );
+    }
+
+    const systemTools = await getSystemTools(db, projectId);
+
+    const responseMessage = await processThreadMessage(
+      db,
+      thread.id,
+      threadMessageDtoToThreadMessage(messages),
+      advanceRequestDto,
+      tamboBackend,
+      systemTools,
+      availableComponentMap,
+    );
+    const {
+      responseMessageDto,
+      resultingGenerationStage,
+      resultingStatusMessage,
+    } = await addAssistantResponse(
+      db,
+      thread.id,
+      addedUserMessage,
+      responseMessage,
+      this.logger,
+    );
+
+    const toolCallRequest = responseMessage.toolCallRequest;
+    if (
+      toolCallRequest &&
+      toolCallRequest.toolName in systemTools.mcpToolSources
+    ) {
+      return await this.handleSystemToolCall(
+        toolCallRequest,
+        systemTools,
+        responseMessage,
+        advanceRequestDto,
+        projectId,
+        thread.id,
+        false,
+      );
+    }
+
+    return {
+      responseMessageDto: {
+        ...responseMessageDto,
+        content: convertContentPartToDto(responseMessageDto.content),
+      },
+      generationStage: resultingGenerationStage,
+      statusMessage: resultingStatusMessage,
+    };
+  }
+
+  private async handleSystemToolCall(
+    toolCallRequest: ToolCallRequest,
+    systemTools: SystemTools,
+    componentDecision: LegacyComponentDecision,
+    advanceRequestDto: AdvanceThreadDto,
+    projectId: string,
+    threadId: string,
+    stream: boolean,
+  ): Promise<
+    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
+  > {
+    const toolSource = systemTools.mcpToolSources[toolCallRequest.toolName];
+
+    const result = await toolSource.callTool(
+      toolCallRequest.toolName,
+      Object.fromEntries(
+        toolCallRequest.parameters.map((p) => [
+          p.parameterName,
+          p.parameterValue,
+        ]),
+      ),
+    );
+
+    const responseContent: ChatCompletionContentPartDto[] =
+      typeof result === "string"
+        ? [{ type: ContentPartType.Text, text: result }]
+        : Array.isArray(result.content)
+          ? result.content
+          : [];
+
+    // TODO: handle cases where MCP server returns *only* resource types
+    if (responseContent.length === 0) {
+      throw new Error("No response content found");
+    }
+    const messageWithToolResponse: AdvanceThreadDto = {
+      messageToAppend: {
+        actionType: ActionType.ToolResponse,
+        component: componentDecision,
+        role: MessageRole.Tool,
+        content: responseContent,
+      },
+      additionalContext: advanceRequestDto.additionalContext,
+      availableComponents: advanceRequestDto.availableComponents,
+      contextKey: advanceRequestDto.contextKey,
+    };
+
+    return await this.advanceThread(
+      projectId,
+      messageWithToolResponse,
+      threadId,
+      stream,
+    );
+  }
+
+  private async handleStreamingResponse(
+    projectId: string,
+    threadId: string,
+    db: HydraDatabase,
+    tamboBackend: TamboBackend,
+    messages: ThreadMessage[],
+    addedUserMessage: ThreadMessage,
+    advanceRequestDto: AdvanceThreadDto,
+    availableComponentMap: Record<string, AvailableComponentDto>,
+  ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
+    const systemTools = await getSystemTools(db, projectId);
+    const latestMessage = messages[messages.length - 1];
+    const toolCallId = latestMessage.tool_call_id;
     if (latestMessage.role === MessageRole.Tool) {
       await updateGenerationStage(
-        this.getDb(),
-        thread.id,
+        db,
+        threadId,
         GenerationStage.HYDRATING_COMPONENT,
         `Hydrating ${latestMessage.component?.componentName}...`,
       );
@@ -510,131 +648,105 @@ export class ThreadsService {
       const componentDef = advanceRequestDto.availableComponents?.find(
         (c) => c.name === latestMessage.component?.componentName,
       );
-      // if (!componentDef) {
-      //   throw new Error("Component definition not found");
-      // }
+      if (!componentDef) {
+        throw new Error("Component definition not found");
+      }
 
-      if (stream) {
-        const streamedResponseMessage =
-          await tamboBackend.hydrateComponentWithData(
-            threadMessageDtoToThreadMessage(messages),
-            componentDef!,
-            toolResponse,
-            latestMessage.tool_call_id,
-            thread.id,
-            true,
-          );
-        return this.handleAdvanceThreadStream(
-          thread.id,
-          streamedResponseMessage,
-          addedUserMessage,
-          latestMessage.tool_call_id,
-        );
-      } else {
-        let finalResponse: LegacyComponentDecision | undefined;
-        for await (const response of await tamboBackend.runDecisionLoop({
-          messageHistory: threadMessageDtoToThreadMessage(messages),
-          availableComponents: advanceRequestDto.availableComponents ?? [],
-          stream: false,
+      const streamedResponseMessage =
+        await tamboBackend.hydrateComponentWithData(
+          messages,
+          componentDef,
           toolResponse,
-          toolCallId: latestMessage.tool_call_id,
-          additionalContext: advanceRequestDto.additionalContext,
-        })) {
-          finalResponse = response;
-        }
-        if (!finalResponse) {
-          throw new Error("No response received from decision loop");
-        }
-        responseMessage = finalResponse;
-      }
-    } else {
-      await updateGenerationStage(
-        this.getDb(),
-        thread.id,
-        GenerationStage.CHOOSING_COMPONENT,
-        `Choosing component...`,
-      );
-      if (stream) {
-        const streamedResponseMessage = await tamboBackend.generateComponent(
-          threadMessageDtoToThreadMessage(messages),
-          availableComponentMap,
-          thread.id,
+          latestMessage.tool_call_id,
+          threadId,
+          systemTools,
           true,
-          advanceRequestDto.additionalContext,
         );
-        return this.handleAdvanceThreadStream(
-          thread.id,
-          streamedResponseMessage,
-          addedUserMessage,
-        );
-      } else {
-        let finalResponse: LegacyComponentDecision | undefined;
-        for await (const response of await tamboBackend.runDecisionLoop({
-          messageHistory: threadMessageDtoToThreadMessage(messages),
-          availableComponents: advanceRequestDto.availableComponents ?? [],
-          stream: false,
-          additionalContext: advanceRequestDto.additionalContext,
-        })) {
-          finalResponse = response;
-        }
-        if (!finalResponse) {
-          throw new Error("No response received from decision loop");
-        }
-        responseMessage = finalResponse;
-        console.log("responseMessage", responseMessage);
-      }
+      return this.handleAdvanceThreadStream(
+        projectId,
+        threadId,
+        streamedResponseMessage,
+        addedUserMessage,
+        systemTools,
+        advanceRequestDto,
+        toolCallId,
+      );
     }
 
-    const db = this.getDb();
-    const {
-      responseMessageDto,
-      resultingGenerationStage,
-      resultingStatusMessage,
-    } = await addAssistantResponse(
+    await updateGenerationStage(
       db,
-      thread,
-      addedUserMessage,
-      responseMessage,
-      this.logger,
+      threadId,
+      GenerationStage.CHOOSING_COMPONENT,
+      `Choosing component...`,
     );
 
-    return {
-      responseMessageDto,
-      generationStage: resultingGenerationStage,
-      statusMessage: resultingStatusMessage,
-    };
+    const streamedResponseMessage = await tamboBackend.generateComponent(
+      messages,
+      availableComponentMap,
+      threadId,
+      systemTools,
+      true,
+      advanceRequestDto.additionalContext,
+    );
+
+    return this.handleAdvanceThreadStream(
+      projectId,
+      threadId,
+      streamedResponseMessage,
+      addedUserMessage,
+      systemTools,
+      advanceRequestDto,
+      toolCallId,
+    );
   }
 
   private async *handleAdvanceThreadStream(
+    projectId: string,
     threadId: string,
     stream: AsyncIterableIterator<LegacyComponentDecision>,
-    addedUserMessage: ThreadMessageDto,
+    addedUserMessage: ThreadMessage,
+    systemTools: SystemTools,
+    originalRequest: AdvanceThreadDto,
     toolCallId?: string,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
-    let finalResponse:
-      | {
-          responseMessageDto: ThreadMessageDto;
-          generationStage: GenerationStage;
-          statusMessage: string;
-        }
-      | undefined;
     let lastUpdateTime = 0;
     const updateIntervalMs = 500;
+    const db = this.getDb();
+    const logger = this.logger;
 
     await updateGenerationStage(
-      this.getDb(),
+      db,
       threadId,
       GenerationStage.STREAMING_RESPONSE,
       `Streaming response...`,
     );
 
     const inProgressMessage = await addInProgressMessage(
-      this.getDb(),
+      db,
       threadId,
       addedUserMessage,
       toolCallId,
-      this.logger,
+      logger,
     );
+    let finalResponse: {
+      responseMessageDto: ThreadMessageDto;
+      generationStage: GenerationStage;
+      statusMessage: string;
+    } = {
+      responseMessageDto: {
+        // Only bring in the bare minimum fields from the inProgressMessage
+        componentState: inProgressMessage.componentState,
+        content: convertContentPartToDto(inProgressMessage.content),
+        createdAt: inProgressMessage.createdAt,
+        id: inProgressMessage.id,
+        role: inProgressMessage.role,
+        threadId: inProgressMessage.threadId,
+      },
+      generationStage: GenerationStage.IDLE,
+      statusMessage: "",
+    };
+    let finalToolCallRequest: ToolCallRequest | undefined;
+    let finalToolCallId: string | undefined;
 
     for await (const chunk of stream) {
       finalResponse = {
@@ -651,22 +763,26 @@ export class ThreadsService {
           ],
           component: chunk,
           actionType: chunk.toolCallRequest ? ActionType.ToolCall : undefined,
-          toolCallRequest: chunk.toolCallRequest,
-          // toolCallId is set when streaming the response to a tool response
-          // chunk.toolCallId is set when streaming the response to a component
-          tool_call_id: toolCallId ?? chunk.toolCallId,
+          // do NOT set the toolCallRequest or tool_call_id here, we will set them in the final response,
+          // once the call is fully formed, and we know we do not call any system tools
         },
         generationStage: GenerationStage.STREAMING_RESPONSE,
         statusMessage: `Streaming response...`,
       };
+      if (chunk.toolCallRequest) {
+        finalToolCallRequest = chunk.toolCallRequest;
+        // toolCallId is set when streaming the response to a tool response
+        // chunk.toolCallId is set when streaming the response to a component
+        finalToolCallId = toolCallId ?? chunk.toolCallId;
+      }
       const currentTime = Date.now();
 
       // Update db message on interval
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
         await updateMessage(
-          this.getDb(),
+          db,
           inProgressMessage.id,
-          finalResponse!.responseMessageDto,
+          finalResponse.responseMessageDto,
         );
         lastUpdateTime = currentTime;
       }
@@ -678,23 +794,65 @@ export class ThreadsService {
       };
     }
 
-    if (finalResponse) {
-      const { resultingGenerationStage, resultingStatusMessage } =
-        await finishInProgressMessage(
-          this.getDb(),
-          threadId,
-          addedUserMessage,
-          inProgressMessage,
-          finalResponse,
-          this.logger,
-        );
+    // now that we're done streaming, add the tool call request and tool call id to the response
+    finalResponse = {
+      ...finalResponse,
+      responseMessageDto: {
+        ...finalResponse.responseMessageDto,
+        toolCallRequest: finalToolCallRequest,
+        tool_call_id: finalToolCallId,
+      },
+    };
 
-      yield {
-        responseMessageDto: finalResponse.responseMessageDto,
-        generationStage: resultingGenerationStage,
-        statusMessage: resultingStatusMessage,
-      };
+    const { resultingGenerationStage, resultingStatusMessage } =
+      await finishInProgressMessage(
+        db,
+        threadId,
+        addedUserMessage,
+        inProgressMessage,
+        finalResponse,
+        logger,
+      );
+    const componentDecision = finalResponse.responseMessageDto.component;
+    if (
+      componentDecision &&
+      finalToolCallRequest &&
+      finalToolCallRequest.toolName in systemTools.mcpToolSources
+    ) {
+      // Note that this effectively consumes finalToolCallRequest and finalToolCallId
+      const result = await this.handleSystemToolCall(
+        finalToolCallRequest,
+        systemTools,
+        componentDecision,
+        originalRequest,
+        projectId,
+        threadId,
+        true,
+      );
+      if (Symbol.asyncIterator in result) {
+        for await (const chunk of result) {
+          yield chunk;
+        }
+      } else {
+        yield result;
+      }
+      return;
     }
+
+    // now that we're done streaming, add the tool call request and tool call id to the response
+    finalResponse = {
+      ...finalResponse,
+      responseMessageDto: {
+        ...finalResponse.responseMessageDto,
+        toolCallRequest: finalToolCallRequest,
+        tool_call_id: finalToolCallId,
+      },
+    };
+    yield {
+      responseMessageDto: finalResponse.responseMessageDto,
+      generationStage: resultingGenerationStage,
+      statusMessage: resultingStatusMessage,
+    };
   }
 
   private async ensureThread(
@@ -735,7 +893,7 @@ export class ThreadsService {
 
     // If no provider keys are set, use the fallback key
     if (!providerKeys?.length) {
-      const fallbackKey = this.configService.get("FALLBACK_OPENAI_API_KEY");
+      const fallbackKey = process.env.FALLBACK_OPENAI_API_KEY;
       if (!fallbackKey) {
         throw new NotFoundException(
           "No provider keys found for project and no fallback key configured",
