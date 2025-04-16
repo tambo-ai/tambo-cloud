@@ -1,9 +1,29 @@
 import OpenAI from "openai";
+import { FunctionParameters } from "openai/resources";
 import {
   AvailableComponent,
   ComponentContextToolMetadata,
   ComponentPropsMetadata,
 } from "../../model/component-metadata";
+
+// Standard parameters to be added to all tools
+export const standardToolParameters: FunctionParameters = {
+  type: "object",
+  properties: {
+    statusMessage: {
+      type: "string",
+      description:
+        "a message that will be displayed to the user to explain in a few words what the tool is being used for, starting with a verb. For example, 'looking for <something>' or 'creating <something>'.",
+    },
+    displayMessage: {
+      type: "string",
+      description:
+        "A message to be displayed before the tool is called. This should be a natural language response to the previous message to describe what you are about to do. For example, `First, let me <do something>` or 'Great, I can see <something>, let me <do something>'. Get creative, this is what will make the user feel like they are having a conversation with you.",
+    },
+  },
+  required: ["statusMessage", "displayMessage"],
+  additionalProperties: false,
+};
 
 // Public functions
 export function convertMetadataToTools(
@@ -73,6 +93,34 @@ export function convertComponentsToUITools(
         required: Object.entries(component.props)
           .filter(([_, value]) => (value as ComponentPropsMetadata).isRequired)
           .map(([key]) => key),
+        additionalProperties: false,
+      },
+    },
+  }));
+}
+
+export function addParametersToTools(
+  tools: OpenAI.Chat.Completions.ChatCompletionTool[],
+  parameters: FunctionParameters,
+): OpenAI.Chat.Completions.ChatCompletionTool[] {
+  return tools.map((tool) => ({
+    ...tool,
+    function: {
+      ...tool.function,
+      parameters: {
+        type: "object",
+        properties: {
+          ...(tool.function.parameters?.properties || {}),
+          ...(parameters.properties || {}),
+        },
+        required: Array.from(
+          new Set([
+            ...(Array.isArray(tool.function.parameters?.required)
+              ? tool.function.parameters.required
+              : []),
+            ...(Array.isArray(parameters.required) ? parameters.required : []),
+          ]),
+        ),
         additionalProperties: false,
       },
     },

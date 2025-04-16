@@ -9,8 +9,10 @@ import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
 import { threadMessagesToChatHistory } from "../../util/threadMessagesToChatHistory";
 import { getLLMResponseToolCallRequest, LLMClient } from "../llm/llm-client";
 import {
+  addParametersToTools,
   convertComponentsToUITools,
   convertMetadataToTools,
+  standardToolParameters,
 } from "../tool/tool-service";
 
 export async function* runDecisionLoop(
@@ -24,12 +26,14 @@ export async function* runDecisionLoop(
     availableComponents,
     uiToolNamePrefix,
   );
-  console.log("componentTools", JSON.stringify(componentTools));
-
   const standardTools = convertMetadataToTools(
     availableComponents.flatMap((component) => component.contextTools),
   );
   const tools = [...componentTools, ...standardTools];
+  const toolsWithStandardParameters = addParametersToTools(
+    tools,
+    standardToolParameters,
+  );
 
   const { template: systemPrompt } = generateDecisionLoopPrompt();
   const chatHistory = threadMessagesToChatHistory(messageHistory);
@@ -39,7 +43,7 @@ export async function* runDecisionLoop(
   ]);
   const response = await llmClient.complete({
     messages: promptMessages,
-    tools,
+    tools: toolsWithStandardParameters,
     promptTemplateName: "decision-loop",
     promptTemplateParams: {
       chat_history: chatHistory,
@@ -63,9 +67,7 @@ export async function* runDecisionLoop(
 
   const decision: LegacyComponentDecision = {
     reasoning: "",
-    message: response.message?.content?.trim()
-      ? response.message.content
-      : "...",
+    message: response.message?.content?.trim() || toolArgs.displayMessage || "",
     componentName: isUITool
       ? toolCall?.function.name.replace(uiToolNamePrefix, "")
       : "",
