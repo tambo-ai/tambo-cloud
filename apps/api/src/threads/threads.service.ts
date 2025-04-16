@@ -793,7 +793,7 @@ export class ThreadsService {
       toolCallRequest &&
       toolCallRequest.toolName in systemTools.mcpToolSources
     ) {
-      return await this.handleSystemToolCall(
+      const result = await this.handleSystemToolCall(
         toolCallRequest,
         systemTools,
         componentDecision,
@@ -801,6 +801,14 @@ export class ThreadsService {
         projectId,
         threadId,
       );
+      if (Symbol.asyncIterator in result) {
+        for await (const chunk of result) {
+          yield chunk;
+        }
+      } else {
+        yield result;
+      }
+      return;
     }
 
     yield {
