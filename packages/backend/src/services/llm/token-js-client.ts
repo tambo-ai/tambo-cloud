@@ -77,8 +77,6 @@ export class TokenJSClient implements LLMClient {
       return this.handleStreamingResponse(stream);
     }
 
-    console.log("messagesFormatted", messagesFormatted);
-
     const response = await this.client.chat.completions.create({
       provider: this.provider,
       model: this.model,
