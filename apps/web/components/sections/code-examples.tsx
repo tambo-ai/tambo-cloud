@@ -140,80 +140,47 @@ export const tamboComponents = [
 export function CodeExamples() {
   const [activeTab, setActiveTab] = useState<TabKey>("demo");
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [isHighlighted, setIsHighlighted] = useState(false);
-
-  // Create a ref to store the InteractiveDemo component instance
-  // This ensures the component state persists between tab changes
   const demoRef = useRef<HTMLDivElement>(null);
-
-  // Keep demo visible in DOM even when other tabs are selected
-  // This preserves its state when switching tabs
-  const [demoMounted, setDemoMounted] = useState(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let lastScrollY = window.scrollY;
-    let scrollTimeout: NodeJS.Timeout | null = null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        // When section enters viewport, scroll to center it
+        if (entry.isIntersecting && sectionRef.current) {
+          const sectionTop =
+            sectionRef.current.getBoundingClientRect().top + window.scrollY;
+          const viewportCenter = window.innerHeight / 2;
+          const sectionHeight = sectionRef.current.offsetHeight;
+          const targetScrollPosition =
+            sectionTop - viewportCenter + sectionHeight / 2;
 
-    const handleScroll = () => {
-      if (!sectionRef.current) return;
+          window.scrollTo({
+            top: targetScrollPosition,
+            behavior: "smooth",
+          });
 
-      const currentScrollY = window.scrollY;
-      const isScrollingDown = currentScrollY > lastScrollY;
-      lastScrollY = currentScrollY;
-
-      const rect = sectionRef.current.getBoundingClientRect();
-
-      // Check if section is entering viewport from below while scrolling down
-      if (
-        isScrollingDown &&
-        rect.top < window.innerHeight * 0.6 &&
-        rect.top > 0
-      ) {
-        // Clear any existing timeout
-        if (scrollTimeout) {
-          clearTimeout(scrollTimeout);
+          // Once centered, stop observing
+          observer.unobserve(sectionRef.current);
         }
+      },
+      {
+        root: null,
+        rootMargin: "-10% 0px",
+        threshold: 0.2,
+      },
+    );
 
-        // Highlight the section
-        setIsHighlighted(true);
-
-        // Snap to section with slight offset
-        window.scrollTo({
-          top: sectionRef.current.offsetTop - 60,
-          behavior: "smooth",
-        });
-
-        // Prevent immediate scroll after snapping
-        scrollTimeout = setTimeout(() => {
-          scrollTimeout = null;
-        }, 800);
-      } else if (rect.bottom < 0 || rect.top > window.innerHeight) {
-        // Reset highlight when out of view
-        setIsHighlighted(false);
-      }
-    };
-
-    // Throttled scroll handler
-    let ticking = false;
-    const throttledScroll = () => {
-      if (scrollTimeout) return; // Skip if we're in timeout period
-
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", throttledScroll);
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
 
     return () => {
-      if (scrollTimeout) clearTimeout(scrollTimeout);
-      window.removeEventListener("scroll", throttledScroll);
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
     };
   }, []);
 
@@ -228,10 +195,7 @@ export function CodeExamples() {
       id="code-examples"
       className="py-4 sm:py-6 md:py-8 lg:py-10 scroll-mt-16"
     >
-      <div
-        ref={sectionRef}
-        className={`w-full space-y-4 ${isHighlighted ? "section-highlight" : ""}`}
-      >
+      <div ref={sectionRef} className="w-full space-y-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
