@@ -839,15 +839,6 @@ export class ThreadsService {
       return;
     }
 
-    // now that we're done streaming, add the tool call request and tool call id to the response
-    finalResponse = {
-      ...finalResponse,
-      responseMessageDto: {
-        ...finalResponse.responseMessageDto,
-        toolCallRequest: finalToolCallRequest,
-        tool_call_id: finalToolCallId,
-      },
-    };
     yield {
       responseMessageDto: finalResponse.responseMessageDto,
       generationStage: resultingGenerationStage,
