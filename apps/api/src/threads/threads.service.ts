@@ -701,16 +701,17 @@ export class ThreadsService {
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     let lastUpdateTime = 0;
     const updateIntervalMs = 500;
+    const db = this.getDb();
 
     await updateGenerationStage(
-      this.getDb(),
+      db,
       threadId,
       GenerationStage.STREAMING_RESPONSE,
       `Streaming response...`,
     );
 
     const inProgressMessage = await addInProgressMessage(
-      this.getDb(),
+      db,
       threadId,
       addedUserMessage,
       toolCallId,
@@ -762,7 +763,7 @@ export class ThreadsService {
       // Update db message on interval
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
         await updateMessage(
-          this.getDb(),
+          db,
           inProgressMessage.id,
           finalResponse.responseMessageDto,
         );
@@ -778,7 +779,7 @@ export class ThreadsService {
 
     const { resultingGenerationStage, resultingStatusMessage } =
       await finishInProgressMessage(
-        this.getDb(),
+        db,
         threadId,
         addedUserMessage,
         inProgressMessage,
