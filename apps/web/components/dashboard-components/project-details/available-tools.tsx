@@ -24,7 +24,7 @@ interface AvailableToolsProps {
 
 export function AvailableTools({ project }: AvailableToolsProps) {
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("");
+  const [selectedAppId, setSelectedAppId] = React.useState("");
 
   const {
     data: apps,
@@ -37,7 +37,7 @@ export function AvailableTools({ project }: AvailableToolsProps) {
   const { mutate: enableApp } = api.tools.enableApp.useMutation({
     onSuccess: async () => {
       await refetchApps();
-      setValue(""); // Reset combobox after enabling
+      setSelectedAppId(""); // Reset combobox after enabling
       setOpen(false);
     },
   });
@@ -81,13 +81,14 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                 aria-expanded={open}
                 className="w-full justify-between"
               >
-                {value
-                  ? disabledApps.find((app) => app.appId === value)?.name
+                {selectedAppId
+                  ? disabledApps.find((app) => app.appId === selectedAppId)
+                      ?.name
                   : "Add an app..."}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0">
+            <PopoverContent className="w-full p-0 max-w-prose">
               <Command>
                 <CommandInput placeholder="Search apps..." />
                 <CommandList>
@@ -96,29 +97,44 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                     {disabledApps.map((app) => (
                       <CommandItem
                         key={app.appId}
-                        value={app.appId}
+                        value={app.name}
+                        keywords={getAppKeywords(app.description)}
                         onSelect={(currentValue) => {
-                          enableApp({
-                            projectId: project.id,
-                            appId: currentValue,
-                          });
+                          // kind of a hack since we want appId, but the combobox is using name
+                          const appId = apps.find(
+                            (a) => a.name === currentValue,
+                          )?.appId;
+                          if (appId) {
+                            enableApp({
+                              projectId: project.id,
+                              appId,
+                            });
+                          }
                         }}
+                        className="flex flex-col items-start py-3 "
                       >
-                        <div className="flex items-center gap-2">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={app.logo}
-                            alt={app.name}
-                            className="w-4 h-4 rounded-full"
+                        <div className="flex items-center w-full">
+                          <div className="flex items-center gap-2">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={app.logo}
+                              alt={app.name}
+                              className="w-4 h-4 rounded-full"
+                            />
+                            {app.name}
+                          </div>
+                          <Check
+                            className={cn(
+                              "ml-auto h-4 w-4",
+                              selectedAppId === app.appId
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
                           />
-                          {app.name}
                         </div>
-                        <Check
-                          className={cn(
-                            "ml-auto h-4 w-4",
-                            value === app.appId ? "opacity-100" : "opacity-0",
-                          )}
-                        />
+                        <span className="text-xs text-muted-foreground mt-1">
+                          {app.description}
+                        </span>
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -180,4 +196,10 @@ export function AvailableTools({ project }: AvailableToolsProps) {
       </CardContent>
     </Card>
   );
+}
+function getAppKeywords(description: string): string[] | undefined {
+  return description
+    .split(" ")
+    .map((word) => word.replace(/[^a-zA-Z0-9]/g, "").trim())
+    .filter((word) => word.length > 4);
 }
