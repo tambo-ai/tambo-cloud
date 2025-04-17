@@ -17,7 +17,8 @@ export function convertContentDtoToContentPart(
     .map((part): ChatCompletionContentPart | null => {
       switch (part.type) {
         case ContentPartType.Text:
-          if (!part.text) {
+          // empty strings are ok, but undefined/null is not
+          if (!part.text && typeof part.text !== "string") {
             throw new Error("Text content is required for text type");
           }
           return {
