@@ -124,9 +124,9 @@ export function McpServerRow({
       : error?.message || (error && "An error occurred");
 
   return (
-    <div className="space-y-2">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md">
+    <div className="space-y-2 bg-muted/50 p-2 rounded-md">
+      <div className="space-y-1 ">
+        <div className="flex items-center gap-2 ">
           <Input
             ref={inputRef}
             value={url}
@@ -184,12 +184,12 @@ export function McpServerRow({
         )}
       </div>
 
-      <div className="flex gap-2 px-2">
+      <div className="flex gap-2">
         <Input
           value={headerName}
           onChange={(e) => setHeaderName(e.target.value)}
           placeholder="Optional header name (e.g. Authorization)"
-          className="flex-1"
+          className="flex-[2]"
           disabled={!isEditing}
         />
         <Input
@@ -199,7 +199,7 @@ export function McpServerRow({
           onFocus={() => setIsHeaderValueFocused(true)}
           onBlur={() => setIsHeaderValueFocused(false)}
           placeholder="Header value"
-          className="flex-1"
+          className="flex-[5]"
           disabled={!isEditing}
         />
       </div>
