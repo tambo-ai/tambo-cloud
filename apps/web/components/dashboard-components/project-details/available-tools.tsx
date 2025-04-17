@@ -222,12 +222,6 @@ export function AvailableTools({ project }: AvailableToolsProps) {
     </Card>
   );
 }
-function getAppKeywords(description: string): string[] | undefined {
-  return description
-    .split(" ")
-    .map((word) => word.replace(/[^a-zA-Z0-9]/g, "").trim())
-    .filter((word) => word.length > 4);
-}
 
 function getAuthModeName(mode: ComposioAuthMode): string {
   switch (mode) {

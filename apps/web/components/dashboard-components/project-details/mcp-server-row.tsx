@@ -8,6 +8,7 @@ interface McpServerRowProps {
   server: {
     id: string;
     url: string | null;
+    customHeaders: Record<string, string>;
   };
   projectId: string;
   onRefresh: () => Promise<void>;
@@ -24,8 +25,11 @@ export function McpServerRow({
 }: McpServerRowProps) {
   const [isEditing, setIsEditing] = useState(isNew);
   const [url, setUrl] = useState(server.url || (isNew ? "https://" : ""));
-  const [headerName, setHeaderName] = useState("");
-  const [headerValue, setHeaderValue] = useState("");
+  const firstHeaderKey = Object.keys(server.customHeaders)[0];
+  const [headerName, setHeaderName] = useState(firstHeaderKey || "");
+  const [headerValue, setHeaderValue] = useState(
+    server.customHeaders[firstHeaderKey] || "",
+  );
   const [isHeaderValueFocused, setIsHeaderValueFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -78,11 +82,19 @@ export function McpServerRow({
       return;
     }
     setUrl(server.url || "");
+    setHeaderName(firstHeaderKey || "");
+    setHeaderValue(server.customHeaders[firstHeaderKey] || "");
     setIsEditing(false);
   };
 
   const handleSave = async () => {
     const trimmedUrl = url.trim();
+    const trimmedHeaderName = headerName.trim();
+    const customHeaders: Record<string, string> = {};
+
+    if (trimmedHeaderName) {
+      customHeaders[trimmedHeaderName] = headerValue;
+    }
 
     if (!trimmedUrl) {
       return;
@@ -92,12 +104,14 @@ export function McpServerRow({
       await addServer({
         projectId,
         url: trimmedUrl,
+        customHeaders,
       });
     } else {
       await updateServer({
         projectId,
         serverId: server.id,
         url: trimmedUrl,
+        customHeaders,
       });
     }
   };
@@ -200,7 +214,7 @@ export function McpServerRow({
           onBlur={() => setIsHeaderValueFocused(false)}
           placeholder="Header value"
           className="flex-[5]"
-          disabled={!isEditing}
+          disabled={!isEditing || !headerName.trim()}
         />
       </div>
     </div>
