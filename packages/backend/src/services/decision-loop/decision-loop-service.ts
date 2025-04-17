@@ -105,7 +105,7 @@ export async function* runDecisionLoop(
             ? message.trim()
             : (toolArgs as any).displayMessage || "",
           false,
-        ),
+        ), // use content if it exists, or displayMessage from the toolcall if it doesn't, since sometimes a toolcall request won't include content
         componentName: isUITool
           ? toolCall?.function.name.replace(uiToolNamePrefix, "")
           : "",
