@@ -72,6 +72,7 @@ export async function* runDecisionLoop(
     componentState: null,
     toolCallRequest: undefined,
     toolCallId: undefined,
+    statusMessage: undefined,
   };
 
   let accumulatedDecision = initialDecision;
@@ -99,6 +100,7 @@ export async function* runDecisionLoop(
       }
 
       const paramDisplayMessage = (toolArgs as any).displayMessage;
+      const statusMessage = (toolArgs as any).statusMessage;
 
       // If this is a non-UI tool call, make sure params are complete and filter out standard tool parameters
       let filteredToolCallRequest;
@@ -125,16 +127,22 @@ export async function* runDecisionLoop(
       }
 
       const parsedChunk = {
-        message: extractMessageContent(
-          message?.length > 0 ? message.trim() : paramDisplayMessage || "",
-          false,
-        ), // use content if it exists, or displayMessage from the toolcall if it doesn't, since sometimes a toolcall request won't include content
+        message:
+          isUITool || !toolCall
+            ? extractMessageContent(
+                message?.length > 0
+                  ? message.trim()
+                  : paramDisplayMessage || "",
+                false,
+              )
+            : "", // Only show message for UI tool calls
         componentName: isUITool
           ? toolCall?.function.name.replace(uiToolNamePrefix, "")
           : "",
         props: isUITool ? toolArgs : null,
         toolCallRequest: filteredToolCallRequest,
         toolCallId: getLLMResponseToolCallId(chunk),
+        statusMessage,
       };
 
       accumulatedDecision = {
