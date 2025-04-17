@@ -100,6 +100,7 @@ export async function* runDecisionLoop(
 
       const paramDisplayMessage = (toolArgs as any).displayMessage;
 
+      // If this is a non-UI tool call, make sure params are complete and filter out standard tool parameters
       let filteredToolCallRequest;
       if (!isUITool && toolCall) {
         const parsedToolCall = tryParseJsonObject(
