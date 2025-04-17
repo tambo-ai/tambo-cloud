@@ -9,13 +9,19 @@ import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
 import { SystemTools } from "../../systemTools";
 import { extractMessageContent } from "../../util/response-parsing";
 import { threadMessagesToChatHistory } from "../../util/threadMessagesToChatHistory";
-import { getLLMResponseToolCallRequest, LLMClient } from "../llm/llm-client";
+import {
+  getLLMResponseMessage,
+  getLLMResponseToolCallId,
+  getLLMResponseToolCallRequest,
+  LLMClient,
+} from "../llm/llm-client";
 import {
   addParametersToTools,
   convertComponentsToUITools,
   convertMetadataToTools,
   standardToolParameters,
 } from "../tool/tool-service";
+
 export async function* runDecisionLoop(
   llmClient: LLMClient,
   messageHistory: ThreadMessage[],
@@ -44,47 +50,74 @@ export async function* runDecisionLoop(
     { role: "system", content: systemPrompt },
     { role: "chat_history" as "user", content: "{chat_history}" },
   ]);
-  const response = await llmClient.complete({
+
+  const responseStream = await llmClient.complete({
     messages: promptMessages,
     tools: [...toolsWithStandardParameters, ...(systemTools?.tools ?? [])],
     promptTemplateName: "decision-loop",
     promptTemplateParams: {
       chat_history: chatHistory,
     },
+    stream: true,
   });
 
-  console.log("stream", stream);
-  console.log(response);
-
-  const toolCall = response.message?.tool_calls?.[0];
-  if (toolCall) {
-    console.log("toolCall", JSON.stringify(toolCall));
-  }
-  const isUITool =
-    toolCall &&
-    componentTools.some(
-      (tool) => tool.function.name === toolCall.function.name,
-    );
-  const toolArgs = toolCall ? JSON.parse(toolCall.function.arguments) : {};
-
-  const decision: LegacyComponentDecision = {
+  const initialDecision: LegacyComponentDecision = {
     reasoning: "",
-    message: extractMessageContent(
-      response.message?.content?.trim() || toolArgs.displayMessage || "",
-      false,
-    ),
-    componentName: isUITool
-      ? toolCall?.function.name.replace(uiToolNamePrefix, "")
-      : "",
-    props: isUITool ? toolArgs : null,
+    message: "",
+    componentName: "",
+    props: null,
     componentState: null,
-    toolCallRequest:
-      !isUITool && toolCall
-        ? getLLMResponseToolCallRequest(response)
-        : undefined,
+    toolCallRequest: undefined,
+    toolCallId: undefined,
   };
 
-  console.log("decision", decision);
+  let accumulatedDecision = initialDecision;
 
-  yield decision;
+  for await (const chunk of responseStream) {
+    try {
+      const message = getLLMResponseMessage(chunk) || "{}";
+      const toolCall = chunk.message?.tool_calls?.[0];
+
+      // Check if this is a UI tool call
+      const isUITool =
+        toolCall &&
+        componentTools.some(
+          (tool) => tool.function.name === toolCall.function.name,
+        );
+
+      let toolArgs = {};
+      if (toolCall) {
+        try {
+          toolArgs = JSON.parse(toolCall.function.arguments);
+        } catch (_e) {
+          // Ignore parse errors for incomplete JSON
+        }
+      }
+
+      const parsedChunk = {
+        message: extractMessageContent(
+          message?.trim() || (toolArgs as any).displayMessage || "",
+          false,
+        ),
+        componentName: isUITool
+          ? toolCall?.function.name.replace(uiToolNamePrefix, "")
+          : "",
+        props: isUITool ? toolArgs : null,
+        toolCallRequest:
+          !isUITool && toolCall
+            ? getLLMResponseToolCallRequest(chunk)
+            : undefined,
+        toolCallId: getLLMResponseToolCallId(chunk),
+      };
+
+      accumulatedDecision = {
+        ...accumulatedDecision,
+        ...parsedChunk,
+      };
+
+      yield accumulatedDecision;
+    } catch (e) {
+      console.error("Error parsing stream chunk:", e);
+    }
+  }
 }

@@ -642,13 +642,6 @@ export class ThreadsService {
         throw new Error("No tool response found");
       }
 
-      const componentDef = advanceRequestDto.availableComponents?.find(
-        (c) => c.name === latestMessage.component?.componentName,
-      );
-      if (!componentDef) {
-        throw new Error("Component definition not found");
-      }
-
       const streamedResponseMessage = await tamboBackend.runDecisionLoop({
         messageHistory: messages,
         availableComponents: advanceRequestDto.availableComponents ?? [],
