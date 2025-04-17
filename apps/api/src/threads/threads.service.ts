@@ -510,7 +510,6 @@ export class ThreadsService {
         threadMessageDtoToThreadMessage(messages),
         addedUserMessage,
         advanceRequestDto,
-        availableComponentMap,
       );
     }
 
@@ -624,7 +623,6 @@ export class ThreadsService {
     messages: ThreadMessage[],
     addedUserMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
-    availableComponentMap: Record<string, AvailableComponentDto>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
     const systemTools = await getSystemTools(db, projectId);
     const latestMessage = messages[messages.length - 1];
@@ -651,16 +649,14 @@ export class ThreadsService {
         throw new Error("Component definition not found");
       }
 
-      const streamedResponseMessage =
-        await tamboBackend.hydrateComponentWithData(
-          messages,
-          componentDef,
-          toolResponse,
-          latestMessage.tool_call_id,
-          threadId,
-          systemTools,
-          true,
-        );
+      const streamedResponseMessage = await tamboBackend.runDecisionLoop({
+        messageHistory: messages,
+        availableComponents: advanceRequestDto.availableComponents ?? [],
+        stream: true,
+        systemTools,
+        additionalContext: advanceRequestDto.additionalContext,
+      });
+
       return this.handleAdvanceThreadStream(
         projectId,
         threadId,
@@ -679,15 +675,13 @@ export class ThreadsService {
       `Choosing component...`,
     );
 
-    const streamedResponseMessage = await tamboBackend.generateComponent(
-      messages,
-      availableComponentMap,
-      threadId,
+    const streamedResponseMessage = await tamboBackend.runDecisionLoop({
+      messageHistory: messages,
+      availableComponents: advanceRequestDto.availableComponents ?? [],
+      stream: true,
       systemTools,
-      true,
-      advanceRequestDto.additionalContext,
-    );
-
+      additionalContext: advanceRequestDto.additionalContext,
+    });
     return this.handleAdvanceThreadStream(
       projectId,
       threadId,
