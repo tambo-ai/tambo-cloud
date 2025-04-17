@@ -70,6 +70,7 @@ describe("Thread State", () => {
 
   describe("updateGenerationStage", () => {
     it("should update thread generation stage", async () => {
+      const now = new Date();
       jest.mocked(operations.updateThread).mockResolvedValue({
         id: "thread-1",
         messages: [],
@@ -78,8 +79,8 @@ describe("Thread State", () => {
         metadata: null,
         generationStage: GenerationStage.CHOOSING_COMPONENT,
         statusMessage: "Test status",
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
       });
       jest
         .mocked(
@@ -106,11 +107,12 @@ describe("Thread State", () => {
 
   describe("addUserMessage", () => {
     it("should throw error if thread is already processing", async () => {
+      const now = new Date();
       const mockThread = {
         id: "thread-1",
         generationStage: GenerationStage.STREAMING_RESPONSE,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: now,
+        updatedAt: now,
         projectId: "project-1",
         contextKey: null,
         metadata: null,
@@ -201,6 +203,7 @@ describe("Thread State", () => {
 
   describe("finishInProgressMessage", () => {
     it("should update message and generation stage", async () => {
+      const now = new Date();
       const mockFinalMessage: ThreadMessageDto = {
         id: "msg-2",
         threadId: "thread-1",
@@ -213,7 +216,7 @@ describe("Thread State", () => {
         ],
         toolCallRequest: undefined,
         componentState: {},
-        createdAt: new Date(),
+        createdAt: now,
       };
 
       const mockUserMessage: typeof schema.messages.$inferSelect = {
@@ -222,7 +225,7 @@ describe("Thread State", () => {
         role: MessageRole.User,
         content: [{ type: ContentPartType.Text, text: "test" }],
         componentState: {},
-        createdAt: new Date(),
+        createdAt: now,
         metadata: null,
         toolCallRequest: null,
         toolCallId: null,
@@ -236,7 +239,7 @@ describe("Thread State", () => {
         role: MessageRole.Assistant,
         content: [{ type: ContentPartType.Text, text: "initial" }],
         componentState: {},
-        createdAt: new Date(),
+        createdAt: now,
         metadata: null,
         toolCallId: null,
         componentDecision: null,
@@ -283,7 +286,7 @@ describe("Thread State", () => {
               text: "test",
             },
           ],
-          createdAt: new Date(),
+          createdAt: now,
           componentState: {},
         },
         "msg-2",
