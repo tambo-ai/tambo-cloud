@@ -126,18 +126,20 @@ export async function* runDecisionLoop(
         }
       }
 
+      const displayMessage =
+        isUITool || !toolCall
+          ? extractMessageContent(
+              message?.length > 0
+                ? message.trim()
+                : isUITool
+                  ? paramDisplayMessage || ""
+                  : "",
+              false,
+            )
+          : ""; // Only show message for UI tool calls or when no tool call
+
       const parsedChunk = {
-        message:
-          isUITool || !toolCall
-            ? extractMessageContent(
-                message?.length > 0
-                  ? message.trim()
-                  : isUITool
-                    ? paramDisplayMessage || ""
-                    : "",
-                false,
-              )
-            : "", // Only show message for UI tool calls or when no tool call
+        message: displayMessage,
         componentName: isUITool
           ? toolCall?.function.name.replace(uiToolNamePrefix, "")
           : "",
