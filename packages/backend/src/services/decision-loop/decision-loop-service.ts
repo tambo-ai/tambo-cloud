@@ -88,17 +88,14 @@ export async function* runDecisionLoop(
 
       let toolArgs = {};
       if (toolCall) {
-        console.log("toolCall", toolCall);
         try {
           // toolArgs = JSON.parse(toolCall.function.arguments);
           toolArgs = parse(toolCall.function.arguments);
-          console.log("toolArgs", toolArgs);
         } catch (_e) {
           // Ignore parse errors for incomplete JSON
         }
       }
 
-      console.log("message", message);
       const parsedChunk = {
         message: extractMessageContent(
           message?.length > 0
@@ -121,8 +118,6 @@ export async function* runDecisionLoop(
         ...accumulatedDecision,
         ...parsedChunk,
       };
-
-      console.log("accumulatedDecision", accumulatedDecision);
 
       yield accumulatedDecision;
     } catch (e) {

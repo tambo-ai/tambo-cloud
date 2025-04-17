@@ -240,7 +240,6 @@ export async function addAssistantResponse(
 export async function* convertDecisionStreamToMessageStream(
   stream: AsyncIterableIterator<LegacyComponentDecision>,
   inProgressMessage: ThreadMessage,
-  toolCallId?: string,
 ): AsyncIterableIterator<ThreadMessageDto> {
   let finalThreadMessage: ThreadMessageDto = {
     // Only bring in the bare minimum fields from the inProgressMessage
@@ -252,7 +251,7 @@ export async function* convertDecisionStreamToMessageStream(
     threadId: inProgressMessage.threadId,
   };
   let finalToolCallRequest: ToolCallRequest | undefined;
-  let finalToolCallId: string | undefined;
+  // let finalToolCallId: string | undefined;
 
   for await (const chunk of stream) {
     finalThreadMessage = {
@@ -271,7 +270,7 @@ export async function* convertDecisionStreamToMessageStream(
       finalToolCallRequest = chunk.toolCallRequest;
       // toolCallId is set when streaming the response to a tool response
       // chunk.toolCallId is set when streaming the response to a component
-      finalToolCallId = toolCallId ?? chunk.toolCallId;
+      // finalToolCallId = toolCallId ?? chunk.toolCallId;
     }
 
     yield finalThreadMessage;
@@ -281,7 +280,7 @@ export async function* convertDecisionStreamToMessageStream(
   finalThreadMessage = {
     ...finalThreadMessage,
     toolCallRequest: finalToolCallRequest,
-    tool_call_id: finalToolCallId,
+    // tool_call_id: finalToolCallId,
   };
 
   yield finalThreadMessage;

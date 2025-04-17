@@ -630,6 +630,9 @@ export class ThreadsService {
         throw new Error("No tool response found");
       }
 
+      console.log("abotu to stream with tool response! ");
+      console.log(messages);
+
       const streamedResponseMessage = await tamboBackend.runDecisionLoop({
         messageHistory: messages,
         availableComponents: advanceRequestDto.availableComponents ?? [],
@@ -709,7 +712,6 @@ export class ThreadsService {
     for await (const threadMessage of convertDecisionStreamToMessageStream(
       stream,
       inProgressMessage,
-      toolCallId,
     )) {
       // Update db message on interval
       const currentTime = Date.now();
