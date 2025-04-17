@@ -110,8 +110,8 @@ export function addParametersToTools(
       parameters: {
         type: "object",
         properties: {
-          ...(tool.function.parameters?.properties || {}),
           ...(parameters.properties || {}),
+          ...(tool.function.parameters?.properties || {}),
         },
         required: Array.from(
           new Set([

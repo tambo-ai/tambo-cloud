@@ -97,6 +97,7 @@ export async function* runDecisionLoop(
         }
       }
 
+      let hasCompleteToolCall = true;
       if (!isUITool && toolCall) {
         // If this is a non-UI tool call, make sure the params are complete
         const parsedToolCall = tryParseJsonObject(
@@ -104,8 +105,7 @@ export async function* runDecisionLoop(
           false,
         );
         if (!parsedToolCall) {
-          // If the params are not complete, hold yielding until they are
-          continue;
+          hasCompleteToolCall = false;
         }
       }
 
@@ -121,7 +121,7 @@ export async function* runDecisionLoop(
           : "",
         props: isUITool ? toolArgs : null,
         toolCallRequest:
-          !isUITool && toolCall
+          !isUITool && toolCall && hasCompleteToolCall
             ? getLLMResponseToolCallRequest(chunk)
             : undefined,
         toolCallId: getLLMResponseToolCallId(chunk),
