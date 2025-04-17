@@ -16,13 +16,16 @@ import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { ThreadMessageDto } from "../dto/message.dto";
 import { convertContentPartToDto } from "./content";
 import {
+  addAssistantMessageToThread,
   addMessage,
-  addResponseToThread,
   updateMessage,
   verifyLatestMessageConsistency,
 } from "./messages";
 import { extractToolResponse } from "./tool";
 
+/**
+ * Update the generation stage of a thread
+ */
 export async function updateGenerationStage(
   db: HydraDb,
   id: string,
@@ -35,6 +38,21 @@ export async function updateGenerationStage(
   });
 }
 
+/**
+ * Process the newest message in a thread.
+ *
+ * If it is a tool message (response to a tool call) then we hydrate the component.
+ * Otherwise, we choose a component to generate.
+ *
+ * @param db
+ * @param threadId
+ * @param messages
+ * @param advanceRequestDto
+ * @param tamboBackend
+ * @param systemTools
+ * @param availableComponentMap
+ * @returns
+ */
 export async function processThreadMessage(
   db: HydraDatabase,
   threadId: string,
@@ -94,6 +112,9 @@ export async function processThreadMessage(
   );
 }
 
+/**
+ * Add a user message to a thread, making sure that the thread is not already in the middle of processing.
+ */
 export async function addUserMessage(
   db: HydraDb,
   threadId: string,
@@ -151,6 +172,9 @@ export async function addUserMessage(
   }
 }
 
+/**
+ * Add an assistant response to a thread, making sure that the thread is not already in the middle of processing.
+ */
 export async function addAssistantResponse(
   db: HydraDatabase,
   threadId: string,
@@ -167,7 +191,7 @@ export async function addAssistantResponse(
       async (tx) => {
         await verifyLatestMessageConsistency(tx, threadId, addedUserMessage);
 
-        const responseMessageDto = await addResponseToThread(
+        const responseMessageDto = await addAssistantMessageToThread(
           tx,
           responseMessage,
           threadId,
@@ -208,6 +232,9 @@ export async function addAssistantResponse(
   }
 }
 
+/**
+ * Convert a stream of component decisions to a stream of serialized thread messages
+ */
 export async function* convertDecisionStreamToMessageStream(
   stream: AsyncIterableIterator<LegacyComponentDecision>,
   inProgressMessage: ThreadMessage,
@@ -258,6 +285,10 @@ export async function* convertDecisionStreamToMessageStream(
   yield finalThreadMessage;
 }
 
+/**
+ * Add a placeholder for an in-progress message to a thread, that will be updated later
+ * with the final response.
+ */
 export async function addInProgressMessage(
   db: HydraDb,
   threadId: string,
@@ -296,6 +327,9 @@ export async function addInProgressMessage(
   }
 }
 
+/**
+ * Finish an in-progress message, updating the thread with the final response.
+ */
 export async function finishInProgressMessage(
   db: HydraDb,
   threadId: string,

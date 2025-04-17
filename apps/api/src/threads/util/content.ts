@@ -4,6 +4,9 @@ import {
 } from "@tambo-ai-cloud/core";
 import { ChatCompletionContentPartDto } from "../dto/message.dto";
 
+/**
+ * Convert a serialized content part to a content part that can be consumed by an LLM
+ */
 export function convertContentDtoToContentPart(
   content: string | ChatCompletionContentPartDto[],
 ): ChatCompletionContentPart[] {
@@ -51,6 +54,9 @@ export function convertContentDtoToContentPart(
     .filter((part): part is ChatCompletionContentPart => !!part);
 }
 
+/**
+ * Convert a string or array of LLM content parts to a serialized content part
+ */
 export function convertContentPartToDto(
   part: ChatCompletionContentPart[] | string,
 ): ChatCompletionContentPartDto[] {
@@ -60,6 +66,9 @@ export function convertContentPartToDto(
   return part as ChatCompletionContentPartDto[];
 }
 
+/**
+ * Try to parse a string as JSON, returning the original string if it is not valid JSON
+ */
 export function tryParseJson(text: string): any {
   // we are assuming that JSON is only ever an object or an array,
   // so we don't need to check for other types of JSON structures

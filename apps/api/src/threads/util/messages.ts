@@ -19,6 +19,9 @@ import {
   convertContentPartToDto,
 } from "./content";
 
+/**
+ * Add a message to a thread
+ */
 export async function addMessage(
   db: HydraDb,
   threadId: string,
@@ -50,6 +53,9 @@ export async function addMessage(
   };
 }
 
+/**
+ * Update a message in a thread
+ */
 export async function updateMessage(
   db: HydraDb,
   messageId: string,
@@ -74,7 +80,10 @@ export async function updateMessage(
   };
 }
 
-export async function addResponseToThread(
+/**
+ * Add a response to a thread
+ */
+export async function addAssistantMessageToThread(
   db: HydraDb,
   component: LegacyComponentDecision,
   threadId: string,
@@ -102,6 +111,9 @@ export async function addResponseToThread(
   });
 }
 
+/**
+ * Verify the latest message in a thread is the latest user message in the thread
+ */
 export async function verifyLatestMessageConsistency(
   db: HydraTransaction,
   threadId: string,
@@ -132,6 +144,9 @@ export async function verifyLatestMessageConsistency(
   }
 }
 
+/**
+ * Convert a list of serialized thread message DTOs to a list of thread messages
+ */
 export function threadMessageDtoToThreadMessage(
   messages: ThreadMessageDto[],
 ): ThreadMessage[] {
