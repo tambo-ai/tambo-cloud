@@ -31,28 +31,29 @@ import { SuggestionDto } from "./dto/suggestion.dto";
 import { SuggestionsGenerateDto } from "./dto/suggestions-generate.dto";
 import { Thread, ThreadRequest, ThreadWithMessagesDto } from "./dto/thread.dto";
 import {
-  addAssistantResponse,
-  addInProgressMessage,
-  addMessage,
-  addUserMessage,
-  callSystemTool,
-  convertContentPartToDto,
-  convertDecisionStreamToMessageStream,
-  extractToolResponse,
-  finishInProgressMessage,
-  mapSuggestionToDto,
-  processThreadMessage,
-  threadMessageDtoToThreadMessage,
-  updateGenerationStage,
-  updateMessage,
-} from "./threads.utils";
-import {
   FREE_MESSAGE_LIMIT,
   FreeLimitReachedError,
   InvalidSuggestionRequestError,
   SuggestionGenerationError,
   SuggestionNotFoundException,
 } from "./types/errors";
+import { convertContentPartToDto } from "./util/content";
+import {
+  addMessage,
+  threadMessageDtoToThreadMessage,
+  updateMessage,
+} from "./util/messages";
+import { mapSuggestionToDto } from "./util/suggestions";
+import {
+  addAssistantResponse,
+  addInProgressMessage,
+  addUserMessage,
+  convertDecisionStreamToMessageStream,
+  finishInProgressMessage,
+  processThreadMessage,
+  updateGenerationStage,
+} from "./util/thread-state";
+import { callSystemTool, extractToolResponse } from "./util/tool";
 
 @Injectable()
 export class ThreadsService {
