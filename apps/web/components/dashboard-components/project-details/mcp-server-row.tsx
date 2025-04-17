@@ -24,6 +24,9 @@ export function McpServerRow({
 }: McpServerRowProps) {
   const [isEditing, setIsEditing] = useState(isNew);
   const [url, setUrl] = useState(server.url || (isNew ? "https://" : ""));
+  const [headerName, setHeaderName] = useState("");
+  const [headerValue, setHeaderValue] = useState("");
+  const [isHeaderValueFocused, setIsHeaderValueFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -121,63 +124,85 @@ export function McpServerRow({
       : error?.message || (error && "An error occurred");
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md">
-        <Input
-          ref={inputRef}
-          value={url}
-          disabled={!isEditing}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={isNew ? "Enter server URL" : undefined}
-          className={`flex-1 ${error ? "border-destructive" : ""}`}
-        />
-        {isEditing ? (
-          <>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSave}
-              disabled={isSaving || !url.trim()}
-            >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCancel}
-              disabled={isSaving}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="ghost" size="icon" onClick={handleEdit}>
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
-            </Button>
-          </>
+    <div className="space-y-2">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md">
+          <Input
+            ref={inputRef}
+            value={url}
+            disabled={!isEditing}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={isNew ? "Enter server URL" : undefined}
+            className={`flex-1 ${error ? "border-destructive" : ""}`}
+          />
+          {isEditing ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSave}
+                disabled={isSaving || !url.trim()}
+              >
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCancel}
+                disabled={isSaving}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="icon" onClick={handleEdit}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+              </Button>
+            </>
+          )}
+        </div>
+        {errorMessage && (
+          <p className="text-sm text-destructive px-2">{errorMessage}</p>
         )}
       </div>
-      {errorMessage && (
-        <p className="text-sm text-destructive px-2">{errorMessage}</p>
-      )}
+
+      <div className="flex gap-2 px-2">
+        <Input
+          value={headerName}
+          onChange={(e) => setHeaderName(e.target.value)}
+          placeholder="Optional header name (e.g. Authorization)"
+          className="flex-1"
+          disabled={!isEditing}
+        />
+        <Input
+          type={isHeaderValueFocused ? "text" : "password"}
+          value={headerValue}
+          onChange={(e) => setHeaderValue(e.target.value)}
+          onFocus={() => setIsHeaderValueFocused(true)}
+          onBlur={() => setIsHeaderValueFocused(false)}
+          placeholder="Header value"
+          className="flex-1"
+          disabled={!isEditing}
+        />
+      </div>
     </div>
   );
 }
