@@ -1,4 +1,5 @@
 import { getComposio } from "@/lib/composio";
+import { ComposioConnectorConfig } from "@/lib/composio-utils";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { operations } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
@@ -27,6 +28,9 @@ export const toolsRouter = createTRPCRouter({
           appId: app.appId,
           name: app.name,
           no_auth: app.no_auth,
+          auth_schemes: app.auth_schemes as
+            | ComposioConnectorConfig[]
+            | undefined,
           // mistyped in the SDK
           tags: app.tags as unknown as string[],
           logo: app.logo,

@@ -13,6 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ComposioAuthMode } from "@/lib/composio-utils";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { Check, ChevronsUpDown, Key, Trash2 } from "lucide-react";
@@ -98,7 +99,7 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                       <CommandItem
                         key={app.appId}
                         value={app.name}
-                        keywords={getAppKeywords(app.description)}
+                        keywords={app.tags}
                         onSelect={(currentValue) => {
                           // kind of a hack since we want appId, but the combobox is using name
                           const appId = apps.find(
@@ -111,7 +112,7 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                             });
                           }
                         }}
-                        className="flex flex-col items-start py-3 "
+                        className="flex flex-col items-start py-3"
                       >
                         <div className="flex items-center w-full">
                           <div className="flex items-center gap-2">
@@ -132,9 +133,21 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                             )}
                           />
                         </div>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {app.description}
-                        </span>
+                        <div className="flex flex-col gap-2 mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {app.description}
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {app.auth_schemes?.map((scheme, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-secondary/50 text-secondary-foreground"
+                              >
+                                {getAuthModeName(scheme.mode)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       </CommandItem>
                     ))}
                   </CommandGroup>
@@ -150,23 +163,35 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                 key={app.appId}
                 className="flex items-center justify-between gap-4 p-2 bg-muted/50 rounded-md"
               >
-                <div className="flex items-center gap-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={app.logo}
-                    alt={app.name}
-                    className="w-4 h-4 rounded-full"
-                  />
-                  <span>{app.name}</span>
-                  {app.tags &&
-                    (app.tags as string[]).map((tag, i) => (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={app.logo}
+                      alt={app.name}
+                      className="w-4 h-4 rounded-full"
+                    />
+                    <span>{app.name}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {app.tags &&
+                      (app.tags as string[]).map((tag, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10"
+                        >
+                          {tag.trim()}
+                        </span>
+                      ))}
+                    {app.auth_schemes?.map((scheme, i) => (
                       <span
-                        key={i}
-                        className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10"
+                        key={`auth-${i}`}
+                        className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-secondary/50 text-secondary-foreground"
                       >
-                        {tag.trim()}
+                        {getAuthModeName(scheme.mode)}
                       </span>
                     ))}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {!app.no_auth && (
@@ -202,4 +227,19 @@ function getAppKeywords(description: string): string[] | undefined {
     .split(" ")
     .map((word) => word.replace(/[^a-zA-Z0-9]/g, "").trim())
     .filter((word) => word.length > 4);
+}
+
+function getAuthModeName(mode: ComposioAuthMode): string {
+  switch (mode) {
+    case "API_KEY":
+      return "API Key";
+    case "OAUTH2":
+      return "OAuth 2.0";
+    case "BEARER_TOKEN":
+      return "Bearer Token";
+    case "BASIC":
+      return "Basic Auth";
+    default:
+      return mode;
+  }
 }
