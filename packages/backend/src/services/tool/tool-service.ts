@@ -126,3 +126,41 @@ export function addParametersToTools(
     },
   }));
 }
+
+/**
+ * Filters out any parameters that aren't defined in the original tool schema
+ */
+export function filterOutStandardToolParameters(
+  toolCall: { function: { name: string; arguments: string } },
+  tools: {
+    function: {
+      name: string;
+      parameters?: {
+        properties?: Record<string, unknown>;
+        type?: string;
+        required?: string[];
+      };
+    };
+  }[],
+  parsedArguments: Record<string, unknown> | null,
+): { parameterName: string; parameterValue: unknown }[] | undefined {
+  if (!parsedArguments) return undefined;
+
+  // Find the matching tool definition
+  const toolDef = tools.find(
+    (tool) => tool.function.name === toolCall.function.name,
+  );
+
+  if (!toolDef?.function?.parameters?.properties) return undefined;
+
+  // Get the defined parameter names from the tool's schema
+  const definedParams = Object.keys(toolDef.function.parameters.properties);
+
+  // Transform the tool args into array of {parameterName, parameterValue} objects
+  return Object.entries(parsedArguments)
+    .filter(([key]) => definedParams.includes(key))
+    .map(([parameterName, parameterValue]) => ({
+      parameterName,
+      parameterValue,
+    }));
+}

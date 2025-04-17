@@ -21,6 +21,7 @@ import {
   addParametersToTools,
   convertComponentsToUITools,
   convertMetadataToTools,
+  filterOutStandardToolParameters,
   standardToolParameters,
 } from "../tool/tool-service";
 
@@ -97,33 +98,41 @@ export async function* runDecisionLoop(
         }
       }
 
-      let hasCompleteToolCall = true;
+      const paramDisplayMessage = (toolArgs as any).displayMessage;
+
+      let filteredToolCallRequest;
       if (!isUITool && toolCall) {
-        // If this is a non-UI tool call, make sure the params are complete
         const parsedToolCall = tryParseJsonObject(
           toolCall.function.arguments,
           false,
         );
-        if (!parsedToolCall) {
-          hasCompleteToolCall = false;
+        if (parsedToolCall) {
+          const filteredArgs = filterOutStandardToolParameters(
+            toolCall,
+            tools,
+            parsedToolCall,
+          );
+
+          const originalRequest = getLLMResponseToolCallRequest(chunk);
+          if (originalRequest && filteredArgs) {
+            filteredToolCallRequest = {
+              ...originalRequest,
+              parameters: filteredArgs,
+            };
+          }
         }
       }
 
       const parsedChunk = {
         message: extractMessageContent(
-          message?.length > 0
-            ? message.trim()
-            : (toolArgs as any).displayMessage || "",
+          message?.length > 0 ? message.trim() : paramDisplayMessage || "",
           false,
         ), // use content if it exists, or displayMessage from the toolcall if it doesn't, since sometimes a toolcall request won't include content
         componentName: isUITool
           ? toolCall?.function.name.replace(uiToolNamePrefix, "")
           : "",
         props: isUITool ? toolArgs : null,
-        toolCallRequest:
-          !isUITool && toolCall && hasCompleteToolCall
-            ? getLLMResponseToolCallRequest(chunk)
-            : undefined,
+        toolCallRequest: filteredToolCallRequest,
         toolCallId: getLLMResponseToolCallId(chunk),
       };
 
