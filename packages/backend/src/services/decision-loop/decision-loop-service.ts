@@ -132,10 +132,12 @@ export async function* runDecisionLoop(
             ? extractMessageContent(
                 message?.length > 0
                   ? message.trim()
-                  : paramDisplayMessage || "",
+                  : isUITool
+                    ? paramDisplayMessage || ""
+                    : "",
                 false,
               )
-            : "", // Only show message for UI tool calls
+            : "", // Only show message for UI tool calls or when no tool call
         componentName: isUITool
           ? toolCall?.function.name.replace(uiToolNamePrefix, "")
           : "",
