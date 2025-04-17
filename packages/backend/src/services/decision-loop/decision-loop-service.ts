@@ -4,6 +4,7 @@ import {
   LegacyComponentDecision,
   ThreadMessage,
 } from "@tambo-ai-cloud/core";
+import { parse } from "partial-json";
 import { AvailableComponent } from "../../model/component-metadata";
 import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
 import { SystemTools } from "../../systemTools";
@@ -75,7 +76,7 @@ export async function* runDecisionLoop(
 
   for await (const chunk of responseStream) {
     try {
-      const message = getLLMResponseMessage(chunk) || "{}";
+      const message = getLLMResponseMessage(chunk) || "";
       const toolCall = chunk.message?.tool_calls?.[0];
 
       // Check if this is a UI tool call
@@ -87,16 +88,22 @@ export async function* runDecisionLoop(
 
       let toolArgs = {};
       if (toolCall) {
+        console.log("toolCall", toolCall);
         try {
-          toolArgs = JSON.parse(toolCall.function.arguments);
+          // toolArgs = JSON.parse(toolCall.function.arguments);
+          toolArgs = parse(toolCall.function.arguments);
+          console.log("toolArgs", toolArgs);
         } catch (_e) {
           // Ignore parse errors for incomplete JSON
         }
       }
 
+      console.log("message", message);
       const parsedChunk = {
         message: extractMessageContent(
-          message?.trim() || (toolArgs as any).displayMessage || "",
+          message?.length > 0
+            ? message.trim()
+            : (toolArgs as any).displayMessage || "",
           false,
         ),
         componentName: isUITool
@@ -114,6 +121,8 @@ export async function* runDecisionLoop(
         ...accumulatedDecision,
         ...parsedChunk,
       };
+
+      console.log("accumulatedDecision", accumulatedDecision);
 
       yield accumulatedDecision;
     } catch (e) {
