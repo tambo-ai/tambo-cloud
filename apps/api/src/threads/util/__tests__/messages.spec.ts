@@ -32,23 +32,6 @@ jest.mock("@tambo-ai-cloud/db", () => ({
   },
 }));
 
-jest.mock("../messages", () => {
-  const originalModule = jest.requireActual("../messages");
-  return {
-    ...originalModule,
-    addMessage: jest.spyOn(originalModule, "addMessage"),
-    updateMessage: jest.spyOn(originalModule, "updateMessage"),
-    addAssistantMessageToThread: jest.spyOn(
-      originalModule,
-      "addAssistantMessageToThread",
-    ),
-    verifyLatestMessageConsistency: jest.spyOn(
-      originalModule,
-      "verifyLatestMessageConsistency",
-    ),
-  };
-});
-
 describe("messages utilities", () => {
   const mockDb = {
     query: {
