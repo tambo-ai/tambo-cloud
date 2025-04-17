@@ -3,6 +3,7 @@ import {
   ChatCompletionMessageParam,
   LegacyComponentDecision,
   ThreadMessage,
+  tryParseJsonObject,
 } from "@tambo-ai-cloud/core";
 import { parse } from "partial-json";
 import { AvailableComponent } from "../../model/component-metadata";
@@ -93,6 +94,18 @@ export async function* runDecisionLoop(
           toolArgs = parse(toolCall.function.arguments);
         } catch (_e) {
           // Ignore parse errors for incomplete JSON
+        }
+      }
+
+      if (!isUITool && toolCall) {
+        // If this is a non-UI tool call, make sure the params are complete
+        const parsedToolCall = tryParseJsonObject(
+          toolCall.function.arguments,
+          false,
+        );
+        if (!parsedToolCall) {
+          // If the params are not complete, hold yielding until they are
+          continue;
         }
       }
 
