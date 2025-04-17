@@ -90,7 +90,7 @@ export async function* runDecisionLoop(
       let toolArgs = {};
       if (toolCall) {
         try {
-          // toolArgs = JSON.parse(toolCall.function.arguments);
+          //partial parse tool params to allow streaming in-progress params
           toolArgs = parse(toolCall.function.arguments);
         } catch (_e) {
           // Ignore parse errors for incomplete JSON
