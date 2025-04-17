@@ -260,7 +260,15 @@ describe("Thread State", () => {
       jest
         .mocked(mockDb.query.messages.findMany)
         .mockResolvedValue([mockAssistantMessage, mockUserMessage]);
-      jest.mocked(operations.updateMessage).mockResolvedValue(mockFinalMessage);
+      jest.mocked(operations.updateMessage).mockResolvedValue({
+        ...mockFinalMessage,
+        content: mockFinalMessage.content as ChatCompletionContentPart[],
+        toolCallId: null,
+        componentDecision: null,
+        actionType: null,
+        metadata: null,
+        toolCallRequest: null,
+      });
 
       const result = await finishInProgressMessage(
         mockDb,
