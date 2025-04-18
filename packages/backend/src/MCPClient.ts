@@ -23,7 +23,9 @@ export class MCPClient {
    * @param headers - Optional custom headers to include in requests
    */
   private constructor(endpoint: string, headers?: Record<string, string>) {
-    this.transport = new SSEClientTransport(new URL(endpoint), { headers });
+    this.transport = new SSEClientTransport(new URL(endpoint), {
+      requestInit: { headers },
+    });
     this.client = new Client({
       name: "tambo-mcp-client",
       version: "1.0.0",
