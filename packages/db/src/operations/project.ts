@@ -474,33 +474,35 @@ export async function upsertComposioAuth(
   contextKey: string | null,
   authMode: ComposioAuthMode,
   authFields: Record<string, string>,
-) {
-  // First try to find an existing context
-  const [existingContext] = await db.query.toolProviderUserContexts.findMany({
-    where: and(
-      eq(schema.toolProviderUserContexts.toolProviderId, toolProviderId),
-      contextKey
-        ? eq(schema.toolProviderUserContexts.contextKey, contextKey)
-        : isNull(schema.toolProviderUserContexts.contextKey),
-    ),
-  });
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    // First try to find an existing context
+    const [existingContext] = await tx.query.toolProviderUserContexts.findMany({
+      where: and(
+        eq(schema.toolProviderUserContexts.toolProviderId, toolProviderId),
+        contextKey
+          ? eq(schema.toolProviderUserContexts.contextKey, contextKey)
+          : isNull(schema.toolProviderUserContexts.contextKey),
+      ),
+    });
 
-  if (existingContext) {
-    // Update existing context
-    await db
-      .update(schema.toolProviderUserContexts)
-      .set({
+    if (existingContext) {
+      // Update existing context
+      await tx
+        .update(schema.toolProviderUserContexts)
+        .set({
+          composioAuthSchemaMode: authMode,
+          composioAuthFields: authFields,
+        })
+        .where(eq(schema.toolProviderUserContexts.id, existingContext.id));
+    } else {
+      // Create new context
+      await tx.insert(schema.toolProviderUserContexts).values({
+        toolProviderId,
+        contextKey,
         composioAuthSchemaMode: authMode,
         composioAuthFields: authFields,
-      })
-      .where(eq(schema.toolProviderUserContexts.id, existingContext.id));
-  } else {
-    // Create new context
-    await db.insert(schema.toolProviderUserContexts).values({
-      toolProviderId,
-      contextKey,
-      composioAuthSchemaMode: authMode,
-      composioAuthFields: authFields,
-    });
-  }
+      });
+    }
+  });
 }
