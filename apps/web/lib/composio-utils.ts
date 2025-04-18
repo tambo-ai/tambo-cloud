@@ -2,11 +2,16 @@
 // and then asking it to generate the types.
 
 /** possible authentication modes */
-export type ComposioAuthMode = "API_KEY" | "OAUTH2" | "BEARER_TOKEN" | "BASIC";
+export type ComposioAuthMode =
+  | "API_KEY"
+  | "OAUTH2"
+  | "BEARER_TOKEN"
+  | "BASIC"
+  | "BASIC_WITH_JWT";
 
 export interface ComposioConnectorConfig {
-  /** unique name of this connector */
-  name: string;
+  /** name of this connector */
+  name?: string;
 
   /** where to proxy requests */
   proxy: {
