@@ -9,13 +9,7 @@ import {
   ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
-import {
-  index,
-  pgPolicy,
-  pgRole,
-  pgTable,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { index, pgPolicy, pgRole, pgTable, unique } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { customJsonb } from "./drizzleUtil";
 export { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
@@ -422,7 +416,7 @@ export const toolProviderUserContexts = pgTable(
   (table) => {
     return [
       index("context_tool_providers_context_key_idx").on(table.contextKey),
-      uniqueIndex("context_tool_providers_context_key_tool_provider_idx").on(
+      unique("context_tool_providers_context_key_tool_provider_idx").on(
         table.contextKey,
         table.toolProviderId,
       ),
