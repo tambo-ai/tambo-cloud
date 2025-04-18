@@ -401,7 +401,7 @@ export const toolProviderUserContexts = pgTable(
     // this is effectively the end-user id. If null, then this is the default/global context for the tool provider.
     contextKey: text("context_key"),
     toolProviderId: text("tool_provider_id")
-      .references(() => toolProviders.id)
+      .references(() => toolProviders.id, { onDelete: "cascade" })
       .notNull(),
     composioIntegrationId: text("composio_integration_id"),
     composioAuthSchemaMode: text("composio_auth_schema_mode", {
