@@ -3,7 +3,7 @@
 import { Section } from "@/components/section";
 import { highContrastLightTheme } from "@/lib/syntax-theme";
 import { clsx } from "clsx";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
   Code,
   FileCode,
@@ -140,49 +140,81 @@ export const tamboComponents = [
 export function CodeExamples() {
   const [activeTab, setActiveTab] = useState<TabKey>("demo");
   const sectionRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const demoRef = useRef<HTMLDivElement>(null);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const wheelCountRef = useRef(0);
 
+  // Use Framer Motion's scroll utilities for smooth scale animation
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+
+  // Transform scroll progress to scale value
+  // Scale starts at 1, peaks at 1.2 when centered, then goes back to 1
+  const scale = useTransform(
+    scrollYProgress,
+    [0, 0.4, 0.6, 1],
+    [1, 1.2, 1.2, 1],
+  );
+
+  // Handle wheel events to count scrolls and disable snap after threshold
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        // When section enters viewport, scroll to center it
-        if (entry.isIntersecting && sectionRef.current) {
-          const sectionTop =
-            sectionRef.current.getBoundingClientRect().top + window.scrollY;
-          const viewportCenter = window.innerHeight / 2;
-          const sectionHeight = sectionRef.current.offsetHeight;
-          const targetScrollPosition =
-            sectionTop - viewportCenter + sectionHeight / 2;
+    const handleWheel = (e: WheelEvent) => {
+      // Only count wheel events when we're snapped and visible
+      const rect = sectionRef.current?.getBoundingClientRect();
+      if (!rect) return;
 
-          window.scrollTo({
-            top: targetScrollPosition,
-            behavior: "smooth",
-          });
+      // Check if component is centered in viewport (within 100px)
+      const viewportCenter = window.innerHeight / 2;
+      const elementCenter = rect.top + rect.height / 2;
+      const isCentered = Math.abs(elementCenter - viewportCenter) < 100;
 
-          // Once centered, stop observing
-          observer.unobserve(sectionRef.current);
+      if (snapEnabled && isCentered) {
+        // Immediately disable snap on any significant scroll attempt
+        const scrollMagnitude = Math.abs(e.deltaY);
+        if (scrollMagnitude > 20) {
+          setSnapEnabled(false);
+        } else {
+          wheelCountRef.current += 1;
+
+          // Reduced from 3 to 2 wheel events to disable snapping
+          if (wheelCountRef.current >= 2) {
+            setSnapEnabled(false);
+          }
         }
-      },
-      {
-        root: null,
-        rootMargin: "-10% 0px",
-        threshold: 0.2,
-      },
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => {
-      if (sectionRef.current) {
-        observer.unobserve(sectionRef.current);
       }
     };
-  }, []);
+
+    // Reset wheel count and re-enable snap when scrolling away
+    const handleScroll = () => {
+      if (!snapEnabled) {
+        const rect = sectionRef.current?.getBoundingClientRect();
+        if (!rect) return;
+
+        // If component is far from center, re-enable snapping for next time
+        const viewportCenter = window.innerHeight / 2;
+        const elementCenter = rect.top + rect.height / 2;
+        const isCentered = Math.abs(elementCenter - viewportCenter) < 200;
+
+        if (!isCentered) {
+          wheelCountRef.current = 0;
+          setSnapEnabled(true);
+        }
+      }
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [snapEnabled]);
 
   // Set a flag when switching tabs to preserve demo state
   const handleTabChange = (tab: TabKey) => {
@@ -190,18 +222,53 @@ export function CodeExamples() {
     setActiveTab(tab);
   };
 
+  // Apply scroll snap styles to the main container using CSS variables
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Apply scroll-snap properties to html/body
+    if (snapEnabled) {
+      // Use proximity instead of mandatory for gentler snapping
+      document.documentElement.style.scrollSnapType = "y proximity";
+      document.body.style.scrollBehavior = "smooth";
+
+      // Auto-disable snap after 1.5 seconds
+      const timeout = setTimeout(() => {
+        setSnapEnabled(false);
+      }, 1500);
+
+      return () => clearTimeout(timeout);
+    } else {
+      document.documentElement.style.scrollSnapType = "";
+      document.body.style.scrollBehavior = "";
+    }
+
+    return () => {
+      // Cleanup
+      document.documentElement.style.scrollSnapType = "";
+      document.body.style.scrollBehavior = "";
+    };
+  }, [snapEnabled]);
+
   return (
     <Section
       id="code-examples"
       className="py-4 sm:py-6 md:py-8 lg:py-10 scroll-mt-16"
     >
-      <div ref={sectionRef} className="w-full space-y-4">
+      <div
+        ref={sectionRef}
+        style={{
+          scrollSnapAlign: snapEnabled ? "center" : "none",
+        }}
+        className="w-full space-y-4"
+      >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
+          style={{ scale }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2, ease }}
-          className="w-full max-w-[95vw] md:max-w-[90vw] h-[90vh] md:h-[85vh] mx-auto"
+          transition={{ duration: 0.5, ease }}
+          className="w-full max-w-[80vw] md:max-w-[76vw] h-[76vh] md:h-[72vh] mx-auto"
         >
           <div className="rounded-lg overflow-hidden border shadow-md bg-background h-full">
             {/* Code editor header with terminal-style tabs */}

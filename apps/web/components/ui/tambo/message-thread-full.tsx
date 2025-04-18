@@ -51,7 +51,7 @@ const MessageThreadFull = React.forwardRef<
       )}
       {...props}
     >
-      <div className="p-3 sm:p-4 border-b border-gray-200 flex items-center justify-end">
+      <div className="p-2 sm:p-3 border-b border-gray-200 flex items-center justify-end">
         <ThreadHistory
           contextKey={contextKey}
           position={{ side: "left", align: "start" }}
@@ -59,12 +59,12 @@ const MessageThreadFull = React.forwardRef<
       </div>
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-3 sm:px-4 [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-thumb]:bg-gray-300"
+        className="flex-1 overflow-y-auto px-2 sm:px-3 [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-thumb]:bg-gray-300"
       >
-        <ThreadContent className="py-3 sm:py-4" />
+        <ThreadContent className="py-2 sm:py-3" />
       </div>
       {/* <MessageSuggestions /> */}
-      <div className="p-3 sm:p-4 border-t border-gray-200">
+      <div className="p-2 sm:p-3 border-t border-gray-200">
         <MessageInput contextKey={contextKey} />
       </div>
     </div>
