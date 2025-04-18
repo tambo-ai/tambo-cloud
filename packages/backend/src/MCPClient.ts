@@ -42,7 +42,10 @@ export class MCPClient {
    * @returns A connected MCPClient instance ready for use
    * @throws Will throw an error if connection fails
    */
-  static async create(endpoint: string, headers?: Record<string, string>): Promise<MCPClient> {
+  static async create(
+    endpoint: string,
+    headers?: Record<string, string>,
+  ): Promise<MCPClient> {
     const mcpClient = new MCPClient(endpoint, headers);
     await mcpClient.client.connect(mcpClient.transport);
     return mcpClient;

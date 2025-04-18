@@ -51,8 +51,10 @@ async function getMcpTools(
       continue;
     }
     // Extract custom_headers if they exist
-    const customHeaders = mcpServer.customHeaders as Record<string, string> | undefined;
-    
+    const customHeaders = mcpServer.customHeaders as
+      | Record<string, string>
+      | undefined;
+
     const mcpClient = await MCPClient.create(mcpServer.url, customHeaders);
     const tools = await mcpClient.listTools();
     mcpTools.push(
