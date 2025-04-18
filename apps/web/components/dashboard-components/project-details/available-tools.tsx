@@ -11,11 +11,13 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -36,6 +38,8 @@ import {
 } from "@tambo-ai-cloud/core";
 import { Check, ChevronsUpDown, Key, Trash2 } from "lucide-react";
 import * as React from "react";
+import { useEffect, useState } from "react";
+
 interface AvailableToolsProps {
   project: { id: string; name: string };
 }
@@ -48,11 +52,14 @@ interface EnabledAppRowProps {
     tags?: string[];
     auth_schemes?: ComposioConnectorConfig[];
     no_auth?: boolean;
+    description?: string;
+    enabled?: boolean;
   };
+  projectId: string;
   onDisable: (appId: string) => void;
   onUpdateAuth?: (
     appId: string,
-    schemeId: string,
+    schemeId: ComposioAuthMode,
     values: Record<string, string>,
   ) => void;
 }
@@ -60,126 +67,161 @@ interface EnabledAppRowProps {
 interface ToolAuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  app: {
-    name: string;
-    auth_schemes?: ComposioConnectorConfig[];
-  };
-  onUpdateAuth: (schemeId: string, values: Record<string, string>) => void;
+  onUpdateAuth: (
+    schemeId: ComposioAuthMode,
+    fields: Record<string, string>,
+  ) => void;
+  currentScheme?: ComposioConnectorConfig;
+  availableSchemes?: ComposioConnectorConfig[];
+  projectId: string;
+  appId: string;
+  appName: string;
 }
 
-function ToolAuthDialog({
+export function ToolAuthDialog({
   open,
   onOpenChange,
-  app,
   onUpdateAuth,
+  currentScheme,
+  availableSchemes,
+  projectId,
+  appId,
+  appName,
 }: ToolAuthDialogProps) {
-  const [selectedScheme, setSelectedScheme] = React.useState<
-    ComposioAuthMode | ""
-  >("");
-  const [fieldValues, setFieldValues] = React.useState<Record<string, string>>(
-    {},
+  const [selectedScheme, setSelectedScheme] = useState<
+    ComposioConnectorConfig | undefined
+  >(currentScheme || availableSchemes?.[0]);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+
+  // Fetch current auth values when dialog opens
+  const { data: currentAuth, isFetching } = api.tools.getComposioAuth.useQuery(
+    {
+      projectId,
+      appId,
+      contextKey: null,
+    },
+    {
+      enabled: open,
+    },
   );
 
-  // Set the selected scheme to the only option if there's just one
-  React.useEffect(() => {
-    if (app.auth_schemes?.length === 1) {
-      setSelectedScheme(app.auth_schemes[0].mode);
+  useEffect(() => {
+    if (open) {
+      if (currentAuth) {
+        const matchingScheme = availableSchemes?.find(
+          (s) => s.mode === currentAuth.mode,
+        );
+        if (matchingScheme) {
+          setSelectedScheme(matchingScheme);
+          setFieldValues(currentAuth.fields);
+        }
+      } else {
+        // If no current auth, use default scheme selection logic
+        const newScheme =
+          currentScheme ||
+          (availableSchemes?.length === 1 ? availableSchemes[0] : undefined);
+        setSelectedScheme(newScheme);
+        setFieldValues({});
+      }
     }
-  }, [app.auth_schemes]);
+  }, [open, currentAuth, currentScheme, availableSchemes]);
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedScheme(currentScheme || availableSchemes?.[0]);
+      setFieldValues({});
+    }
+  }, [open, currentScheme, availableSchemes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateAuth(selectedScheme, fieldValues);
-    onOpenChange(false);
+    if (selectedScheme?.mode) {
+      onUpdateAuth(selectedScheme.mode, fieldValues);
+      onOpenChange(false);
+    }
   };
-
-  const currentScheme = app.auth_schemes?.find(
-    (scheme) => scheme.mode === selectedScheme,
-  );
-  if (!currentScheme) {
-    console.log("No scheme found for", selectedScheme, app.auth_schemes);
-  } else if (!currentScheme?.fields) {
-    console.log("No fields for scheme", currentScheme);
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Configure Authentication for {app.name}</DialogTitle>
+          <DialogTitle>{appName} - Authentication Method</DialogTitle>
+          <DialogDescription>
+            {availableSchemes && availableSchemes.length > 1
+              ? "Select an authentication method and provide the required details."
+              : "Provide the required authentication details."}
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
-            {app.auth_schemes && app.auth_schemes.length > 1 && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Authentication Method
-                </label>
-                <Select
-                  value={selectedScheme}
-                  onValueChange={(value: string) =>
-                    setSelectedScheme(value as ComposioAuthMode)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select auth method" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {app.auth_schemes.map((scheme) => (
-                      <SelectItem key={scheme.mode} value={scheme.mode}>
-                        {getAuthModeName(scheme.mode)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {availableSchemes && availableSchemes.length > 1 && (
+            <div className="space-y-4">
+              <Label>Authentication Method</Label>
+              <Select
+                value={selectedScheme?.mode}
+                onValueChange={(value: ComposioAuthMode) => {
+                  const scheme = availableSchemes?.find(
+                    (s) => s.mode === value,
+                  );
+                  setSelectedScheme(scheme);
+                  setFieldValues({});
+                }}
+                disabled={isFetching}
+              >
+                <SelectTrigger>
+                  <SelectValue>
+                    {selectedScheme
+                      ? getAuthModeName(selectedScheme.mode)
+                      : "Select a method"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSchemes?.map((scheme) => (
+                    <SelectItem key={scheme.mode} value={scheme.mode}>
+                      {getAuthModeName(scheme.mode)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {selectedScheme &&
+            (!selectedScheme.fields || selectedScheme.fields.length === 0) && (
+              <div className="text-sm text-muted-foreground space-y-2 py-2">
+                This authentication method doesn&apos;t require any additional
+                configuration. You can proceed by clicking Save.
               </div>
             )}
 
-            {currentScheme?.fields && (
-              <div className="space-y-4">
-                {currentScheme.fields.map((field) => (
-                  <div key={field.name} className="space-y-2">
-                    <label className="text-sm font-medium">
-                      {field.display_name}
-                    </label>
-                    <Input
-                      type={field.is_secret ? "password" : "text"}
-                      placeholder={field.display_name}
-                      value={fieldValues[field.name] || ""}
-                      onChange={(e) =>
-                        setFieldValues((prev) => ({
-                          ...prev,
-                          [field.name]: e.target.value,
-                        }))
-                      }
-                      required={field.required}
-                    />
-                    <p className="text-xs text-muted-foreground whitespace-pre-line">
-                      {field.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-            {currentScheme &&
-              (!currentScheme.fields || currentScheme.fields.length === 0) && (
-                <div className="space-y-2 py-2">
-                  <p className="text-sm text-muted-foreground">
-                    This authentication method doesn&apos;t require any
-                    additional configuration. You can proceed by clicking Save.
-                  </p>
-                </div>
+          {selectedScheme?.fields?.map((field) => (
+            <div key={field.name} className="space-y-2">
+              <Label htmlFor={field.name}>{field.display_name}</Label>
+              <Input
+                id={field.name}
+                type={field.is_secret ? "password" : "text"}
+                value={fieldValues[field.name] || ""}
+                onChange={(e) =>
+                  setFieldValues((prev) => ({
+                    ...prev,
+                    [field.name]: e.target.value,
+                  }))
+                }
+                required={field.required}
+                disabled={isFetching}
+              />
+              {field.description && (
+                <p className="text-xs text-muted-foreground whitespace-pre-line">
+                  {field.description}
+                </p>
               )}
-          </div>
+            </div>
+          ))}
+
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
+            <Button type="submit" disabled={!selectedScheme || isFetching}>
+              Save
             </Button>
-            <Button type="submit">Save</Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -187,7 +229,12 @@ function ToolAuthDialog({
   );
 }
 
-function EnabledAppRow({ app, onDisable, onUpdateAuth }: EnabledAppRowProps) {
+function EnabledAppRow({
+  app,
+  projectId,
+  onDisable,
+  onUpdateAuth,
+}: EnabledAppRowProps) {
   const [authDialogOpen, setAuthDialogOpen] = React.useState(false);
 
   return (
@@ -242,12 +289,16 @@ function EnabledAppRow({ app, onDisable, onUpdateAuth }: EnabledAppRowProps) {
       <ToolAuthDialog
         open={authDialogOpen}
         onOpenChange={setAuthDialogOpen}
-        app={app}
         onUpdateAuth={(schemeId, values) => {
           if (onUpdateAuth) {
             onUpdateAuth(app.appId, schemeId, values);
           }
         }}
+        currentScheme={app.auth_schemes?.[0]}
+        availableSchemes={app.auth_schemes}
+        projectId={projectId}
+        appId={app.appId}
+        appName={app.name}
       />
     </div>
   );
@@ -279,20 +330,24 @@ export function AvailableTools({ project }: AvailableToolsProps) {
     },
   });
 
+  const { mutate: updateAuth } = api.tools.updateComposioAuth.useMutation({
+    onSuccess: () => {
+      // Could add a toast here if desired
+    },
+  });
+
   const handleUpdateAuth = (
     appId: string,
-    schemeId: string,
+    schemeId: ComposioAuthMode,
     values: Record<string, string>,
   ) => {
-    // This is a no-op for now, will be implemented later
-    console.log(
-      "Update auth for app",
+    updateAuth({
+      projectId: project.id,
       appId,
-      "scheme",
-      schemeId,
-      "values",
-      values,
-    );
+      contextKey: null, // For now passing null as specified
+      authMode: schemeId,
+      authFields: values,
+    });
   };
 
   if (isLoading) {
@@ -389,9 +444,7 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                                 key={i}
                                 className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-secondary/50 text-secondary-foreground"
                               >
-                                {getAuthModeName(
-                                  scheme.mode as ComposioAuthMode,
-                                )}
+                                {getAuthModeName(scheme.mode)}
                               </span>
                             ))}
                           </div>
@@ -410,6 +463,7 @@ export function AvailableTools({ project }: AvailableToolsProps) {
               <EnabledAppRow
                 key={app.appId}
                 app={app}
+                projectId={project.id}
                 onDisable={(appId) =>
                   disableApp({
                     projectId: project.id,
