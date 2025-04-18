@@ -57,11 +57,11 @@ interface EnabledAppRowProps {
   };
   projectId: string;
   onDisable: (appId: string) => void;
-  onUpdateAuth?: (
+  onUpdateAuth: (
     appId: string,
     schemeId: ComposioAuthMode,
     values: Record<string, string>,
-  ) => void;
+  ) => Promise<void>;
 }
 
 interface ToolAuthDialogProps {
@@ -70,7 +70,7 @@ interface ToolAuthDialogProps {
   onUpdateAuth: (
     schemeId: ComposioAuthMode,
     fields: Record<string, string>,
-  ) => void;
+  ) => Promise<void>;
   currentScheme?: ComposioConnectorConfig;
   availableSchemes?: ComposioConnectorConfig[];
   projectId: string;
@@ -94,7 +94,11 @@ export function ToolAuthDialog({
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
 
   // Fetch current auth values when dialog opens
-  const { data: currentAuth, isFetching } = api.tools.getComposioAuth.useQuery(
+  const {
+    data: currentAuth,
+    isFetching,
+    refetch,
+  } = api.tools.getComposioAuth.useQuery(
     {
       projectId,
       appId,
@@ -102,11 +106,16 @@ export function ToolAuthDialog({
     },
     {
       enabled: open,
+      refetchOnMount: true,
+      refetchOnWindowFocus: false,
     },
   );
 
   useEffect(() => {
     if (open) {
+      // Refetch when dialog opens to ensure fresh data
+      refetch();
+
       if (currentAuth) {
         const matchingScheme = availableSchemes?.find(
           (s) => s.mode === currentAuth.mode,
@@ -124,7 +133,7 @@ export function ToolAuthDialog({
         setFieldValues({});
       }
     }
-  }, [open, currentAuth, currentScheme, availableSchemes]);
+  }, [open, currentAuth, currentScheme, availableSchemes, refetch]);
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -134,10 +143,11 @@ export function ToolAuthDialog({
     }
   }, [open, currentScheme, availableSchemes]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedScheme?.mode) {
-      onUpdateAuth(selectedScheme.mode, fieldValues);
+      await onUpdateAuth(selectedScheme.mode, fieldValues);
+      await refetch(); // Refetch after saving
       onOpenChange(false);
     }
   };
@@ -289,10 +299,8 @@ function EnabledAppRow({
       <ToolAuthDialog
         open={authDialogOpen}
         onOpenChange={setAuthDialogOpen}
-        onUpdateAuth={(schemeId, values) => {
-          if (onUpdateAuth) {
-            onUpdateAuth(app.appId, schemeId, values);
-          }
+        onUpdateAuth={async (schemeId, values) => {
+          await onUpdateAuth(app.appId, schemeId, values);
         }}
         currentScheme={app.auth_schemes?.[0]}
         availableSchemes={app.auth_schemes}
@@ -330,18 +338,18 @@ export function AvailableTools({ project }: AvailableToolsProps) {
     },
   });
 
-  const { mutate: updateAuth } = api.tools.updateComposioAuth.useMutation({
+  const { mutateAsync: updateAuth } = api.tools.updateComposioAuth.useMutation({
     onSuccess: () => {
       // Could add a toast here if desired
     },
   });
 
-  const handleUpdateAuth = (
+  const handleUpdateAuth = async (
     appId: string,
     schemeId: ComposioAuthMode,
     values: Record<string, string>,
   ) => {
-    updateAuth({
+    await updateAuth({
       projectId: project.id,
       appId,
       contextKey: null, // For now passing null as specified
