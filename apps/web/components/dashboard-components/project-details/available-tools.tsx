@@ -258,52 +258,58 @@ function EnabledAppRow({
   const [authDialogOpen, setAuthDialogOpen] = React.useState(false);
 
   return (
-    <div className="flex items-center justify-between gap-4 p-2 bg-muted/50 rounded-md">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={app.logo} alt={app.name} className="w-4 h-4 rounded-full" />
-          <span>{app.name}</span>
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {app.tags &&
-            app.tags.map((tag, i) => (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-4 p-2 bg-muted/50 rounded-md">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={app.logo}
+              alt={app.name}
+              className="w-4 h-4 rounded-full"
+            />
+            <span>{app.name}</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {app.tags &&
+              app.tags.map((tag, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10"
+                >
+                  {tag.trim()}
+                </span>
+              ))}
+            {app.auth_schemes?.map((scheme, i) => (
               <span
-                key={i}
-                className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10"
+                key={`auth-${i}`}
+                className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-secondary/50 text-secondary-foreground"
               >
-                {tag.trim()}
+                {getAuthModeName(scheme.mode)}
               </span>
             ))}
-          {app.auth_schemes?.map((scheme, i) => (
-            <span
-              key={`auth-${i}`}
-              className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-secondary/50 text-secondary-foreground"
-            >
-              {getAuthModeName(scheme.mode)}
-            </span>
-          ))}
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {!app.no_auth && app.auth_schemes && app.auth_schemes.length > 0 && (
+        <div className="flex items-center gap-2">
+          {!app.no_auth && app.auth_schemes && app.auth_schemes.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAuthDialogOpen(true)}
+            >
+              <Key className="h-4 w-4" />
+              <span className="sr-only">Authenticate</span>
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setAuthDialogOpen(true)}
+            onClick={() => onDisable(app.appId)}
           >
-            <Key className="h-4 w-4" />
-            <span className="sr-only">Authenticate</span>
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Remove</span>
           </Button>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onDisable(app.appId)}
-        >
-          <Trash2 className="h-4 w-4" />
-          <span className="sr-only">Remove</span>
-        </Button>
+        </div>
       </div>
 
       <ToolAuthDialog
@@ -334,19 +340,21 @@ export function AvailableTools({ project }: AvailableToolsProps) {
     projectId: project.id,
   });
 
-  const { mutate: enableApp } = api.tools.enableApp.useMutation({
-    onSuccess: async () => {
-      await refetchApps();
-      setSelectedAppId(""); // Reset combobox after enabling
-      setOpen(false);
-    },
-  });
+  const { mutateAsync: enableApp, error: enableError } =
+    api.tools.enableApp.useMutation({
+      onSuccess: async () => {
+        await refetchApps();
+        setSelectedAppId(""); // Reset combobox after enabling
+        setOpen(false);
+      },
+    });
 
-  const { mutate: disableApp } = api.tools.disableApp.useMutation({
-    onSuccess: async () => {
-      await refetchApps();
-    },
-  });
+  const { mutateAsync: disableApp, error: disableError } =
+    api.tools.disableApp.useMutation({
+      onSuccess: async () => {
+        await refetchApps();
+      },
+    });
 
   const { mutateAsync: updateAuth } = api.tools.updateComposioAuth.useMutation({
     onSuccess: () => {
@@ -362,7 +370,7 @@ export function AvailableTools({ project }: AvailableToolsProps) {
     await updateAuth({
       projectId: project.id,
       appId,
-      contextKey: null, // For now passing null as specified
+      contextKey: null,
       authMode: schemeId,
       authFields: values,
     });
@@ -392,6 +400,12 @@ export function AvailableTools({ project }: AvailableToolsProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {enableError && (
+            <div className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">
+              Failed to enable app: {enableError.message}
+            </div>
+          )}
+
           {/* Combobox for disabled apps */}
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -419,13 +433,13 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                         key={app.appId}
                         value={app.name}
                         keywords={app.tags}
-                        onSelect={(currentValue) => {
+                        onSelect={async (currentValue) => {
                           // kind of a hack since we want appId, but the combobox is using name
                           const appId = apps.find(
                             (a) => a.name === currentValue,
                           )?.appId;
                           if (appId) {
-                            enableApp({
+                            await enableApp({
                               projectId: project.id,
                               appId,
                             });
@@ -477,17 +491,23 @@ export function AvailableTools({ project }: AvailableToolsProps) {
 
           {/* List of enabled apps */}
           <div className="space-y-2">
+            {disableError && (
+              <div className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">
+                Failed to remove app: {disableError.message}
+              </div>
+            )}
+
             {enabledApps.map((app) => (
               <EnabledAppRow
                 key={app.appId}
                 app={app}
                 projectId={project.id}
-                onDisable={(appId) =>
-                  disableApp({
+                onDisable={async (appId) => {
+                  await disableApp({
                     projectId: project.id,
                     appId,
-                  })
-                }
+                  });
+                }}
                 onUpdateAuth={handleUpdateAuth}
               />
             ))}
