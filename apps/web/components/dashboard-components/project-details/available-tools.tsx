@@ -28,15 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { api } from "@/trpc/react";
 import {
   ComposioAuthMode,
   ComposioConnectorConfig,
-} from "@/lib/composio-utils";
-import { cn } from "@/lib/utils";
-import { api } from "@/trpc/react";
+} from "@tambo-ai-cloud/core";
 import { Check, ChevronsUpDown, Key, Trash2 } from "lucide-react";
 import * as React from "react";
-
 interface AvailableToolsProps {
   project: { id: string; name: string };
 }
@@ -390,7 +389,9 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                                 key={i}
                                 className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded bg-secondary/50 text-secondary-foreground"
                               >
-                                {getAuthModeName(scheme.mode)}
+                                {getAuthModeName(
+                                  scheme.mode as ComposioAuthMode,
+                                )}
                               </span>
                             ))}
                           </div>
@@ -427,15 +428,15 @@ export function AvailableTools({ project }: AvailableToolsProps) {
 
 function getAuthModeName(mode: ComposioAuthMode): string {
   switch (mode) {
-    case "API_KEY":
+    case ComposioAuthMode.API_KEY:
       return "API Key";
-    case "OAUTH2":
+    case ComposioAuthMode.OAUTH2:
       return "OAuth 2.0";
-    case "BEARER_TOKEN":
+    case ComposioAuthMode.BEARER_TOKEN:
       return "Bearer Token";
-    case "BASIC":
+    case ComposioAuthMode.BASIC:
       return "Basic Auth";
-    case "BASIC_WITH_JWT":
+    case ComposioAuthMode.BASIC_WITH_JWT:
       return "Basic Auth + JWT";
     default:
       return mode;

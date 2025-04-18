@@ -2,12 +2,13 @@
 // and then asking it to generate the types.
 
 /** possible authentication modes */
-export type ComposioAuthMode =
-  | "API_KEY"
-  | "OAUTH2"
-  | "BEARER_TOKEN"
-  | "BASIC"
-  | "BASIC_WITH_JWT";
+export enum ComposioAuthMode {
+  API_KEY = "API_KEY",
+  OAUTH2 = "OAUTH2",
+  BEARER_TOKEN = "BEARER_TOKEN",
+  BASIC = "BASIC",
+  BASIC_WITH_JWT = "BASIC_WITH_JWT",
+}
 
 export interface ComposioConnectorConfig {
   /** name of this connector */
