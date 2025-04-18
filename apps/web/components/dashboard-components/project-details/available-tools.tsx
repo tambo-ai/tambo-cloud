@@ -98,6 +98,7 @@ export function ToolAuthDialog({
     data: currentAuth,
     isFetching,
     refetch,
+    error,
   } = api.tools.getComposioAuth.useQuery(
     {
       projectId,
@@ -147,7 +148,7 @@ export function ToolAuthDialog({
     e.preventDefault();
     if (selectedScheme?.mode) {
       await onUpdateAuth(selectedScheme.mode, fieldValues);
-      await refetch(); // Refetch after saving
+      await refetch();
       onOpenChange(false);
     }
   };
@@ -164,6 +165,12 @@ export function ToolAuthDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+              Error loading authentication details: {error.message}
+            </div>
+          )}
+
           {availableSchemes && availableSchemes.length > 1 && (
             <div className="space-y-4">
               <Label>Authentication Method</Label>
@@ -176,7 +183,7 @@ export function ToolAuthDialog({
                   setSelectedScheme(scheme);
                   setFieldValues({});
                 }}
-                disabled={isFetching}
+                disabled={isFetching || !!error}
               >
                 <SelectTrigger>
                   <SelectValue>
@@ -218,7 +225,7 @@ export function ToolAuthDialog({
                   }))
                 }
                 required={field.required}
-                disabled={isFetching}
+                disabled={isFetching || !!error}
               />
               {field.description && (
                 <p className="text-xs text-muted-foreground whitespace-pre-line">
@@ -229,7 +236,10 @@ export function ToolAuthDialog({
           ))}
 
           <DialogFooter>
-            <Button type="submit" disabled={!selectedScheme || isFetching}>
+            <Button
+              type="submit"
+              disabled={!selectedScheme || isFetching || !!error}
+            >
               Save
             </Button>
           </DialogFooter>
