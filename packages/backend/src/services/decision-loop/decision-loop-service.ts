@@ -29,7 +29,6 @@ export async function* runDecisionLoop(
   llmClient: LLMClient,
   messageHistory: ThreadMessage[],
   availableComponents: AvailableComponent[],
-  stream: boolean,
   systemTools: SystemTools | undefined,
   uiToolNamePrefix: string = "show_",
 ): AsyncIterableIterator<LegacyComponentDecision> {

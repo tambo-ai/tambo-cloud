@@ -23,7 +23,6 @@ interface HydraBackendOptions {
 interface RunDecisionLoopParams {
   messageHistory: ThreadMessage[];
   availableComponents: AvailableComponent[];
-  stream: boolean;
   systemTools?: SystemTools;
   toolResponse?: ToolResponseBody;
   toolCallId?: string;
@@ -174,7 +173,6 @@ export default class TamboBackend {
       this.llmClient,
       params.messageHistory,
       params.availableComponents,
-      params.stream,
       params.systemTools,
     );
   }
