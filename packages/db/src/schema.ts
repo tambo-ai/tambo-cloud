@@ -1,12 +1,11 @@
-import type {
-  ComponentDecisionV2,
-  ToolCallRequest,
-} from "@tambo-ai-cloud/core";
 import {
   ActionType,
   ChatCompletionContentPart,
+  ComponentDecisionV2,
+  ComposioAuthMode,
   GenerationStage,
   MessageRole,
+  ToolCallRequest,
   ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
@@ -409,6 +408,15 @@ export const toolProviderUserContexts = pgTable(
     contextKey: text("context_key"),
     toolProviderId: text("tool_provider_id")
       .references(() => toolProviders.id)
+      .notNull(),
+    composioIntegrationId: text("composio_integration_id"),
+    composioAuthSchemaMode: text("composio_auth_schema_mode", {
+      enum: Object.values(ComposioAuthMode) as [ComposioAuthMode],
+    }),
+    composioAuthFields: customJsonb<Record<string, string>>(
+      "composio_auth_fields",
+    )
+      .default({})
       .notNull(),
   }),
   (table) => {
