@@ -106,7 +106,6 @@ export async function processThreadMessage(
   const decisionStream = await tamboBackend.runDecisionLoop({
     messageHistory: messages,
     availableComponents: advanceRequestDto.availableComponents ?? [],
-    stream: false,
     systemTools,
     additionalContext: advanceRequestDto.additionalContext,
   });
