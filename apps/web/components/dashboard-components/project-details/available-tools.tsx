@@ -112,6 +112,7 @@ export function ToolAuthDialog({
     },
   );
 
+  // This useEffect properly includes all variables used within
   useEffect(() => {
     if (open) {
       // Refetch when dialog opens to ensure fresh data
@@ -136,7 +137,7 @@ export function ToolAuthDialog({
     }
   }, [open, currentAuth, currentScheme, availableSchemes, refetch]);
 
-  // Reset form when dialog closes
+  // Reset form when dialog closes - ensuring all dependencies are included
   useEffect(() => {
     if (!open) {
       setSelectedScheme(currentScheme || availableSchemes?.[0]);
@@ -467,5 +468,4 @@ export function AvailableTools({ project }: AvailableToolsProps) {
                           />
                         </div>
                         <div className="flex flex-col gap-2 mt-1">
-                          <span className="text-xs text-muted-foreground">
-                            
+                          
