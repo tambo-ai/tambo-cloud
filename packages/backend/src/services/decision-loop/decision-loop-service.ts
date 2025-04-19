@@ -21,6 +21,7 @@ import {
   addParametersToTools,
   convertComponentsToUITools,
   convertMetadataToTools,
+  displayMessageTool,
   filterOutStandardToolParameters,
   standardToolParameters,
 } from "../tool/tool-service";
@@ -39,7 +40,7 @@ export async function* runDecisionLoop(
   const contextTools = convertMetadataToTools(
     availableComponents.flatMap((component) => component.contextTools),
   );
-  const tools = [...componentTools, ...contextTools];
+  const tools = [...componentTools, ...contextTools, displayMessageTool];
   // Add standard parameters to all tools
   const toolsWithStandardParameters = addParametersToTools(
     tools,
@@ -61,6 +62,7 @@ export async function* runDecisionLoop(
       chat_history: chatHistory,
     },
     stream: true,
+    tool_choice: "required",
   });
 
   const initialDecision: LegacyComponentDecision = {
@@ -116,7 +118,12 @@ export async function* runDecisionLoop(
           );
 
           const originalRequest = getLLMResponseToolCallRequest(chunk);
-          if (originalRequest && filteredArgs) {
+          // Only include tool call request if it's not the displayMessageTool
+          if (
+            originalRequest &&
+            filteredArgs &&
+            toolCall.function.name !== displayMessageTool.function.name
+          ) {
             filteredToolCallRequest = {
               ...originalRequest,
               parameters: filteredArgs,
@@ -137,7 +144,10 @@ export async function* runDecisionLoop(
           : "",
         props: isUITool ? toolArgs : null,
         toolCallRequest: filteredToolCallRequest,
-        toolCallId: getLLMResponseToolCallId(chunk),
+        toolCallId:
+          toolCall?.function.name === displayMessageTool.function.name
+            ? undefined
+            : getLLMResponseToolCallId(chunk),
         statusMessage,
       };
 

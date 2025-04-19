@@ -99,6 +99,21 @@ export function convertComponentsToUITools(
   }));
 }
 
+export const displayMessageTool: OpenAI.Chat.Completions.ChatCompletionTool = {
+  type: "function",
+  function: {
+    name: "showMessage_tambo_internal",
+    description:
+      "Display a message to the user. Use this when you just want to communicate something or ask for clarification without taking any other action.",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+      additionalProperties: false,
+    },
+  },
+};
+
 export function addParametersToTools(
   tools: OpenAI.Chat.Completions.ChatCompletionTool[],
   parameters: FunctionParameters,
