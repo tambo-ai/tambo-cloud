@@ -1,5 +1,4 @@
 import {
-  ComposioAuthMode,
   encryptApiKey,
   encryptProviderKey,
   hashKey,
@@ -472,9 +471,10 @@ export async function upsertComposioAuth(
   db: HydraDb,
   toolProviderId: string,
   contextKey: string | null,
-  integrationId: string,
-  authMode: ComposioAuthMode,
-  authFields: Record<string, string>,
+  fields: Omit<
+    typeof schema.toolProviderUserContexts.$inferInsert,
+    "toolProviderId" | "contextKey"
+  >,
 ): Promise<void> {
   await db.transaction(async (tx) => {
     // First try to find an existing context
@@ -491,20 +491,14 @@ export async function upsertComposioAuth(
       // Update existing context
       await tx
         .update(schema.toolProviderUserContexts)
-        .set({
-          composioAuthSchemaMode: authMode,
-          composioAuthFields: authFields,
-          composioIntegrationId: integrationId,
-        })
+        .set(fields)
         .where(eq(schema.toolProviderUserContexts.id, existingContext.id));
     } else {
       // Create new context
       await tx.insert(schema.toolProviderUserContexts).values({
         toolProviderId,
         contextKey,
-        composioAuthSchemaMode: authMode,
-        composioAuthFields: authFields,
-        composioIntegrationId: integrationId,
+        ...fields,
       });
     }
   });

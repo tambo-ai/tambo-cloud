@@ -404,6 +404,8 @@ export const toolProviderUserContexts = pgTable(
       .references(() => toolProviders.id, { onDelete: "cascade" })
       .notNull(),
     composioIntegrationId: text("composio_integration_id"),
+    // once the connected account is created, we store the id here - if this is non-null, then we have a connected account
+    composioConnectedAccountId: text("composio_connected_account_id"),
     composioAuthSchemaMode: text("composio_auth_schema_mode", {
       enum: Object.values(ComposioAuthMode) as [ComposioAuthMode],
     }),

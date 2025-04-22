@@ -253,6 +253,13 @@
       "when": 1745010132732,
       "tag": "0035_famous_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1745336688035,
+      "tag": "0036_hard_alice",
+      "breakpoints": true
     }
   ]
 }
