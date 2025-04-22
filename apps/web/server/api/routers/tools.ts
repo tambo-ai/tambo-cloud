@@ -197,13 +197,93 @@ export const toolsRouter = createTRPCRouter({
           message: "Tool provider not found",
         });
       }
-
+      if (!toolProvider.composioAppId) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "App not found",
+        });
+      }
+      console.log("toolProvider", toolProvider);
+      console.log(
+        "trying to create integration with appId",
+        toolProvider.composioAppId,
+      );
+      const composio = getComposio();
+      // Ugh this is a hack: we need to get the app from the list of apps, because the appId is not the same as the appUniqueKey
+      // TODO: should we rekey this by appName/appUniqueKey? the composio docs are not consistent about thiss
+      const apps = await composio.apps.list();
+      const app = apps.find((app) => app.appId === toolProvider.composioAppId);
+      if (!app?.key) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "App not found",
+        });
+      }
+      const integration = await composio.integrations.getOrCreateIntegration({
+        name: `Integration for ${input.contextKey ? input.contextKey : "all users"} in project ${input.projectId}`,
+        appUniqueKey: app.key,
+      });
+      console.log("integration", integration);
+      if (!integration.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Integration not found",
+        });
+      }
+      // const ca = await composio.connectedAccounts.get({ connectedAccountId });
+      const connectionRequest = await composio.connectedAccounts.initiate({
+        integrationId: integration.id,
+      });
+      console.log("initiated", connectionRequest);
+      console.log("auth url at ", connectionRequest.redirectUrl);
       await operations.upsertComposioAuth(
         ctx.db,
         toolProvider.id,
         input.contextKey,
-        input.authMode,
-        input.authFields,
+        {
+          composioIntegrationId: integration.id,
+          composioAuthSchemaMode: input.authMode,
+          composioAuthFields: input.authFields,
+          composioAccountConnectionRequestId: connectionReques,
+        },
+      );
+      let connected = false;
+      let attempts = 0;
+      while (!connected) {
+        const ca = await composio.connectedAccounts.get({
+          connectedAccountId: connectionRequest.connectedAccountId,
+        });
+        if (ca.status === "ACTIVE") {
+          connected = true;
+          break;
+        }
+
+        if (ca.status !== "INITIATED") {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Connected account failed to connect",
+          });
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        attempts++;
+        if (attempts > 60) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Connected account failed to connect",
+          });
+        }
+      }
+      await operations.upsertComposioAuth(
+        ctx.db,
+        toolProvider.id,
+        input.contextKey,
+        {
+          composioIntegrationId: integration.id,
+          composioAuthSchemaMode: input.authMode,
+          composioAuthFields: input.authFields,
+          composioConnectedAccountId: connectionRequest.connectedAccountId,
+        },
       );
     }),
   getComposioAuth: protectedProcedure
