@@ -244,45 +244,10 @@ export const toolsRouter = createTRPCRouter({
           composioIntegrationId: integration.id,
           composioAuthSchemaMode: input.authMode,
           composioAuthFields: input.authFields,
-          composioAccountConnectionRequestId: connectionReques,
-        },
-      );
-      let connected = false;
-      let attempts = 0;
-      while (!connected) {
-        const ca = await composio.connectedAccounts.get({
-          connectedAccountId: connectionRequest.connectedAccountId,
-        });
-        if (ca.status === "ACTIVE") {
-          connected = true;
-          break;
-        }
-
-        if (ca.status !== "INITIATED") {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Connected account failed to connect",
-          });
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        attempts++;
-        if (attempts > 60) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Connected account failed to connect",
-          });
-        }
-      }
-      await operations.upsertComposioAuth(
-        ctx.db,
-        toolProvider.id,
-        input.contextKey,
-        {
-          composioIntegrationId: integration.id,
-          composioAuthSchemaMode: input.authMode,
-          composioAuthFields: input.authFields,
           composioConnectedAccountId: connectionRequest.connectedAccountId,
+          // this is the only chance we have to store the redirect url
+          composioRedirectUrl: connectionRequest.redirectUrl,
+          composioConnectedAccountStatus: connectionRequest.connectionStatus,
         },
       );
     }),
@@ -331,6 +296,60 @@ export const toolsRouter = createTRPCRouter({
       return {
         mode: context.composioAuthSchemaMode,
         fields: context.composioAuthFields,
+        redirectUrl: context.composioRedirectUrl,
+        status: context.composioConnectedAccountStatus,
+      };
+    }),
+  checkComposioConnectedAccountStatus: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        toolProviderId: z.string(),
+        contextKey: z.string().nullable(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await operations.ensureProjectAccess(
+        ctx.db,
+        input.projectId,
+        ctx.session.user.id,
+      );
+
+      // Get the current auth context
+      const [context] = await ctx.db.query.toolProviderUserContexts.findMany({
+        where: and(
+          eq(
+            schema.toolProviderUserContexts.toolProviderId,
+            input.toolProviderId,
+          ),
+          input.contextKey
+            ? eq(schema.toolProviderUserContexts.contextKey, input.contextKey)
+            : isNull(schema.toolProviderUserContexts.contextKey),
+        ),
+      });
+
+      if (!context || !context.composioConnectedAccountId) {
+        return { status: "NOT_CONNECTED" as const };
+      }
+
+      const composio = getComposio();
+      const connectedAccount = await composio.connectedAccounts.get({
+        connectedAccountId: context.composioConnectedAccountId,
+      });
+
+      // Update the status in the database
+      await operations.upsertComposioAuth(
+        ctx.db,
+        input.toolProviderId,
+        input.contextKey,
+        {
+          composioConnectedAccountStatus: connectedAccount.status,
+        },
+      );
+
+      return {
+        status: connectedAccount.status,
+        lastCheckedAt: new Date(),
       };
     }),
 });
