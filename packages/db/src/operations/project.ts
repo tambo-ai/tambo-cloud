@@ -472,6 +472,7 @@ export async function upsertComposioAuth(
   db: HydraDb,
   toolProviderId: string,
   contextKey: string | null,
+  integrationId: string,
   authMode: ComposioAuthMode,
   authFields: Record<string, string>,
 ): Promise<void> {
@@ -493,6 +494,7 @@ export async function upsertComposioAuth(
         .set({
           composioAuthSchemaMode: authMode,
           composioAuthFields: authFields,
+          composioIntegrationId: integrationId,
         })
         .where(eq(schema.toolProviderUserContexts.id, existingContext.id));
     } else {
@@ -502,6 +504,7 @@ export async function upsertComposioAuth(
         contextKey,
         composioAuthSchemaMode: authMode,
         composioAuthFields: authFields,
+        composioIntegrationId: integrationId,
       });
     }
   });
