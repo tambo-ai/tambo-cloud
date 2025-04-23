@@ -7,12 +7,14 @@ import OpenAI from "openai";
 export async function getSystemTools(
   db: HydraDatabase,
   projectId: string,
+  contextKey: string | null,
 ): Promise<SystemTools> {
   const { mcpTools, mcpToolSources } = await getMcpTools(db, projectId);
 
   const { composioTools, composioClient } = await getComposioTools(
     db,
     projectId,
+    contextKey,
   );
 
   const mcpToolNames = mcpTools.map((tool) => tool.function.name);
@@ -85,11 +87,17 @@ async function getMcpTools(
 async function getComposioTools(
   db: HydraDatabase,
   projectId: string,
+  contextKey: string | null,
 ): Promise<{
   composioTools: OpenAI.Chat.Completions.ChatCompletionTool[];
   composioClient?: OpenAIToolSet;
 }> {
-  const composioApps = await operations.getComposioApps(db, projectId);
+  const composioApps = await operations.getComposioApps(
+    db,
+    projectId,
+    contextKey,
+  );
+  console.log("composioApps", composioApps);
   if (!composioApps.length) {
     return { composioTools: [], composioClient: undefined };
   }
@@ -98,9 +106,16 @@ async function getComposioTools(
     .map((app) => app.composioAppId)
     .filter((appId): appId is string => !!appId);
   const composioClient = new OpenAIToolSet();
-
-  const tools = await composioClient.getTools({ apps: appIds });
-
+  const composio = getComposio();
+  const apps = await composio.apps.list();
+  const activeApps = apps.filter(
+    (app) => app.appId && appIds.includes(app.appId),
+  );
+  const activeAppKeys = activeApps.map((app) => app.key);
+  // console.log("apps", apps);
+  // console.log("activeApps", activeApps);
+  const tools = await composioClient.getTools({ apps: activeAppKeys });
+  // console.log("tools for appIds", appIds, ":", tools);
   for (const tool of tools) {
     composioTools.push({
       type: "function",
