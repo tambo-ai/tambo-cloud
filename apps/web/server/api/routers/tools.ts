@@ -204,11 +204,7 @@ export const toolsRouter = createTRPCRouter({
           message: "App not found",
         });
       }
-      console.log("toolProvider", toolProvider);
-      console.log(
-        "trying to create integration with appId",
-        toolProvider.composioAppId,
-      );
+
       const {
         integrationId,
         connectedAccountId,
@@ -330,9 +326,6 @@ export const toolsRouter = createTRPCRouter({
       const connectedAccount = await composio.connectedAccounts.get({
         connectedAccountId: context.composioConnectedAccountId,
       });
-      console.log("\n\nconnectedAccount", connectedAccount.status);
-      console.log("enabled", connectedAccount.enabled);
-      console.log("expiresAt", connectedAccount.entityId);
 
       // Update the status in the database
       await operations.upsertComposioAuth(
@@ -386,26 +379,14 @@ async function ensureComposioAccount(
     });
   }
 
-  let integration;
-  try {
-    console.log(
-      "getting/creating integration",
-      app.key,
-      input.authMode,
-      input.authFields,
-    );
-    integration = await composio.integrations.getOrCreateIntegration({
-      name: `Integration for ${input.contextKey ? input.contextKey : "all users"} in project ${input.projectId}`,
-      appUniqueKey: app.key,
-      useComposioAuth: true,
-      authConfig: input.authFields,
-      authScheme: input.authMode,
-    });
-  } catch (error) {
-    console.error("Error getting/creating integration:", error);
-    throw error;
-  }
-  console.log("integration", integration);
+  const integration = await composio.integrations.getOrCreateIntegration({
+    name: `Integration for ${input.contextKey ? input.contextKey : "all users"} in project ${input.projectId}`,
+    appUniqueKey: app.key,
+    useComposioAuth: true,
+    authConfig: input.authFields,
+    authScheme: input.authMode,
+  });
+
   if (!integration.id) {
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -421,9 +402,6 @@ async function ensureComposioAccount(
   const connectedAccountId = connectionRequest.connectedAccountId;
   const redirectUrl = connectionRequest.redirectUrl;
   const connectionStatus = connectionRequest.connectionStatus;
-
-  console.log("initiated", connectionRequest);
-  console.log("auth url at ", connectionRequest.redirectUrl);
 
   return {
     connectionRequest,

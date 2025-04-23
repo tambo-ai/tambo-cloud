@@ -161,11 +161,6 @@ export function ToolAuthDialog({
   // When the diaog opens and we have loaded the current auth, initialize the dialog
   useEffect(() => {
     if (open && currentAuth && !isFetchingCurrentAuth) {
-      console.log(
-        "initializing dialog",
-        currentAuth.mode,
-        availableSchemes?.[0]?.mode,
-      );
       setSelectedScheme(
         availableSchemes?.find((s) => s.mode === currentAuth.mode) ??
           availableSchemes?.[0],

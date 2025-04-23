@@ -2,6 +2,7 @@ import { MCPClient, SystemTools } from "@tambo-ai-cloud/backend";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import { OpenAIToolSet } from "composio-core";
 import OpenAI from "openai";
+import { getComposio } from "./composio";
 
 /** Get the tools available for the project */
 export async function getSystemTools(
@@ -97,7 +98,6 @@ async function getComposioTools(
     projectId,
     contextKey,
   );
-  console.log("composioApps", composioApps);
   if (!composioApps.length) {
     return { composioTools: [], composioClient: undefined };
   }
@@ -112,10 +112,8 @@ async function getComposioTools(
     (app) => app.appId && appIds.includes(app.appId),
   );
   const activeAppKeys = activeApps.map((app) => app.key);
-  // console.log("apps", apps);
-  // console.log("activeApps", activeApps);
   const tools = await composioClient.getTools({ apps: activeAppKeys });
-  // console.log("tools for appIds", appIds, ":", tools);
+
   for (const tool of tools) {
     composioTools.push({
       type: "function",
