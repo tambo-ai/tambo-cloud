@@ -6,7 +6,10 @@ import {
   tryParseJsonObject,
 } from "@tambo-ai-cloud/core";
 import { parse } from "partial-json";
-import { AvailableComponent } from "../../model/component-metadata";
+import {
+  AvailableComponent,
+  ComponentContextToolMetadata,
+} from "../../model/component-metadata";
 import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
 import { SystemTools } from "../../systemTools";
 import { extractMessageContent } from "../../util/response-parsing";
@@ -32,15 +35,22 @@ export async function* runDecisionLoop(
   availableComponents: AvailableComponent[],
   systemTools: SystemTools | undefined,
   uiToolNamePrefix: string = "show_",
+  clientTools: ComponentContextToolMetadata[],
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const componentTools = convertComponentsToUITools(
     availableComponents,
     uiToolNamePrefix,
   );
+  const clientToolsConverted = convertMetadataToTools(clientTools);
   const contextTools = convertMetadataToTools(
     availableComponents.flatMap((component) => component.contextTools),
   );
-  const tools = [...componentTools, ...contextTools, displayMessageTool];
+  const tools = [
+    ...componentTools,
+    ...contextTools,
+    ...clientToolsConverted,
+    displayMessageTool,
+  ];
   // Add standard parameters to all tools
   const toolsWithStandardParameters = addParametersToTools(
     tools,

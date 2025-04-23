@@ -641,6 +641,7 @@ export class ThreadsService {
       const streamedResponseMessage = await tamboBackend.runDecisionLoop({
         messageHistory: messages,
         availableComponents: advanceRequestDto.availableComponents ?? [],
+        clientTools: advanceRequestDto.clientTools ?? [],
         systemTools,
         additionalContext: advanceRequestDto.additionalContext,
       });
@@ -666,6 +667,7 @@ export class ThreadsService {
     const streamedResponseMessage = await tamboBackend.runDecisionLoop({
       messageHistory: messages,
       availableComponents: advanceRequestDto.availableComponents ?? [],
+      clientTools: advanceRequestDto.clientTools ?? [],
       systemTools,
       additionalContext: advanceRequestDto.additionalContext,
     });
