@@ -540,10 +540,12 @@ export class ThreadsService {
     const toolCallRequest = responseMessage.toolCallRequest;
     if (
       toolCallRequest &&
-      toolCallRequest.toolName in systemTools.mcpToolSources
+      (toolCallRequest.toolName in systemTools.mcpToolSources ||
+        systemTools.composioToolNames.includes(toolCallRequest.toolName))
     ) {
       return await this.handleSystemToolCall(
         toolCallRequest,
+        responseMessage.toolCallId ?? "",
         systemTools,
         responseMessage,
         advanceRequestDto,
@@ -565,6 +567,7 @@ export class ThreadsService {
 
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
+    toolCallId: string,
     systemTools: SystemTools,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
@@ -574,6 +577,7 @@ export class ThreadsService {
   ): Promise<AdvanceThreadResponseDto>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
+    toolCallId: string,
     systemTools: SystemTools,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
@@ -583,6 +587,7 @@ export class ThreadsService {
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
+    toolCallId: string,
     systemTools: SystemTools,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
@@ -595,6 +600,7 @@ export class ThreadsService {
     const messageWithToolResponse: AdvanceThreadDto = await callSystemTool(
       systemTools,
       toolCallRequest,
+      toolCallId,
       componentDecision,
       advanceRequestDto,
     );
@@ -752,11 +758,13 @@ export class ThreadsService {
     if (
       componentDecision &&
       finalToolCallRequest &&
-      finalToolCallRequest.toolName in systemTools.mcpToolSources
+      (finalToolCallRequest.toolName in systemTools.mcpToolSources ||
+        systemTools.composioToolNames.includes(finalToolCallRequest.toolName))
     ) {
       // Note that this effectively consumes finalToolCallRequest and finalToolCallId
       const toolResponseMessageStream = await this.handleSystemToolCall(
         finalToolCallRequest,
+        toolCallId ?? "",
         systemTools,
         componentDecision,
         originalRequest,
