@@ -260,7 +260,6 @@ export function APIKeyList({ project }: APIKeyListProps) {
             </motion.div>
           )}
 
-          {/* Newly generated key - only show for manually created keys */}
           {newGeneratedKey && !showKeyDialog && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
