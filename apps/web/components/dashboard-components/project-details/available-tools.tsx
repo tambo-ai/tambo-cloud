@@ -67,10 +67,6 @@ interface EnabledAppRowProps {
 interface ToolAuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdateAuth: (
-    schemeId: ComposioAuthMode,
-    fields: Record<string, string>,
-  ) => Promise<void>;
   currentScheme?: ComposioConnectorConfig;
   availableSchemes?: ComposioConnectorConfig[];
   projectId: string;
@@ -81,7 +77,6 @@ interface ToolAuthDialogProps {
 export function ToolAuthDialog({
   open,
   onOpenChange,
-  onUpdateAuth,
   currentScheme,
   availableSchemes,
   projectId,
@@ -93,12 +88,18 @@ export function ToolAuthDialog({
   >(currentScheme || availableSchemes?.[0]);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
 
+  const {
+    mutateAsync: updateAuth,
+    isPending: isUpdating,
+    error: updateError,
+    data: updateResult,
+  } = api.tools.updateComposioAuth.useMutation();
+
   // Fetch current auth values when dialog opens
   const {
     data: currentAuth,
     isFetching,
-    refetch,
-    error,
+    error: fetchError,
   } = api.tools.getComposioAuth.useQuery(
     {
       projectId,
@@ -112,29 +113,31 @@ export function ToolAuthDialog({
     },
   );
 
-  useEffect(() => {
-    if (open) {
-      // Refetch when dialog opens to ensure fresh data
-      refetch();
+  const toolProviderId = currentAuth?.toolProviderId;
+  const redirectUrl = updateResult?.redirectUrl ?? currentAuth?.redirectUrl;
+  const { data: connectedAccountStatus } =
+    api.tools.checkComposioConnectedAccountStatus.useQuery(
+      {
+        projectId,
+        toolProviderId: toolProviderId ?? "",
+        contextKey: null,
+      },
+      {
+        enabled: open && !!toolProviderId && !!redirectUrl,
+        refetchInterval: 1000,
+      },
+    );
+  const accountStatus =
+    connectedAccountStatus?.status ??
+    updateResult?.connectionStatus ??
+    currentAuth?.status;
 
-      if (currentAuth) {
-        const matchingScheme = availableSchemes?.find(
-          (s) => s.mode === currentAuth.mode,
-        );
-        if (matchingScheme) {
-          setSelectedScheme(matchingScheme);
-          setFieldValues(currentAuth.fields);
-        }
-      } else {
-        // If no current auth, use default scheme selection logic
-        const newScheme =
-          currentScheme ||
-          (availableSchemes?.length === 1 ? availableSchemes[0] : undefined);
-        setSelectedScheme(newScheme);
-        setFieldValues({});
-      }
+  // Watch for connection status changes
+  useEffect(() => {
+    if (accountStatus === "ACTIVE") {
+      onOpenChange(false);
     }
-  }, [open, currentAuth, currentScheme, availableSchemes, refetch]);
+  }, [accountStatus, onOpenChange]);
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -142,16 +145,27 @@ export function ToolAuthDialog({
       setSelectedScheme(currentScheme || availableSchemes?.[0]);
       setFieldValues({});
     }
-  }, [open, currentScheme, availableSchemes]);
+  }, [availableSchemes, currentScheme, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (selectedScheme?.mode) {
-      await onUpdateAuth(selectedScheme.mode, fieldValues);
-      await refetch();
-      onOpenChange(false);
+      const response = await updateAuth({
+        projectId,
+        appId,
+        contextKey: null,
+        authMode: selectedScheme.mode,
+        authFields: fieldValues,
+      });
+
+      if (!response.redirectUrl) {
+        onOpenChange(false);
+      }
     }
   };
+
+  const formDisabled = isFetching || isUpdating || !!redirectUrl;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,19 +173,23 @@ export function ToolAuthDialog({
         <DialogHeader>
           <DialogTitle>{appName} - Authentication Method</DialogTitle>
           <DialogDescription>
-            {availableSchemes && availableSchemes.length > 1
-              ? "Select an authentication method and provide the required details."
-              : "Provide the required authentication details."}
+            {redirectUrl
+              ? "Please authenticate with the service. This dialog will close automatically once authenticated."
+              : availableSchemes && availableSchemes.length > 1
+                ? "Select an authentication method and provide the required details."
+                : "Provide the required authentication details."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
+          {(fetchError || updateError) && (
             <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-              Error loading authentication details: {error.message}
+              {fetchError?.message ||
+                updateError?.message ||
+                "An error occurred"}
             </div>
           )}
 
-          {availableSchemes && availableSchemes.length > 1 && (
+          {availableSchemes && availableSchemes.length > 1 && !redirectUrl && (
             <div className="space-y-4">
               <Label>Authentication Method</Label>
               <Select
@@ -183,7 +201,7 @@ export function ToolAuthDialog({
                   setSelectedScheme(scheme);
                   setFieldValues({});
                 }}
-                disabled={isFetching || !!error}
+                disabled={formDisabled}
               >
                 <SelectTrigger>
                   <SelectValue>
@@ -225,7 +243,7 @@ export function ToolAuthDialog({
                   }))
                 }
                 required={field.required}
-                disabled={isFetching || !!error}
+                disabled={formDisabled}
               />
               {field.description && (
                 <p className="text-xs text-muted-foreground whitespace-pre-line">
@@ -236,12 +254,26 @@ export function ToolAuthDialog({
           ))}
 
           <DialogFooter>
-            <Button
-              type="submit"
-              disabled={!selectedScheme || isFetching || !!error}
-            >
-              Save
-            </Button>
+            {redirectUrl ? (
+              <>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Click the button below to authenticate with the service
+                </p>
+                <Button type="button" variant="outline" asChild>
+                  <a
+                    href={redirectUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Authenticate
+                  </a>
+                </Button>
+              </>
+            ) : (
+              <Button type="submit" disabled={!selectedScheme || formDisabled}>
+                Save
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>
@@ -315,9 +347,6 @@ function EnabledAppRow({
       <ToolAuthDialog
         open={authDialogOpen}
         onOpenChange={setAuthDialogOpen}
-        onUpdateAuth={async (schemeId, values) => {
-          await onUpdateAuth(app.appId, schemeId, values);
-        }}
         currentScheme={app.auth_schemes?.[0]}
         availableSchemes={app.auth_schemes}
         projectId={projectId}
@@ -356,24 +385,13 @@ export function AvailableTools({ project }: AvailableToolsProps) {
       },
     });
 
-  const { mutateAsync: updateAuth } = api.tools.updateComposioAuth.useMutation({
-    onSuccess: () => {
-      // Could add a toast here if desired
-    },
-  });
-
   const handleUpdateAuth = async (
     appId: string,
     schemeId: ComposioAuthMode,
     values: Record<string, string>,
   ) => {
-    await updateAuth({
-      projectId: project.id,
-      appId,
-      contextKey: null,
-      authMode: schemeId,
-      authFields: values,
-    });
+    // This function is no longer needed since we moved the mutation
+    // but we'll keep it as a no-op to avoid breaking the interface
   };
 
   if (isLoading) {
