@@ -50,6 +50,7 @@ export async function* runDecisionLoop(
     ...contextTools,
     ...clientToolsConverted,
     displayMessageTool,
+    ...(systemTools?.tools ?? []),
   ];
   // Add standard parameters to all tools
   const toolsWithStandardParameters = addParametersToTools(
