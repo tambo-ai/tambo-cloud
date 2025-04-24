@@ -55,6 +55,12 @@ import {
 } from "./util/thread-state";
 import { callSystemTool, extractToolResponse } from "./util/tool";
 
+/**
+ * The maximum depth of tool calls we will make. This is to prevent infinite
+ * loops.
+ */
+const MAX_TOOL_CALL_DEPTH = 3;
+
 @Injectable()
 export class ThreadsService {
   constructor(
@@ -441,12 +447,16 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
     stream?: boolean,
+    depth = 0, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
     const db = this.getDb();
 
     await this.checkMessageLimit(projectId);
+    if (depth > MAX_TOOL_CALL_DEPTH) {
+      throw new Error("Maximum tool call depth reached");
+    }
 
     const thread = await this.ensureThread(
       projectId,
@@ -508,6 +518,7 @@ export class ThreadsService {
         threadMessageDtoToThreadMessage(messages),
         userMessage,
         advanceRequestDto,
+        depth,
       );
     }
 
@@ -552,6 +563,7 @@ export class ThreadsService {
         projectId,
         thread.id,
         false,
+        depth,
       );
     }
 
@@ -574,6 +586,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: boolean,
+    depth: number,
   ): Promise<AdvanceThreadResponseDto>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
@@ -584,6 +597,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: true,
+    depth: number,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
@@ -594,6 +608,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: boolean,
+    depth: number,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -604,12 +619,16 @@ export class ThreadsService {
       componentDecision,
       advanceRequestDto,
     );
+    if (messageWithToolResponse === advanceRequestDto) {
+      throw new Error("No tool call response, returning assistant message");
+    }
 
     return await this.advanceThread(
       projectId,
       messageWithToolResponse,
       threadId,
       stream,
+      depth + 1,
     );
   }
 
@@ -621,6 +640,7 @@ export class ThreadsService {
     messages: ThreadMessage[],
     userMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
+    depth: number,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
     const systemTools = await getSystemTools(
       db,
@@ -659,6 +679,7 @@ export class ThreadsService {
         systemTools,
         advanceRequestDto,
         toolCallId,
+        depth,
       );
     }
 
@@ -683,6 +704,7 @@ export class ThreadsService {
       systemTools,
       advanceRequestDto,
       toolCallId,
+      depth,
     );
   }
 
@@ -694,6 +716,7 @@ export class ThreadsService {
     systemTools: SystemTools,
     originalRequest: AdvanceThreadDto,
     toolCallId?: string,
+    depth: number = 0,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     const db = this.getDb();
     const logger = this.logger;
@@ -771,6 +794,7 @@ export class ThreadsService {
         projectId,
         threadId,
         true,
+        depth,
       );
       for await (const chunk of toolResponseMessageStream) {
         yield chunk;
