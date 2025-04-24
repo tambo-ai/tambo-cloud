@@ -67,9 +67,7 @@ export function convertMetadataToTools(
               } else {
                 return [
                   parameter.name,
-                  {
-                    ...parameter.schema,
-                  },
+                  parameter.schema || { type: parameter.type },
                 ];
               }
             }),
