@@ -565,11 +565,7 @@ export class ThreadsService {
     );
 
     const toolCallRequest = responseMessage.toolCallRequest;
-    if (
-      toolCallRequest &&
-      (toolCallRequest.toolName in systemTools.mcpToolSources ||
-        systemTools.composioToolNames.includes(toolCallRequest.toolName))
-    ) {
+    if (isSystemToolCall(toolCallRequest, systemTools)) {
       if (!responseMessage.toolCallId) {
         console.warn(
           `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
@@ -803,9 +799,7 @@ export class ThreadsService {
     const componentDecision = finalThreadMessage.component;
     if (
       componentDecision &&
-      finalToolCallRequest &&
-      (finalToolCallRequest.toolName in systemTools.mcpToolSources ||
-        systemTools.composioToolNames.includes(finalToolCallRequest.toolName))
+      isSystemToolCall(finalToolCallRequest, systemTools)
     ) {
       if (!toolCallId) {
         console.warn(
@@ -895,4 +889,14 @@ export class ThreadsService {
     const { providerKey: decryptedKey } = decryptProviderKey(providerKey);
     return decryptedKey;
   }
+}
+function isSystemToolCall(
+  toolCallRequest: ToolCallRequest | undefined,
+  systemTools: SystemTools,
+): toolCallRequest is ToolCallRequest {
+  return (
+    !!toolCallRequest &&
+    (toolCallRequest.toolName in systemTools.mcpToolSources ||
+      systemTools.composioToolNames.includes(toolCallRequest.toolName))
+  );
 }
