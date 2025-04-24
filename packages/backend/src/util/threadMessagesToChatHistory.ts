@@ -180,8 +180,22 @@ function makeAssistantMessages(
       `assistant message ${message.id} has component name ${message.component.componentName}, returning assistant message`,
     );
   }
+  const toolCallId = message.tool_call_id ?? "";
+  const componentDecisionToolCalls =
+    message.component && toolCallId
+      ? formatFunctionCall(
+          makeFakeDecisionCall(
+            combineComponentWithState(
+              message.component,
+              message.componentState,
+            ),
+          ),
+          toolCallId,
+        )
+      : undefined;
   const assistantMessage: ChatCompletionAssistantMessageParam = {
     role: "assistant",
+    tool_calls: componentDecisionToolCalls,
     content: message.component
       ? [
           {
@@ -196,6 +210,14 @@ function makeAssistantMessages(
         ]
       : (message.content as ChatCompletionContentPartText[]),
   };
+  if (componentDecisionToolCalls && !respondedToolIds.includes(toolCallId)) {
+    const userMessage: ChatCompletionToolMessageParam = {
+      role: "tool",
+      content: [{ type: "text", text: "{}" }],
+      tool_call_id: toolCallId,
+    };
+    return [assistantMessage, userMessage];
+  }
   return [assistantMessage];
 }
 
