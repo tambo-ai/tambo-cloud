@@ -181,18 +181,10 @@ function makeAssistantMessages(
     );
   }
   const toolCallId = message.tool_call_id ?? "";
-  const componentDecisionToolCalls =
-    message.component && toolCallId
-      ? formatFunctionCall(
-          makeFakeDecisionCall(
-            combineComponentWithState(
-              message.component,
-              message.componentState,
-            ),
-          ),
-          toolCallId,
-        )
-      : undefined;
+  const componentDecisionToolCalls = makeToolCallWithFakeFallback(
+    message,
+    toolCallId,
+  );
   const assistantMessage: ChatCompletionAssistantMessageParam = {
     role: "assistant",
     tool_calls: componentDecisionToolCalls,
@@ -219,6 +211,29 @@ function makeAssistantMessages(
     return [assistantMessage, userMessage];
   }
   return [assistantMessage];
+}
+
+function makeToolCallWithFakeFallback(
+  message: ThreadMessage,
+  toolCallId: string,
+) {
+  if (!message.component || !toolCallId) {
+    return undefined;
+  }
+
+  if (message.toolCallRequest) {
+    return formatFunctionCall(message.toolCallRequest, toolCallId);
+  }
+
+  // this shouldn't happen anymore, but just in case
+  console.warn("no tool call request, creating fake component decision call");
+
+  const combinedComponent = combineComponentWithState(
+    message.component,
+    message.componentState,
+  );
+  const fakeDecision = makeFakeDecisionCall(combinedComponent);
+  return formatFunctionCall(fakeDecision, toolCallId);
 }
 
 function combineComponentWithState(
