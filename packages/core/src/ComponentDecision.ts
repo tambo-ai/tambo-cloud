@@ -7,6 +7,8 @@ export interface LegacyComponentDecision {
   toolCallId?: string;
   componentState: Record<string, unknown> | null;
   reasoning: string;
+  statusMessage?: string;
+  completionStatusMessage?: string;
 }
 
 export interface ComponentDecisionV2 {
