@@ -134,13 +134,8 @@ export async function addUserMessage(
           throw new Error(`Thread ${threadId} not found`);
         }
 
-        if (
-          currentThread.generationStage ===
-            GenerationStage.STREAMING_RESPONSE ||
-          currentThread.generationStage ===
-            GenerationStage.HYDRATING_COMPONENT ||
-          currentThread.generationStage === GenerationStage.CHOOSING_COMPONENT
-        ) {
+        const generationStage = currentThread.generationStage;
+        if (isThreadProcessing(generationStage)) {
           throw new Error(
             `Thread is already in processing (${currentThread.generationStage}), only one response can be generated at a time`,
           );
@@ -172,6 +167,14 @@ export async function addUserMessage(
     );
     throw error;
   }
+}
+
+function isThreadProcessing(generationStage: GenerationStage) {
+  return [
+    GenerationStage.STREAMING_RESPONSE,
+    GenerationStage.HYDRATING_COMPONENT,
+    GenerationStage.CHOOSING_COMPONENT,
+  ].includes(generationStage);
 }
 
 /**
