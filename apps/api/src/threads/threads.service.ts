@@ -554,6 +554,11 @@ export class ThreadsService {
       (toolCallRequest.toolName in systemTools.mcpToolSources ||
         systemTools.composioToolNames.includes(toolCallRequest.toolName))
     ) {
+      if (!responseMessage.toolCallId) {
+        console.warn(
+          `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
+        );
+      }
       return await this.handleSystemToolCall(
         toolCallRequest,
         responseMessage.toolCallId ?? "",
@@ -784,6 +789,11 @@ export class ThreadsService {
       (finalToolCallRequest.toolName in systemTools.mcpToolSources ||
         systemTools.composioToolNames.includes(finalToolCallRequest.toolName))
     ) {
+      if (!toolCallId) {
+        console.warn(
+          `While handling tool call request ${finalToolCallRequest.toolName}, no tool call id in response message ${finalThreadMessage}, returning assistant message`,
+        );
+      }
       // Note that this effectively consumes finalToolCallRequest and finalToolCallId
       const toolResponseMessageStream = await this.handleSystemToolCall(
         finalToolCallRequest,

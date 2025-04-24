@@ -78,7 +78,6 @@ export async function callSystemTool(
   }
 
   if (systemTools.composioToolNames.includes(toolCallRequest.toolName)) {
-    console.log("Calling composio tool", toolCallRequest);
     const result = await systemTools.composioClient?.executeToolCall({
       id: toolCallId,
       type: "function",
@@ -94,7 +93,6 @@ export async function callSystemTool(
         ),
       },
     });
-    console.log("Composio tool result", result);
     const responseContent = [
       { type: ContentPartType.Text, text: result ?? "" },
     ];
@@ -113,15 +111,8 @@ export async function callSystemTool(
 
     return messageWithToolResponse;
   }
-  console.log(
-    "No tool found",
-    toolCallRequest,
-    " missing ",
-    toolCallRequest.toolName,
-    " in ",
-    systemTools.composioToolNames,
-    " and ",
-    Object.keys(systemTools.mcpToolSources),
-  );
+
+  // If we don't have a tool source for the tool call request, return the
+  // original request. Callers should probably handle this as an error.
   return advanceRequestDto;
 }
