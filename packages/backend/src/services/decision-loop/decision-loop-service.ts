@@ -152,7 +152,7 @@ export async function* runDecisionLoop(
       const parsedChunk = {
         message: displayMessage,
         componentName: isUITool
-          ? toolCall?.function.name.replace(uiToolNamePrefix, "")
+          ? toolCall?.function.name.slice(uiToolNamePrefix.length)
           : "",
         props: isUITool ? toolArgs : null,
         toolCallRequest: filteredToolCallRequest,
