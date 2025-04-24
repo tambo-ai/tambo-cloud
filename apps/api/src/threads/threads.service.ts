@@ -446,6 +446,29 @@ export class ThreadsService {
     projectId: string,
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
+    stream?: true,
+    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+  ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
+  async advanceThread(
+    projectId: string,
+    advanceRequestDto: AdvanceThreadDto,
+    unresolvedThreadId?: string,
+    stream?: false,
+    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+  ): Promise<AdvanceThreadResponseDto>;
+  async advanceThread(
+    projectId: string,
+    advanceRequestDto: AdvanceThreadDto,
+    unresolvedThreadId?: string,
+    stream?: boolean,
+    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+  ): Promise<
+    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
+  >;
+  async advanceThread(
+    projectId: string,
+    advanceRequestDto: AdvanceThreadDto,
+    unresolvedThreadId?: string,
     stream?: boolean,
     depth = 0, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
   ): Promise<
