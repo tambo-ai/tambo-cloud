@@ -20,7 +20,6 @@ import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
 import { getSystemTools } from "../common/systemTools";
-import { AvailableComponentDto } from "../components/dto/generate-component.dto";
 import { ProjectsService } from "../projects/projects.service";
 import {
   AdvanceThreadDto,
@@ -491,7 +490,7 @@ export class ThreadsService {
     const userMessage = await addUserMessage(
       db,
       thread.id,
-      advanceRequestDto,
+      advanceRequestDto.messageToAppend,
       this.logger,
     );
 
@@ -500,16 +499,10 @@ export class ThreadsService {
       version: "v2",
     });
 
-    const availableComponentMap: Record<string, AvailableComponentDto> =
-      advanceRequestDto.availableComponents?.reduce((acc, component) => {
-        acc[component.name] = component;
-        return acc;
-      }, {}) ?? {};
-
     // Log available components
     this.logger.log(
       `Available components for thread ${thread.id}: ${JSON.stringify(
-        Object.keys(availableComponentMap),
+        advanceRequestDto.availableComponents?.map((comp) => comp.name),
       )}`,
     );
 

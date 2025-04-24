@@ -12,7 +12,7 @@ import {
 import { HydraDatabase, HydraDb, operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
-import { ThreadMessageDto } from "../dto/message.dto";
+import { MessageRequest, ThreadMessageDto } from "../dto/message.dto";
 import { convertContentPartToDto } from "./content";
 import {
   addAssistantMessageToThread,
@@ -120,7 +120,7 @@ export async function processThreadMessage(
 export async function addUserMessage(
   db: HydraDb,
   threadId: string,
-  advanceRequestDto: AdvanceThreadDto,
+  message: MessageRequest,
   logger?: Logger,
 ) {
   try {
@@ -148,11 +148,7 @@ export async function addUserMessage(
           "Starting processing...",
         );
 
-        return await addMessage(
-          tx,
-          threadId,
-          advanceRequestDto.messageToAppend,
-        );
+        return await addMessage(tx, threadId, message);
       },
       {
         isolationLevel: "serializable",
