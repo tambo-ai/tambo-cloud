@@ -1,14 +1,10 @@
-import { ApiProperty, ApiSchema, getSchemaPath } from "@nestjs/swagger";
+import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import {
   AvailableComponent,
-  AvailableComponents,
   ComponentContextToolMetadata,
   ComponentPropsMetadata,
 } from "@tambo-ai-cloud/backend";
-import { ArrayMinSize } from "class-validator";
 import { JSONSchema7 } from "json-schema";
-import { ChatCompletionContentPartDto } from "../../threads/dto/message.dto";
-import { LegacyChatMessageDto } from "./legacy-chat-history.dto";
 
 @ApiSchema({ name: "ComponentPropsMetadata" })
 export class ComponentPropsMetadataDto implements ComponentPropsMetadata {}
@@ -23,11 +19,6 @@ export class AvailableComponentDto implements AvailableComponent {
     additionalProperties: true,
   })
   props!: ComponentPropsMetadataDto;
-}
-
-@ApiSchema({ name: "AvailableComponents" })
-export class AvailableComponentsDto implements AvailableComponents {
-  [key: string]: AvailableComponentDto;
 }
 
 export class ToolParameters {
@@ -47,31 +38,4 @@ export class ComponentContextToolMetadataDto
   name!: string;
   description!: string;
   parameters!: ToolParameters[];
-}
-
-export class GenerateComponentRequest {
-  messageHistory!: LegacyChatMessageDto[];
-  @ApiProperty({
-    type: "object",
-    additionalProperties: { $ref: getSchemaPath(AvailableComponentDto) },
-  })
-  availableComponents!: any;
-  /** Optional threadId to generate a component for */
-  threadId?: string;
-  /** Optional contextKey to generate a component for */
-  contextKey?: string;
-}
-export class GenerateComponentRequest2 {
-  /**
-   * The message to generate a component for. The entire thread history will be
-   * pulled from the database.
-   *
-   * This is the same as ThreadMessage.content */
-  @ArrayMinSize(1)
-  content!: ChatCompletionContentPartDto[];
-  availableComponents!: AvailableComponentDto[];
-  /** Optional threadId to generate a component for */
-  threadId?: string;
-  /** Optional contextKey to generate a component for */
-  contextKey?: string;
 }
