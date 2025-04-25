@@ -25,7 +25,6 @@ import {
   AdvanceThreadDto,
   AdvanceThreadResponseDto,
 } from "./dto/advance-thread.dto";
-import { AvailableComponentDto } from "./dto/generate-component.dto";
 import { MessageRequest, ThreadMessageDto } from "./dto/message.dto";
 import { SuggestionDto } from "./dto/suggestion.dto";
 import { SuggestionsGenerateDto } from "./dto/suggestions-generate.dto";
