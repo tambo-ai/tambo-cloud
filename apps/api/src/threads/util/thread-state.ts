@@ -148,12 +148,6 @@ export async function addUserMessage(
           "Starting processing...",
         );
 
-        console.log(
-          "Adding user message with role: ",
-          message.role,
-          "tool call id: ",
-          message.tool_call_id,
-        );
         return await addMessage(tx, threadId, message);
       },
       {

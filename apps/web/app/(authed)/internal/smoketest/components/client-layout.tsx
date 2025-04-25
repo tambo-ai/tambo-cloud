@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 import { TamboProvider } from "@tambo-ai/react";
 import { FC, PropsWithChildren } from "react";
 
-const ClientLayout: FC<PropsWithChildren> = ({ children }) => {
+export const ClientLayout: FC<PropsWithChildren> = ({ children }) => {
   return (
     <TamboProvider
       tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL!}
@@ -14,5 +14,3 @@ const ClientLayout: FC<PropsWithChildren> = ({ children }) => {
     </TamboProvider>
   );
 };
-
-export default ClientLayout;
