@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { RouterOutputs } from "@/trpc/react";
 import { LegacyComponentDecision } from "@tambo-ai-cloud/core";
+import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import {
   ActionBadge,
@@ -32,93 +33,104 @@ export function ThreadMessages({ thread }: Readonly<ThreadMessagesProps>) {
 
   return (
     <div className="space-y-4">
-      {messages.map((message) => {
-        const hasMatchingToolCallId =
-          message.toolCallId === highlightedToolCallId ||
-          message.toolCallRequest?.tool_call_id === highlightedToolCallId ||
-          (message.componentDecision as LegacyComponentDecision)?.toolCallId ===
-            highlightedToolCallId;
+      <AnimatePresence initial={false}>
+        {messages.map((message) => {
+          const hasMatchingToolCallId =
+            message.toolCallId === highlightedToolCallId ||
+            message.toolCallRequest?.tool_call_id === highlightedToolCallId ||
+            (message.componentDecision as LegacyComponentDecision)
+              ?.toolCallId === highlightedToolCallId;
 
-        const isInternalMessage = !!message.actionType;
-        const hasToolCallRequest =
-          !!message.toolCallRequest?.toolName &&
-          !!message.toolCallRequest?.parameters?.length;
+          const isInternalMessage = !!message.actionType;
+          const hasToolCallRequest =
+            !!message.toolCallRequest?.toolName &&
+            !!message.toolCallRequest?.parameters?.length;
 
-        return (
-          <Card
-            key={message.id}
-            className={cn(
-              "p-4 transition-all duration-200",
-              roleStyles[message.role as keyof typeof roleStyles],
-              isInternalMessage && "bg-[#F5F5F5] dark:bg-[#2A2A2A]",
-              highlightedToolCallId && !hasMatchingToolCallId && "opacity-40",
-            )}
-          >
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  {message.role}
-                  {message.actionType && (
-                    <ActionBadge type={message.actionType} />
-                  )}
-                </p>
-                <div className="flex items-center gap-2">
-                  {message.toolCallId && (
-                    <ToolCallBadge
-                      id={message.toolCallId}
-                      onHover={setHighlightedToolCallId}
-                    />
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(message.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              <div
+          return (
+            <motion.div
+              key={message.id}
+              initial={{ height: 0, opacity: 0, marginTop: 0 }}
+              animate={{ height: "auto", opacity: 1, marginTop: 16 }}
+              exit={{ height: 0, opacity: 0, marginTop: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+            >
+              <Card
                 className={cn(
-                  "whitespace-pre-wrap",
-                  isInternalMessage && "text-muted-foreground",
+                  "p-4 transition-all duration-200",
+                  roleStyles[message.role as keyof typeof roleStyles],
+                  isInternalMessage && "bg-[#F5F5F5] dark:bg-[#2A2A2A]",
+                  highlightedToolCallId &&
+                    !hasMatchingToolCallId &&
+                    "opacity-40",
                 )}
               >
-                {typeof message.content === "object" ? (
-                  <pre className="max-h-[400px] max-w-full overflow-auto rounded-md bg-[#F8F9FA] dark:bg-[#2A2A2A] p-2">
-                    {JSON.stringify(message.content, null, 2)}
-                  </pre>
-                ) : (
-                  `${message.content}`
-                )}
-              </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      {message.role}
+                      {message.actionType && (
+                        <ActionBadge type={message.actionType} />
+                      )}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {message.toolCallId && (
+                        <ToolCallBadge
+                          id={message.toolCallId}
+                          onHover={setHighlightedToolCallId}
+                        />
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(message.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
 
-              {message.componentDecision?.componentName && (
-                <div className="mt-2 text-sm text-muted-foreground bg-[#F8F9FA] dark:bg-[#2A2A2A] p-3 rounded-md">
-                  {message.componentDecision.componentName && (
-                    <code className="font-mono">
-                      &lt;{message.componentDecision.componentName}
-                      {message.componentDecision.props &&
-                        ` ${Object.keys(message.componentDecision.props)
-                          .map((key) => `${key}={...}`)
-                          .join(" ")}`}{" "}
-                      /&gt;
-                    </code>
+                  <div
+                    className={cn(
+                      "whitespace-pre-wrap",
+                      isInternalMessage && "text-muted-foreground",
+                    )}
+                  >
+                    {typeof message.content === "object" ? (
+                      <pre className="max-h-[400px] max-w-full overflow-auto rounded-md bg-[#F8F9FA] dark:bg-[#2A2A2A] p-2">
+                        {JSON.stringify(message.content, null, 2)}
+                      </pre>
+                    ) : (
+                      `${message.content}`
+                    )}
+                  </div>
+
+                  {message.componentDecision?.componentName && (
+                    <div className="mt-2 text-sm text-muted-foreground bg-[#F8F9FA] dark:bg-[#2A2A2A] p-3 rounded-md">
+                      {message.componentDecision.componentName && (
+                        <code className="font-mono">
+                          &lt;{message.componentDecision.componentName}
+                          {message.componentDecision.props &&
+                            ` ${Object.keys(message.componentDecision.props)
+                              .map((key) => `${key}={...}`)
+                              .join(" ")}`}{" "}
+                          /&gt;
+                        </code>
+                      )}
+                    </div>
+                  )}
+
+                  {hasToolCallRequest && message.toolCallRequest && (
+                    <ToolCallCode
+                      toolName={message.toolCallRequest.toolName}
+                      parameters={message.toolCallRequest.parameters}
+                    />
+                  )}
+
+                  {!!message.suggestedActions?.length && (
+                    <SuggestedActions actions={message.suggestedActions} />
                   )}
                 </div>
-              )}
-
-              {hasToolCallRequest && message.toolCallRequest && (
-                <ToolCallCode
-                  toolName={message.toolCallRequest.toolName}
-                  parameters={message.toolCallRequest.parameters}
-                />
-              )}
-
-              {!!message.suggestedActions?.length && (
-                <SuggestedActions actions={message.suggestedActions} />
-              )}
-            </div>
-          </Card>
-        );
-      })}
+              </Card>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 }
