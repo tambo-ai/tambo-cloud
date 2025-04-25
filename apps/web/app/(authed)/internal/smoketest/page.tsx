@@ -3,6 +3,7 @@
 import { ThreadList } from "@/components/thread/thread-list";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Message } from "@/components/ui/message";
 import { useSession } from "@/hooks/auth";
 import { api } from "@/trpc/react";
 import { TamboTool, useTambo, useTamboThreadList } from "@tambo-ai/react";
@@ -347,25 +348,13 @@ export default function SmokePage() {
           <Card className="p-4 min-h-[500px] flex flex-col">
             <div className="flex-1 overflow-y-auto space-y-4 mb-4">
               {messages.map((message, index) => (
-                <div
+                <Message
                   key={index}
-                  className={`p-3 rounded-lg ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground ml-12"
-                      : "bg-muted mr-12"
-                  }`}
-                >
-                  {message.content.map((content, index) => (
-                    <div key={index}>
-                      {content.type === "text"
-                        ? content.text
-                        : `[Unhandled ${content.type}]`}
-                    </div>
-                  ))}
-                  {message.renderedComponent && (
-                    <div className="mt-2">{message.renderedComponent}</div>
-                  )}
-                </div>
+                  role={message.role === "user" ? "user" : "assistant"}
+                  content={message.content}
+                  message={message}
+                  variant="solid"
+                />
               ))}
             </div>
             <MessageSuggestions maxSuggestions={3} />
