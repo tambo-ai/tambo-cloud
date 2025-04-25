@@ -42,7 +42,7 @@ export function ThreadMessages({ thread }: Readonly<ThreadMessagesProps>) {
         const isInternalMessage = !!message.actionType;
         const hasToolCallRequest =
           !!message.toolCallRequest?.toolName &&
-          message.toolCallRequest.parameters.length > 0;
+          !!message.toolCallRequest?.parameters?.length;
 
         return (
           <Card
@@ -105,7 +105,7 @@ export function ThreadMessages({ thread }: Readonly<ThreadMessagesProps>) {
                 </div>
               )}
 
-              {hasToolCallRequest && (
+              {hasToolCallRequest && message.toolCallRequest && (
                 <ToolCallCode
                   toolName={message.toolCallRequest.toolName}
                   parameters={message.toolCallRequest.parameters}

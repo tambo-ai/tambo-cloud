@@ -1,5 +1,4 @@
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 interface ActionBadgeProps {
@@ -44,35 +43,61 @@ export function ToolCallCode({ toolName, parameters }: ToolCallCodeProps) {
   const [expanded, setExpanded] = useState(false);
 
   const formatValue = (value: any) => {
-    if (typeof value === "string" && value.length > 50 && !expanded) {
-      return `"${value.slice(0, 50)}..."`;
-    }
     return JSON.stringify(value, null, expanded ? 2 : 0);
   };
 
-  return (
-    <div className="font-mono text-sm bg-muted/50 p-3 rounded-md">
-      <div className="flex justify-between items-center mb-2">
-        <span className="font-semibold">{toolName}</span>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          {expanded ? "Collapse" : "Expand"}
-        </button>
-      </div>
-      <div className={cn("transition-all", expanded ? "space-y-1" : "")}>
-        {parameters.map((param, i) => (
-          <div key={i} className={expanded ? "ml-4" : "inline"}>
-            {expanded && (
+  if (expanded) {
+    return (
+      <div className="font-mono text-sm bg-muted/50 p-3 rounded-md">
+        <div className="flex justify-between items-center mb-2">
+          <span className="font-semibold">{toolName}</span>
+          <button
+            onClick={() => setExpanded(false)}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Collapse
+          </button>
+        </div>
+        <div className="space-y-1">
+          {parameters.map((param, i) => (
+            <div key={i} className="ml-4">
               <span className="text-muted-foreground">
                 {param.parameterName}:{" "}
               </span>
-            )}
-            <span>{formatValue(param.parameterValue)}</span>
-            {!expanded && i < parameters.length - 1 && ", "}
+              <span>{formatValue(param.parameterValue)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Create the full parameter string
+  const paramString = parameters
+    .map(
+      (param) => `${param.parameterName}: ${formatValue(param.parameterValue)}`,
+    )
+    .join(", ");
+
+  return (
+    <div className="font-mono text-sm bg-muted/50 p-3 rounded-md">
+      <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="overflow-hidden whitespace-nowrap">
+            <span className="font-semibold">{toolName}</span>
+            <span>(</span>
+            <span className="text-ellipsis overflow-hidden" title={paramString}>
+              {paramString}
+            </span>
+            <span>)</span>
           </div>
-        ))}
+        </div>
+        <button
+          onClick={() => setExpanded(true)}
+          className="text-xs text-muted-foreground hover:text-foreground shrink-0"
+        >
+          Expand
+        </button>
       </div>
     </div>
   );
