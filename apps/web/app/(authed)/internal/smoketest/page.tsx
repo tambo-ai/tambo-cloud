@@ -303,9 +303,9 @@ export default function SmokePage() {
     isThreadInfoLoading;
 
   return (
-    <div className="container max-w-4xl py-8 space-y-4">
-      <div className="flex  gap-4">
-        <Card className="p-4">
+    <div className="container max-w-7xl py-8 space-y-4">
+      <div className="flex gap-4">
+        <Card className="p-4 flex flex-col flex-1">
           <div className="flex justify-between items-center mb-4 gap-2">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold">Threads</h2>
@@ -344,7 +344,7 @@ export default function SmokePage() {
             isLoading={isLoading}
           />
         </Card>
-        <div className="flex-1">
+        <div className="flex-col gap-2 flex-1">
           <Card className="p-4 min-h-[500px] flex flex-col">
             <div className="flex-1 overflow-y-auto space-y-4 mb-4">
               {messages.map((message, index) => (
