@@ -35,7 +35,7 @@ export async function* runDecisionLoop(
   availableComponents: AvailableComponent[],
   systemTools: SystemTools | undefined,
   clientTools: ComponentContextToolMetadata[],
-  uiToolNamePrefix: string = "show_",
+  uiToolNamePrefix: string = "show_component_",
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const componentTools = convertComponentsToUITools(
     availableComponents,
