@@ -40,6 +40,9 @@ export function ThreadMessages({ thread }: Readonly<ThreadMessagesProps>) {
             highlightedToolCallId;
 
         const isInternalMessage = !!message.actionType;
+        const hasToolCallRequest =
+          !!message.toolCallRequest?.toolName &&
+          message.toolCallRequest.parameters.length > 0;
 
         return (
           <Card
@@ -87,7 +90,7 @@ export function ThreadMessages({ thread }: Readonly<ThreadMessagesProps>) {
                 )}
               </div>
 
-              {message.componentDecision && (
+              {message.componentDecision?.componentName && (
                 <div className="mt-2 text-sm text-muted-foreground bg-[#F8F9FA] dark:bg-[#2A2A2A] p-3 rounded-md">
                   {message.componentDecision.componentName && (
                     <code className="font-mono">
@@ -102,7 +105,7 @@ export function ThreadMessages({ thread }: Readonly<ThreadMessagesProps>) {
                 </div>
               )}
 
-              {message.toolCallRequest && (
+              {hasToolCallRequest && (
                 <ToolCallCode
                   toolName={message.toolCallRequest.toolName}
                   parameters={message.toolCallRequest.parameters}
