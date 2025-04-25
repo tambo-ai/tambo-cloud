@@ -162,20 +162,12 @@ export default function ProjectPage({ params }: ProjectPageProps) {
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {isLoadingThreads ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="h-16 animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <ThreadList
-                threads={simpleThreads || []}
-                selectedThreadId={selectedThreadId}
-                onThreadSelect={setSelectedThreadId}
-                isLoading={isLoadingThreads}
-              />
-            )}
+            <ThreadList
+              threads={simpleThreads || []}
+              selectedThreadId={selectedThreadId}
+              onThreadSelect={setSelectedThreadId}
+              isLoading={isLoadingThreads}
+            />
           </div>
         </motion.div>
 
@@ -185,12 +177,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
           variants={itemVariants}
         >
           <div className="flex justify-between items-center mb-4 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold">Messages</h2>
-              {isFetching && (
-                <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
-              )}
-            </div>
+            <h2 className="text-lg font-semibold">Messages</h2>
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={showInternalMessages}
