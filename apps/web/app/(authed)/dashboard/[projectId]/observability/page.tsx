@@ -136,16 +136,19 @@ export default function ProjectPage({ params }: ProjectPageProps) {
 
   return (
     <motion.div
-      className="flex flex-col"
+      className="flex flex-col h-[calc(100vh-var(--header-height)-8rem)] overflow-hidden"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
       {/* Main Content Area */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 h-full overflow-hidden">
         {/* Thread List */}
-        <motion.div className="border rounded-lg p-4" variants={itemVariants}>
-          <div className="flex justify-between items-center mb-4">
+        <motion.div
+          className="border rounded-lg p-4 flex flex-col h-full overflow-hidden"
+          variants={itemVariants}
+        >
+          <div className="flex justify-between items-center mb-4 flex-shrink-0">
             <h2 className="text-lg font-semibold">Threads</h2>
             <Button
               variant="ghost"
@@ -158,25 +161,30 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               />
             </Button>
           </div>
-          {isLoadingThreads ? (
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="h-16 animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <ThreadList
-              threads={simpleThreads || []}
-              selectedThreadId={selectedThreadId}
-              onThreadSelect={setSelectedThreadId}
-              isLoading={isLoadingThreads}
-            />
-          )}
+          <div className="flex-1 overflow-y-auto">
+            {isLoadingThreads ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="h-16 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <ThreadList
+                threads={simpleThreads || []}
+                selectedThreadId={selectedThreadId}
+                onThreadSelect={setSelectedThreadId}
+                isLoading={isLoadingThreads}
+              />
+            )}
+          </div>
         </motion.div>
 
         {/* Thread Messages */}
-        <motion.div className="border rounded-lg p-4" variants={itemVariants}>
-          <div className="flex justify-between items-center mb-4">
+        <motion.div
+          className="border rounded-lg p-4 flex flex-col h-full overflow-hidden"
+          variants={itemVariants}
+        >
+          <div className="flex justify-between items-center mb-4 flex-shrink-0">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-semibold">Messages</h2>
               {isFetching && (
@@ -204,13 +212,15 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               </Button>
             </div>
           </div>
-          {selectedThread ? (
-            <ThreadMessages thread={selectedThread} />
-          ) : (
-            <p className="text-muted-foreground text-center py-8">
-              Select a thread to view messages
-            </p>
-          )}
+          <div className="flex-1 overflow-y-auto">
+            {selectedThread ? (
+              <ThreadMessages thread={selectedThread} />
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                Select a thread to view messages
+              </p>
+            )}
+          </div>
         </motion.div>
       </div>
     </motion.div>
