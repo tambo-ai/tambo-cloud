@@ -68,17 +68,32 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   }));
 
   // Fetch selected thread details
-  const { data: selectedThread, error: threadError } =
-    api.thread.getThread.useQuery(
-      {
-        threadId: selectedThreadId!,
-        projectId,
-        includeInternal: showInternalMessages,
+  const {
+    data: selectedThread,
+    error: threadError,
+    isFetching,
+    refetch,
+  } = api.thread.getThread.useQuery(
+    {
+      threadId: selectedThreadId!,
+      projectId,
+      includeInternal: showInternalMessages,
+    },
+    {
+      enabled: !!selectedThreadId,
+      placeholderData: (prev, prevQuery) => {
+        if (!prevQuery) return undefined;
+        const { input } = prevQuery.queryKey[1];
+        if (
+          input.threadId === selectedThreadId &&
+          input.projectId === projectId
+        ) {
+          return prev;
+        }
+        return undefined;
       },
-      {
-        enabled: !!selectedThreadId,
-      },
-    );
+    },
+  );
 
   // Handle errors with useEffect
   useEffect(() => {
@@ -162,7 +177,12 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         {/* Thread Messages */}
         <motion.div className="border rounded-lg p-4" variants={itemVariants}>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold mb-4">Messages</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">Messages</h2>
+              {isFetching && (
+                <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={showInternalMessages}
@@ -172,6 +192,16 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                 id={checkboxId}
               />
               <Label htmlFor={checkboxId}>Show internal messages</Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => await refetch()}
+                disabled={!selectedThreadId}
+              >
+                <RefreshCw
+                  className={cn("h-4 w-4", isFetching && "animate-spin")}
+                />
+              </Button>
             </div>
           </div>
           {selectedThread ? (
