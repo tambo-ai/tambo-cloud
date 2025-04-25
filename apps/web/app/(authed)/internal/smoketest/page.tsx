@@ -350,10 +350,9 @@ export default function SmokePage() {
               {messages.map((message, index) => (
                 <Message
                   key={index}
-                  role={message.role === "user" ? "user" : "assistant"}
+                  role={message.role as "user" | "assistant"}
                   content={message.content}
                   message={message}
-                  variant="solid"
                 />
               ))}
             </div>
