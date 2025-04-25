@@ -818,6 +818,7 @@ export class ThreadsService {
         true,
         depth,
       );
+
       for await (const chunk of toolResponseMessageStream) {
         yield chunk;
       }
