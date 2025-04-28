@@ -588,6 +588,7 @@ export class ThreadsService {
       responseMessageDto: {
         ...responseMessageDto,
         content: convertContentPartToDto(responseMessageDto.content),
+        componentState: responseMessageDto.componentState ?? {},
       },
       generationStage: resultingGenerationStage,
       statusMessage: resultingStatusMessage,
