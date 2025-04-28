@@ -23,6 +23,7 @@ import {
 } from "@nestjs/swagger";
 import { GenerationStage } from "@tambo-ai-cloud/core";
 import { Request } from "express";
+import isEqual from "react-fast-compare";
 import { ApiKeyGuard, ProjectId } from "../components/guards/apikey.guard";
 import {
   ProjectAccessOwnGuard,
@@ -286,11 +287,12 @@ export class ThreadsController {
     if (!request[ProjectId]) {
       throw new BadRequestException("Project ID is required");
     }
-    return await (this.threadsService.advanceThread(
+    return await this.threadsService.advanceThread(
       request[ProjectId],
       advanceRequestDto,
       threadId,
-    ) as Promise<AdvanceThreadResponseDto>);
+      false,
+    );
   }
 
   @UseGuards(ThreadInProjectGuard)
@@ -336,10 +338,12 @@ export class ThreadsController {
     if (!request[ProjectId]) {
       throw new BadRequestException("Project ID is required");
     }
-    return await (this.threadsService.advanceThread(
+    return await this.threadsService.advanceThread(
       request[ProjectId],
       advanceRequestDto,
-    ) as Promise<AdvanceThreadResponseDto>);
+      undefined,
+      false,
+    );
   }
 
   @Post("advancestream")
@@ -355,15 +359,12 @@ export class ThreadsController {
       throw new BadRequestException("Project ID is required");
     }
     try {
-      const stream = (await this.threadsService.advanceThread(
+      const stream = await this.threadsService.advanceThread(
         request[ProjectId],
         advanceRequestDto,
         undefined,
         true,
-      )) as AsyncIterableIterator<{
-        responseMessageDto: ThreadMessageDto;
-        generationStage: GenerationStage;
-      }>;
+      );
       await this.handleAdvanceStream(response, stream);
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
@@ -379,7 +380,7 @@ export class ThreadsController {
     }>,
   ) {
     try {
-      for await (const chunk of stream) {
+      for await (const chunk of filterDuplicateChunks(stream)) {
         response.write(`data: ${JSON.stringify(chunk)}\n\n`);
       }
     } catch (error: any) {
@@ -389,5 +390,18 @@ export class ThreadsController {
       response.write("data: DONE\n\n");
       response.end();
     }
+  }
+}
+
+async function* filterDuplicateChunks<T>(
+  stream: AsyncIterableIterator<T>,
+): AsyncIterableIterator<T> {
+  let previousChunk: T | undefined = undefined;
+  for await (const chunk of stream) {
+    if (previousChunk !== undefined && isEqual(chunk, previousChunk)) {
+      continue;
+    }
+    previousChunk = chunk;
+    yield chunk;
   }
 }

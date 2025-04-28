@@ -20,7 +20,6 @@ import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
 import { getSystemTools } from "../common/systemTools";
-import { AvailableComponentDto } from "../components/dto/generate-component.dto";
 import { ProjectsService } from "../projects/projects.service";
 import {
   AdvanceThreadDto,
@@ -446,6 +445,29 @@ export class ThreadsService {
     projectId: string,
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
+    stream?: true,
+    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+  ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
+  async advanceThread(
+    projectId: string,
+    advanceRequestDto: AdvanceThreadDto,
+    unresolvedThreadId?: string,
+    stream?: false,
+    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+  ): Promise<AdvanceThreadResponseDto>;
+  async advanceThread(
+    projectId: string,
+    advanceRequestDto: AdvanceThreadDto,
+    unresolvedThreadId?: string,
+    stream?: boolean,
+    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+  ): Promise<
+    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
+  >;
+  async advanceThread(
+    projectId: string,
+    advanceRequestDto: AdvanceThreadDto,
+    unresolvedThreadId?: string,
     stream?: boolean,
     depth = 0, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
   ): Promise<
@@ -468,7 +490,7 @@ export class ThreadsService {
     const userMessage = await addUserMessage(
       db,
       thread.id,
-      advanceRequestDto,
+      advanceRequestDto.messageToAppend,
       this.logger,
     );
 
@@ -477,16 +499,10 @@ export class ThreadsService {
       version: "v2",
     });
 
-    const availableComponentMap: Record<string, AvailableComponentDto> =
-      advanceRequestDto.availableComponents?.reduce((acc, component) => {
-        acc[component.name] = component;
-        return acc;
-      }, {}) ?? {};
-
     // Log available components
     this.logger.log(
       `Available components for thread ${thread.id}: ${JSON.stringify(
-        Object.keys(availableComponentMap),
+        advanceRequestDto.availableComponents?.map((comp) => comp.name),
       )}`,
     );
 
@@ -549,11 +565,7 @@ export class ThreadsService {
     );
 
     const toolCallRequest = responseMessage.toolCallRequest;
-    if (
-      toolCallRequest &&
-      (toolCallRequest.toolName in systemTools.mcpToolSources ||
-        systemTools.composioToolNames.includes(toolCallRequest.toolName))
-    ) {
+    if (isSystemToolCall(toolCallRequest, systemTools)) {
       if (!responseMessage.toolCallId) {
         console.warn(
           `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
@@ -653,7 +665,6 @@ export class ThreadsService {
       null, // right now all provider contexts are stored with null context keys
     );
     const latestMessage = messages[messages.length - 1];
-    const toolCallId = latestMessage.tool_call_id;
     if (latestMessage.role === MessageRole.Tool) {
       await updateGenerationStage(
         db,
@@ -684,7 +695,6 @@ export class ThreadsService {
         userMessage,
         systemTools,
         advanceRequestDto,
-        toolCallId,
         depth,
       );
     }
@@ -710,7 +720,6 @@ export class ThreadsService {
       userMessage,
       systemTools,
       advanceRequestDto,
-      toolCallId,
       depth,
     );
   }
@@ -722,7 +731,6 @@ export class ThreadsService {
     userMessage: ThreadMessage,
     systemTools: SystemTools,
     originalRequest: AdvanceThreadDto,
-    toolCallId?: string,
     depth: number = 0,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     const db = this.getDb();
@@ -739,7 +747,6 @@ export class ThreadsService {
       db,
       threadId,
       userMessage,
-      toolCallId,
       logger,
     );
 
@@ -787,10 +794,10 @@ export class ThreadsService {
     const componentDecision = finalThreadMessage.component;
     if (
       componentDecision &&
-      finalToolCallRequest &&
-      (finalToolCallRequest.toolName in systemTools.mcpToolSources ||
-        systemTools.composioToolNames.includes(finalToolCallRequest.toolName))
+      isSystemToolCall(finalToolCallRequest, systemTools)
     ) {
+      const toolCallId = finalThreadMessage.tool_call_id;
+
       if (!toolCallId) {
         console.warn(
           `While handling tool call request ${finalToolCallRequest.toolName}, no tool call id in response message ${finalThreadMessage}, returning assistant message`,
@@ -808,6 +815,7 @@ export class ThreadsService {
         true,
         depth,
       );
+
       for await (const chunk of toolResponseMessageStream) {
         yield chunk;
       }
@@ -879,4 +887,14 @@ export class ThreadsService {
     const { providerKey: decryptedKey } = decryptProviderKey(providerKey);
     return decryptedKey;
   }
+}
+function isSystemToolCall(
+  toolCallRequest: ToolCallRequest | undefined,
+  systemTools: SystemTools,
+): toolCallRequest is ToolCallRequest {
+  return (
+    !!toolCallRequest &&
+    (toolCallRequest.toolName in systemTools.mcpToolSources ||
+      systemTools.composioToolNames.includes(toolCallRequest.toolName))
+  );
 }
