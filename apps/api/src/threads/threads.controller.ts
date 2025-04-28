@@ -165,10 +165,7 @@ export class ThreadsController {
     @Param("id") threadId: string,
     @Query("includeInternal") includeInternal?: boolean,
   ): Promise<ThreadMessageDto[]> {
-    return (await this.threadsService.getMessages(
-      threadId,
-      includeInternal,
-    )) as ThreadMessageDto[];
+    return await this.threadsService.getMessages(threadId, includeInternal);
   }
 
   @UseGuards(ThreadInProjectGuard)

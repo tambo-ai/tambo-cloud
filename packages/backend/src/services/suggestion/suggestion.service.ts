@@ -41,7 +41,7 @@ export async function generateSuggestions(
     });
 
     // Add validation for response message
-    if (!response?.message) {
+    if (!response.message) {
       console.warn("No response message received from LLM");
       return {
         suggestions: [],
