@@ -15,13 +15,13 @@ export const customJsonb = <TData>(name: string) =>
       return stringify(value);
     },
     /** Database -> TypeScript */
-    fromDriver(valueStr: string | object | SuperJSONResult): TData {
+    fromDriver(valueStr: string | object | SuperJSONResult | null): TData {
       if (typeof valueStr === "string") {
         // hack: incorrect!
         return valueStr as TData;
       }
       if (!valueStr) {
-        return valueStr;
+        return valueStr as TData;
       }
       if ("json" in valueStr) {
         return deserialize<TData>(valueStr);

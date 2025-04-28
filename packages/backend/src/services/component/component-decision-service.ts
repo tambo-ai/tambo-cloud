@@ -109,7 +109,7 @@ async function handleNoComponentCase(
 > {
   const chatHistory = threadMessagesToChatHistory(context.messageHistory);
   const { template, args } = getNoComponentPromptTemplate(
-    reasoning ?? "No reasoning provided",
+    reasoning,
     context.availableComponents,
   );
 

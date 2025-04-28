@@ -130,7 +130,7 @@ export class ThreadsController {
       ...thread,
       contextKey: thread.contextKey ?? undefined,
       metadata: thread.metadata ?? undefined,
-      generationStage: thread.generationStage ?? undefined,
+      generationStage: thread.generationStage,
       statusMessage: thread.statusMessage ?? undefined,
     };
   }
@@ -264,10 +264,10 @@ export class ThreadsController {
     @Param("messageId") messageId: string,
     @Body() newState: UpdateComponentStateDto,
   ): Promise<ThreadMessageDto> {
-    const message = (await this.threadsService.updateComponentState(
+    const message = await this.threadsService.updateComponentState(
       messageId,
       newState.state,
-    )) as ThreadMessageDto;
+    );
     return message;
   }
 
