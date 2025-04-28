@@ -6,6 +6,7 @@ import { deserialize, type serialize, stringify } from "superjson";
 
 type SuperJSONResult = ReturnType<typeof serialize>;
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const customJsonb = <TData>(name: string) =>
   customType<{ data: TData; driverData: string }>({
     dataType() {
