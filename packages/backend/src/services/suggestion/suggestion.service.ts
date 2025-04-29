@@ -7,23 +7,18 @@ import {
   SuggestionsResponseSchema,
 } from "./suggestion.types";
 
-export type SuggestionsContext = {
-  messageHistory: ThreadMessage[];
-  availableComponents: AvailableComponent[];
-};
-
 // Public function
 export async function generateSuggestions(
   llmClient: LLMClient,
-  context: SuggestionsContext,
+  messageHistory: ThreadMessage[],
+  availableComponents: AvailableComponent[],
   count: number,
   threadId: string,
   stream?: boolean,
 ): Promise<SuggestionDecision | AsyncIterableIterator<SuggestionDecision>> {
-  const components = context.availableComponents;
   const messages = buildSuggestionPrompt(
-    components,
-    context.messageHistory,
+    availableComponents,
+    messageHistory,
     count,
   );
 

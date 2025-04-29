@@ -7,10 +7,7 @@ import {
 import { Provider } from "./model/providers";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
 import { TokenJSClient } from "./services/llm/token-js-client";
-import {
-  generateSuggestions,
-  SuggestionsContext,
-} from "./services/suggestion/suggestion.service";
+import { generateSuggestions } from "./services/suggestion/suggestion.service";
 import { SuggestionDecision } from "./services/suggestion/suggestion.types";
 import { SystemTools } from "./systemTools";
 
@@ -61,14 +58,10 @@ export default class TamboBackend {
     threadId: string,
     stream?: boolean,
   ): Promise<SuggestionDecision | AsyncIterableIterator<SuggestionDecision>> {
-    const context: SuggestionsContext = {
-      messageHistory,
-      availableComponents,
-    };
-
     return await generateSuggestions(
       this.llmClient,
-      context,
+      messageHistory,
+      availableComponents,
       count,
       threadId,
       stream,
