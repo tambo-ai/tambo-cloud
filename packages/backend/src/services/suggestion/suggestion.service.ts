@@ -1,5 +1,5 @@
 import { ThreadMessage } from "@tambo-ai-cloud/core";
-import { InputContextAsArray } from "../../model/input-context";
+import { AvailableComponent } from "../../model";
 import { buildSuggestionPrompt } from "../../prompt/suggestion-generator";
 import { getLLMResponseMessage, LLMClient } from "../llm/llm-client";
 import {
@@ -7,10 +7,9 @@ import {
   SuggestionsResponseSchema,
 } from "./suggestion.types";
 
-type SuggestionsContext = {
+export type SuggestionsContext = {
   messageHistory: ThreadMessage[];
-  availableComponents: InputContextAsArray["availableComponents"];
-  threadId: string;
+  availableComponents: AvailableComponent[];
 };
 
 // Public function

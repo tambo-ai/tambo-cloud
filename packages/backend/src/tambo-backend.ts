@@ -4,11 +4,13 @@ import {
   ComponentContextToolMetadata,
   ToolResponseBody,
 } from "./model/component-metadata";
-import { InputContextAsArray } from "./model/input-context";
 import { Provider } from "./model/providers";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
 import { TokenJSClient } from "./services/llm/token-js-client";
-import { generateSuggestions } from "./services/suggestion/suggestion.service";
+import {
+  generateSuggestions,
+  SuggestionsContext,
+} from "./services/suggestion/suggestion.service";
 import { SuggestionDecision } from "./services/suggestion/suggestion.types";
 import { SystemTools } from "./systemTools";
 
@@ -59,10 +61,9 @@ export default class TamboBackend {
     threadId: string,
     stream?: boolean,
   ): Promise<SuggestionDecision | AsyncIterableIterator<SuggestionDecision>> {
-    const context: InputContextAsArray = {
+    const context: SuggestionsContext = {
       messageHistory,
       availableComponents,
-      threadId,
     };
 
     return await generateSuggestions(
