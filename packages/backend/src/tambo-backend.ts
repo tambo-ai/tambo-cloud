@@ -1,14 +1,11 @@
 import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
 import {
   AvailableComponent,
-  AvailableComponents,
   ComponentContextToolMetadata,
   ToolResponseBody,
 } from "./model/component-metadata";
-import { InputContext, InputContextAsArray } from "./model/input-context";
+import { InputContextAsArray } from "./model/input-context";
 import { Provider } from "./model/providers";
-import { decideComponent } from "./services/component/component-decision-service";
-import { hydrateComponent } from "./services/component/component-hydration-service";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
 import { TokenJSClient } from "./services/llm/token-js-client";
 import { generateSuggestions } from "./services/suggestion/suggestion.service";
@@ -75,89 +72,6 @@ export default class TamboBackend {
       threadId,
       stream,
     );
-  }
-
-  public async generateComponent(
-    messageHistory: ThreadMessage[],
-    availableComponents: AvailableComponents,
-    threadId: string,
-    systemTools: SystemTools | undefined,
-    stream: true,
-    additionalContext?: string,
-  ): Promise<AsyncIterableIterator<LegacyComponentDecision>>;
-  public async generateComponent(
-    messageHistory: ThreadMessage[],
-    availableComponents: AvailableComponents,
-    threadId: string,
-    systemTools: SystemTools | undefined,
-    stream?: false | undefined,
-    additionalContext?: string,
-  ): Promise<LegacyComponentDecision>;
-  public async generateComponent(
-    messageHistory: ThreadMessage[],
-    availableComponents: AvailableComponents,
-    threadId: string,
-    systemTools: SystemTools | undefined,
-    stream?: boolean,
-    additionalContext?: string,
-  ): Promise<
-    LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
-  > {
-    const context: InputContext = {
-      messageHistory,
-      availableComponents,
-      threadId,
-      additionalContext,
-    };
-    return await decideComponent(
-      this.llmClient,
-      context,
-      threadId,
-      systemTools,
-      stream,
-    );
-  }
-
-  public async hydrateComponentWithData(
-    messageHistory: ThreadMessage[],
-    component: AvailableComponent,
-    toolResponse: ToolResponseBody,
-    toolCallId: string | undefined,
-    threadId: string,
-    systemTools: SystemTools | undefined,
-    stream: true,
-  ): Promise<AsyncIterableIterator<LegacyComponentDecision>>;
-  public async hydrateComponentWithData(
-    messageHistory: ThreadMessage[],
-    component: AvailableComponent,
-    toolResponse: ToolResponseBody,
-    toolCallId: string | undefined,
-    threadId: string,
-    systemTools: SystemTools | undefined,
-    stream?: false | undefined,
-  ): Promise<LegacyComponentDecision>;
-  public async hydrateComponentWithData(
-    messageHistory: ThreadMessage[],
-    component: AvailableComponent,
-    toolResponse: ToolResponseBody,
-    toolCallId: string | undefined,
-    threadId: string,
-    systemTools: SystemTools | undefined,
-    stream?: boolean,
-  ): Promise<
-    LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
-  > {
-    return await hydrateComponent({
-      llmClient: this.llmClient,
-      messageHistory,
-      chosenComponent: component,
-      toolResponse,
-      toolCallId,
-      availableComponents: undefined,
-      threadId,
-      stream,
-      systemTools,
-    });
   }
 
   public async runDecisionLoop(
