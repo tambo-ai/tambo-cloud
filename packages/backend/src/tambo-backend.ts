@@ -16,7 +16,6 @@ import { SuggestionDecision } from "./services/suggestion/suggestion.types";
 import { SystemTools } from "./systemTools";
 
 interface HydraBackendOptions {
-  version?: "v1" | "v2";
   model?: string;
   provider?: Provider;
 }
@@ -33,18 +32,12 @@ interface RunDecisionLoopParams {
 
 export default class TamboBackend {
   private llmClient: TokenJSClient;
-  private version: "v1" | "v2";
   constructor(
     openAIKey: string,
     private chainId: string,
     options: HydraBackendOptions = {},
   ) {
-    const {
-      version = "v1",
-      model = "gpt-4o-mini",
-      provider = "openai",
-    } = options;
-    this.version = version;
+    const { model = "gpt-4o-mini", provider = "openai" } = options;
     this.llmClient = new TokenJSClient(openAIKey, model, provider, chainId);
   }
 
@@ -163,7 +156,6 @@ export default class TamboBackend {
       availableComponents: undefined,
       threadId,
       stream,
-      version: this.version,
       systemTools,
     });
   }

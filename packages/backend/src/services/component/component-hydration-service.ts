@@ -37,7 +37,6 @@ export async function hydrateComponent({
   availableComponents,
   threadId,
   stream,
-  version = "v1",
   systemTools,
 }: {
   llmClient: LLMClient;
@@ -48,7 +47,6 @@ export async function hydrateComponent({
   availableComponents: AvailableComponents | undefined;
   threadId: string;
   stream?: boolean;
-  version?: "v1" | "v2";
   systemTools?: SystemTools;
 }): Promise<
   LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
@@ -145,7 +143,6 @@ To respond to the user's message:
       responseStream,
       chosenComponent.name,
       threadId,
-      version,
     );
   }
 
@@ -157,13 +154,12 @@ To respond to the user's message:
     componentName: chosenComponent.name,
     props: null,
     componentState: null, // TOOD: remove when optional
-    ...(version === "v1" ? { suggestedActions: [] } : {}),
     toolCallRequest: getLLMResponseToolCallRequest(generateComponentResponse),
   };
 
   if (!componentDecision.toolCallRequest) {
     const parsedData = (await parseAndValidate(
-      version === "v1" ? schemaV1 : schemaV2,
+      schemaV2,
       getLLMResponseMessage(generateComponentResponse),
     )) as z.infer<typeof schemaV1> | z.infer<typeof schemaV2>;
 
@@ -171,9 +167,6 @@ To respond to the user's message:
     componentDecision.props = parsedData.props;
     componentDecision.message = parsedData.message;
     componentDecision.componentState = parsedData.componentState ?? null;
-    if (version === "v1" && "suggestedActions" in parsedData) {
-      componentDecision.suggestedActions = parsedData.suggestedActions || [];
-    }
   }
 
   return componentDecision;
@@ -183,7 +176,6 @@ async function* handleComponentHydrationStream(
   responseStream: AsyncIterableIterator<Partial<LLMResponse>>,
   componentName: string,
   threadId: string,
-  version: "v1" | "v2" = "v1",
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const initialDecision: LegacyComponentDecision = {
     reasoning: "",
@@ -191,7 +183,6 @@ async function* handleComponentHydrationStream(
     props: null,
     message: "",
     componentState: null, // TOOD: remove when optional
-    ...(version === "v1" ? { suggestedActions: [] } : {}),
     toolCallRequest: undefined,
     toolCallId: undefined,
   };

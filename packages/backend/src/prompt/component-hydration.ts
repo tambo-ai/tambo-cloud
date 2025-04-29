@@ -5,7 +5,7 @@ import {
   ToolResponseBody,
 } from "../model/component-metadata";
 import { generateAvailableComponentsPrompt } from "./component-formatting";
-import { schemaV1, schemaV2 } from "./schemas";
+import { schemaV2 } from "./schemas";
 
 const basePrompt = `You are an AI assistant that interacts with users and helps them perform tasks.
 To help the user perform these tasks, you are able to generate UI components. You are able to display components and decide what props to pass in. 
@@ -26,27 +26,27 @@ When possible, carry the componentState forward from the last component decision
 This response should be short and concise.
 `;
 
-const suggestedActionsGuidelines = `When generating suggestedActions, consider the following:
-1. Each suggestion should be a natural follow-up action that would make use of an available components
-2. The actionText should be phrased as a user message that would trigger the use of a specific component
-3. Suggestions should be contextually relevant to what the user is trying to accomplish
-4. Include 1-3 suggestions that would help the user progress in their current task
-5. The label should be a clear, concise button text, while the actionText can be more detailed`;
+// TODO: Put this into the suggestedActions prompt
+// const suggestedActionsGuidelines = `When generating suggestedActions, consider the following:
+// 1. Each suggestion should be a natural follow-up action that would make use of an available components
+// 2. The actionText should be phrased as a user message that would trigger the use of a specific component
+// 3. Suggestions should be contextually relevant to what the user is trying to accomplish
+// 4. Include 1-3 suggestions that would help the user progress in their current task
+// 5. The label should be a clear, concise button text, while the actionText can be more detailed`;
 
 // Version-specific base prompts
-const basePromptV1 = `${basePrompt}\n${suggestedActionsGuidelines}`;
 const basePromptV2 = basePrompt;
 
-const componentHydrationPromptWithToolResponse = (version: "v1" | "v2") =>
-  `${version === "v1" ? basePromptV1 : basePromptV2}
+const componentHydrationPromptWithToolResponse = () =>
+  `${basePromptV2}
 You have received a response from a tool. Use this data to help determine what props to pass in: {toolResponseString}
 
 {availableComponentsPrompt}
 
 {zodTypePrompt}` as const;
 
-const componentHydrationPromptWithoutToolResponse = (version: "v1" | "v2") =>
-  `${version === "v1" ? basePromptV1 : basePromptV2}
+const componentHydrationPromptWithoutToolResponse = () =>
+  `${basePromptV2}
 You can also use any of the provided tools to fetch data needed to pass into the component.
 
 {availableComponentsPrompt}
@@ -57,10 +57,9 @@ function getComponentHydrationPromptWithToolResponseTemplate(
   toolResponseString: string,
   availableComponentsPrompt: string,
   zodTypePrompt: string,
-  version: "v1" | "v2" = "v1",
 ) {
   return {
-    template: componentHydrationPromptWithToolResponse(version),
+    template: componentHydrationPromptWithToolResponse(),
     args: { toolResponseString, availableComponentsPrompt, zodTypePrompt },
   };
 }
@@ -68,10 +67,9 @@ function getComponentHydrationPromptWithToolResponseTemplate(
 function getComponentHydrationPromptWithoutToolResponseTemplate(
   availableComponentsPrompt: string,
   zodTypePrompt: string,
-  version: "v1" | "v2" = "v1",
 ) {
   return {
-    template: componentHydrationPromptWithoutToolResponse(version),
+    template: componentHydrationPromptWithoutToolResponse(),
     args: { availableComponentsPrompt, zodTypePrompt },
   };
 }
@@ -105,29 +103,24 @@ function generateFormatInstructions(schema: z.ZodSchema): string {
 export function getComponentHydrationPromptTemplate(
   toolResponse: ToolResponseBody | undefined,
   availableComponents: AvailableComponents,
-  version: "v1" | "v2" = "v1",
 ) {
   const toolResponseString = toolResponse
     ? JSON.stringify(toolResponse)
     : undefined;
   const availableComponentsPrompt =
     generateAvailableComponentsPrompt(availableComponents);
-  const zodTypePrompt = generateZodTypePrompt(
-    version === "v1" ? schemaV1 : schemaV2,
-  );
+  const zodTypePrompt = generateZodTypePrompt(schemaV2);
 
   if (toolResponseString) {
     return getComponentHydrationPromptWithToolResponseTemplate(
       toolResponseString,
       availableComponentsPrompt,
       zodTypePrompt,
-      version,
     );
   }
 
   return getComponentHydrationPromptWithoutToolResponseTemplate(
     availableComponentsPrompt,
     zodTypePrompt,
-    version,
   );
 }

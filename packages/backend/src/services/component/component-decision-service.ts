@@ -103,7 +103,6 @@ async function handleNoComponentCase(
   context: InputContext,
   threadId: string,
   stream?: boolean,
-  version: "v1" | "v2" = "v1",
 ): Promise<
   LegacyComponentDecision | AsyncIterableIterator<LegacyComponentDecision>
 > {
@@ -129,7 +128,7 @@ async function handleNoComponentCase(
       stream: true,
     });
 
-    return handleNoComponentStream(responseStream, threadId, version);
+    return handleNoComponentStream(responseStream);
   }
 
   const noComponentResponse = await llmClient.complete(completeOptions);
@@ -140,14 +139,11 @@ async function handleNoComponentCase(
     props: null,
     message: extractMessageContent(noComponentResponse.message.content),
     componentState: null, // TOOD: remove when optional
-    ...(version === "v1" ? { suggestedActions: [] } : {}),
   };
 }
 
 async function* handleNoComponentStream(
   responseStream: AsyncIterableIterator<Partial<LLMResponse>>,
-  threadId: string,
-  version: "v1" | "v2" = "v1",
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const accumulatedDecision: LegacyComponentDecision = {
     reasoning: "",
@@ -155,7 +151,6 @@ async function* handleNoComponentStream(
     props: null,
     message: "",
     componentState: null, // TOOD: remove when optional
-    ...(version === "v1" ? { suggestedActions: [] } : {}),
   };
 
   let hasLogged = false;
