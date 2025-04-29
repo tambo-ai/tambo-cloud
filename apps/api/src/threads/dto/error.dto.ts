@@ -15,7 +15,7 @@ import { ProblemDetails } from "../types/errors";
 
 /** DTO for RFC9457: JSON Problem Details */
 @ApiSchema({ name: "ProblemDetails" })
-export class ErrorDto implements ProblemDetails {
+export class ProblemDetailsDto implements ProblemDetails {
   @ApiProperty({
     description: "A URI reference that identifies the problem type",
     example: "https://problems-registry.smartbear.com/not-found",
