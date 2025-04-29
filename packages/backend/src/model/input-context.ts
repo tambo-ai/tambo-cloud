@@ -1,15 +1,5 @@
 import { ThreadMessage } from "@tambo-ai-cloud/core";
-import { AvailableComponent, AvailableComponents } from "./component-metadata";
-
-export type InputContextCore = {
-  messageHistory: ThreadMessage[];
-  threadId: string;
-};
-
-export type InputContext = InputContextCore & {
-  availableComponents: AvailableComponents;
-  additionalContext?: string;
-};
+import { AvailableComponent } from "./component-metadata";
 
 export type InputContextAsArray = {
   messageHistory: ThreadMessage[];
