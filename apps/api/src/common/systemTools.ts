@@ -68,6 +68,7 @@ async function getMcpTools(
           function: {
             name: tool.name,
             description: tool.description,
+            strict: true,
             parameters: tool.inputSchema?.properties
               ? {
                   type: "object",
@@ -122,6 +123,7 @@ async function getComposioTools(
         name: tool.function.name,
         description: tool.function.description,
         parameters: tool.function.parameters,
+        strict: true,
       },
     });
   }

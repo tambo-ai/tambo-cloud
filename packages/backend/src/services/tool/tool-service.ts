@@ -39,6 +39,7 @@ export function convertMetadataToTools(
     function: {
       name: tool.name,
       description: tool.description,
+      strict: true,
       parameters: {
         type: "object",
         properties: {
@@ -87,24 +88,27 @@ export function convertComponentsToUITools(
   components: AvailableComponent[],
   toolNamePrefix: string = "show_component_",
 ): OpenAI.Chat.Completions.ChatCompletionTool[] {
-  return components.map((component) => ({
-    type: "function" as const,
-    function: {
-      name: `${toolNamePrefix}${component.name}`,
-      description: `Show the ${component.name} UI component the user. Here is a description of the component: ${component.description}`,
-      parameters: {
-        type: "object",
-        properties:
-          component.props &&
-          typeof component.props === "object" &&
-          "properties" in component.props
-            ? (component.props as JSONSchema7).properties
-            : component.props,
-        required: (component.props as JSONSchema7).required,
-        additionalProperties: false,
+  return components.map(
+    (component): OpenAI.Chat.Completions.ChatCompletionTool => ({
+      type: "function" as const,
+      function: {
+        name: `${toolNamePrefix}${component.name}`,
+        description: `Show the ${component.name} UI component the user. Here is a description of the component: ${component.description}`,
+        strict: true,
+        parameters: {
+          type: "object",
+          properties:
+            component.props &&
+            typeof component.props === "object" &&
+            "properties" in component.props
+              ? (component.props as JSONSchema7).properties
+              : component.props,
+          required: (component.props as JSONSchema7).required,
+          additionalProperties: false,
+        },
       },
-    },
-  }));
+    }),
+  );
 }
 
 export const displayMessageTool: OpenAI.Chat.Completions.ChatCompletionTool = {
@@ -113,6 +117,7 @@ export const displayMessageTool: OpenAI.Chat.Completions.ChatCompletionTool = {
     name: "showMessage_tambo_internal",
     description:
       "Display a message to the user. Use this when you just want to communicate something or ask for clarification without taking any other action. The message can and should include markdown formatting when appropriate (e.g., ```typescript code blocks, **bold text**, lists) - especially when showing code examples.",
+    strict: true,
     parameters: {
       type: "object",
       properties: {},
