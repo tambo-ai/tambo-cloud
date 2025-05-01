@@ -27,6 +27,7 @@ import {
   displayMessageTool,
   filterOutStandardToolParameters,
   standardToolParameters,
+  TamboToolParameters,
 } from "../tool/tool-service";
 
 export async function* runDecisionLoop(
@@ -111,10 +112,11 @@ export async function* runDecisionLoop(
           // Ignore parse errors for incomplete JSON
         }
       }
-
-      const paramDisplayMessage = (toolArgs as any).displayMessage;
-      const statusMessage = (toolArgs as any).statusMessage;
-      const completionStatusMessage = (toolArgs as any).completionStatusMessage;
+      const toolArgsWithTamboPrefix = toolArgs as TamboToolParameters;
+      const paramDisplayMessage = toolArgsWithTamboPrefix._tambo_displayMessage;
+      const statusMessage = toolArgsWithTamboPrefix._tambo_statusMessage;
+      const completionStatusMessage =
+        toolArgsWithTamboPrefix._tambo_completionStatusMessage;
       // If this is a non-UI tool call, make sure params are complete and filter out standard tool parameters
       let filteredToolCallRequest;
       if (!isUITool && toolCall) {
