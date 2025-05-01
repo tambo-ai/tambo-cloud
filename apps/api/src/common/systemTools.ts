@@ -75,7 +75,7 @@ async function getMcpTools(
           console.log(
             "sanitized:",
             JSON.stringify(
-              sanitizeJSONSchemaProperty(tool.inputSchema ?? {}),
+              sanitizeJSONSchemaProperty(tool.inputSchema ?? {}, true),
               null,
               2,
             ),
@@ -92,6 +92,7 @@ async function getMcpTools(
                   type: "object",
                   properties: sanitizeJSONSchemaProperties(
                     tool.inputSchema.properties,
+                    Object.keys(tool.inputSchema.properties),
                   ),
                   required: Object.keys(tool.inputSchema.properties),
                   additionalProperties: false,
@@ -148,6 +149,7 @@ async function getComposioTools(
           type: "object",
           properties: sanitizeJSONSchemaProperties(
             tool.function.parameters?.properties ?? ({} as any),
+            Object.keys(tool.function.parameters?.properties ?? {}),
           ),
           required: Object.keys(tool.function.parameters?.properties ?? {}),
           additionalProperties: false,

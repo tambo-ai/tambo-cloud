@@ -133,12 +133,18 @@ function getComponentProperties(component: AvailableComponent) {
     console.warn("Unknown component prop format in ", component.name);
     return component.props;
   }
-  const properties = (component.props as JSONSchema7).properties;
+  const componentProps = component.props as JSONSchema7;
+  const properties = componentProps.properties;
 
   if (!properties) {
     return {};
   }
-  return sanitizeJSONSchemaProperties(properties);
+  return sanitizeJSONSchemaProperties(
+    properties,
+    Array.isArray(componentProps.required)
+      ? componentProps.required
+      : Object.keys(properties),
+  );
 }
 
 export function addParametersToTools(
