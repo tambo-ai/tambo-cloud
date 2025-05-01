@@ -102,7 +102,6 @@ describe("getSystemTools", () => {
   });
 
   it("should fetch and combine tools from MCP servers", async () => {
-    console.log("mocked mcpclient", jest.mocked(MCPClient));
     jest.mocked(MCPClient.create).mockResolvedValue({
       listTools: jest
         .fn<typeof _mcpClientInstance.listTools>()
