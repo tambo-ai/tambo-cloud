@@ -103,7 +103,7 @@ export async function* runDecisionLoop(
           (tool) => tool.function.name === toolCall.function.name,
         );
 
-      let toolArgs = {};
+      let toolArgs: Partial<TamboToolParameters> = {};
       if (toolCall) {
         try {
           //partial parse tool params to allow streaming in-progress params
@@ -112,11 +112,9 @@ export async function* runDecisionLoop(
           // Ignore parse errors for incomplete JSON
         }
       }
-      const toolArgsWithTamboPrefix = toolArgs as TamboToolParameters;
-      const paramDisplayMessage = toolArgsWithTamboPrefix._tambo_displayMessage;
-      const statusMessage = toolArgsWithTamboPrefix._tambo_statusMessage;
-      const completionStatusMessage =
-        toolArgsWithTamboPrefix._tambo_completionStatusMessage;
+      const paramDisplayMessage = toolArgs._tambo_displayMessage;
+      const statusMessage = toolArgs._tambo_statusMessage;
+      const completionStatusMessage = toolArgs._tambo_completionStatusMessage;
       // If this is a non-UI tool call, make sure params are complete and filter out standard tool parameters
       let filteredToolCallRequest;
       if (!isUITool && toolCall) {

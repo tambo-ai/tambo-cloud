@@ -212,11 +212,11 @@ export function filterOutStandardToolParameters(
   if (!toolDef?.function.parameters?.properties) return undefined;
 
   // Get the defined parameter names from the tool's schema
-  const definedParamName = Object.keys(toolDef.function.parameters.properties);
+  const definedParamNames = Object.keys(toolDef.function.parameters.properties);
 
   // Transform the tool args into array of {parameterName, parameterValue} objects
   return Object.entries(parsedArguments)
-    .filter(([name]) => definedParamName.includes(name))
+    .filter(([name]) => definedParamNames.includes(name))
     .map(([parameterName, parameterValue]) => ({
       parameterName,
       parameterValue,
