@@ -1,10 +1,18 @@
 import { JSONSchema7Definition } from "json-schema";
 
-/** Sanitizes a JSON Schema object to ensure it is valid for OpenAI function calling. */
+/**
+ * Sanitizes a JSON Schema object to ensure it is valid for OpenAI function
+ * calling.
+ *
+ * It does this primarily by making all parameters required, and then making
+ * any parameters that are not in the required list be nullable. (e.g. if
+ * the required list is ["a", "b"], then "a" and "b" will be required, and
+ * "c" will be required but nullable.)
+ */
 export function sanitizeJSONSchemaProperties(
   properties: Record<string, JSONSchema7Definition>,
   requiredProperties: string[],
-) {
+): Record<string, JSONSchema7Definition> {
   return Object.fromEntries(
     Object.entries(properties).map(([key, value]) => {
       return [
@@ -14,6 +22,16 @@ export function sanitizeJSONSchemaProperties(
     }),
   );
 }
+
+/**
+ * Sanitizes a single JSON Schema property to ensure it is valid for OpenAI
+ * function calling.
+ *
+ * It does this primarily by making all parameters required, and then making any
+ * parameters that are not in the required list be nullable. (e.g. if the
+ * required list is ["a", "b"], then "a" and "b" will be required, and "c" will
+ * be required but nullable.)
+ */
 export function sanitizeJSONSchemaProperty(
   property: JSONSchema7Definition,
   isRequired: boolean,
