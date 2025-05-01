@@ -1,11 +1,12 @@
-import { MCPClient, SystemTools } from "@tambo-ai-cloud/backend";
+import {
+  MCPClient,
+  sanitizeJSONSchemaProperties,
+  sanitizeJSONSchemaProperty,
+  SystemTools,
+} from "@tambo-ai-cloud/backend";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import { OpenAIToolSet } from "composio-core";
 import OpenAI from "openai";
-import {
-  sanitizeJSONSchemaProperties,
-  sanitizeJSONSchemaProperty,
-} from "../../../../packages/backend/src/services/tool/json-schema";
 import { getComposio } from "./composio";
 
 /** Get the tools available for the project */
