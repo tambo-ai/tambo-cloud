@@ -20,11 +20,15 @@ jest.mock("@tambo-ai-cloud/db", () => {
   };
 });
 
-jest.mock("@tambo-ai-cloud/backend", () => ({
-  MCPClient: {
-    create: jest.fn(),
-  },
-}));
+jest.mock("@tambo-ai-cloud/backend", () => {
+  const backendModule = jest.requireActual("@tambo-ai-cloud/backend");
+  return {
+    ...backendModule,
+    MCPClient: {
+      create: jest.fn(),
+    },
+  };
+});
 jest.mock("composio-core", () => ({
   Composio: jest.fn().mockImplementation(() => ({
     apps: {
@@ -177,7 +181,9 @@ describe("getSystemTools", () => {
                     type: "string",
                   },
                 },
+                required: ["param1"],
                 type: "object",
+                additionalProperties: false,
               },
               strict: true,
             },
@@ -229,7 +235,14 @@ describe("getSystemTools", () => {
         tools: [
           {
             function: {
+              description: undefined,
               name: "mockComposioTool",
+              parameters: {
+                properties: {},
+                required: [],
+                type: "object",
+                additionalProperties: false,
+              },
               strict: true,
             },
             type: "function",
