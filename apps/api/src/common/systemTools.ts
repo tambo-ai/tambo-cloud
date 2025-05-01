@@ -1,7 +1,6 @@
 import {
   MCPClient,
   sanitizeJSONSchemaProperties,
-  sanitizeJSONSchemaProperty,
   SystemTools,
 } from "@tambo-ai-cloud/backend";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
@@ -68,20 +67,6 @@ async function getMcpTools(
     const tools = await mcpClient.listTools();
     mcpTools.push(
       ...tools.map((tool): OpenAI.Chat.Completions.ChatCompletionTool => {
-        if (tool.name === "list_allowed_directories") {
-          console.log(
-            "list_allowed_directories",
-            JSON.stringify(tool.inputSchema, null, 2),
-          );
-          console.log(
-            "sanitized:",
-            JSON.stringify(
-              sanitizeJSONSchemaProperty(tool.inputSchema ?? {}, true),
-              null,
-              2,
-            ),
-          );
-        }
         return {
           type: "function",
           function: {

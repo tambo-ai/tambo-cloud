@@ -177,4 +177,68 @@ describe("sanitizeJSONSchemaProperties", () => {
       },
     });
   });
+
+  it("should be idempotent - running the function twice should produce the same result", () => {
+    const properties: Record<string, JSONSchema7Definition> = {
+      // Simple types
+      name: { type: "string", description: "User name" },
+      age: { type: "number", minimum: 0 },
+      isActive: true,
+      isArchived: false,
+
+      // Object with nested properties
+      profile: {
+        type: "object",
+        properties: {
+          email: {
+            type: "string",
+            format: "email",
+            default: "test@example.com",
+          },
+          address: {
+            type: "object",
+            properties: {
+              street: { type: "string" },
+              city: { type: "string" },
+              zipCode: { type: "string", pattern: "^\\d{5}$" },
+            },
+          },
+        },
+      },
+
+      // Arrays of different types
+      tags: {
+        type: "array",
+        items: { type: "string" },
+        minItems: 1,
+      },
+      scores: {
+        type: "array",
+        items: { type: "number" },
+        maxItems: 5,
+      },
+      mixedArray: {
+        type: "array",
+        items: [{ type: "string" }, { type: "number" }, { type: "boolean" }],
+      },
+    };
+
+    const requiredProps = ["name", "profile", "tags"];
+
+    // First pass
+    const firstPass = sanitizeJSONSchemaProperties(properties, requiredProps);
+
+    // Second pass - should be identical to first pass
+    const secondPass = sanitizeJSONSchemaProperties(firstPass, requiredProps);
+
+    // Verify specific properties to make debugging easier if full check fails
+    expect(secondPass.name).toEqual(firstPass.name);
+    expect(secondPass.age).toEqual(firstPass.age);
+    expect(secondPass.profile).toEqual(firstPass.profile);
+    expect(secondPass.tags).toEqual(firstPass.tags);
+    expect(secondPass.mixedArray).toEqual(firstPass.mixedArray);
+
+    // Deep equality check
+    expect(secondPass).toEqual(firstPass);
+  });
 });
