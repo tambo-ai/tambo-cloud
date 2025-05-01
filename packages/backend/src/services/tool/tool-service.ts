@@ -5,6 +5,7 @@ import {
   AvailableComponent,
   ComponentContextToolMetadata,
 } from "../../model/component-metadata";
+import { sanitizeJSONSchemaProperties } from "./json-schema";
 
 // Standard parameters to be added to all tools
 export const standardToolParameters: FunctionParameters = {
@@ -97,12 +98,7 @@ export function convertComponentsToUITools(
         strict: true,
         parameters: {
           type: "object",
-          properties:
-            component.props &&
-            typeof component.props === "object" &&
-            "properties" in component.props
-              ? (component.props as JSONSchema7).properties
-              : component.props,
+          properties: getComponentProperties(component),
           required: (component.props as JSONSchema7).required,
           additionalProperties: false,
         },
@@ -126,6 +122,24 @@ export const displayMessageTool: OpenAI.Chat.Completions.ChatCompletionTool = {
     },
   },
 };
+
+function getComponentProperties(component: AvailableComponent) {
+  if (
+    !component.props ||
+    typeof component.props !== "object" ||
+    !("properties" in component.props)
+  ) {
+    // we don't know what this is, return it as-is
+    console.warn("Unknown component prop format in ", component.name);
+    return component.props;
+  }
+  const properties = (component.props as JSONSchema7).properties;
+
+  if (!properties) {
+    return {};
+  }
+  return sanitizeJSONSchemaProperties(properties);
+}
 
 export function addParametersToTools(
   tools: OpenAI.Chat.Completions.ChatCompletionTool[],

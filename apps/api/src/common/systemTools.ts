@@ -2,6 +2,10 @@ import { MCPClient, SystemTools } from "@tambo-ai-cloud/backend";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import { OpenAIToolSet } from "composio-core";
 import OpenAI from "openai";
+import {
+  sanitizeJSONSchemaProperties,
+  sanitizeJSONSchemaProperty,
+} from "../../../../packages/backend/src/services/tool/json-schema";
 import { getComposio } from "./composio";
 
 /** Get the tools available for the project */
@@ -62,8 +66,22 @@ async function getMcpTools(
     const mcpClient = await MCPClient.create(mcpServer.url, customHeaders);
     const tools = await mcpClient.listTools();
     mcpTools.push(
-      ...tools.map(
-        (tool): OpenAI.Chat.Completions.ChatCompletionTool => ({
+      ...tools.map((tool): OpenAI.Chat.Completions.ChatCompletionTool => {
+        if (tool.name === "list_allowed_directories") {
+          console.log(
+            "list_allowed_directories",
+            JSON.stringify(tool.inputSchema, null, 2),
+          );
+          console.log(
+            "sanitized:",
+            JSON.stringify(
+              sanitizeJSONSchemaProperty(tool.inputSchema ?? {}),
+              null,
+              2,
+            ),
+          );
+        }
+        return {
           type: "function",
           function: {
             name: tool.name,
@@ -72,12 +90,16 @@ async function getMcpTools(
             parameters: tool.inputSchema?.properties
               ? {
                   type: "object",
-                  properties: tool.inputSchema.properties,
+                  properties: sanitizeJSONSchemaProperties(
+                    tool.inputSchema.properties,
+                  ),
+                  required: Object.keys(tool.inputSchema.properties),
+                  additionalProperties: false,
                 }
               : undefined,
           },
-        }),
-      ),
+        };
+      }),
     );
 
     for (const tool of tools) {
@@ -122,7 +144,14 @@ async function getComposioTools(
       function: {
         name: tool.function.name,
         description: tool.function.description,
-        parameters: tool.function.parameters,
+        parameters: {
+          type: "object",
+          properties: sanitizeJSONSchemaProperties(
+            tool.function.parameters?.properties ?? ({} as any),
+          ),
+          required: Object.keys(tool.function.parameters?.properties ?? {}),
+          additionalProperties: false,
+        },
         strict: true,
       },
     });
