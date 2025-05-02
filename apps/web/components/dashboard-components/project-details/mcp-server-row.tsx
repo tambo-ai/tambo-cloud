@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/trpc/react";
+import { MCPTransport } from "@tambo-ai-cloud/core";
 import { Loader2, Pencil, Save, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -9,6 +10,7 @@ interface McpServerRowProps {
     id: string;
     url: string | null;
     customHeaders: Record<string, string>;
+    mcpTransport?: MCPTransport;
   };
   projectId: string;
   onRefresh: () => Promise<void>;
@@ -24,6 +26,9 @@ export function McpServerRow({
   onCancel,
 }: McpServerRowProps) {
   const [isEditing, setIsEditing] = useState(isNew);
+  const [mcpTransport, setMcpTransport] = useState<MCPTransport>(
+    server.mcpTransport || MCPTransport.SSE,
+  );
   const [url, setUrl] = useState(server.url || (isNew ? "https://" : ""));
   const firstHeaderKey = Object.keys(server.customHeaders)[0];
   const [headerName, setHeaderName] = useState(firstHeaderKey || "");
@@ -105,6 +110,7 @@ export function McpServerRow({
         projectId,
         url: trimmedUrl,
         customHeaders,
+        mcpTransport,
       });
     } else {
       await updateServer({
@@ -112,6 +118,7 @@ export function McpServerRow({
         serverId: server.id,
         url: trimmedUrl,
         customHeaders,
+        mcpTransport,
       });
     }
   };
@@ -140,6 +147,25 @@ export function McpServerRow({
   return (
     <div className="space-y-2 bg-muted/50 p-2 rounded-md">
       <div className="space-y-1 ">
+        <div className="mb-2">
+          <label
+            htmlFor="mcp-transport"
+            className="block text-sm font-medium mb-1"
+          >
+            MCP Server Type
+          </label>
+          <select
+            id="mcp-transport"
+            name="mcpTransport"
+            className="block w-full border rounded px-2 py-1 font-sans"
+            value={mcpTransport}
+            onChange={(e) => setMcpTransport(e.target.value as MCPTransport)}
+            disabled={!isEditing}
+          >
+            <option value={MCPTransport.SSE}>SSE</option>
+            <option value={MCPTransport.HTTP}>HTTP Streamable</option>
+          </select>
+        </div>
         <div className="flex items-center gap-2 ">
           <Input
             ref={inputRef}
