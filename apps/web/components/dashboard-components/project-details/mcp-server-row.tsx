@@ -147,25 +147,6 @@ export function McpServerRow({
   return (
     <div className="space-y-2 bg-muted/50 p-2 rounded-md">
       <div className="space-y-1 ">
-        <div className="mb-2">
-          <label
-            htmlFor="mcp-transport"
-            className="block text-sm font-medium mb-1"
-          >
-            MCP Server Type
-          </label>
-          <select
-            id="mcp-transport"
-            name="mcpTransport"
-            className="block w-full border rounded px-2 py-1 font-sans"
-            value={mcpTransport}
-            onChange={(e) => setMcpTransport(e.target.value as MCPTransport)}
-            disabled={!isEditing}
-          >
-            <option value={MCPTransport.SSE}>SSE</option>
-            <option value={MCPTransport.HTTP}>HTTP Streamable</option>
-          </select>
-        </div>
         <div className="flex items-center gap-2 ">
           <Input
             ref={inputRef}
@@ -223,7 +204,28 @@ export function McpServerRow({
           <p className="text-sm text-destructive px-2">{errorMessage}</p>
         )}
       </div>
-
+      <div className="mb-2">
+        <label
+          htmlFor="mcp-transport"
+          className="block text-sm font-medium mb-1"
+        >
+          MCP Server Type
+        </label>
+        <select
+          id="mcp-transport"
+          name="mcpTransport"
+          className="block w-full border rounded px-2 py-1 font-sans"
+          value={mcpTransport}
+          onChange={(e) => setMcpTransport(e.target.value as MCPTransport)}
+          disabled={!isEditing}
+        >
+          <option value={MCPTransport.SSE}>SSE</option>
+          <option value={MCPTransport.HTTP}>HTTP Streamable</option>
+        </select>
+      </div>
+      <label htmlFor="headerName" className="block text-sm font-medium">
+        Custom Header
+      </label>
       <div className="flex gap-2">
         <Input
           value={headerName}
