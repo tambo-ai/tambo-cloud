@@ -127,7 +127,7 @@ export class MCPClient {
 
 // Example usage:
 /*
-const mcp = await MCPClient.create('https://api.example.com/mcp');
+const mcp = await MCPClient.create('https://api.example.com/mcp', MCPTransport.HTTP);
 const tools = await mcp.listTools();
 const result = await mcp.callTool('toolName', { arg1: 'value1' });
 */
