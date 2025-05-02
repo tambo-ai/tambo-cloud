@@ -5,28 +5,39 @@ import {
   AvailableComponent,
   ComponentContextToolMetadata,
 } from "../../model/component-metadata";
+import { sanitizeJSONSchemaProperties } from "./json-schema";
+
+export interface TamboToolParameters {
+  _tambo_statusMessage: string;
+  _tambo_completionStatusMessage: string;
+  _tambo_displayMessage: string;
+}
 
 // Standard parameters to be added to all tools
 export const standardToolParameters: FunctionParameters = {
   type: "object",
   properties: {
-    statusMessage: {
+    _tambo_statusMessage: {
       type: "string",
       description:
-        "A message that will be displayed to the user to explain in a few words what the tool is being used for, starting with a verb. For example, 'looking for <something>' or 'creating <something>'.",
+        "A message that will be displayed to the user to explain in a few words what the tool doing, starting with a verb. For example, 'looking for <something>' or 'creating <something>'.",
     },
-    completionStatusMessage: {
+    _tambo_completionStatusMessage: {
       type: "string",
       description:
         "A message that will be displayed to the user to explain in a few words what the tool has done, to replace the statusMessage when the tool has completed its task. For example, 'looked for <something>' or 'created <something>'",
     },
-    displayMessage: {
+    _tambo_displayMessage: {
       type: "string",
       description:
         "A message to be displayed before the tool is called. This should be a natural language response to the previous message to describe what you are about to do. For example, `First, let me <do something>` or 'Great, I can see <something>, let me <do something>'. Get creative, this is what will make the user feel like they are having a conversation with you. You can and should use markdown formatting (code blocks with language specification, bold, lists) when showing examples or code.",
     },
   },
-  required: ["statusMessage", "displayMessage", "completionStatusMessage"],
+  required: [
+    "_tambo_statusMessage",
+    "_tambo_displayMessage",
+    "_tambo_completionStatusMessage",
+  ],
   additionalProperties: false,
 };
 
@@ -39,6 +50,7 @@ export function convertMetadataToTools(
     function: {
       name: tool.name,
       description: tool.description,
+      strict: true,
       parameters: {
         type: "object",
         properties: {
@@ -87,24 +99,22 @@ export function convertComponentsToUITools(
   components: AvailableComponent[],
   toolNamePrefix: string = "show_component_",
 ): OpenAI.Chat.Completions.ChatCompletionTool[] {
-  return components.map((component) => ({
-    type: "function" as const,
-    function: {
-      name: `${toolNamePrefix}${component.name}`,
-      description: `Show the ${component.name} UI component the user. Here is a description of the component: ${component.description}`,
-      parameters: {
-        type: "object",
-        properties:
-          component.props &&
-          typeof component.props === "object" &&
-          "properties" in component.props
-            ? (component.props as JSONSchema7).properties
-            : component.props,
-        required: (component.props as JSONSchema7).required,
-        additionalProperties: false,
+  return components.map(
+    (component): OpenAI.Chat.Completions.ChatCompletionTool => ({
+      type: "function" as const,
+      function: {
+        name: `${toolNamePrefix}${component.name}`,
+        description: `Show the ${component.name} UI component the user. Here is a description of the component: ${component.description}`,
+        strict: true,
+        parameters: {
+          type: "object",
+          properties: getComponentProperties(component),
+          required: (component.props as JSONSchema7).required,
+          additionalProperties: false,
+        },
       },
-    },
-  }));
+    }),
+  );
 }
 
 export const displayMessageTool: OpenAI.Chat.Completions.ChatCompletionTool = {
@@ -113,6 +123,7 @@ export const displayMessageTool: OpenAI.Chat.Completions.ChatCompletionTool = {
     name: "showMessage_tambo_internal",
     description:
       "Display a message to the user. Use this when you just want to communicate something or ask for clarification without taking any other action. The message can and should include markdown formatting when appropriate (e.g., ```typescript code blocks, **bold text**, lists) - especially when showing code examples.",
+    strict: true,
     parameters: {
       type: "object",
       properties: {},
@@ -121,6 +132,30 @@ export const displayMessageTool: OpenAI.Chat.Completions.ChatCompletionTool = {
     },
   },
 };
+
+function getComponentProperties(component: AvailableComponent) {
+  if (
+    !component.props ||
+    typeof component.props !== "object" ||
+    !("properties" in component.props)
+  ) {
+    // we don't know what this is, return it as-is
+    console.warn("Unknown component prop format in ", component.name);
+    return component.props;
+  }
+  const componentProps = component.props as JSONSchema7;
+  const properties = componentProps.properties;
+
+  if (!properties) {
+    return {};
+  }
+  return sanitizeJSONSchemaProperties(
+    properties,
+    Array.isArray(componentProps.required)
+      ? componentProps.required
+      : Object.keys(properties),
+  );
+}
 
 export function addParametersToTools(
   tools: OpenAI.Chat.Completions.ChatCompletionTool[],
@@ -177,11 +212,11 @@ export function filterOutStandardToolParameters(
   if (!toolDef?.function.parameters?.properties) return undefined;
 
   // Get the defined parameter names from the tool's schema
-  const definedParams = Object.keys(toolDef.function.parameters.properties);
+  const definedParamNames = Object.keys(toolDef.function.parameters.properties);
 
   // Transform the tool args into array of {parameterName, parameterValue} objects
   return Object.entries(parsedArguments)
-    .filter(([key]) => definedParams.includes(key))
+    .filter(([name]) => definedParamNames.includes(name))
     .map(([parameterName, parameterValue]) => ({
       parameterName,
       parameterValue,
