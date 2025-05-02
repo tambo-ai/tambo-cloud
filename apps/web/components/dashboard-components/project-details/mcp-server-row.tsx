@@ -145,10 +145,14 @@ export function McpServerRow({
       : error?.message || (error && "An error occurred");
 
   return (
-    <div className="space-y-2 bg-muted/50 p-2 rounded-md">
-      <div className="space-y-1 ">
-        <div className="flex items-center gap-2 ">
+    <div className="flex flex-col gap-2 bg-muted/50 p-2 rounded-md">
+      <div className="flex flex-col gap-1">
+        <label htmlFor="mcp-url" className="block text-sm font-medium">
+          MCP Server URL
+        </label>
+        <div className="flex items-center gap-2">
           <Input
+            id="mcp-url"
             ref={inputRef}
             value={url}
             disabled={!isEditing}
@@ -204,7 +208,7 @@ export function McpServerRow({
           <p className="text-sm text-destructive px-2">{errorMessage}</p>
         )}
       </div>
-      <div className="mb-2">
+      <div>
         <label
           htmlFor="mcp-transport"
           className="block text-sm font-medium mb-1"
@@ -223,27 +227,29 @@ export function McpServerRow({
           <option value={MCPTransport.HTTP}>HTTP Streamable</option>
         </select>
       </div>
-      <label htmlFor="headerName" className="block text-sm font-medium">
-        Custom Header
-      </label>
-      <div className="flex gap-2">
-        <Input
-          value={headerName}
-          onChange={(e) => setHeaderName(e.target.value)}
-          placeholder="Optional header name (e.g. Authorization)"
-          className="flex-[2]"
-          disabled={!isEditing}
-        />
-        <Input
-          type={isHeaderValueFocused ? "text" : "password"}
-          value={headerValue}
-          onChange={(e) => setHeaderValue(e.target.value)}
-          onFocus={() => setIsHeaderValueFocused(true)}
-          onBlur={() => setIsHeaderValueFocused(false)}
-          placeholder="Header value"
-          className="flex-[5]"
-          disabled={!isEditing || !headerName.trim()}
-        />
+      <div>
+        <label htmlFor="headerName" className="block text-sm font-medium">
+          Custom Header
+        </label>
+        <div className="flex gap-2">
+          <Input
+            value={headerName}
+            onChange={(e) => setHeaderName(e.target.value)}
+            placeholder="Optional header name (e.g. Authorization)"
+            className="flex-[2]"
+            disabled={!isEditing}
+          />
+          <Input
+            type={isHeaderValueFocused ? "text" : "password"}
+            value={headerValue}
+            onChange={(e) => setHeaderValue(e.target.value)}
+            onFocus={() => setIsHeaderValueFocused(true)}
+            onBlur={() => setIsHeaderValueFocused(false)}
+            placeholder="Header value"
+            className="flex-[5]"
+            disabled={!isEditing || !headerName.trim()}
+          />
+        </div>
       </div>
     </div>
   );
