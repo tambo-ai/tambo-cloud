@@ -38,6 +38,12 @@ export function McpServerRow({
   const [isHeaderValueFocused, setIsHeaderValueFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Dynamic IDs based on server ID
+  const urlInputId = `mcp-url-${server.id}`;
+  const transportId = `mcp-transport-${server.id}`;
+  const headerNameId = `header-name-${server.id}`;
+  const headerValueId = `header-value-${server.id}`;
+
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -147,12 +153,12 @@ export function McpServerRow({
   return (
     <div className="flex flex-col gap-2 bg-muted/50 p-2 rounded-md">
       <div className="flex flex-col gap-1">
-        <label htmlFor="mcp-url" className="block text-sm font-medium">
+        <label htmlFor={urlInputId} className="block text-sm font-medium">
           MCP Server URL
         </label>
         <div className="flex items-center gap-2">
           <Input
-            id="mcp-url"
+            id={urlInputId}
             ref={inputRef}
             value={url}
             disabled={!isEditing}
@@ -209,14 +215,11 @@ export function McpServerRow({
         )}
       </div>
       <div>
-        <label
-          htmlFor="mcp-transport"
-          className="block text-sm font-medium mb-1"
-        >
+        <label htmlFor={transportId} className="block text-sm font-medium">
           MCP Server Type
         </label>
         <select
-          id="mcp-transport"
+          id={transportId}
           name="mcpTransport"
           className="block w-full border rounded px-2 py-1 font-sans"
           value={mcpTransport}
@@ -228,11 +231,12 @@ export function McpServerRow({
         </select>
       </div>
       <div>
-        <label htmlFor="headerName" className="block text-sm font-medium">
+        <label htmlFor={headerNameId} className="block text-sm font-medium">
           Custom Header
         </label>
         <div className="flex gap-2">
           <Input
+            id={headerNameId}
             value={headerName}
             onChange={(e) => setHeaderName(e.target.value)}
             placeholder="Optional header name (e.g. Authorization)"
@@ -240,6 +244,7 @@ export function McpServerRow({
             disabled={!isEditing}
           />
           <Input
+            id={headerValueId}
             type={isHeaderValueFocused ? "text" : "password"}
             value={headerValue}
             onChange={(e) => setHeaderValue(e.target.value)}
