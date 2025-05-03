@@ -23,11 +23,10 @@ jest.mock("@tambo-ai-cloud/db", () => {
     getDb: jest.fn(),
   };
 });
-
-jest.mock("@tambo-ai-cloud/backend", () => {
-  const backendModule = jest.requireActual("@tambo-ai-cloud/backend");
+jest.mock("@tambo-ai-cloud/core", () => {
+  const coreModule = jest.requireActual("@tambo-ai-cloud/core");
   return {
-    ...(backendModule as any),
+    ...(coreModule as any),
     MCPClient: {
       create: jest.fn(),
     },
