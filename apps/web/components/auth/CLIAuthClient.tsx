@@ -174,6 +174,9 @@ export function CLIAuthClient() {
   const addProviderKeyMutation = api.project.addProviderKey.useMutation();
   const generateApiKeyMutation = api.project.generateApiKey.useMutation();
 
+  // Get the queryClient for invalidating queries
+  const utils = api.useUtils();
+
   const steps = ["select a project", "generate key"];
 
   const handleGenerate = useCallback(async () => {
@@ -237,6 +240,9 @@ export function CLIAuthClient() {
         });
       }
 
+      // Invalidate project list query to refresh the data
+      await utils.project.getUserProjects.invalidate();
+
       // Close dialog and reset state
       setCreateDialogState({
         isOpen: false,
@@ -256,6 +262,7 @@ export function CLIAuthClient() {
     createProjectMutation,
     addProviderKeyMutation,
     handleProjectSelect,
+    utils.project.getUserProjects,
   ]);
 
   const navigateToProject = useCallback(() => {
