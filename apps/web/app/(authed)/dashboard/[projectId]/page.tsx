@@ -126,20 +126,17 @@ export default function ProjectPage({ params }: ProjectPageProps) {
           />
         </motion.div>
 
-        {/* Flex container for side-by-side layout */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          <motion.div className="w-full lg:w-1/2" variants={itemVariants}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <motion.div variants={itemVariants}>
             <ProviderKeySection project={project} />
           </motion.div>
-          <motion.div className="w-full lg:w-1/2" variants={itemVariants}>
+          <motion.div variants={itemVariants}>
             <APIKeyList project={project} />
           </motion.div>
-        </div>
-        <div className="flex flex-col lg:flex-row gap-6">
-          <motion.div className="w-full lg:w-1/2" variants={itemVariants}>
+          <motion.div variants={itemVariants}>
             <AvailableMcpServers project={project} />
           </motion.div>
-          <motion.div className="w-full lg:w-1/2" variants={itemVariants}>
+          <motion.div variants={itemVariants}>
             {project.composioEnabled && <AvailableTools project={project} />}
           </motion.div>
         </div>
