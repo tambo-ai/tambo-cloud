@@ -6,10 +6,11 @@ import { ProgressIndicator } from "@/components/cli-auth/ProgressIndicator";
 import { ProjectStep } from "@/components/cli-auth/ProjectStep";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/hooks/auth";
+import { useCountdownTimer } from "@/hooks/useCountdownTimer";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 // Animation variants
 const containerVariants = {
@@ -51,7 +52,6 @@ export function CLIAuthClient() {
   );
   const [selectedProjectName, setSelectedProjectName] = useState<string>("");
   const [apiKey, setApiKey] = useState("");
-  const [countdown, setCountdown] = useState(60);
   const [isGenerating, setIsGenerating] = useState(false);
   const [createDialogState, setCreateDialogState] = useState({
     isOpen: false,
@@ -61,7 +61,14 @@ export function CLIAuthClient() {
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const { data: session, isLoading: isAuthLoading } = useSession();
   const router = useRouter();
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Use our new countdown timer hook
+  const { countdown, startTimer, stopTimer } = useCountdownTimer(60, () => {
+    // Redirect to project page after showing 0
+    setTimeout(() => {
+      router.push(`/dashboard/${selectedProjectId}`);
+    }, 500);
+  });
 
   // tRPC queries and mutations
   const projectsQuery = api.project.getUserProjects.useQuery(undefined, {
@@ -79,15 +86,6 @@ export function CLIAuthClient() {
   );
 
   const steps = ["select a project", "generate key"];
-
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, []);
 
   const handleGenerate = useCallback(async () => {
     if (!selectedProjectId || isGenerating) return;
@@ -107,37 +105,14 @@ export function CLIAuthClient() {
 
       setApiKey(result.apiKey);
 
-      // Clear existing timer if any
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-
-      // Start countdown
-      timerRef.current = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            if (timerRef.current) {
-              clearInterval(timerRef.current);
-              timerRef.current = null;
-            }
-
-            // Set countdown to 0 to show it before redirect
-            setTimeout(() => {
-              // Redirect to project page after showing 0
-              router.push(`/dashboard/${selectedProjectId}`);
-            }, 500);
-
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Start the countdown timer
+      startTimer();
     } catch (error) {
       console.error("Key generation failed:", error);
     } finally {
       setIsGenerating(false);
     }
-  }, [selectedProjectId, generateApiKeyMutation, isGenerating, router]);
+  }, [selectedProjectId, generateApiKeyMutation, isGenerating, startTimer]);
 
   const handleProjectSelect = useCallback(
     (projectId: string) => {
@@ -157,15 +132,11 @@ export function CLIAuthClient() {
   );
 
   const handleBack = useCallback(() => {
-    // Clear the timer when going back to project selection
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
+    // Stop the timer when going back to project selection
+    stopTimer();
     setStep("select");
     setApiKey("");
-    setCountdown(60);
-  }, []);
+  }, [stopTimer]);
 
   const handleCreateProject = useCallback(async () => {
     try {
