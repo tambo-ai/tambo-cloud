@@ -145,7 +145,7 @@ function Step({
   }
 }
 
-export function CLIAuthClient() {
+export function CLIAuthPage() {
   const [step, setStep] = useState<"select" | "key">("select");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null,
