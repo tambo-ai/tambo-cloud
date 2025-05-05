@@ -170,7 +170,7 @@ export function CLIAuthPage() {
     }, 500);
   });
 
-  const createProjectMutation = api.project.createProject.useMutation();
+  const createProjectMutation = api.project.createProject2.useMutation();
   const addProviderKeyMutation = api.project.addProviderKey.useMutation();
   const generateApiKeyMutation = api.project.generateApiKey.useMutation();
 
@@ -227,9 +227,9 @@ export function CLIAuthPage() {
   const handleCreateProject = useCallback(async () => {
     try {
       setIsCreatingProject(true);
-      const newProject = await createProjectMutation.mutateAsync(
-        createDialogState.name,
-      );
+      const newProject = await createProjectMutation.mutateAsync({
+        name: createDialogState.name,
+      });
 
       // Add OpenAI provider key
       if (createDialogState.providerKey) {
