@@ -62,7 +62,7 @@ export function CustomInstructionsEditor({
                 {project.customInstructions || "No custom instructions set."}
               </div>
               <Button variant="outline" onClick={() => setIsEditing(true)}>
-                Edit Custom Instructions
+                Edit
               </Button>
             </>
           ) : (
