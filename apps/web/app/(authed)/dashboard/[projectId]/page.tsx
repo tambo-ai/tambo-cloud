@@ -136,16 +136,16 @@ export default function ProjectPage({ params }: ProjectPageProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <motion.div variants={itemVariants}>
-            <CustomInstructionsEditor
-              project={project}
-              onEdited={handleRefreshProject}
-            />
-          </motion.div>
-          <motion.div variants={itemVariants}>
             <ProviderKeySection project={project} />
           </motion.div>
           <motion.div variants={itemVariants}>
             <APIKeyList project={project} />
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <CustomInstructionsEditor
+              project={project}
+              onEdited={handleRefreshProject}
+            />
           </motion.div>
           <motion.div variants={itemVariants}>
             <AvailableMcpServers project={project} />
