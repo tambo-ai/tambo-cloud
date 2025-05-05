@@ -45,6 +45,106 @@ const contentVariants = {
   },
 };
 
+// Loading component
+function Loading() {
+  return (
+    <motion.div
+      key="loading"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex items-center justify-center py-8"
+    >
+      <div className="animate-pulse h-8 w-8 rounded-full bg-muted" />
+    </motion.div>
+  );
+}
+
+// Step component
+type StepProps = {
+  currentStep: "select" | "key";
+  selectedProjectId: string | null;
+  selectedProjectName: string;
+  createDialogState: {
+    isOpen: boolean;
+    name: string;
+    providerKey: string;
+  };
+  setCreateDialogState: (state: {
+    isOpen: boolean;
+    name: string;
+    providerKey: string;
+  }) => void;
+  apiKey: string;
+  countdown: number;
+  isGenerating: boolean;
+  onBack: () => void;
+  onGenerate: () => Promise<void>;
+  onProjectSelect: (projectId: string, projectName: string) => void;
+  onNavigateToProject?: () => void;
+};
+
+function Step({
+  currentStep,
+  selectedProjectId,
+  selectedProjectName,
+  createDialogState,
+  setCreateDialogState,
+  apiKey,
+  countdown,
+  isGenerating,
+  onBack,
+  onGenerate,
+  onProjectSelect,
+  onNavigateToProject,
+}: StepProps) {
+  switch (currentStep) {
+    case "select":
+      return (
+        <motion.div
+          key="project-step"
+          variants={contentVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
+          <ProjectStep
+            onProjectSelect={onProjectSelect}
+            onCreateClick={() =>
+              setCreateDialogState({
+                ...createDialogState,
+                isOpen: true,
+              })
+            }
+          />
+        </motion.div>
+      );
+    case "key":
+      return (
+        <motion.div
+          key="key-step"
+          variants={contentVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+        >
+          <KeyStep
+            apiKey={apiKey}
+            countdown={countdown}
+            isGenerating={isGenerating}
+            onBack={onBack}
+            onGenerate={onGenerate}
+            projectName={selectedProjectName}
+            projectId={selectedProjectId ?? ""}
+            onNavigateToProject={onNavigateToProject}
+          />
+        </motion.div>
+      );
+    default:
+      return null;
+  }
+}
+
 export function CLIAuthClient() {
   const [step, setStep] = useState<"select" | "key">("select");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
@@ -70,20 +170,9 @@ export function CLIAuthClient() {
     }, 500);
   });
 
-  // tRPC queries and mutations
-  const projectsQuery = api.project.getUserProjects.useQuery(undefined, {
-    enabled: !!session,
-  });
   const createProjectMutation = api.project.createProject.useMutation();
   const addProviderKeyMutation = api.project.addProviderKey.useMutation();
   const generateApiKeyMutation = api.project.generateApiKey.useMutation();
-  const providerKeysQuery = api.project.getProviderKeys.useQuery(
-    selectedProjectId ?? "",
-    {
-      enabled: !!selectedProjectId && !!session,
-      staleTime: 30000,
-    },
-  );
 
   const steps = ["select a project", "generate key"];
 
@@ -115,20 +204,14 @@ export function CLIAuthClient() {
   }, [selectedProjectId, generateApiKeyMutation, isGenerating, startTimer]);
 
   const handleProjectSelect = useCallback(
-    (projectId: string) => {
-      const selectedProject = projectsQuery.data?.find(
-        (project) => project.id === projectId,
-      );
-
-      if (selectedProject) {
-        setSelectedProjectId(projectId);
-        setSelectedProjectName(selectedProject.name);
-        setStep("key");
-        // Generate API key immediately when switching to the key step
-        handleGenerate();
-      }
+    (projectId: string, projectName: string) => {
+      setSelectedProjectId(projectId);
+      setSelectedProjectName(projectName);
+      setStep("key");
+      // Generate API key immediately when switching to the key step
+      handleGenerate();
     },
-    [projectsQuery.data, handleGenerate],
+    [handleGenerate],
   );
 
   const handleBack = useCallback(() => {
@@ -154,9 +237,6 @@ export function CLIAuthClient() {
         });
       }
 
-      // Refetch projects
-      await projectsQuery.refetch();
-
       // Close dialog and reset state
       setCreateDialogState({
         isOpen: false,
@@ -165,10 +245,7 @@ export function CLIAuthClient() {
       });
 
       // Select the new project
-      setSelectedProjectId(newProject.id);
-      setSelectedProjectName(newProject.name);
-      setStep("key");
-      handleGenerate();
+      handleProjectSelect(newProject.id, newProject.name);
     } catch (error) {
       console.error("Project creation failed:", error);
     } finally {
@@ -178,11 +255,21 @@ export function CLIAuthClient() {
     createDialogState,
     createProjectMutation,
     addProviderKeyMutation,
-    projectsQuery,
-    handleGenerate,
+    handleProjectSelect,
   ]);
 
+  const navigateToProject = useCallback(() => {
+    if (selectedProjectId) {
+      router.push(`/dashboard/${selectedProjectId}`);
+    }
+  }, [router, selectedProjectId]);
+
   if (isAuthLoading) {
+    return <div className="hidden"></div>;
+  }
+
+  // If no session after loading, don't render the UI
+  if (!session) {
     return <div className="hidden"></div>;
   }
 
@@ -213,56 +300,23 @@ export function CLIAuthClient() {
           <CardContent>
             <div className="flex flex-col gap-4"></div>
             <AnimatePresence mode="wait">
-              {isAuthLoading ||
-              (step === "select" && projectsQuery.isLoading) ? (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center justify-center py-8"
-                >
-                  <div className="animate-pulse h-8 w-8 rounded-full bg-muted" />
-                </motion.div>
-              ) : step === "select" ? (
-                <motion.div
-                  key="project-step"
-                  variants={contentVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  <ProjectStep
-                    projects={projectsQuery.data}
-                    isLoading={false}
-                    error={projectsQuery.error}
-                    onProjectSelect={handleProjectSelect}
-                    onCreateClick={() =>
-                      setCreateDialogState({
-                        ...createDialogState,
-                        isOpen: true,
-                      })
-                    }
-                  />
-                </motion.div>
+              {isAuthLoading ? (
+                <Loading />
               ) : (
-                <motion.div
-                  key="key-step"
-                  variants={contentVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  <KeyStep
-                    apiKey={apiKey}
-                    countdown={countdown}
-                    error={providerKeysQuery.error}
-                    isGenerating={isGenerating}
-                    onBack={handleBack}
-                    onGenerate={handleGenerate}
-                    projectName={selectedProjectName}
-                  />
-                </motion.div>
+                <Step
+                  currentStep={step}
+                  selectedProjectId={selectedProjectId}
+                  selectedProjectName={selectedProjectName}
+                  createDialogState={createDialogState}
+                  setCreateDialogState={setCreateDialogState}
+                  apiKey={apiKey}
+                  countdown={countdown}
+                  isGenerating={isGenerating}
+                  onBack={handleBack}
+                  onGenerate={handleGenerate}
+                  onProjectSelect={handleProjectSelect}
+                  onNavigateToProject={navigateToProject}
+                />
               )}
             </AnimatePresence>
 
