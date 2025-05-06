@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/hooks/auth";
 import { useCountdownTimer } from "@/hooks/useCountdownTimer";
 import { api } from "@/trpc/react";
+import { MCPTransport } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -69,12 +70,24 @@ type StepProps = {
     isOpen: boolean;
     name: string;
     providerKey: string;
+    mcpServer?: {
+      url: string;
+      customHeaders: Record<string, string>;
+      mcpTransport: MCPTransport;
+    };
   };
-  setCreateDialogState: (state: {
-    isOpen: boolean;
-    name: string;
-    providerKey: string;
-  }) => void;
+  setCreateDialogState: React.Dispatch<
+    React.SetStateAction<{
+      isOpen: boolean;
+      name: string;
+      providerKey: string;
+      mcpServer?: {
+        url: string;
+        customHeaders: Record<string, string>;
+        mcpTransport: MCPTransport;
+      };
+    }>
+  >;
   apiKey: string;
   countdown: number;
   isGenerating: boolean;
@@ -153,10 +166,20 @@ export function CLIAuthPage() {
   const [selectedProjectName, setSelectedProjectName] = useState<string>("");
   const [apiKey, setApiKey] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [createDialogState, setCreateDialogState] = useState({
+  const [createDialogState, setCreateDialogState] = useState<{
+    isOpen: boolean;
+    name: string;
+    providerKey: string;
+    mcpServer?: {
+      url: string;
+      customHeaders: Record<string, string>;
+      mcpTransport: MCPTransport;
+    };
+  }>({
     isOpen: false,
     name: "",
     providerKey: "",
+    mcpServer: undefined,
   });
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const { data: session, isLoading: isAuthLoading } = useSession();
@@ -227,9 +250,17 @@ export function CLIAuthPage() {
   const handleCreateProject = useCallback(async () => {
     try {
       setIsCreatingProject(true);
-      const newProject = await createProjectMutation.mutateAsync({
+
+      // Prepare project creation input
+      const createProjectInput = {
         name: createDialogState.name,
-      });
+        mcpServers: createDialogState.mcpServer
+          ? [createDialogState.mcpServer]
+          : undefined,
+      };
+
+      const newProject =
+        await createProjectMutation.mutateAsync(createProjectInput);
 
       // Add OpenAI provider key
       if (createDialogState.providerKey) {
@@ -248,6 +279,7 @@ export function CLIAuthPage() {
         isOpen: false,
         name: "",
         providerKey: "",
+        mcpServer: undefined,
       });
 
       // Select the new project
