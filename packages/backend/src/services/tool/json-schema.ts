@@ -15,12 +15,17 @@ import { JSONSchema7Definition } from "json-schema";
 export function sanitizeJSONSchemaProperties(
   properties: Record<string, JSONSchema7Definition>,
   requiredProperties: string[],
+  debugKey?: string,
 ): Record<string, JSONSchema7Definition> {
   return Object.fromEntries(
     Object.entries(properties).map(([key, value]) => {
       return [
         key,
-        sanitizeJSONSchemaProperty(value, requiredProperties.includes(key)),
+        sanitizeJSONSchemaProperty(
+          value,
+          requiredProperties.includes(key),
+          debugKey ? `${debugKey}.${key}` : key,
+        ),
       ] as const;
     }),
   );
@@ -38,6 +43,7 @@ export function sanitizeJSONSchemaProperties(
 export function sanitizeJSONSchemaProperty(
   property: JSONSchema7Definition | undefined,
   isRequired: boolean,
+  debugKey?: string,
 ): JSONSchema7Definition {
   if (
     typeof property === "boolean" ||
@@ -95,7 +101,8 @@ export function sanitizeJSONSchemaProperty(
           string,
           JSONSchema7Definition
         >,
-        Object.keys(restOfProperty.properties || {}),
+        restOfProperty.required ?? [],
+        debugKey,
       ),
       required: Object.keys(restOfProperty.properties || {}),
       additionalProperties: false,
@@ -111,39 +118,59 @@ export function sanitizeJSONSchemaProperty(
     const arrayProperty = {
       ...restOfProperty,
       items: Array.isArray(restOfProperty.items)
-        ? restOfProperty.items.map((item) =>
-            sanitizeJSONSchemaProperty(item, isRequired),
+        ? restOfProperty.items.map((item, index) =>
+            sanitizeJSONSchemaProperty(
+              item,
+              isRequired,
+              `${debugKey}[${index}]`,
+            ),
           )
         : sanitizeJSONSchemaProperty(
             restOfProperty.items as JSONSchema7Definition,
             isRequired,
+            `${debugKey}.??`,
           ),
-    } as JSONSchema7Definition;
+    };
 
     if (isRequired) {
       return arrayProperty;
     }
     return {
       anyOf: [{ type: "null" }, arrayProperty],
-    } as JSONSchema7Definition;
+    };
   }
   const wellKnownKeys = ["anyOf", "oneOf", "allOf", "not"] as const;
   for (const key of wellKnownKeys) {
     if (key in restOfProperty) {
       const value = restOfProperty[key];
       if (Array.isArray(value)) {
+        const sanitizedArray = value.map((item) => {
+          return sanitizeJSONSchemaProperty(
+            item,
+            isRequired,
+            `${debugKey}=>${key}`,
+          );
+        });
+
         return {
-          [key]: value.map((item) => {
-            return sanitizeJSONSchemaProperty(item, true);
-          }),
+          [key]: sanitizedArray,
         };
       } else {
         return {
-          [key]: sanitizeJSONSchemaProperty(value, true),
+          [key]: sanitizeJSONSchemaProperty(
+            value,
+            isRequired,
+            `${debugKey}=>${key}`,
+          ),
         };
       }
     }
   }
 
-  return restOfProperty;
+  if (isRequired) {
+    return restOfProperty;
+  }
+  return {
+    anyOf: [{ type: "null" }, restOfProperty],
+  };
 }
