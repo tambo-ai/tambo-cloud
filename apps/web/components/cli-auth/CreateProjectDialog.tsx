@@ -303,7 +303,8 @@ export const CreateProjectDialog = memo(function CreateProjectDialog({
                   onDelete={handleMcpServerDelete}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Configure a custom MCP server for this project.
+                  Configure a custom MCP server for this project. You can add
+                  additional MCP servers in the project settings.
                 </p>
               </div>
             )}
