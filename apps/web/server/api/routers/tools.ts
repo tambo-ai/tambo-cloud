@@ -142,7 +142,7 @@ export const toolsRouter = createTRPCRouter({
         mcpTransport: z.nativeEnum(MCPTransport),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const { url, customHeaders, mcpTransport } = input;
 
       return await validateMcpServer({
