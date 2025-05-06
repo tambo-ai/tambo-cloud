@@ -61,7 +61,7 @@ export async function* runDecisionLoop(
     standardToolParameters,
   );
 
-  const { template: systemPrompt } =
+  const { template: systemPrompt, args: systemPromptArgs } =
     generateDecisionLoopPrompt(customInstructions);
   const chatHistory = threadMessagesToChatHistory(messageHistory);
   const promptMessages = objectTemplate<ChatCompletionMessageParam[]>([
@@ -75,6 +75,7 @@ export async function* runDecisionLoop(
     promptTemplateName: "decision-loop",
     promptTemplateParams: {
       chat_history: chatHistory,
+      ...systemPromptArgs,
     },
     stream: true,
     tool_choice: "required",

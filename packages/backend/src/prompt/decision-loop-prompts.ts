@@ -28,12 +28,10 @@ For example, imagine these tools are available:
 If a user asks for weather in a city, you may call the 'get_weather' tool, and
 then call the 'show_component_Weather' tool to pass the weather information to the Weather component on screen.
 
-{custom_instructions}
-`,
+{custom_instructions}`,
     {
       custom_instructions: customInstructions
-        ? `
-Here are additional instructions:
+        ? `In addition to the above, please also follow these additional instructions:
 ${customInstructions}
 `
         : "",
