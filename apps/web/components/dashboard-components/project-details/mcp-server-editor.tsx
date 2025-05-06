@@ -102,11 +102,18 @@ export function McpServerEditor({
       return;
     }
 
-    await validateMcpServer({
-      url: trimmedUrl,
-      customHeaders,
-      mcpTransport,
-    });
+    // we don't want to validate on every keystroke
+    // TODO: maybe validate if the user has changed the url or transport?
+    if (!hideEditButtons) {
+      const { valid } = await validateMcpServer({
+        url: trimmedUrl,
+        customHeaders,
+        mcpTransport,
+      });
+      if (!valid) {
+        return;
+      }
+    }
 
     await onSave({
       url: trimmedUrl,
@@ -219,7 +226,7 @@ export function McpServerEditor({
         )}
         {validationResult && (
           <p className="text-sm text-destructive px-2">
-            {validationResult.error?.message}
+            {validationResult.error}
           </p>
         )}
       </div>
