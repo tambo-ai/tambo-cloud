@@ -1,10 +1,4 @@
-import {
-  JSONSchema7,
-  JSONSchema7Array,
-  JSONSchema7Definition,
-  JSONSchema7Object,
-  JSONSchema7Type,
-} from "json-schema";
+import { JSONSchema7Definition } from "json-schema";
 
 /**
  * Sanitizes a JSON Schema object to ensure it is valid for OpenAI function
@@ -133,45 +127,23 @@ export function sanitizeJSONSchemaProperty(
       anyOf: [{ type: "null" }, arrayProperty],
     } as JSONSchema7Definition;
   }
-  const wellKnownKeys = ["anyOf", "oneOf", "allOf", "not", "enum"] as const;
+  const wellKnownKeys = ["anyOf", "oneOf", "allOf", "not"] as const;
   for (const key of wellKnownKeys) {
     if (key in restOfProperty) {
       const value = restOfProperty[key];
       if (Array.isArray(value)) {
         return {
           [key]: value.map((item) => {
-            return sanitizeJSONType(item, true);
+            return sanitizeJSONSchemaProperty(item, true);
           }),
         };
       } else {
         return {
-          [key]: sanitizeJSONSchemaProperty(value, isRequired),
+          [key]: sanitizeJSONSchemaProperty(value, true),
         };
       }
     }
   }
 
   return restOfProperty;
-}
-
-function sanitizeJSONType<
-  T extends
-    | JSONSchema7
-    | JSONSchema7Object
-    | JSONSchema7Array
-    | JSONSchema7Type,
->(type: T, isRequired: boolean): T {
-  if (
-    typeof type === "string" ||
-    typeof type === "number" ||
-    typeof type === "boolean" ||
-    type === null ||
-    type === false
-  ) {
-    return type;
-  }
-  if (Array.isArray(type)) {
-    return type.map((item) => sanitizeJSONType(item, isRequired)) as T;
-  }
-  return sanitizeJSONSchemaProperty(type, isRequired) as T;
 }
