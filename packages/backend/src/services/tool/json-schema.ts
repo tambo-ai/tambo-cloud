@@ -1,6 +1,8 @@
 import {
+  JSONSchema7,
   JSONSchema7Array,
   JSONSchema7Definition,
+  JSONSchema7Object,
   JSONSchema7Type,
 } from "json-schema";
 
@@ -40,9 +42,9 @@ export function sanitizeJSONSchemaProperties(
  * be required but nullable.)
  */
 export function sanitizeJSONSchemaProperty(
-  property: JSONSchema7Definition | JSONSchema7Type | undefined,
+  property: JSONSchema7Definition | undefined,
   isRequired: boolean,
-): JSONSchema7Definition | JSONSchema7Type {
+): JSONSchema7Definition {
   if (
     typeof property === "boolean" ||
     typeof property === "number" ||
@@ -59,11 +61,6 @@ export function sanitizeJSONSchemaProperty(
         property,
       ],
     };
-  }
-  if (Array.isArray(property)) {
-    return property.map((item) =>
-      sanitizeJSONSchemaProperty(item, isRequired),
-    ) as JSONSchema7Array;
   }
 
   const {
@@ -143,15 +140,7 @@ export function sanitizeJSONSchemaProperty(
       if (Array.isArray(value)) {
         return {
           [key]: value.map((item) => {
-            if (
-              typeof item === "number" ||
-              typeof item === "boolean" ||
-              typeof item === "string" ||
-              item === null
-            ) {
-              return item;
-            }
-            return sanitizeJSONSchemaProperty(item, isRequired);
+            return sanitizeJSONType(item, true);
           }),
         };
       } else {
@@ -163,4 +152,26 @@ export function sanitizeJSONSchemaProperty(
   }
 
   return restOfProperty;
+}
+
+function sanitizeJSONType<
+  T extends
+    | JSONSchema7
+    | JSONSchema7Object
+    | JSONSchema7Array
+    | JSONSchema7Type,
+>(type: T, isRequired: boolean): T {
+  if (
+    typeof type === "string" ||
+    typeof type === "number" ||
+    typeof type === "boolean" ||
+    type === null ||
+    type === false
+  ) {
+    return type;
+  }
+  if (Array.isArray(type)) {
+    return type.map((item) => sanitizeJSONType(item, isRequired)) as T;
+  }
+  return sanitizeJSONSchemaProperty(type, isRequired) as T;
 }
