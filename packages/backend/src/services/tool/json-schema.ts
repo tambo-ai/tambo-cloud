@@ -1,4 +1,8 @@
-import { JSONSchema7Definition } from "json-schema";
+import {
+  JSONSchema7Array,
+  JSONSchema7Definition,
+  JSONSchema7Type,
+} from "json-schema";
 
 /**
  * Sanitizes a JSON Schema object to ensure it is valid for OpenAI function
@@ -36,10 +40,14 @@ export function sanitizeJSONSchemaProperties(
  * be required but nullable.)
  */
 export function sanitizeJSONSchemaProperty(
-  property: JSONSchema7Definition,
+  property: JSONSchema7Definition | JSONSchema7Type | undefined,
   isRequired: boolean,
-): JSONSchema7Definition {
-  if (typeof property === "boolean") {
+): JSONSchema7Definition | JSONSchema7Type {
+  if (
+    typeof property === "boolean" ||
+    typeof property === "number" ||
+    typeof property === "string"
+  ) {
     if (isRequired) {
       return property;
     }
@@ -52,6 +60,12 @@ export function sanitizeJSONSchemaProperty(
       ],
     };
   }
+  if (Array.isArray(property)) {
+    return property.map((item) =>
+      sanitizeJSONSchemaProperty(item, isRequired),
+    ) as JSONSchema7Array;
+  }
+
   const {
     format: _format,
     default: _default,
@@ -59,8 +73,11 @@ export function sanitizeJSONSchemaProperty(
     maxItems: _maxItems,
     maxLength: _maxLength,
     minLength: _minLength,
+    examples: _examples,
+    minimum: _minimum,
+    maximum: _maximum,
     ...restOfProperty
-  } = property;
+  } = property ?? {};
   if (_default || _minItems || _maxItems || _maxLength || _minLength) {
     const droppedKeys = {
       _default,
@@ -68,6 +85,9 @@ export function sanitizeJSONSchemaProperty(
       _maxItems,
       _maxLength,
       _minLength,
+      _examples,
+      _minimum,
+      _maximum,
     } as const;
     console.warn(
       "Sanitizing JSON dropped: ",
@@ -76,11 +96,14 @@ export function sanitizeJSONSchemaProperty(
       ),
     );
   }
-  if (property.type === "object") {
+  if (restOfProperty.type === "object") {
     const objectProperty = {
       ...restOfProperty,
       properties: sanitizeJSONSchemaProperties(
-        (property.properties ?? {}) as Record<string, JSONSchema7Definition>,
+        (restOfProperty.properties ?? {}) as Record<
+          string,
+          JSONSchema7Definition
+        >,
         Object.keys(restOfProperty.properties || {}),
       ),
       required: Object.keys(restOfProperty.properties || {}),
@@ -93,24 +116,51 @@ export function sanitizeJSONSchemaProperty(
       anyOf: [{ type: "null" }, objectProperty],
     };
   }
-  if (property.type === "array") {
+  if (restOfProperty.type === "array") {
     const arrayProperty = {
       ...restOfProperty,
-      items: Array.isArray(property.items)
-        ? property.items.map((item) =>
+      items: Array.isArray(restOfProperty.items)
+        ? restOfProperty.items.map((item) =>
             sanitizeJSONSchemaProperty(item, isRequired),
           )
         : sanitizeJSONSchemaProperty(
-            property.items as JSONSchema7Definition,
+            restOfProperty.items as JSONSchema7Definition,
             isRequired,
           ),
-    };
+    } as JSONSchema7Definition;
+
     if (isRequired) {
       return arrayProperty;
     }
     return {
       anyOf: [{ type: "null" }, arrayProperty],
-    };
+    } as JSONSchema7Definition;
   }
+  const wellKnownKeys = ["anyOf", "oneOf", "allOf", "not", "enum"] as const;
+  for (const key of wellKnownKeys) {
+    if (key in restOfProperty) {
+      const value = restOfProperty[key];
+      if (Array.isArray(value)) {
+        return {
+          [key]: value.map((item) => {
+            if (
+              typeof item === "number" ||
+              typeof item === "boolean" ||
+              typeof item === "string" ||
+              item === null
+            ) {
+              return item;
+            }
+            return sanitizeJSONSchemaProperty(item, isRequired);
+          }),
+        };
+      } else {
+        return {
+          [key]: sanitizeJSONSchemaProperty(value, isRequired),
+        };
+      }
+    }
+  }
+
   return restOfProperty;
 }
