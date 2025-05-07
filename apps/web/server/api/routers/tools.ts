@@ -6,12 +6,13 @@ import {
   ComposioConnectorConfig,
   MCPTransport,
   ToolProviderType,
+  validateMcpServer,
 } from "@tambo-ai-cloud/core";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { validateSafeURL, validateZodUrl } from "../../../lib/urlSecurity";
+import { validateSafeURL, validateServerUrl } from "../../../lib/urlSecurity";
 
 export const toolsRouter = createTRPCRouter({
   listApps: protectedProcedure
@@ -92,7 +93,7 @@ export const toolsRouter = createTRPCRouter({
           .string()
           .url()
           .refine(
-            validateZodUrl,
+            validateServerUrl,
             "URL appears to be unsafe: must not point to internal, local, or private networks",
           ),
         customHeaders: customHeadersSchema,
@@ -127,6 +128,29 @@ export const toolsRouter = createTRPCRouter({
       );
       return server;
     }),
+  validateMcpServer: protectedProcedure
+    .input(
+      z.object({
+        url: z
+          .string()
+          .url()
+          .refine(
+            validateServerUrl,
+            "URL appears to be unsafe: must not point to internal, local, or private networks",
+          ),
+        customHeaders: customHeadersSchema,
+        mcpTransport: z.nativeEnum(MCPTransport),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { url, customHeaders, mcpTransport } = input;
+
+      return await validateMcpServer({
+        url,
+        customHeaders,
+        mcpTransport,
+      });
+    }),
   deleteMcpServer: protectedProcedure
     .input(z.object({ projectId: z.string(), serverId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -149,7 +173,7 @@ export const toolsRouter = createTRPCRouter({
           .string()
           .url()
           .refine(
-            validateZodUrl,
+            validateServerUrl,
             "URL appears to be unsafe: must not point to internal, local, or private networks",
           ),
         customHeaders: customHeadersSchema,
