@@ -81,31 +81,32 @@ export function sanitizeJSONSchemaProperty(
     contentMediaType: _contentMediaType,
     ...restOfProperty
   } = property ?? {};
-  if (_default || _minItems || _maxItems || _maxLength || _minLength) {
-    const droppedKeys = {
-      _format,
-      _default,
-      _minItems,
-      _maxItems,
-      _maxLength,
-      _minLength,
-      _examples,
-      _minimum,
-      _maximum,
-      _exclusiveMaximum,
-      _exclusiveMinimum,
-      _pattern,
-      _multipleOf,
-      _contentEncoding,
-      _contentMediaType,
-    } as const;
-    const droppedKeysString = Object.keys(droppedKeys)
-      .filter((key) => !!droppedKeys[key as keyof typeof droppedKeys])
-      .join(", ");
+  const droppedKeys = {
+    _format,
+    _default,
+    _minItems,
+    _maxItems,
+    _maxLength,
+    _minLength,
+    _examples,
+    _minimum,
+    _maximum,
+    _exclusiveMaximum,
+    _exclusiveMinimum,
+    _pattern,
+    _multipleOf,
+    _contentEncoding,
+    _contentMediaType,
+  } as const;
+  const droppedKeysString = Object.keys(droppedKeys)
+    .filter((key) => !!droppedKeys[key as keyof typeof droppedKeys])
+    .join(", ");
+  if (droppedKeysString) {
     console.warn(
       `Sanitizing JSON dropped keys at ${debugKey}: ${droppedKeysString}`,
     );
   }
+
   if (restOfProperty.type === "object") {
     const objectProperty = {
       ...restOfProperty,
