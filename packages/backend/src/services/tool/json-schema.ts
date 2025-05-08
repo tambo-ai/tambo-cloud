@@ -72,8 +72,13 @@ export function sanitizeJSONSchemaProperty(
     minLength: _minLength,
     examples: _examples,
     minimum: _minimum,
+    exclusiveMaximum: _exclusiveMaximum,
+    exclusiveMinimum: _exclusiveMinimum,
     maximum: _maximum,
     pattern: _pattern,
+    multipleOf: _multipleOf,
+    contentEncoding: _contentEncoding,
+    contentMediaType: _contentMediaType,
     ...restOfProperty
   } = property ?? {};
   if (_default || _minItems || _maxItems || _maxLength || _minLength) {
@@ -87,7 +92,12 @@ export function sanitizeJSONSchemaProperty(
       _examples,
       _minimum,
       _maximum,
+      _exclusiveMaximum,
+      _exclusiveMinimum,
       _pattern,
+      _multipleOf,
+      _contentEncoding,
+      _contentMediaType,
     } as const;
     console.warn(
       "Sanitizing JSON dropped: ",
