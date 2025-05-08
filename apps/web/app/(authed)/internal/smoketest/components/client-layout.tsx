@@ -1,7 +1,7 @@
 "use client";
 
 import { env } from "@/lib/env";
-import { TamboMcpProvider, TamboProvider } from "@tambo-ai/react";
+import { TamboProvider } from "@tambo-ai/react";
 import { FC, PropsWithChildren } from "react";
 
 export const ClientLayout: FC<PropsWithChildren> = ({ children }) => {
@@ -10,9 +10,7 @@ export const ClientLayout: FC<PropsWithChildren> = ({ children }) => {
       tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL}
       apiKey={env.NEXT_PUBLIC_TAMBO_API_KEY!}
     >
-      <TamboMcpProvider mcpServers={["http://localhost:8001/sse"]}>
-        {children}
-      </TamboMcpProvider>
+      {children}
     </TamboProvider>
   );
 };
