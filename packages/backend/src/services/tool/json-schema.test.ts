@@ -394,6 +394,7 @@ describe("sanitizeJSONSchemaProperties", () => {
           },
           binary: {
             type: "string",
+            // these do not need to be removed
             contentEncoding: "base64",
             contentMediaType: "image/png",
           },
@@ -437,7 +438,15 @@ describe("sanitizeJSONSchemaProperties", () => {
       anyOf: [{ type: "null" }, { type: "string" }],
     });
     expect(nestedProps.binary).toEqual({
-      anyOf: [{ type: "null" }, { type: "string" }],
+      anyOf: [
+        { type: "null" },
+        {
+          contentEncoding: "base64",
+          contentMediaType: "image/png",
+
+          type: "string",
+        },
+      ],
     });
 
     // Make sure no validation props exist in the result
@@ -456,8 +465,6 @@ describe("sanitizeJSONSchemaProperties", () => {
       "multipleOf",
       "minItems",
       "maxItems",
-      "contentEncoding",
-      "contentMediaType",
     ];
 
     for (const prop of validationProps) {
