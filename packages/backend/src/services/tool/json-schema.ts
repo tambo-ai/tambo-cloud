@@ -83,10 +83,15 @@ export function sanitizeJSONSchemaProperty(
   } = property ?? {};
 
   // Dynamically calculate dropped keys
-  const originalKeys =
-    property && typeof property === "object" ? Object.keys(property) : [];
+  const prop = typeof property === "object" ? property : {};
+  const originalKeys = Object.keys(prop);
   const restKeys = Object.keys(restOfProperty);
-  const droppedKeys = originalKeys.filter((key) => !restKeys.includes(key));
+  const droppedKeys = originalKeys.filter(
+    (key) =>
+      !restKeys.includes(key) &&
+      prop[key as keyof typeof prop] != null &&
+      prop[key as keyof typeof prop] !== undefined, // filters out null and undefined
+  );
   if (droppedKeys.length > 0) {
     console.warn(
       `Sanitizing JSON dropped keys at ${debugKey}: ${droppedKeys.join(", ")}`,
