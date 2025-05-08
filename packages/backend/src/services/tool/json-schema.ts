@@ -73,10 +73,12 @@ export function sanitizeJSONSchemaProperty(
     examples: _examples,
     minimum: _minimum,
     maximum: _maximum,
+    pattern: _pattern,
     ...restOfProperty
   } = property ?? {};
   if (_default || _minItems || _maxItems || _maxLength || _minLength) {
     const droppedKeys = {
+      _format,
       _default,
       _minItems,
       _maxItems,
@@ -85,6 +87,7 @@ export function sanitizeJSONSchemaProperty(
       _examples,
       _minimum,
       _maximum,
+      _pattern,
     } as const;
     console.warn(
       "Sanitizing JSON dropped: ",
