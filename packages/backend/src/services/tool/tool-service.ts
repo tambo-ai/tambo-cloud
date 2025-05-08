@@ -46,11 +46,6 @@ export function convertMetadataToTools(
   toolsMetadata: ComponentContextToolMetadata[],
 ): OpenAI.Chat.Completions.ChatCompletionTool[] {
   return toolsMetadata.map((tool) => {
-    console.log(
-      "converting tool first param =",
-      tool.name,
-      tool.parameters[0].schema,
-    );
     const parameters = {
       type: "object",
       properties: {
