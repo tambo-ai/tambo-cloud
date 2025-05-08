@@ -99,11 +99,11 @@ export function sanitizeJSONSchemaProperty(
       _contentEncoding,
       _contentMediaType,
     } as const;
+    const droppedKeysString = Object.keys(droppedKeys)
+      .filter((key) => !!droppedKeys[key as keyof typeof droppedKeys])
+      .join(", ");
     console.warn(
-      "Sanitizing JSON dropped: ",
-      Object.keys(droppedKeys).filter(
-        (key) => !!droppedKeys[key as keyof typeof droppedKeys],
-      ),
+      `Sanitizing JSON dropped keys at ${debugKey}: ${droppedKeysString}`,
     );
   }
   if (restOfProperty.type === "object") {
@@ -135,13 +135,13 @@ export function sanitizeJSONSchemaProperty(
             sanitizeJSONSchemaProperty(
               item,
               isRequired,
-              `${debugKey}[${index}]`,
+              `${debugKey}.items[${index}]`,
             ),
           )
         : sanitizeJSONSchemaProperty(
             restOfProperty.items as JSONSchema7Definition,
             isRequired,
-            `${debugKey}.??`,
+            `${debugKey}.items`,
           ),
     };
 
@@ -157,11 +157,11 @@ export function sanitizeJSONSchemaProperty(
     if (key in restOfProperty) {
       const value = restOfProperty[key];
       if (Array.isArray(value)) {
-        const sanitizedArray = value.map((item) => {
+        const sanitizedArray = value.map((item, index) => {
           return sanitizeJSONSchemaProperty(
             item,
             isRequired,
-            `${debugKey}=>${key}`,
+            `${debugKey}.${key}[${index}]`,
           );
         });
 
@@ -173,7 +173,7 @@ export function sanitizeJSONSchemaProperty(
           [key]: sanitizeJSONSchemaProperty(
             value,
             isRequired,
-            `${debugKey}=>${key}`,
+            `${debugKey}.${key}`,
           ),
         };
       }
