@@ -8,8 +8,8 @@ import { FC, PropsWithChildren } from "react";
 
 export const ClientLayout: FC<PropsWithChildren> = ({ children }) => {
   const params = useSearchParams();
-  const mcpServers = params.get("mcpServers");
-  const mcpServersArray = mcpServers ? mcpServers.split(",") : [];
+  const mcpServers = params.getAll("mcpServers");
+  const mcpServersArray = mcpServers.length > 0 ? mcpServers : [];
   return (
     <TamboProvider
       tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL}
