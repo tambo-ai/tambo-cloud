@@ -1,5 +1,9 @@
 import { ToolCallRequest } from "@tambo-ai-cloud/core";
-import { JSONSchema7, JSONSchema7Object } from "json-schema";
+import {
+  JSONSchema7,
+  JSONSchema7Definition,
+  JSONSchema7Object,
+} from "json-schema";
 import OpenAI from "openai";
 
 export function unstrictifyToolCallRequest(
@@ -15,74 +19,119 @@ export function unstrictifyToolCallRequest(
     {}) as JSONSchema7Object;
   const strictToolParams = (strictTool.function.parameters ??
     {}) as JSONSchema7Object;
-  const newParams = unstrictifyToolCallParams(
-    originalToolParams.properties as Record<string, JSONSchema7>,
-    strictToolParams.properties as Record<string, JSONSchema7>,
-    toolCallRequest.parameters,
-  ).filter((param) => param !== undefined);
+  const params = Object.fromEntries(
+    toolCallRequest.parameters.map(({ parameterName, parameterValue }) => {
+      return [parameterName, parameterValue] as const;
+    }),
+  );
+  const newParamsRecord = unstrictifyToolCallParams(
+    originalToolParams as JSONSchema7,
+    strictToolParams as JSONSchema7,
+    params,
+  );
+  console.log("newParamsRecord", newParamsRecord);
+  const newParams = Object.entries(newParamsRecord).map(
+    ([parameterName, parameterValue]) => {
+      return { parameterName, parameterValue };
+    },
+  );
   return {
     ...toolCallRequest,
     parameters: newParams,
   };
 }
 function unstrictifyToolCallParams(
-  originalToolParams: Record<string, JSONSchema7>,
-  strictToolParams: Record<string, JSONSchema7>,
-  toolCallRequestParams: { parameterName: string; parameterValue: any }[],
-) {
-  return toolCallRequestParams.map((param) => {
-    const { parameterName, parameterValue } = param;
-    // find the param in the original tool
-    const originalParamSchema =
-      parameterName in originalToolParams
-        ? originalToolParams[parameterName]
-        : undefined;
+  originalToolParams: JSONSchema7,
+  strictToolParams: JSONSchema7,
+  toolCallRequestParams: Record<string, unknown>,
+): Record<string, unknown> {
+  if (originalToolParams.type !== "object") {
+    throw new Error(
+      `originalToolParams must be an object, instead got ${originalToolParams.type}`,
+    );
+  }
+  if (strictToolParams.type !== "object") {
+    throw new Error(
+      `strictToolParams must be an object, instead got ${strictToolParams.type}`,
+    );
+  }
+  const newParams = Object.entries(toolCallRequestParams)
+    .map(([parameterName, parameterValue]) => {
+      const isRequired = originalToolParams.required?.includes(parameterName);
+      // find the param in the original tool
+      const originalParamSchema =
+        parameterName in (originalToolParams.properties ?? {})
+          ? originalToolParams.properties?.[parameterName]
+          : undefined;
 
-    if (!originalParamSchema) {
-      console.warn("original tool params:", originalToolParams);
-      throw new Error(
-        `Tool call request parameter ${parameterName} not found in original tool`,
-      );
-    }
+      if (!originalParamSchema) {
+        console.warn("original tool params:", originalToolParams);
+        throw new Error(
+          `Tool call request parameter ${parameterName} not found in original tool`,
+        );
+      }
 
-    const strictParamSchema = strictToolParams[param.parameterName] as
-      | JSONSchema7
-      | undefined;
-    if (!strictParamSchema) {
-      throw new Error(
-        `Tool call request parameter ${parameterName} not found in strict tool`,
-      );
-    }
+      const strictParamSchema =
+        parameterName in (strictToolParams.properties ?? {})
+          ? strictToolParams.properties?.[parameterName]
+          : undefined;
+      if (!strictParamSchema) {
+        throw new Error(
+          `Tool call request parameter ${parameterName} not found in strict tool`,
+        );
+      }
 
-    // if strict-ness added 'anyOf' to the original param, then we can effectively leave it out of the request
-    if (
-      isOptional(strictParamSchema, originalParamSchema) &&
-      parameterValue === null
-    ) {
-      return undefined;
-    }
+      if (parameterValue === null) {
+        console.log(
+          `checking if I can drop "${parameterName}"`,
+          canBeNull(originalParamSchema),
+          isRequired,
+          originalParamSchema,
+        );
+      }
+      if (
+        parameterValue === null &&
+        !canBeNull(originalParamSchema) &&
+        !isRequired
+      ) {
+        console.log("dropping", parameterName, parameterValue);
+        return undefined;
+      }
 
-    // TODO: now recurse into parameterValue, dealing with required: [...]
-    // in the original param to determine optional-ness
-    return { parameterName, parameterValue } as const;
-  });
+      // TODO: now recurse into parameterValue, dealing with required: [...]
+      // in the original param to determine optional-ness
+      if (
+        typeof originalParamSchema === "object" &&
+        originalParamSchema.type === "object" &&
+        typeof strictParamSchema === "object" &&
+        strictParamSchema.type === "object"
+      ) {
+        // parameter value better itself be an object
+        const newParamValue = unstrictifyToolCallParams(
+          originalParamSchema,
+          strictParamSchema,
+          parameterValue as Record<string, unknown>,
+        );
+        return [parameterName, newParamValue] as const;
+      }
+
+      return [parameterName, parameterValue] as const;
+    })
+    .filter((param) => param !== undefined);
+  return Object.fromEntries(newParams);
 }
-function isOptional(strictParam: JSONSchema7, originalParam: JSONSchema7) {
-  if (!strictParam.anyOf) {
-    return false;
-  }
-  if (
-    !strictParam.anyOf.find(
-      (anyOption) => typeof anyOption === "object" && anyOption.type === "null",
-    )
-  ) {
-    return false;
-  }
-  if (originalParam.anyOf) {
-    // TODO: maybe deal with anyOf nesting
+
+function canBeNull(param: JSONSchema7Definition): boolean {
+  if (typeof param !== "object") {
     return false;
   }
 
-  // at this point we know that we definitely transformed a non-optional parameter into an optional one
-  return true;
+  if (param.type === "null") {
+    return true;
+  }
+
+  if (param.anyOf?.some((anyOf) => canBeNull(anyOf))) {
+    return true;
+  }
+  return false;
 }

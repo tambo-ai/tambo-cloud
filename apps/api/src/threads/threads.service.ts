@@ -818,6 +818,16 @@ export class ThreadsService {
       strictTool,
       strictToolCallRequest,
     );
+
+    // Update the tool call to be the non-strict call
+    finalThreadMessage = {
+      ...finalThreadMessage,
+      toolCallRequest,
+    };
+    console.log(
+      " non-strict toolCallRequest",
+      JSON.stringify(toolCallRequest, null, 2),
+    );
     const { resultingGenerationStage, resultingStatusMessage } =
       await finishInProgressMessage(
         db,

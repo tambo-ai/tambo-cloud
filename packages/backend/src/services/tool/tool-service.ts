@@ -6,7 +6,10 @@ import {
   ComponentContextToolMetadata,
 } from "../../model/component-metadata";
 import { SystemTools } from "../../systemTools";
-import { sanitizeJSONSchemaProperties } from "./json-schema";
+import {
+  sanitizeJSONSchemaProperties,
+  sanitizeJSONSchemaProperty,
+} from "./json-schema";
 
 export interface TamboToolParameters {
   _tambo_statusMessage: string;
@@ -84,10 +87,10 @@ export function convertMetadataToTools(
         .map((parameter) => parameter.name),
       additionalProperties: false,
     };
-    const sanitizedProperties = sanitizeJSONSchemaProperties(
-      parameters.properties,
-      parameters.required,
-    );
+    // const sanitizedProperties = sanitizeJSONSchemaProperties(
+    //   parameters.properties,
+    //   parameters.required,
+    // );
 
     const fn: OpenAI.Chat.Completions.ChatCompletionTool = {
       type: "function",
@@ -97,8 +100,8 @@ export function convertMetadataToTools(
         strict: true,
         parameters: {
           type: "object",
-          properties: sanitizedProperties,
-          required: Object.keys(sanitizedProperties),
+          properties: parameters.properties,
+          required: parameters.required,
           additionalProperties: false,
         },
       },
@@ -254,12 +257,38 @@ export function getToolsFromSources(
   const contextTools = convertMetadataToTools(
     availableComponents.flatMap((component) => component.contextTools),
   );
-  const tools = [
+  const originalTools = [
     ...componentTools,
     ...contextTools,
     ...clientToolsConverted,
     displayMessageTool,
     ...(systemTools?.tools ?? []),
   ];
-  return { originalTools: tools, strictTools: tools };
+  const strictTools = originalTools.map(
+    (tool): OpenAI.Chat.Completions.ChatCompletionTool => {
+      const parameters = (tool.function.parameters ?? {}) as Record<
+        string,
+        JSONSchema7
+      >;
+      const strictTool: OpenAI.Chat.Completions.ChatCompletionTool = {
+        ...tool,
+        function: {
+          ...tool.function,
+          parameters: sanitizeJSONSchemaProperty(parameters, true) as any,
+        },
+      };
+      if (tool.function.name === "list_tables") {
+        console.log(
+          "converted ",
+          tool.function.name,
+          " from ",
+          (tool.function.parameters?.properties as any)?.args,
+          " to ",
+          (strictTool.function.parameters?.properties as any)?.args,
+        );
+      }
+      return strictTool;
+    },
+  );
+  return { originalTools, strictTools };
 }

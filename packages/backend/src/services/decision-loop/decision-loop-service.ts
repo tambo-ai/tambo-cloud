@@ -30,21 +30,16 @@ import {
 export async function* runDecisionLoop(
   llmClient: LLMClient,
   messageHistory: ThreadMessage[],
-  tools: OpenAI.Chat.Completions.ChatCompletionTool[],
+  originalTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   customInstructions: string | undefined,
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const componentTools = strictTools.filter((tool) =>
     tool.function.name.startsWith(UI_TOOLNAME_PREFIX),
   );
-  // const { tools, componentTools } = getToolsFromSources(
-  //   availableComponents,
-  //   clientTools,
-  //   systemTools,
-  // );
   // Add standard parameters to all tools
   const toolsWithStandardParameters = addParametersToTools(
-    tools,
+    strictTools,
     standardToolParameters,
   );
 
@@ -109,7 +104,11 @@ export async function* runDecisionLoop(
       // If this is a non-UI tool call, make sure params are complete and filter out standard tool parameters
       let clientToolRequest: ToolCallRequest | undefined;
       if (!isUITool && toolCall) {
-        clientToolRequest = removeTamboToolParameters(toolCall, tools, chunk);
+        clientToolRequest = removeTamboToolParameters(
+          toolCall,
+          strictTools,
+          chunk,
+        );
       }
 
       const displayMessage = extractMessageContent(
