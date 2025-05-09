@@ -1,5 +1,9 @@
 import { Logger } from "@nestjs/common";
-import { SystemTools, TamboBackend } from "@tambo-ai-cloud/backend";
+import {
+  getToolsFromSources,
+  SystemTools,
+  TamboBackend,
+} from "@tambo-ai-cloud/backend";
 import {
   ActionType,
   ContentPartType,
@@ -104,11 +108,16 @@ export async function processThreadMessage(
       `Choosing component...`,
     );
   }
+  const { originalTools, strictTools } = getToolsFromSources(
+    advanceRequestDto.availableComponents ?? [],
+    advanceRequestDto.clientTools ?? [],
+    systemTools,
+  );
+
   const decisionStream = await tamboBackend.runDecisionLoop({
     messageHistory: messages,
-    availableComponents: advanceRequestDto.availableComponents ?? [],
-    clientTools: advanceRequestDto.clientTools ?? [],
-    systemTools,
+    originalTools,
+    strictTools,
     additionalContext: advanceRequestDto.additionalContext,
     customInstructions,
   });

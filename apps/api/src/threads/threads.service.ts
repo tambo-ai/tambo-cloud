@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   generateChainId,
+  getToolsFromSources,
   SystemTools,
   TamboBackend,
 } from "@tambo-ai-cloud/backend";
@@ -15,6 +16,7 @@ import {
 import type { HydraDatabase } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
+import OpenAI from "openai";
 import { decryptProviderKey } from "../common/key.utils";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { EmailService } from "../common/services/email.service";
@@ -29,6 +31,7 @@ import { MessageRequest, ThreadMessageDto } from "./dto/message.dto";
 import { SuggestionDto } from "./dto/suggestion.dto";
 import { SuggestionsGenerateDto } from "./dto/suggestions-generate.dto";
 import { Thread, ThreadRequest, ThreadWithMessagesDto } from "./dto/thread.dto";
+import { unstrictifyToolCallRequest } from "./tool-call-strict";
 import {
   FREE_MESSAGE_LIMIT,
   FreeLimitReachedError,
@@ -683,12 +686,16 @@ export class ThreadsService {
       if (!toolResponse) {
         throw new Error("No tool response found");
       }
+      const { originalTools, strictTools } = getToolsFromSources(
+        advanceRequestDto.availableComponents ?? [],
+        advanceRequestDto.clientTools ?? [],
+        systemTools,
+      );
 
       const streamedResponseMessage = await tamboBackend.runDecisionLoop({
         messageHistory: messages,
-        availableComponents: advanceRequestDto.availableComponents ?? [],
-        clientTools: advanceRequestDto.clientTools ?? [],
-        systemTools,
+        originalTools,
+        strictTools,
         additionalContext: advanceRequestDto.additionalContext,
         customInstructions,
       });
@@ -700,6 +707,8 @@ export class ThreadsService {
         userMessage,
         systemTools,
         advanceRequestDto,
+        originalTools,
+        strictTools,
         depth,
       );
     }
@@ -710,12 +719,16 @@ export class ThreadsService {
       GenerationStage.CHOOSING_COMPONENT,
       `Choosing component...`,
     );
+    const { originalTools, strictTools } = getToolsFromSources(
+      advanceRequestDto.availableComponents ?? [],
+      advanceRequestDto.clientTools ?? [],
+      systemTools,
+    );
 
     const streamedResponseMessage = await tamboBackend.runDecisionLoop({
       messageHistory: messages,
-      availableComponents: advanceRequestDto.availableComponents ?? [],
-      clientTools: advanceRequestDto.clientTools ?? [],
-      systemTools,
+      originalTools,
+      strictTools,
       additionalContext: advanceRequestDto.additionalContext,
       customInstructions,
     });
@@ -726,6 +739,8 @@ export class ThreadsService {
       userMessage,
       systemTools,
       advanceRequestDto,
+      originalTools,
+      strictTools,
       depth,
     );
   }
@@ -737,6 +752,8 @@ export class ThreadsService {
     userMessage: ThreadMessage,
     systemTools: SystemTools,
     originalRequest: AdvanceThreadDto,
+    originalTools: OpenAI.Chat.Completions.ChatCompletionTool[],
+    strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     depth: number = 0,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     const db = this.getDb();
@@ -787,7 +804,20 @@ export class ThreadsService {
       throw new Error("No message found");
     }
 
-    const finalToolCallRequest = finalThreadMessage.toolCallRequest;
+    // Initially, the call was made with a strict schema, so we need to remove non-required parameters
+    const strictToolCallRequest = finalThreadMessage.toolCallRequest;
+    const originalTool = originalTools.find(
+      (tool) => tool.function.name === strictToolCallRequest?.toolName,
+    );
+    const strictTool = strictTools.find(
+      (tool) => tool.function.name === strictToolCallRequest?.toolName,
+    );
+
+    const toolCallRequest = unstrictifyToolCallRequest(
+      originalTool,
+      strictTool,
+      strictToolCallRequest,
+    );
     const { resultingGenerationStage, resultingStatusMessage } =
       await finishInProgressMessage(
         db,
@@ -798,20 +828,17 @@ export class ThreadsService {
         logger,
       );
     const componentDecision = finalThreadMessage.component;
-    if (
-      componentDecision &&
-      isSystemToolCall(finalToolCallRequest, systemTools)
-    ) {
+    if (componentDecision && isSystemToolCall(toolCallRequest, systemTools)) {
       const toolCallId = finalThreadMessage.tool_call_id;
 
       if (!toolCallId) {
         console.warn(
-          `While handling tool call request ${finalToolCallRequest.toolName}, no tool call id in response message ${finalThreadMessage}, returning assistant message`,
+          `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${finalThreadMessage}, returning assistant message`,
         );
       }
-      // Note that this effectively consumes finalToolCallRequest and finalToolCallId
+      // Note that this effectively consumes nonStrictToolCallRequest and finalToolCallId
       const toolResponseMessageStream = await this.handleSystemToolCall(
-        finalToolCallRequest,
+        toolCallRequest,
         toolCallId ?? "",
         systemTools,
         componentDecision,

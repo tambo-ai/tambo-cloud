@@ -1,7 +1,7 @@
 import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
+import OpenAI from "openai";
 import {
   AvailableComponent,
-  ComponentContextToolMetadata,
   ToolResponseBody,
 } from "./model/component-metadata";
 import { Provider } from "./model/providers";
@@ -9,7 +9,6 @@ import { runDecisionLoop } from "./services/decision-loop/decision-loop-service"
 import { TokenJSClient } from "./services/llm/token-js-client";
 import { generateSuggestions } from "./services/suggestion/suggestion.service";
 import { SuggestionDecision } from "./services/suggestion/suggestion.types";
-import { SystemTools } from "./systemTools";
 
 interface HydraBackendOptions {
   model?: string;
@@ -18,9 +17,11 @@ interface HydraBackendOptions {
 
 interface RunDecisionLoopParams {
   messageHistory: ThreadMessage[];
-  availableComponents: AvailableComponent[];
-  clientTools: ComponentContextToolMetadata[];
-  systemTools?: SystemTools;
+  // availableComponents: AvailableComponent[];
+  // clientTools: ComponentContextToolMetadata[];
+  // systemTools?: SystemTools;
+  originalTools: OpenAI.Chat.Completions.ChatCompletionTool[];
+  strictTools: OpenAI.Chat.Completions.ChatCompletionTool[];
   toolResponse?: ToolResponseBody;
   toolCallId?: string;
   additionalContext?: string;
@@ -75,9 +76,8 @@ export default class TamboBackend {
     return runDecisionLoop(
       this.llmClient,
       params.messageHistory,
-      params.availableComponents,
-      params.systemTools,
-      params.clientTools,
+      params.originalTools,
+      params.strictTools,
       params.customInstructions,
     );
   }
