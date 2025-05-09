@@ -7,8 +7,8 @@ import {
 } from "../../model/component-metadata";
 import { SystemTools } from "../../systemTools";
 import {
-  sanitizeJSONSchemaProperties,
-  sanitizeJSONSchemaProperty,
+  strictifyJSONSchemaProperties,
+  strictifyJSONSchemaProperty,
 } from "./json-schema";
 
 export interface TamboToolParameters {
@@ -87,10 +87,6 @@ export function convertMetadataToTools(
         .map((parameter) => parameter.name),
       additionalProperties: false,
     };
-    // const sanitizedProperties = sanitizeJSONSchemaProperties(
-    //   parameters.properties,
-    //   parameters.required,
-    // );
 
     const fn: OpenAI.Chat.Completions.ChatCompletionTool = {
       type: "function",
@@ -166,7 +162,7 @@ function getComponentProperties(component: AvailableComponent) {
   if (!properties) {
     return {};
   }
-  return sanitizeJSONSchemaProperties(
+  return strictifyJSONSchemaProperties(
     properties,
     Array.isArray(componentProps.required)
       ? componentProps.required
@@ -274,7 +270,7 @@ export function getToolsFromSources(
         ...tool,
         function: {
           ...tool.function,
-          parameters: sanitizeJSONSchemaProperty(parameters, true) as any,
+          parameters: strictifyJSONSchemaProperty(parameters, true) as any,
         },
       };
       if (tool.function.name === "list_tables") {
