@@ -824,10 +824,7 @@ export class ThreadsService {
       ...finalThreadMessage,
       toolCallRequest,
     };
-    console.log(
-      " non-strict toolCallRequest",
-      JSON.stringify(toolCallRequest, null, 2),
-    );
+
     const { resultingGenerationStage, resultingStatusMessage } =
       await finishInProgressMessage(
         db,

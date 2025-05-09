@@ -273,16 +273,6 @@ export function getToolsFromSources(
           parameters: strictifyJSONSchemaProperty(parameters, true) as any,
         },
       };
-      if (tool.function.name === "list_tables") {
-        console.log(
-          "converted ",
-          tool.function.name,
-          " from ",
-          (tool.function.parameters?.properties as any)?.args,
-          " to ",
-          (strictTool.function.parameters?.properties as any)?.args,
-        );
-      }
       return strictTool;
     },
   );

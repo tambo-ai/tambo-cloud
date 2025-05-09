@@ -29,7 +29,7 @@ export function unstrictifyToolCallRequest(
     strictToolParams as JSONSchema7,
     params,
   );
-  console.log("newParamsRecord", newParamsRecord);
+
   const newParams = Object.entries(newParamsRecord).map(
     ([parameterName, parameterValue]) => {
       return { parameterName, parameterValue };
@@ -65,7 +65,6 @@ function unstrictifyToolCallParams(
           : undefined;
 
       if (!originalParamSchema) {
-        console.warn("original tool params:", originalToolParams);
         throw new Error(
           `Tool call request parameter ${parameterName} not found in original tool`,
         );
@@ -81,20 +80,11 @@ function unstrictifyToolCallParams(
         );
       }
 
-      if (parameterValue === null) {
-        console.log(
-          `checking if I can drop "${parameterName}"`,
-          canBeNull(originalParamSchema),
-          isRequired,
-          originalParamSchema,
-        );
-      }
       if (
         parameterValue === null &&
         !canBeNull(originalParamSchema) &&
         !isRequired
       ) {
-        console.log("dropping", parameterName, parameterValue);
         return undefined;
       }
 
