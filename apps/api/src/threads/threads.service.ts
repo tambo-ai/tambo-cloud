@@ -809,13 +809,9 @@ export class ThreadsService {
     const originalTool = originalTools.find(
       (tool) => tool.function.name === strictToolCallRequest?.toolName,
     );
-    const strictTool = strictTools.find(
-      (tool) => tool.function.name === strictToolCallRequest?.toolName,
-    );
 
     const toolCallRequest = unstrictifyToolCallRequest(
       originalTool,
-      strictTool,
       strictToolCallRequest,
     );
 

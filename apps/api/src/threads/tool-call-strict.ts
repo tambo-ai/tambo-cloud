@@ -8,16 +8,13 @@ import OpenAI from "openai";
 
 export function unstrictifyToolCallRequest(
   originalTool: OpenAI.Chat.Completions.ChatCompletionTool | undefined,
-  strictTool: OpenAI.Chat.Completions.ChatCompletionTool | undefined,
   toolCallRequest: ToolCallRequest | undefined,
 ): ToolCallRequest | undefined {
-  if (!strictTool || !originalTool || !toolCallRequest) {
+  if (!originalTool || !toolCallRequest) {
     return toolCallRequest;
   }
 
   const originalToolParams = (originalTool.function.parameters ??
-    {}) as JSONSchema7Object;
-  const strictToolParams = (strictTool.function.parameters ??
     {}) as JSONSchema7Object;
   const params = Object.fromEntries(
     toolCallRequest.parameters.map(({ parameterName, parameterValue }) => {
@@ -26,7 +23,6 @@ export function unstrictifyToolCallRequest(
   );
   const newParamsRecord = unstrictifyToolCallParams(
     originalToolParams as JSONSchema7,
-    strictToolParams as JSONSchema7,
     params,
   );
 
@@ -42,17 +38,11 @@ export function unstrictifyToolCallRequest(
 }
 function unstrictifyToolCallParams(
   originalToolParams: JSONSchema7,
-  strictToolParams: JSONSchema7,
   toolCallRequestParams: Record<string, unknown>,
 ): Record<string, unknown> {
   if (originalToolParams.type !== "object") {
     throw new Error(
       `originalToolParams must be an object, instead got ${originalToolParams.type}`,
-    );
-  }
-  if (strictToolParams.type !== "object") {
-    throw new Error(
-      `strictToolParams must be an object, instead got ${strictToolParams.type}`,
     );
   }
   const newParams = Object.entries(toolCallRequestParams)
@@ -70,16 +60,6 @@ function unstrictifyToolCallParams(
         );
       }
 
-      const strictParamSchema =
-        parameterName in (strictToolParams.properties ?? {})
-          ? strictToolParams.properties?.[parameterName]
-          : undefined;
-      if (!strictParamSchema) {
-        throw new Error(
-          `Tool call request parameter ${parameterName} not found in strict tool`,
-        );
-      }
-
       if (
         parameterValue === null &&
         !canBeNull(originalParamSchema) &&
@@ -92,14 +72,11 @@ function unstrictifyToolCallParams(
       // in the original param to determine optional-ness
       if (
         typeof originalParamSchema === "object" &&
-        originalParamSchema.type === "object" &&
-        typeof strictParamSchema === "object" &&
-        strictParamSchema.type === "object"
+        originalParamSchema.type === "object"
       ) {
         // parameter value better itself be an object
         const newParamValue = unstrictifyToolCallParams(
           originalParamSchema,
-          strictParamSchema,
           parameterValue as Record<string, unknown>,
         );
         return [parameterName, newParamValue] as const;
