@@ -30,7 +30,6 @@ import {
 export async function* runDecisionLoop(
   llmClient: LLMClient,
   messageHistory: ThreadMessage[],
-  originalTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   customInstructions: string | undefined,
 ): AsyncIterableIterator<LegacyComponentDecision> {

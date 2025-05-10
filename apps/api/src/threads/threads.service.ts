@@ -694,7 +694,6 @@ export class ThreadsService {
 
       const streamedResponseMessage = await tamboBackend.runDecisionLoop({
         messageHistory: messages,
-        originalTools,
         strictTools,
         additionalContext: advanceRequestDto.additionalContext,
         customInstructions,
@@ -708,7 +707,6 @@ export class ThreadsService {
         systemTools,
         advanceRequestDto,
         originalTools,
-        strictTools,
         depth,
       );
     }
@@ -727,7 +725,6 @@ export class ThreadsService {
 
     const streamedResponseMessage = await tamboBackend.runDecisionLoop({
       messageHistory: messages,
-      originalTools,
       strictTools,
       additionalContext: advanceRequestDto.additionalContext,
       customInstructions,
@@ -740,7 +737,6 @@ export class ThreadsService {
       systemTools,
       advanceRequestDto,
       originalTools,
-      strictTools,
       depth,
     );
   }
@@ -753,7 +749,6 @@ export class ThreadsService {
     systemTools: SystemTools,
     originalRequest: AdvanceThreadDto,
     originalTools: OpenAI.Chat.Completions.ChatCompletionTool[],
-    strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     depth: number = 0,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     const db = this.getDb();
