@@ -107,7 +107,8 @@ function unstrictifyToolCallParams(
   return Object.fromEntries(newParams);
 }
 
-function canBeNull(originalSchema: JSONSchema7Definition): boolean {
+// Export for testing
+export function canBeNull(originalSchema: JSONSchema7Definition): boolean {
   if (typeof originalSchema !== "object") {
     return false;
   }
