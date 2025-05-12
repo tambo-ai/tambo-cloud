@@ -1,11 +1,13 @@
 import { JSONSchema7 } from "json-schema";
 import OpenAI from "openai";
 import { FunctionParameters } from "openai/resources";
+import zodToJsonSchema from "zod-to-json-schema";
 import {
   AvailableComponent,
   ComponentContextToolMetadata,
 } from "../../model/component-metadata";
 import { SystemTools } from "../../systemTools";
+import { SuggestionsResponseSchema } from "../suggestion/suggestion.types";
 import {
   strictifyJSONSchemaProperties,
   strictifyJSONSchemaProperty,
@@ -154,38 +156,9 @@ export const suggestionsResponseTool: OpenAI.Chat.Completions.ChatCompletionTool
       description:
         "Generate suggestions for the user based on the available components and context.",
       strict: true,
-      parameters: {
-        type: "object",
-        properties: {
-          reflection: {
-            type: "string",
-            description:
-              "Brief analysis of user's intent and relevant components",
-          },
-          suggestions: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                title: {
-                  type: "string",
-                  description:
-                    "A concise, action-oriented title that clearly states what will happen. Example: 'Apple Stock Price' or 'Sales Report'",
-                },
-                detailedSuggestion: {
-                  type: "string",
-                  description:
-                    "A natural, conversational message that could be sent by the user, focused on practical requests using available components",
-                },
-              },
-              required: ["title", "detailedSuggestion"],
-              additionalProperties: false,
-            },
-          },
-        },
-        required: ["reflection", "suggestions"],
-        additionalProperties: false,
-      },
+      parameters: zodToJsonSchema(
+        SuggestionsResponseSchema,
+      ) as FunctionParameters,
     },
   };
 
