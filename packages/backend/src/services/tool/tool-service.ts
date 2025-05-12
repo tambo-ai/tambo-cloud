@@ -301,7 +301,6 @@ export function getToolsFromSources(
     ...contextTools,
     ...clientToolsConverted,
     displayMessageTool,
-    suggestionsResponseTool,
     ...(systemTools?.tools ?? []),
   ];
   const strictTools = originalTools.map(
