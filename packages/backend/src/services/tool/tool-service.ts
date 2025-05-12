@@ -1,13 +1,11 @@
 import { JSONSchema7 } from "json-schema";
 import OpenAI from "openai";
 import { FunctionParameters } from "openai/resources";
-import zodToJsonSchema from "zod-to-json-schema";
 import {
   AvailableComponent,
   ComponentContextToolMetadata,
 } from "../../model/component-metadata";
 import { SystemTools } from "../../systemTools";
-import { SuggestionsResponseSchema } from "../suggestion/suggestion.types";
 import {
   strictifyJSONSchemaProperties,
   strictifyJSONSchemaProperty,
@@ -147,20 +145,6 @@ export const displayMessageTool: OpenAI.Chat.Completions.ChatCompletionTool = {
     },
   },
 };
-
-export const suggestionsResponseTool: OpenAI.Chat.Completions.ChatCompletionTool =
-  {
-    type: "function",
-    function: {
-      name: "generate_suggestions",
-      description:
-        "Generate suggestions for the user based on the available components and context.",
-      strict: true,
-      parameters: zodToJsonSchema(
-        SuggestionsResponseSchema,
-      ) as FunctionParameters,
-    },
-  };
 
 function getComponentProperties(component: AvailableComponent) {
   if (

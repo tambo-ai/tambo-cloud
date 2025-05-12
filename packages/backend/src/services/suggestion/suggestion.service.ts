@@ -1,12 +1,29 @@
 import { ThreadMessage, tryParseJsonObject } from "@tambo-ai-cloud/core";
+import OpenAI from "openai";
+import { FunctionParameters } from "openai/resources";
+import zodToJsonSchema from "zod-to-json-schema";
 import { AvailableComponent } from "../../model";
 import { buildSuggestionPrompt } from "../../prompt/suggestion-generator";
 import { LLMClient } from "../llm/llm-client";
-import { suggestionsResponseTool } from "../tool/tool-service";
 import {
   SuggestionDecision,
   SuggestionsResponseSchema,
 } from "./suggestion.types";
+
+// Tool for Suggestion Generation
+export const suggestionsResponseTool: OpenAI.Chat.Completions.ChatCompletionTool =
+  {
+    type: "function",
+    function: {
+      name: "generate_suggestions",
+      description:
+        "Generate suggestions for the user based on the available components and context.",
+      strict: true,
+      parameters: zodToJsonSchema(
+        SuggestionsResponseSchema,
+      ) as FunctionParameters,
+    },
+  };
 
 // Public function
 export async function generateSuggestions(
