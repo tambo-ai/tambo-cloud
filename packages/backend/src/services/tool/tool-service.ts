@@ -146,6 +146,49 @@ export const displayMessageTool: OpenAI.Chat.Completions.ChatCompletionTool = {
   },
 };
 
+export const suggestionsResponseTool: OpenAI.Chat.Completions.ChatCompletionTool =
+  {
+    type: "function",
+    function: {
+      name: "generate_suggestions",
+      description:
+        "Generate suggestions for the user based on the available components and context.",
+      strict: true,
+      parameters: {
+        type: "object",
+        properties: {
+          reflection: {
+            type: "string",
+            description:
+              "Brief analysis of user's intent and relevant components",
+          },
+          suggestions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                title: {
+                  type: "string",
+                  description:
+                    "A concise, action-oriented title that clearly states what will happen. Example: 'Apple Stock Price' or 'Sales Report'",
+                },
+                detailedSuggestion: {
+                  type: "string",
+                  description:
+                    "A natural, conversational message that could be sent by the user, focused on practical requests using available components",
+                },
+              },
+              required: ["title", "detailedSuggestion"],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ["reflection", "suggestions"],
+        additionalProperties: false,
+      },
+    },
+  };
+
 function getComponentProperties(component: AvailableComponent) {
   if (
     !component.props ||
@@ -258,6 +301,7 @@ export function getToolsFromSources(
     ...contextTools,
     ...clientToolsConverted,
     displayMessageTool,
+    suggestionsResponseTool,
     ...(systemTools?.tools ?? []),
   ];
   const strictTools = originalTools.map(
