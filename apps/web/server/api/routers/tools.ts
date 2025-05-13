@@ -1,6 +1,7 @@
 import { getComposio } from "@/lib/composio";
 import { customHeadersSchema } from "@/lib/headerValidation";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { auth } from "@modelcontextprotocol/sdk/client/auth.js";
 import {
   ComposioAuthMode,
   ComposioConnectorConfig,
@@ -12,6 +13,7 @@ import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
+import { OAuthLocalProvider } from "../../../lib/OAuthLocalProvider";
 import { validateSafeURL, validateServerUrl } from "../../../lib/urlSecurity";
 
 export const toolsRouter = createTRPCRouter({
@@ -150,6 +152,58 @@ export const toolsRouter = createTRPCRouter({
         customHeaders,
         mcpTransport,
       });
+    }),
+  authorizeMcpServer: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        url: z.string().url(),
+        customHeaders: customHeadersSchema,
+        mcpTransport: z.nativeEnum(MCPTransport),
+        saveAuthUrl: z
+          .string()
+          .url()
+          .describe(
+            "The URL to redirect to after authorization. This is used to save the auth url to the database.",
+          ),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { projectId } = input;
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id,
+      );
+      try {
+        const { url } = input;
+        const db = ctx.db;
+        const localProvider = new OAuthLocalProvider(db, projectId, {
+          saveAuthUrl: input.saveAuthUrl,
+          serverUrl: url,
+        });
+        console.log("--> starting auth: ", url);
+        const result = await auth(localProvider, { serverUrl: url });
+        console.log("Auth result:", result);
+        if (result === "AUTHORIZED") {
+          return {
+            success: true,
+          };
+        }
+        if (result === "REDIRECT") {
+          return {
+            success: true,
+            redirectUrl: localProvider.redirectStartAuthUrl?.toString(),
+          };
+        }
+        return { success: false };
+      } catch (error: any) {
+        console.error(error);
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
     }),
   deleteMcpServer: protectedProcedure
     .input(z.object({ projectId: z.string(), serverId: z.string() }))
