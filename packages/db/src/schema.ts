@@ -10,7 +10,14 @@ import {
   ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
-import { index, pgPolicy, pgRole, pgTable, unique } from "drizzle-orm/pg-core";
+import {
+  index,
+  pgPolicy,
+  pgRole,
+  pgTable,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { customJsonb } from "./drizzleUtil";
 export { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
@@ -472,6 +479,8 @@ export const mcpOauthClients = pgTable(
       .notNull(),
     clientInformation:
       customJsonb<OAuthClientInformation>("client_information").notNull(),
+    // must be generated on the client before insertion
+    sessionId: uuid("session_id").notNull(),
   }),
 );
 export const mcpOauthClientRelations = relations(
