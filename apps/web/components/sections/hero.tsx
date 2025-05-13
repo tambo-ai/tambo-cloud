@@ -13,9 +13,9 @@ const ease = [0.16, 1, 0.3, 1];
 // Hero content moved directly into this file
 const heroContent = {
   pill: {
-    label: "⭐ Star us on",
-    text: "Github",
-    link: "https://github.com/tambo-ai/tambo",
+    label: "🚀 New",
+    text: "MCP Support",
+    link: "/mcp",
   },
   title: "Add React components to your AI assistant, copilot, or agent.",
   subtitle: "Register components so your AI can render UI, not just text.",
