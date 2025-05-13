@@ -11,7 +11,7 @@ const cliItems = [
   {
     id: "template",
     label: "Start with a Template",
-    command: "npx create-tambo-app@latest .",
+    command: "npm create tambo-app my-app",
   },
   {
     id: "existing",
@@ -68,6 +68,7 @@ export function InstallationSteps() {
               theme="light"
               defaultActiveItemId={activeTab}
               className="group mb-4"
+              onItemChange={handleTabChange}
             />
           </motion.div>
           <motion.div

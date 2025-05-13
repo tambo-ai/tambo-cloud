@@ -6,8 +6,9 @@ import { Header } from "@/components/sections/header";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { FC } from "react";
 
-export default function McpPage() {
+export const McpPage: FC = () => {
   return (
     <main className="flex flex-col">
       <Header className="px-4 sm:px-6 lg:px-8" transparent={false} />
@@ -51,7 +52,7 @@ export default function McpPage() {
             </div>
 
             {/* Discord Button */}
-            <div className="flex justify-center mt-6">
+            <div className="flex justify-center mb-0 space-y-0">
               <Link
                 href="https://discord.gg/dJNvPEHth6"
                 className={cn(
@@ -71,4 +72,6 @@ export default function McpPage() {
       <Footer />
     </main>
   );
-}
+};
+
+export default McpPage;

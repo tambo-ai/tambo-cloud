@@ -1,6 +1,5 @@
 "use client";
 
-import { CLI } from "@/components/cli";
 import { Section } from "@/components/section";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -84,31 +83,6 @@ function HeroTitles() {
         {heroContent.subtitle}
       </motion.p>
     </div>
-  );
-}
-
-function HeroCTA() {
-  return (
-    <motion.div
-      className="w-full"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.8, duration: 0.8, ease }}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        className="w-full"
-      >
-        <CLI
-          title="Bash"
-          command="npx tambo --full-send"
-          className="w-full max-w-full overflow-x-auto"
-        />
-      </motion.div>
-    </motion.div>
   );
 }
 

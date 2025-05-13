@@ -5,8 +5,8 @@ export function Footer() {
     <footer>
       <div className="relative">
         <div className="flex flex-col space-y-4 p-3 sm:p-4 lg:p-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-            <div className="flex gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-3 sm:gap-4">
+            <div className="flex gap-2 sm:gap-3 self-center sm:self-end sm:ml-auto">
               {siteConfig.footer.socialLinks.map((link, index) => (
                 <a
                   key={index}

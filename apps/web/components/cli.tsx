@@ -16,6 +16,7 @@ interface CLIProps {
   title?: string;
   theme?: "dark" | "light";
   defaultActiveItemId?: string;
+  onItemChange?: (itemId: string) => void;
 }
 
 export function CLI({
@@ -24,6 +25,7 @@ export function CLI({
   title,
   theme = "dark",
   defaultActiveItemId,
+  onItemChange,
 }: CLIProps) {
   const [copied, setCopied] = useState(false);
   const [activeItemId, setActiveItemId] = useState<string>(
@@ -34,6 +36,13 @@ export function CLI({
   if (items.length === 0) {
     return null;
   }
+
+  const handleItemChange = (itemId: string) => {
+    setActiveItemId(itemId);
+    if (onItemChange) {
+      onItemChange(itemId);
+    }
+  };
 
   const activeItem = items.find((item) => item.id === activeItemId) || items[0];
   const hasTabs = items.length > 1;
@@ -51,7 +60,7 @@ export function CLI({
     <div
       className={cn(
         "relative rounded-lg overflow-hidden shadow-md",
-        isLightMode ? "bg-slate-100 text-slate-900" : "bg-[#1E1E1E] text-white",
+        isLightMode ? "bg-white text-slate-900" : "bg-[#1E1E1E] text-white",
         className,
       )}
     >
@@ -78,7 +87,7 @@ export function CLI({
               {items.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveItemId(item.id)}
+                  onClick={() => handleItemChange(item.id)}
                   className={cn(
                     "px-4 py-1.5 text-sm font-medium transition-colors border-x border-t rounded-t-lg -mb-px",
                     activeItemId === item.id
