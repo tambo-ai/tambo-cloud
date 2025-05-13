@@ -453,6 +453,11 @@ export const toolProviderUserContextRelations = relations(
     }),
   }),
 );
+interface SessionClientInformation {
+  serverUrl: string;
+  clientInformation: OAuthClientInformation;
+}
+
 type OAuthClientInformation = {
   client_id: string;
   client_secret?: string | undefined;
@@ -477,10 +482,11 @@ export const mcpOauthClients = pgTable(
     projectId: text("project_id")
       .references(() => projects.id)
       .notNull(),
-    clientInformation:
-      customJsonb<OAuthClientInformation>("client_information").notNull(),
+    sessionInfo:
+      customJsonb<SessionClientInformation>("client_information").notNull(),
     // must be generated on the client before insertion
     sessionId: uuid("session_id").notNull(),
+    codeVerifier: text("code_verifier"),
   }),
 );
 export const mcpOauthClientRelations = relations(

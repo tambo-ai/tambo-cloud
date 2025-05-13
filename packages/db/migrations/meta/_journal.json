@@ -295,6 +295,13 @@
       "when": 1747166820081,
       "tag": "0041_odd_viper",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1747167271129,
+      "tag": "0042_worthless_thor",
+      "breakpoints": true
     }
   ]
 }
