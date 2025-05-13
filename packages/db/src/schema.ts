@@ -446,5 +446,41 @@ export const toolProviderUserContextRelations = relations(
     }),
   }),
 );
-
-export type DBContact = typeof contacts.$inferSelect;
+type OAuthClientInformation = {
+  client_id: string;
+  client_secret?: string | undefined;
+  client_id_issued_at?: number | undefined;
+  client_secret_expires_at?: number | undefined;
+};
+// These are effectively sessions for the MCP OAuth flow.
+export const mcpOauthClients = pgTable(
+  "mcp_oauth_clients",
+  ({ text, timestamp }) => ({
+    id: text("id")
+      .primaryKey()
+      .notNull()
+      .unique()
+      .default(sql`generate_custom_id('moc_')`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    projectId: text("project_id")
+      .references(() => projects.id)
+      .notNull(),
+    clientInformation:
+      customJsonb<OAuthClientInformation>("client_information").notNull(),
+  }),
+);
+export const mcpOauthClientRelations = relations(
+  mcpOauthClients,
+  ({ one }) => ({
+    project: one(projects, {
+      fields: [mcpOauthClients.projectId],
+      references: [projects.id],
+    }),
+  }),
+);
+export type DBMcpOauthClient = typeof mcpOauthClients.$inferSelect;

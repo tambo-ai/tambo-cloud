@@ -281,6 +281,13 @@
       "when": 1746466011918,
       "tag": "0039_nappy_moon_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1747165521764,
+      "tag": "0040_black_nextwave",
+      "breakpoints": true
     }
   ]
 }
