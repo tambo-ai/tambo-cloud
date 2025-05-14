@@ -74,6 +74,8 @@ export class ThreadMessageDto {
   @IsEnum(ActionType)
   actionType?: ActionType;
 
+  error?: string;
+
   @IsOptional()
   tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
   createdAt!: Date;

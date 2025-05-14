@@ -37,6 +37,7 @@ export async function addMessage(
     toolCallRequest: messageDto.toolCallRequest ?? undefined,
     toolCallId: messageDto.tool_call_id,
     componentState: messageDto.componentState ?? {},
+    error: messageDto.error,
   });
   return {
     id: message.id,
@@ -50,6 +51,7 @@ export async function addMessage(
     component: message.componentDecision ?? undefined,
     content: message.content,
     tool_call_id: message.toolCallId ?? undefined,
+    error: message.error ?? undefined,
   };
 }
 
@@ -68,6 +70,7 @@ export async function updateMessage(
     actionType: messageDto.actionType ?? undefined,
     toolCallRequest: messageDto.toolCallRequest,
     toolCallId: messageDto.tool_call_id ?? undefined,
+    error: messageDto.error,
   });
   return {
     ...message,
@@ -77,6 +80,7 @@ export async function updateMessage(
     tool_call_id: message.toolCallId ?? undefined,
     actionType: message.actionType ?? undefined,
     componentState: message.componentState ?? {},
+    error: message.error ?? undefined,
   };
 }
 
