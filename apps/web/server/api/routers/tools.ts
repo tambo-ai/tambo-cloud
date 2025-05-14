@@ -156,15 +156,8 @@ export const toolsRouter = createTRPCRouter({
   authorizeMcpServer: protectedProcedure
     .input(
       z.object({
-        // projectId: z.string(),
         toolProviderId: z.string(),
         contextKey: z.string().nullable(),
-        // TODO: get this from the tool provider
-        url: z.string().url(),
-        // TODO: get this from the tool provider
-        customHeaders: customHeadersSchema,
-        // TODO: get this from the tool provider
-        mcpTransport: z.nativeEnum(MCPTransport),
         // Do we even need this?
         saveAuthUrl: z
           .string()
@@ -175,17 +168,34 @@ export const toolsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { contextKey, toolProviderId, url } = input;
-      // TODO: ensure project access - lookup projectId from toolProviderId
-      // await operations.ensureProjectAccess(
-      //   ctx.db,
-      //   projectId,
-      //   ctx.session.user.id,
-      // );
+      const { contextKey, toolProviderId, saveAuthUrl } = input;
       try {
         const db = ctx.db;
+        const toolProvider = await db.query.toolProviders.findFirst({
+          where: and(
+            eq(schema.toolProviders.id, toolProviderId),
+            eq(schema.toolProviders.type, ToolProviderType.MCP),
+          ),
+        });
+        if (!toolProvider) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Tool provider not found",
+          });
+        }
+        const { url, projectId } = toolProvider;
+        await operations.ensureProjectAccess(
+          ctx.db,
+          projectId,
+          ctx.session.user.id,
+        );
 
-        // lazily create a tool provider user context
+        if (!url) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Tool provider URL not found",
+          });
+        }
         const toolProviderUserContextId = await upsertToolProviderUserContext(
           db,
           toolProviderId,
@@ -196,7 +206,7 @@ export const toolsRouter = createTRPCRouter({
           db,
           toolProviderUserContextId,
           {
-            saveAuthUrl: input.saveAuthUrl,
+            saveAuthUrl: saveAuthUrl,
             serverUrl: url,
           },
         );
