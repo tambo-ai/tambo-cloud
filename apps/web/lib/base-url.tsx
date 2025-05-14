@@ -1,4 +1,3 @@
-"use client";
 import { env } from "@/lib/env";
 
 export function getBaseUrl() {
