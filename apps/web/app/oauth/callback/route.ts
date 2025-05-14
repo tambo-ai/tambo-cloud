@@ -13,19 +13,9 @@ const callbackParamsSchema = z
     state: z.string().optional(),
     error: z.string().optional(),
     redirect_uri: z.string().url().optional(),
-    projectId: z.string(),
     sessionId: z.string(),
   })
   .passthrough();
-
-// Schema for the token response from the OAuth provider
-const tokenResponseSchema = z.object({
-  access_token: z.string(),
-  refresh_token: z.string().optional(),
-  expires_in: z.number().optional(),
-  token_type: z.string().optional(),
-  scope: z.string().optional(),
-});
 
 /**
  * Handler for OAuth callback
@@ -40,7 +30,7 @@ export async function GET(request: NextRequest) {
   try {
     // Validate query parameters
     const validatedParams = callbackParamsSchema.parse(queryParams);
-    const { projectId, sessionId, code } = validatedParams;
+    const { sessionId, code } = validatedParams;
     const db = getDb(env.DATABASE_URL);
     const session = await db.query.mcpOauthClients.findFirst({
       where: eq(schema.mcpOauthClients.sessionId, sessionId),
@@ -50,11 +40,15 @@ export async function GET(request: NextRequest) {
       throw new Error("Session not found");
     }
 
-    const oauthProvider = new OAuthLocalProvider(db, projectId, {
-      clientInformation: session.sessionInfo.clientInformation,
-      serverUrl: session.sessionInfo.serverUrl,
-      sessionId,
-    });
+    const oauthProvider = new OAuthLocalProvider(
+      db,
+      session.toolProviderUserContextId,
+      {
+        clientInformation: session.sessionInfo.clientInformation,
+        serverUrl: session.sessionInfo.serverUrl,
+        sessionId,
+      },
+    );
 
     console.log("--> /oauth/callback", url.toString(), queryParams);
     const result = await auth(oauthProvider, {
@@ -73,16 +67,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // // Exchange authorization code for access token
-    // const tokenResponse = await exchangeCodeForToken(validatedParams.code);
-
-    // // Store tokens in database
-    // await storeTokensInDatabase(tokenResponse);
-
     // Handle redirect after successful authentication
     const redirectUrl = validatedParams.redirect_uri
       ? validatedParams.redirect_uri
-      : new URL(`/dashboard/${projectId}`, request.url).toString();
+      : // TODO: redirect to the project page
+        // : new URL(`/dashboard/${projectId}`, request.url).toString();
+        new URL(`/dashboard`, request.url).toString();
 
     return NextResponse.redirect(redirectUrl);
   } catch (error) {

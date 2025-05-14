@@ -18,7 +18,7 @@ export class OAuthLocalProvider implements OAuthClientProvider {
   private _serverUrl: string | undefined;
   constructor(
     private db: HydraDb,
-    private projectId: string,
+    private toolProviderUserContextId: string,
     {
       clientInformation,
       saveAuthUrl,
@@ -36,10 +36,7 @@ export class OAuthLocalProvider implements OAuthClientProvider {
     this._sessionId = sessionId ?? crypto.randomUUID();
 
     this._saveAuthUrl = saveAuthUrl
-      ? new URL(
-          `/oauth/callback?projectId=${projectId}&sessionId=${this._sessionId}`,
-          saveAuthUrl,
-        )
+      ? new URL(`/oauth/callback?sessionId=${this._sessionId}`, saveAuthUrl)
       : undefined;
     this._serverUrl = serverUrl;
   }
@@ -63,9 +60,7 @@ export class OAuthLocalProvider implements OAuthClientProvider {
     console.log("--> clientInformation", this._clientInformation);
     return this._clientInformation;
   }
-  async saveClientInformation(
-    clientInformation: OAuthClientInformationFull,
-  ): Promise<void> {
+  async saveClientInformation(clientInformation: OAuthClientInformationFull) {
     console.log("--> saveClientInformation", clientInformation);
 
     if (!this._serverUrl) {
@@ -74,7 +69,7 @@ export class OAuthLocalProvider implements OAuthClientProvider {
     const [client] = await this.db
       .insert(schema.mcpOauthClients)
       .values({
-        projectId: this.projectId,
+        toolProviderUserContextId: this.toolProviderUserContextId,
         sessionInfo: {
           serverUrl: this._serverUrl,
           clientInformation,
@@ -85,7 +80,7 @@ export class OAuthLocalProvider implements OAuthClientProvider {
     this._clientInformation = clientInformation;
     console.log("--> saveClientInformation stored", client);
   }
-  async codeVerifier(): Promise<string> {
+  async codeVerifier() {
     console.log("--> codeVerifier", this._codeVerifier);
     if (!this._codeVerifier) {
       console.log("--> codeVerifier: fetching from db");
@@ -102,7 +97,7 @@ export class OAuthLocalProvider implements OAuthClientProvider {
     return this._codeVerifier;
   }
 
-  async saveCodeVerifier(codeVerifier: string): Promise<void> {
+  async saveCodeVerifier(codeVerifier: string) {
     console.log("--> saveCodeVerifier", codeVerifier);
     this._codeVerifier = codeVerifier;
     const updatedRows = await this.db
@@ -124,19 +119,33 @@ export class OAuthLocalProvider implements OAuthClientProvider {
     return clientMetadata;
   }
 
-  redirectToAuthorization(authorizationUrl: URL): void | Promise<void> {
+  redirectToAuthorization(authorizationUrl: URL) {
     console.log("--> redirectToAuthorization", authorizationUrl.toString());
     // save this so it can be used later
     this._redirectStartAuthUrl = authorizationUrl;
   }
 
-  tokens(): OAuthTokens | undefined | Promise<OAuthTokens | undefined> {
+  async tokens() {
     console.log("--> tokens", this._tokens);
+    // TODO: do we need to fetch the tokens from the database?
     return this._tokens;
   }
 
-  saveTokens(tokens: OAuthTokens): void | Promise<void> {
+  async saveTokens(tokens: OAuthTokens) {
+    // at this point we want to migrate the entire auth state to the toolProviderUserContext table
     console.log("--> saveTokens", tokens);
     this._tokens = tokens;
+
+    const updatedRows = await this.db
+      .update(schema.toolProviderUserContexts)
+      .set({
+        mcpOauthTokens: tokens,
+        mcpOauthClientInfo: this._clientInformation,
+      })
+      .where(
+        eq(schema.toolProviderUserContexts.id, this.toolProviderUserContextId),
+      )
+      .returning();
+    console.log("--> saveTokens stored", updatedRows);
   }
 }

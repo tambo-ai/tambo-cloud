@@ -9,7 +9,7 @@ import {
   ToolProviderType,
   validateMcpServer,
 } from "@tambo-ai-cloud/core";
-import { operations, schema } from "@tambo-ai-cloud/db";
+import { HydraDb, operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
@@ -156,10 +156,16 @@ export const toolsRouter = createTRPCRouter({
   authorizeMcpServer: protectedProcedure
     .input(
       z.object({
-        projectId: z.string(),
+        // projectId: z.string(),
+        toolProviderId: z.string(),
+        contextKey: z.string().nullable(),
+        // TODO: get this from the tool provider
         url: z.string().url(),
+        // TODO: get this from the tool provider
         customHeaders: customHeadersSchema,
+        // TODO: get this from the tool provider
         mcpTransport: z.nativeEnum(MCPTransport),
+        // Do we even need this?
         saveAuthUrl: z
           .string()
           .url()
@@ -169,19 +175,31 @@ export const toolsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { projectId } = input;
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      const { contextKey, toolProviderId, url } = input;
+      // TODO: ensure project access - lookup projectId from toolProviderId
+      // await operations.ensureProjectAccess(
+      //   ctx.db,
+      //   projectId,
+      //   ctx.session.user.id,
+      // );
       try {
-        const { url } = input;
         const db = ctx.db;
-        const localProvider = new OAuthLocalProvider(db, projectId, {
-          saveAuthUrl: input.saveAuthUrl,
-          serverUrl: url,
-        });
+
+        // lazily create a tool provider user context
+        const toolProviderUserContextId = await upsertToolProviderUserContext(
+          db,
+          toolProviderId,
+          contextKey,
+        );
+
+        const localProvider = new OAuthLocalProvider(
+          db,
+          toolProviderUserContextId,
+          {
+            saveAuthUrl: input.saveAuthUrl,
+            serverUrl: url,
+          },
+        );
         console.log("--> starting auth: ", url);
         const result = await auth(localProvider, { serverUrl: url });
         console.log("Auth result:", result);
@@ -431,6 +449,38 @@ export const toolsRouter = createTRPCRouter({
       };
     }),
 });
+
+/** Create a tool provider user context for the given tool provider id,
+ * returning the id of the created or existing tool provider user context */
+async function upsertToolProviderUserContext(
+  db: HydraDb,
+  toolProviderId: string,
+  contextKey: string | null,
+) {
+  return await db.transaction(async (tx) => {
+    const toolProviderUserContext =
+      await tx.query.toolProviderUserContexts.findFirst({
+        where: eq(
+          schema.toolProviderUserContexts.toolProviderId,
+          toolProviderId,
+        ),
+      });
+    if (toolProviderUserContext) {
+      return toolProviderUserContext.id;
+    }
+
+    const [newToolProviderUserContext] = await db
+      .insert(schema.toolProviderUserContexts)
+      .values({
+        toolProviderId,
+        contextKey,
+      })
+      .returning();
+
+    return newToolProviderUserContext.id;
+  });
+}
+
 async function ensureComposioAccount(
   toolProvider: {
     id: string;
