@@ -1,6 +1,6 @@
 {
-  "id": "65ffdde0-9511-47bf-b479-7b650653a34f",
-  "prevId": "cd61e8ae-502a-4131-be88-e1a0ecc4480d",
+  "id": "3f47b28e-dca5-41b6-9fb4-67b8fafabfda",
+  "prevId": "65ffdde0-9511-47bf-b479-7b650653a34f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -265,6 +265,12 @@
         "client_information": {
           "name": "client_information",
           "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         }

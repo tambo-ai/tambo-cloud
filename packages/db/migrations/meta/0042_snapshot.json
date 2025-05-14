@@ -1,6 +1,6 @@
 {
-  "id": "65ffdde0-9511-47bf-b479-7b650653a34f",
-  "prevId": "cd61e8ae-502a-4131-be88-e1a0ecc4480d",
+  "id": "f03deb03-be2a-4906-b7e2-4661b116455f",
+  "prevId": "3f47b28e-dca5-41b6-9fb4-67b8fafabfda",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -267,6 +267,18 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_verifier": {
+          "name": "code_verifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},

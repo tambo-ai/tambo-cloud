@@ -1,6 +1,6 @@
 {
-  "id": "65ffdde0-9511-47bf-b479-7b650653a34f",
-  "prevId": "cd61e8ae-502a-4131-be88-e1a0ecc4480d",
+  "id": "7fa6fe9b-37a4-48cf-9563-182c0fcadd9c",
+  "prevId": "f03deb03-be2a-4906-b7e2-4661b116455f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -256,8 +256,8 @@
           "notNull": true,
           "default": "now()"
         },
-        "project_id": {
-          "name": "project_id",
+        "tool_provider_user_context_id": {
+          "name": "tool_provider_user_context_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -267,17 +267,29 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_verifier": {
+          "name": "code_verifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "mcp_oauth_clients_project_id_projects_id_fk": {
-          "name": "mcp_oauth_clients_project_id_projects_id_fk",
+        "mcp_oauth_clients_tool_provider_user_context_id_tool_provider_user_contexts_id_fk": {
+          "name": "mcp_oauth_clients_tool_provider_user_context_id_tool_provider_user_contexts_id_fk",
           "tableFrom": "mcp_oauth_clients",
-          "tableTo": "projects",
-          "columnsFrom": ["project_id"],
+          "tableTo": "tool_provider_user_contexts",
+          "columnsFrom": ["tool_provider_user_context_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -981,6 +993,25 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::jsonb"
+        },
+        "mcp_oauth_client_info": {
+          "name": "mcp_oauth_client_info",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mcp_oauth_tokens": {
+          "name": "mcp_oauth_tokens",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mcp_oauth_last_refreshed_at": {
+          "name": "mcp_oauth_last_refreshed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
         }
       },
       "indexes": {
