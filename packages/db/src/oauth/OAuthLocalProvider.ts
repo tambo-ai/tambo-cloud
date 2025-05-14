@@ -5,8 +5,9 @@ import {
   OAuthClientMetadata,
   OAuthTokens,
 } from "@modelcontextprotocol/sdk/shared/auth.js";
-import { HydraDb, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
+import * as schema from "../schema";
+import { HydraDb } from "../types";
 
 export class OAuthLocalProvider implements OAuthClientProvider {
   private _clientInformation: OAuthClientInformation | undefined;
