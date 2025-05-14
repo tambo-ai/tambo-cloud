@@ -39,6 +39,23 @@ export async function addMessage(
     componentState: messageDto.componentState ?? {},
     error: messageDto.error,
   });
+
+  if (messageDto.actionType === ActionType.ToolResponse && messageDto.error) {
+    //Update the previous request message with the error
+    //Find message with matching toolCallId and action is tool call
+    const messages = await operations.getMessages(db, threadId, true);
+    const previousMessage = messages.find(
+      (message) =>
+        message.toolCallId === messageDto.tool_call_id &&
+        message.actionType === ActionType.ToolCall,
+    );
+    if (previousMessage) {
+      await operations.updateMessage(db, previousMessage.id, {
+        error: messageDto.error,
+      });
+    }
+  }
+
   return {
     id: message.id,
     threadId: message.threadId,
@@ -72,6 +89,23 @@ export async function updateMessage(
     toolCallId: messageDto.tool_call_id ?? undefined,
     error: messageDto.error,
   });
+
+  if (messageDto.actionType === ActionType.ToolResponse && messageDto.error) {
+    //Update the previous request message with the error
+    //Find message with matching toolCallId and action is tool call
+    const messages = await operations.getMessages(db, message.threadId, true);
+    const previousMessage = messages.find(
+      (message) =>
+        message.toolCallId === messageDto.tool_call_id &&
+        message.actionType === ActionType.ToolCall,
+    );
+    if (previousMessage) {
+      await operations.updateMessage(db, previousMessage.id, {
+        error: messageDto.error,
+      });
+    }
+  }
+
   return {
     ...message,
     content: convertContentPartToDto(message.content),
