@@ -89,6 +89,7 @@ export const toolsRouter = createTRPCRouter({
       const servers = await operations.getProjectMcpServers(
         ctx.db,
         input.projectId,
+        null,
       );
       return servers;
     }),
@@ -207,7 +208,7 @@ export const toolsRouter = createTRPCRouter({
           db,
           toolProviderUserContextId,
           {
-            saveAuthUrl: saveAuthUrl,
+            baseUrl: saveAuthUrl,
             serverUrl: url,
           },
         );

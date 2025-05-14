@@ -116,7 +116,7 @@ export class OAuthLocalProvider implements OAuthClientProvider {
     console.log("--> saveCodeVerifier stored", updatedRows);
   }
   get clientMetadata(): OAuthClientMetadata {
-    const clientMetadata = {
+    const clientMetadata: OAuthClientMetadata = {
       redirect_uris: [this.redirectUrl],
       client_name: "Tambo",
     };
