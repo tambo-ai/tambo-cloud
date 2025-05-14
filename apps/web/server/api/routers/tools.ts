@@ -469,7 +469,7 @@ async function upsertToolProviderUserContext(
       return toolProviderUserContext.id;
     }
 
-    const [newToolProviderUserContext] = await db
+    const [newToolProviderUserContext] = await tx
       .insert(schema.toolProviderUserContexts)
       .values({
         toolProviderId,
