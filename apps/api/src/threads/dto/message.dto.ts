@@ -105,6 +105,9 @@ export class MessageRequest implements InternalThreadMessage {
   @IsEnum(ActionType)
   actionType?: ActionType;
 
+  @IsOptional()
+  error?: string;
+
   /**
    * @deprecated Put the response in the content instead
    */
