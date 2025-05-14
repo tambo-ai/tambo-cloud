@@ -74,6 +74,7 @@ export class ThreadMessageDto {
   @IsEnum(ActionType)
   actionType?: ActionType;
 
+  @ApiProperty({ required: false, type: String })
   error?: string;
 
   @IsOptional()
@@ -108,6 +109,7 @@ export class MessageRequest implements InternalThreadMessage {
   actionType?: ActionType;
 
   @IsOptional()
+  @ApiProperty({ required: false, type: String })
   error?: string;
 
   /**
