@@ -43,17 +43,12 @@ export async function addMessage(
   if (messageDto.actionType === ActionType.ToolResponse && messageDto.error) {
     //Update the previous request message with the error
     //Find message with matching toolCallId and action is tool call
-    const messages = await operations.getMessages(db, threadId, true);
-    const previousMessage = messages.find(
-      (message) =>
-        message.toolCallId === messageDto.tool_call_id &&
-        message.actionType === ActionType.ToolCall,
+    await propagateErrorToPreviousToolCall(
+      db,
+      threadId,
+      messageDto.tool_call_id,
+      messageDto.error,
     );
-    if (previousMessage) {
-      await operations.updateMessage(db, previousMessage.id, {
-        error: messageDto.error,
-      });
-    }
   }
 
   return {
@@ -93,17 +88,12 @@ export async function updateMessage(
   if (messageDto.actionType === ActionType.ToolResponse && messageDto.error) {
     //Update the previous request message with the error
     //Find message with matching toolCallId and action is tool call
-    const messages = await operations.getMessages(db, message.threadId, true);
-    const previousMessage = messages.find(
-      (message) =>
-        message.toolCallId === messageDto.tool_call_id &&
-        message.actionType === ActionType.ToolCall,
+    await propagateErrorToPreviousToolCall(
+      db,
+      message.threadId,
+      messageDto.tool_call_id,
+      messageDto.error,
     );
-    if (previousMessage) {
-      await operations.updateMessage(db, previousMessage.id, {
-        error: messageDto.error,
-      });
-    }
   }
 
   return {
@@ -116,6 +106,31 @@ export async function updateMessage(
     componentState: message.componentState ?? {},
     error: message.error ?? undefined,
   };
+}
+
+/**
+ * Update the previous tool call message with an error when a tool response fails
+ */
+async function propagateErrorToPreviousToolCall(
+  db: HydraDb,
+  threadId: string,
+  toolCallId: string | undefined,
+  error: string | undefined,
+) {
+  if (!toolCallId || !error) return;
+
+  const messages = await operations.getMessages(db, threadId, true);
+  const previousMessage = messages.find(
+    (message) =>
+      message.toolCallId === toolCallId &&
+      message.actionType === ActionType.ToolCall,
+  );
+
+  if (previousMessage) {
+    await operations.updateMessage(db, previousMessage.id, {
+      error: error,
+    });
+  }
 }
 
 /**
