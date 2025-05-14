@@ -491,9 +491,9 @@ export const mcpOauthClients = pgTable(
 export const mcpOauthClientRelations = relations(
   mcpOauthClients,
   ({ one }) => ({
-    toolProvider: one(projects, {
+    toolProviderUserContext: one(toolProviderUserContexts, {
       fields: [mcpOauthClients.toolProviderUserContextId],
-      references: [projects.id],
+      references: [toolProviderUserContexts.id],
     }),
   }),
 );

@@ -1,3 +1,4 @@
+import { getBaseUrl } from "@/lib/base-url";
 import { env } from "@/lib/env";
 import { OAuthLocalProvider } from "@/lib/OAuthLocalProvider";
 import { auth } from "@modelcontextprotocol/sdk/client/auth.js";
@@ -32,27 +33,38 @@ export async function GET(request: NextRequest) {
     const validatedParams = callbackParamsSchema.parse(queryParams);
     const { sessionId, code } = validatedParams;
     const db = getDb(env.DATABASE_URL);
-    const session = await db.query.mcpOauthClients.findFirst({
+    const oauthClient = await db.query.mcpOauthClients.findFirst({
       where: eq(schema.mcpOauthClients.sessionId, sessionId),
+      with: {
+        toolProviderUserContext: {
+          with: {
+            toolProvider: {
+              columns: {
+                projectId: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    if (!session) {
+    if (!oauthClient) {
       throw new Error("Session not found");
     }
 
     const oauthProvider = new OAuthLocalProvider(
       db,
-      session.toolProviderUserContextId,
+      oauthClient.toolProviderUserContextId,
       {
-        clientInformation: session.sessionInfo.clientInformation,
-        serverUrl: session.sessionInfo.serverUrl,
+        clientInformation: oauthClient.sessionInfo.clientInformation,
+        serverUrl: oauthClient.sessionInfo.serverUrl,
         sessionId,
       },
     );
 
     console.log("--> /oauth/callback", url.toString(), queryParams);
     const result = await auth(oauthProvider, {
-      serverUrl: session.sessionInfo.serverUrl,
+      serverUrl: oauthClient.sessionInfo.serverUrl,
       authorizationCode: code,
     });
     console.log("--> result", result);
@@ -66,13 +78,13 @@ export async function GET(request: NextRequest) {
         ),
       );
     }
+    const { projectId } = oauthClient.toolProviderUserContext.toolProvider;
 
     // Handle redirect after successful authentication
-    const redirectUrl = validatedParams.redirect_uri
-      ? validatedParams.redirect_uri
-      : // TODO: redirect to the project page
-        // : new URL(`/dashboard/${projectId}`, request.url).toString();
-        new URL(`/dashboard`, request.url).toString();
+    const redirectUrl = getPostAuthRedirect(
+      validatedParams.redirect_uri,
+      projectId,
+    );
 
     return NextResponse.redirect(redirectUrl);
   } catch (error) {
@@ -96,4 +108,21 @@ export async function GET(request: NextRequest) {
       new URL("/auth/error?error=unknown_error", request.url),
     );
   }
+}
+
+/** Validates that the redirect_uri is a valid URL and that it is on the same origin as the server */
+function getPostAuthRedirect(
+  redirect_uri: string | undefined,
+  projectId: string,
+) {
+  const baseUrl = new URL(getBaseUrl());
+
+  if (redirect_uri) {
+    const url = new URL(redirect_uri, baseUrl);
+    if (url.origin === baseUrl.origin) {
+      return url.toString();
+    }
+  }
+  // just fall back to the project dashboard
+  return new URL(`/dashboard/${projectId}`, baseUrl).toString();
 }
