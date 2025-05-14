@@ -25,14 +25,11 @@ export const McpPage: FC = () => {
             <div className="aspect-video w-full max-w-2xl mx-auto bg-muted rounded-lg overflow-hidden shadow-lg">
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/6zDDPfr7Aoo"
+                src="https://www.youtube.com/embed/8ObjEFMeXOY"
                 title="MCP Demo Video"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               ></iframe>
-              <div className="w-full h-full flex items-center justify-center">
-                <p className="text-muted-foreground">Video demo coming soon!</p>
-              </div>
             </div>
 
             {/* CLI Setup Section */}
@@ -42,7 +39,7 @@ export const McpPage: FC = () => {
                   {
                     id: "mcp",
                     label: "Create MCP App",
-                    command: "npm create tambo-app -t mcp mcp-demo",
+                    command: "npx tambo create-app -t mcp mcp-demo",
                   },
                 ]}
                 title="Create MCP App"
