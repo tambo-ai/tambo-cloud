@@ -1,3 +1,4 @@
+import { getBaseUrl } from "@/lib/base-url";
 import { getComposio } from "@/lib/composio";
 import { customHeadersSchema } from "@/lib/headerValidation";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
@@ -11,7 +12,7 @@ import {
 } from "@tambo-ai-cloud/core";
 import { HydraDb, operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { OAuthLocalProvider } from "../../../lib/OAuthLocalProvider";
 import { validateSafeURL, validateServerUrl } from "../../../lib/urlSecurity";
@@ -158,23 +159,18 @@ export const toolsRouter = createTRPCRouter({
       z.object({
         toolProviderId: z.string(),
         contextKey: z.string().nullable(),
-        // Do we even need this?
-        saveAuthUrl: z
-          .string()
-          .url()
-          .describe(
-            "The URL to redirect to after authorization. This is used to save the auth url to the database.",
-          ),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { contextKey, toolProviderId, saveAuthUrl } = input;
+      const { contextKey, toolProviderId } = input;
+      const saveAuthUrl = `${getBaseUrl()}/oauth/callback`;
       try {
         const db = ctx.db;
         const toolProvider = await db.query.toolProviders.findFirst({
           where: and(
             eq(schema.toolProviders.id, toolProviderId),
             eq(schema.toolProviders.type, ToolProviderType.MCP),
+            isNotNull(schema.toolProviders.url),
           ),
         });
         if (!toolProvider) {
@@ -191,9 +187,10 @@ export const toolsRouter = createTRPCRouter({
         );
 
         if (!url) {
+          // cannot happen due to validation in the query
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Tool provider URL not found",
+            message: "Tool provider missing MCP URL",
           });
         }
         const toolProviderUserContextId = await upsertToolProviderUserContext(
