@@ -12,7 +12,7 @@ import {
   operations,
   schema,
 } from "@tambo-ai-cloud/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { MessageRequest, ThreadMessageDto } from "../dto/message.dto";
 import {
   convertContentDtoToContentPart,
@@ -119,11 +119,10 @@ async function propagateErrorToPreviousToolCall(
 ) {
   if (!toolCallId || !error) return;
 
-  const messages = await operations.getMessages(db, threadId, true);
-  const previousMessage = messages.find(
-    (message) =>
-      message.toolCallId === toolCallId &&
-      message.actionType === ActionType.ToolCall,
+  const previousMessage = await operations.findPreviousToolCallMessage(
+    db,
+    threadId,
+    toolCallId,
   );
 
   if (previousMessage) {
@@ -209,4 +208,21 @@ export function threadMessageDtoToThreadMessage(
       content: convertContentDtoToContentPart(message.content),
     }),
   );
+}
+
+/**
+ * Find the previous tool call message with a matching tool call ID
+ */
+export async function findPreviousToolCallMessage(
+  db: HydraDb,
+  threadId: string,
+  toolCallId: string,
+) {
+  return await db.query.messages.findFirst({
+    where: and(
+      eq(schema.messages.threadId, threadId),
+      eq(schema.messages.toolCallId, toolCallId),
+      eq(schema.messages.actionType, ActionType.ToolCall),
+    ),
+  });
 }
