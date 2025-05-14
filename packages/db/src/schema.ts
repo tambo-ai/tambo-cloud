@@ -6,6 +6,9 @@ import {
   GenerationStage,
   MCPTransport,
   MessageRole,
+  OAuthClientInformation,
+  OAuthTokens,
+  SessionClientInformation,
   ToolCallRequest,
   ToolProviderType,
 } from "@tambo-ai-cloud/core";
@@ -432,6 +435,14 @@ export const toolProviderUserContexts = pgTable(
     )
       .default({})
       .notNull(),
+    // contains the client information for the MCP OAuth client, including the client_id and client_secret
+    mcpOauthClientInfo: customJsonb<OAuthClientInformation>(
+      "mcp_oauth_client_info",
+    ),
+    mcpOauthTokens: customJsonb<OAuthTokens>("mcp_oauth_tokens"),
+    mcpOauthLastRefreshedAt: timestamp("mcp_oauth_last_refreshed_at", {
+      withTimezone: true,
+    }).defaultNow(),
   }),
   (table) => {
     return [
@@ -443,7 +454,6 @@ export const toolProviderUserContexts = pgTable(
     ];
   },
 );
-
 export const toolProviderUserContextRelations = relations(
   toolProviderUserContexts,
   ({ one }) => ({
@@ -453,17 +463,6 @@ export const toolProviderUserContextRelations = relations(
     }),
   }),
 );
-interface SessionClientInformation {
-  serverUrl: string;
-  clientInformation: OAuthClientInformation;
-}
-
-type OAuthClientInformation = {
-  client_id: string;
-  client_secret?: string | undefined;
-  client_id_issued_at?: number | undefined;
-  client_secret_expires_at?: number | undefined;
-};
 // These are effectively sessions for the MCP OAuth flow.
 export const mcpOauthClients = pgTable(
   "mcp_oauth_clients",
@@ -479,8 +478,8 @@ export const mcpOauthClients = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    projectId: text("project_id")
-      .references(() => projects.id)
+    toolProviderUserContextId: text("tool_provider_user_context_id")
+      .references(() => toolProviderUserContexts.id, { onDelete: "cascade" })
       .notNull(),
     sessionInfo:
       customJsonb<SessionClientInformation>("client_information").notNull(),
@@ -492,8 +491,8 @@ export const mcpOauthClients = pgTable(
 export const mcpOauthClientRelations = relations(
   mcpOauthClients,
   ({ one }) => ({
-    project: one(projects, {
-      fields: [mcpOauthClients.projectId],
+    toolProvider: one(projects, {
+      fields: [mcpOauthClients.toolProviderUserContextId],
       references: [projects.id],
     }),
   }),
