@@ -65,6 +65,7 @@ export function McpServerEditor({
     data: authResult,
     mutateAsync: startAuth,
     isPending: isAuthPending,
+    error: authError,
   } = api.tools.authorizeMcpServer.useMutation();
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -113,11 +114,12 @@ export function McpServerEditor({
     // we don't want to validate on every keystroke
     // TODO: maybe validate if the user has changed the url or transport?
     if (!hideEditButtons) {
-      const { valid } = await validateMcpServer({
+      const { valid, statusCode } = await validateMcpServer({
         url: trimmedUrl,
         customHeaders,
         mcpTransport,
       });
+      console.log("server valid: ", { valid, statusCode });
       if (!valid) {
         return;
       }
@@ -236,7 +238,7 @@ export function McpServerEditor({
           <p className="text-sm text-destructive px-2">
             {validationResult.error}
           </p>
-        )}{" "}
+        )}
         <div className="flex flex-col gap-2">
           {validationResult?.statusCode === 401 &&
             !authResult?.redirectUrl &&
@@ -254,6 +256,12 @@ export function McpServerEditor({
                 Begin Authorization
               </Button>
             )}
+          {authError && (
+            <p className="text-sm text-destructive px-2">{authError.message}</p>
+          )}
+          {authResult?.error && (
+            <p className="text-sm text-destructive px-2">{authResult.error}</p>
+          )}
           {authResult?.redirectUrl && (
             <Button
               variant="outline"
