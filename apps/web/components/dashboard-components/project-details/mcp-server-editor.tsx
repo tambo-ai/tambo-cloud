@@ -4,7 +4,7 @@ import { api } from "@/trpc/react";
 import { MCPTransport } from "@tambo-ai-cloud/core";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
-import { Loader2, Pencil, Save, Trash2, X } from "lucide-react";
+import { Check, Loader2, Pencil, Save, Trash2, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
@@ -13,6 +13,8 @@ export interface MCPServerInfo {
   url: string | null;
   customHeaders: Record<string, string>;
   mcpTransport?: MCPTransport;
+  mcpRequiresAuth?: boolean;
+  mcpIsAuthed?: boolean;
 }
 
 interface McpServerEditorProps {
@@ -30,16 +32,7 @@ interface McpServerEditorProps {
     url: string;
     customHeaders: Record<string, string>;
     mcpTransport: MCPTransport;
-  }) => Promise<
-    | {
-        id: string;
-        url: string;
-        customHeaders: Record<string, string>;
-        mcpTransport: MCPTransport;
-        mcpRequiresAuth: boolean;
-      }
-    | undefined
-  >;
+  }) => Promise<MCPServerInfo | undefined>;
   onDelete: () => Promise<void>;
   projectId?: string;
 }
@@ -74,7 +67,14 @@ export function McpServerEditor({
     mutateAsync: startAuth,
     isPending: isAuthPending,
     error: authError,
-  } = api.tools.authorizeMcpServer.useMutation();
+  } = api.tools.authorizeMcpServer.useMutation({
+    onSuccess: (authResult) => {
+      if (authResult.redirectUrl) {
+        // Open in new tab only when clicked
+        window.open(authResult.redirectUrl, "_blank", "noopener");
+      }
+    },
+  });
 
   const inputRef = useRef<HTMLInputElement>(null);
   // Dynamic IDs based on server ID
@@ -166,6 +166,8 @@ export function McpServerEditor({
       debouncedSave();
     }
   };
+  const mcpRequiresAuth = saveResult?.mcpRequiresAuth || server.mcpRequiresAuth;
+  const mcpIsAuthed = saveResult?.mcpIsAuthed || server.mcpIsAuthed;
 
   return (
     <div className="flex flex-col gap-2 bg-muted/50 p-2 rounded-md">
@@ -237,8 +239,23 @@ export function McpServerEditor({
         {saveError && (
           <p className="text-sm text-destructive px-2">{saveError.message}</p>
         )}
+        {server.mcpRequiresAuth && (
+          <div className="flex flex-col gap-1 mt-1">
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-green-500" />
+              <span className="text-sm">Requires Authorization</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check
+                className={`h-4 w-4 ${server.mcpIsAuthed ? "text-green-500" : "text-gray-300"}`}
+              />
+              <span className="text-sm">Authorization Established</span>
+            </div>
+          </div>
+        )}
         <div className="flex flex-col gap-2">
-          {!!saveResult?.mcpRequiresAuth &&
+          {!!mcpRequiresAuth &&
+            !mcpIsAuthed &&
             !authResult?.redirectUrl &&
             projectId && (
               <Button
@@ -256,22 +273,6 @@ export function McpServerEditor({
             )}
           {authError && (
             <p className="text-sm text-destructive px-2">{authError.message}</p>
-          )}
-          {authResult?.error && (
-            <p className="text-sm text-destructive px-2">{authResult.error}</p>
-          )}
-          {authResult?.redirectUrl && (
-            <Button
-              variant="outline"
-              onClick={(e) => {
-                // Prevent default navigation
-                e.preventDefault();
-                // Open in new tab only when clicked
-                window.open(authResult.redirectUrl, "_blank", "noopener");
-              }}
-            >
-              Login to MCP Server
-            </Button>
           )}
         </div>
       </div>

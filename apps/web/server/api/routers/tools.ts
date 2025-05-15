@@ -91,13 +91,15 @@ export const toolsRouter = createTRPCRouter({
         input.projectId,
         null,
       );
+      console.log("got back servers");
       return servers.map((server) => ({
         id: server.id,
         url: server.url,
         customHeaders: server.customHeaders,
         mcpRequiresAuth: server.mcpRequiresAuth,
         mcpIsAuthed:
-          !!server.contexts.length && server.contexts[0].mcpOauthTokens,
+          !!server.contexts.length &&
+          !!server.contexts[0].mcpOauthTokens?.access_token,
       }));
     }),
   addMcpServer: protectedProcedure
@@ -171,71 +173,67 @@ export const toolsRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { contextKey, toolProviderId } = input;
       const saveAuthUrl = `${getBaseUrl()}/oauth/callback`;
-      try {
-        const db = ctx.db;
-        const toolProvider = await db.query.toolProviders.findFirst({
-          where: and(
-            eq(schema.toolProviders.id, toolProviderId),
-            eq(schema.toolProviders.type, ToolProviderType.MCP),
-            isNotNull(schema.toolProviders.url),
-          ),
+
+      const db = ctx.db;
+      const toolProvider = await db.query.toolProviders.findFirst({
+        where: and(
+          eq(schema.toolProviders.id, toolProviderId),
+          eq(schema.toolProviders.type, ToolProviderType.MCP),
+          isNotNull(schema.toolProviders.url),
+        ),
+      });
+      if (!toolProvider) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tool provider not found",
         });
-        if (!toolProvider) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Tool provider not found",
-          });
-        }
-        const { url, projectId } = toolProvider;
-        await operations.ensureProjectAccess(
-          ctx.db,
-          projectId,
-          ctx.session.user.id,
-        );
+      }
+      const { url, projectId } = toolProvider;
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id,
+      );
 
-        if (!url) {
-          // cannot happen due to validation in the query
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Tool provider missing MCP URL",
-          });
-        }
-        const toolProviderUserContextId = await upsertToolProviderUserContext(
-          db,
-          toolProviderId,
-          contextKey,
-        );
+      if (!url) {
+        // cannot happen due to validation in the query
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Tool provider missing MCP URL",
+        });
+      }
+      const toolProviderUserContextId = await upsertToolProviderUserContext(
+        db,
+        toolProviderId,
+        contextKey,
+      );
 
-        const localProvider = new OAuthLocalProvider(
-          db,
-          toolProviderUserContextId,
-          {
-            baseUrl: saveAuthUrl,
-            serverUrl: url,
-          },
-        );
-        console.log("--> starting auth: ", url);
-        const result = await auth(localProvider, { serverUrl: url });
-        console.log("Auth result:", result);
-        if (result === "AUTHORIZED") {
-          return {
-            success: true,
-          };
-        }
-        if (result === "REDIRECT") {
-          return {
-            success: true,
-            redirectUrl: localProvider.redirectStartAuthUrl?.toString(),
-          };
-        }
-        return { success: false };
-      } catch (error: any) {
-        console.error(error);
+      const localProvider = new OAuthLocalProvider(
+        db,
+        toolProviderUserContextId,
+        {
+          baseUrl: saveAuthUrl,
+          serverUrl: url,
+        },
+      );
+      console.log("--> starting auth: ", url);
+      const result = await auth(localProvider, { serverUrl: url });
+      console.log("Auth result:", result);
+      if (result === "AUTHORIZED") {
         return {
-          success: false,
-          error: error.message,
+          success: true,
         };
       }
+      if (result === "REDIRECT") {
+        return {
+          success: true,
+          redirectUrl: localProvider.redirectStartAuthUrl?.toString(),
+        };
+      }
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Unexpected auth result",
+      });
     }),
   deleteMcpServer: protectedProcedure
     .input(z.object({ projectId: z.string(), serverId: z.string() }))

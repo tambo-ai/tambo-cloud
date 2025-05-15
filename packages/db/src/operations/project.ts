@@ -368,7 +368,16 @@ export async function getProjectMcpServers(
       },
     },
   });
-  console.log("got project mcp servers: ", providers);
+  console.log(
+    "got project mcp servers: ",
+    providers.map((provider) => ({
+      ...provider,
+      firstContext: provider.contexts[0],
+      mcpOAuthTokens: provider.contexts[0]?.mcpOauthTokens,
+      mcpOAuthClientInfo: provider.contexts[0]?.mcpOauthClientInfo,
+      mcpOAuthLastRefreshedAt: provider.contexts[0]?.mcpOauthLastRefreshedAt,
+    })),
+  );
   return providers;
 }
 
