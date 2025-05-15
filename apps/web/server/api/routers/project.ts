@@ -71,7 +71,7 @@ export const projectRouter = createTRPCRouter({
             mcpServer.url,
             mcpServer.customHeaders,
             mcpServer.mcpTransport,
-            validity.statusCode === 401,
+            validity.requiresAuth,
           );
         }
       }

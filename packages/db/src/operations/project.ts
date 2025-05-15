@@ -368,16 +368,6 @@ export async function getProjectMcpServers(
       },
     },
   });
-  console.log(
-    "got project mcp servers: ",
-    providers.map((provider) => ({
-      ...provider,
-      firstContext: provider.contexts[0],
-      mcpOAuthTokens: provider.contexts[0]?.mcpOauthTokens,
-      mcpOAuthClientInfo: provider.contexts[0]?.mcpOauthClientInfo,
-      mcpOAuthLastRefreshedAt: provider.contexts[0]?.mcpOauthLastRefreshedAt,
-    })),
-  );
   return providers;
 }
 
@@ -458,6 +448,28 @@ export async function updateMcpServer(
     mcpTransport: server.mcpTransport,
     mcpRequiresAuth: server.mcpRequiresAuth,
   };
+}
+
+export async function getMcpServer(
+  db: HydraDb,
+  projectId: string,
+  serverId: string,
+  contextKey: string | null,
+) {
+  return await db.query.toolProviders.findFirst({
+    where: and(
+      eq(schema.toolProviders.id, serverId),
+      eq(schema.toolProviders.projectId, projectId),
+    ),
+    with: {
+      contexts: {
+        where:
+          contextKey === null
+            ? isNull(schema.toolProviderUserContexts.contextKey)
+            : eq(schema.toolProviderUserContexts.contextKey, contextKey),
+      },
+    },
+  });
 }
 
 /**
