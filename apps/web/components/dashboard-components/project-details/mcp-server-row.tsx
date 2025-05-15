@@ -9,6 +9,7 @@ interface McpServerRowProps {
   onRefresh: () => Promise<void>;
   isNew?: boolean;
   onCancel?: () => void;
+  redirectToAuth?: (url: string) => void;
 }
 
 export function McpServerRow({
@@ -17,6 +18,7 @@ export function McpServerRow({
   onRefresh,
   isNew = false,
   onCancel,
+  redirectToAuth,
 }: McpServerRowProps) {
   const [isEditing, setIsEditing] = useState(isNew);
 
@@ -119,6 +121,7 @@ export function McpServerRow({
       onCancel={handleCancel}
       onSave={handleSave}
       onDelete={handleDelete}
+      redirectToAuth={redirectToAuth}
     />
   );
 }

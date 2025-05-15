@@ -35,6 +35,7 @@ interface McpServerEditorProps {
   }) => Promise<MCPServerInfo | undefined>;
   onDelete: () => Promise<void>;
   projectId?: string;
+  redirectToAuth?: (url: string) => void;
 }
 
 export function McpServerEditor({
@@ -51,6 +52,7 @@ export function McpServerEditor({
   onSave,
   onDelete,
   projectId,
+  redirectToAuth,
 }: McpServerEditorProps) {
   const [mcpTransport, setMcpTransport] = useState<MCPTransport>(
     server.mcpTransport || MCPTransport.SSE,
@@ -69,9 +71,8 @@ export function McpServerEditor({
     error: authError,
   } = api.tools.authorizeMcpServer.useMutation({
     onSuccess: (authResult) => {
-      if (authResult.redirectUrl) {
-        // Open in new tab only when clicked
-        window.open(authResult.redirectUrl, "_blank", "noopener");
+      if (authResult.redirectUrl && redirectToAuth) {
+        redirectToAuth(authResult.redirectUrl);
       }
     },
   });
@@ -169,6 +170,12 @@ export function McpServerEditor({
   const mcpRequiresAuth = saveResult?.mcpRequiresAuth || server.mcpRequiresAuth;
   const mcpIsAuthed = saveResult?.mcpIsAuthed || server.mcpIsAuthed;
 
+  const showAuthButton =
+    !!mcpRequiresAuth &&
+    !mcpIsAuthed &&
+    !authResult?.redirectUrl &&
+    projectId &&
+    redirectToAuth;
   return (
     <div className="flex flex-col gap-2 bg-muted/50 p-2 rounded-md">
       <div className="flex flex-col gap-1">
@@ -254,23 +261,20 @@ export function McpServerEditor({
           </div>
         )}
         <div className="flex flex-col gap-2">
-          {!!mcpRequiresAuth &&
-            !mcpIsAuthed &&
-            !authResult?.redirectUrl &&
-            projectId && (
-              <Button
-                variant="outline"
-                disabled={isAuthPending}
-                onClick={async () =>
-                  await startAuth({
-                    contextKey: null, // for now we don't have a context key, this isn't per-user
-                    toolProviderId: server.id,
-                  })
-                }
-              >
-                Begin Authorization
-              </Button>
-            )}
+          {showAuthButton && (
+            <Button
+              variant="outline"
+              disabled={isAuthPending}
+              onClick={async () =>
+                await startAuth({
+                  contextKey: null, // for now we don't have a context key, this isn't per-user
+                  toolProviderId: server.id,
+                })
+              }
+            >
+              Begin Authorization
+            </Button>
+          )}
           {authError && (
             <p className="text-sm text-destructive px-2">{authError.message}</p>
           )}
