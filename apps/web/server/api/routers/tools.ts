@@ -91,7 +91,14 @@ export const toolsRouter = createTRPCRouter({
         input.projectId,
         null,
       );
-      return servers;
+      return servers.map((server) => ({
+        id: server.id,
+        url: server.url,
+        customHeaders: server.customHeaders,
+        mcpRequiresAuth: server.mcpRequiresAuth,
+        mcpIsAuthed:
+          !!server.contexts.length && server.contexts[0].mcpOauthTokens,
+      }));
     }),
   addMcpServer: protectedProcedure
     .input(

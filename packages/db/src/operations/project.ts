@@ -358,6 +358,7 @@ export async function getProjectMcpServers(
       eq(schema.toolProviders.type, ToolProviderType.MCP),
       isNotNull(schema.toolProviders.url),
     ),
+    orderBy: (toolProviders, { asc }) => [asc(toolProviders.createdAt)],
     with: {
       contexts: {
         where:
