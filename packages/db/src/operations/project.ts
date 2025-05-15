@@ -377,6 +377,7 @@ export async function createMcpServer(
   url: string,
   customHeaders: Record<string, string> | undefined,
   mcpTransport: MCPTransport,
+  mcpRequiresAuth: boolean,
 ) {
   const [server] = await db
     .insert(schema.toolProviders)
@@ -386,6 +387,7 @@ export async function createMcpServer(
       url,
       customHeaders: customHeaders || {},
       mcpTransport,
+      mcpRequiresAuth,
     })
     .returning({
       id: schema.toolProviders.id,
@@ -394,6 +396,7 @@ export async function createMcpServer(
       url: schema.toolProviders.url,
       customHeaders: schema.toolProviders.customHeaders,
       mcpTransport: schema.toolProviders.mcpTransport,
+      mcpRequiresAuth: schema.toolProviders.mcpRequiresAuth,
     });
 
   return server;
@@ -421,6 +424,7 @@ export async function updateMcpServer(
   url: string,
   customHeaders: Record<string, string> | undefined,
   mcpTransport: MCPTransport,
+  mcpRequiresAuth: boolean,
 ) {
   const [server] = await db
     .update(schema.toolProviders)
@@ -428,6 +432,7 @@ export async function updateMcpServer(
       url,
       customHeaders: customHeaders || {},
       mcpTransport,
+      mcpRequiresAuth,
       updatedAt: new Date(),
     })
     .where(
@@ -443,6 +448,7 @@ export async function updateMcpServer(
       url: schema.toolProviders.url,
       customHeaders: schema.toolProviders.customHeaders,
       mcpTransport: schema.toolProviders.mcpTransport,
+      mcpRequiresAuth: schema.toolProviders.mcpRequiresAuth,
     });
 
   return server;
