@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/trpc/react";
 import { MCPTransport } from "@tambo-ai-cloud/core";
+import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { Loader2, Pencil, Save, Trash2, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -29,7 +30,16 @@ interface McpServerEditorProps {
     url: string;
     customHeaders: Record<string, string>;
     mcpTransport: MCPTransport;
-  }) => Promise<void>;
+  }) => Promise<
+    | {
+        id: string;
+        url: string;
+        customHeaders: Record<string, string>;
+        mcpTransport: MCPTransport;
+        mcpRequiresAuth: boolean;
+      }
+    | undefined
+  >;
   onDelete: () => Promise<void>;
   projectId?: string;
 }
@@ -59,8 +69,6 @@ export function McpServerEditor({
     server.customHeaders[firstHeaderKey] || "",
   );
   const [isHeaderValueFocused, setIsHeaderValueFocused] = useState(false);
-  const { data: validationResult, mutateAsync: validateMcpServer } =
-    api.tools.validateMcpServer.useMutation();
   const {
     data: authResult,
     mutateAsync: startAuth,
@@ -106,34 +114,26 @@ export function McpServerEditor({
     return headers;
   }, [headerName, headerValue]);
 
-  const handleSave = async () => {
-    if (!trimmedUrl) {
-      return;
-    }
+  const {
+    mutate: handleSave,
+    data: saveResult,
+    error: saveError,
+  } = useMutation({
+    mutationFn: async () => {
+      if (!trimmedUrl) {
+        return;
+      }
 
-    // we don't want to validate on every keystroke
-    // TODO: maybe validate if the user has changed the url or transport?
-    if (!hideEditButtons) {
-      const { valid, statusCode } = await validateMcpServer({
+      return await onSave({
         url: trimmedUrl,
         customHeaders,
         mcpTransport,
       });
-      console.log("server valid: ", { valid, statusCode });
-      if (!valid) {
-        return;
-      }
-    }
-
-    await onSave({
-      url: trimmedUrl,
-      customHeaders,
-      mcpTransport,
-    });
-  };
+    },
+  });
 
   // Use debounced callback for auto-save
-  const debouncedSave = useDebouncedCallback(() => {
+  const debouncedSave = useDebouncedCallback(async () => {
     if (hideEditButtons && isEditing) {
       handleSave();
     }
@@ -191,7 +191,7 @@ export function McpServerEditor({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={handleSave}
+                    onClick={() => handleSave()}
                     disabled={isSaving || !url.trim()}
                   >
                     {isSaving ? (
@@ -234,13 +234,11 @@ export function McpServerEditor({
         {errorMessage && (
           <p className="text-sm text-destructive px-2">{errorMessage}</p>
         )}
-        {validationResult && (
-          <p className="text-sm text-destructive px-2">
-            {validationResult.error}
-          </p>
+        {saveError && (
+          <p className="text-sm text-destructive px-2">{saveError.message}</p>
         )}
         <div className="flex flex-col gap-2">
-          {validationResult?.statusCode === 401 &&
+          {!!saveResult?.mcpRequiresAuth &&
             !authResult?.redirectUrl &&
             projectId && (
               <Button

@@ -389,17 +389,15 @@ export async function createMcpServer(
       mcpTransport,
       mcpRequiresAuth,
     })
-    .returning({
-      id: schema.toolProviders.id,
-      projectId: schema.toolProviders.projectId,
-      type: schema.toolProviders.type,
-      url: schema.toolProviders.url,
-      customHeaders: schema.toolProviders.customHeaders,
-      mcpTransport: schema.toolProviders.mcpTransport,
-      mcpRequiresAuth: schema.toolProviders.mcpRequiresAuth,
-    });
+    .returning();
 
-  return server;
+  return {
+    id: server.id,
+    url: server.url!,
+    customHeaders: server.customHeaders,
+    mcpTransport: server.mcpTransport,
+    mcpRequiresAuth: server.mcpRequiresAuth,
+  };
 }
 
 export async function deleteMcpServer(
@@ -441,17 +439,15 @@ export async function updateMcpServer(
         eq(schema.toolProviders.projectId, projectId),
       ),
     )
-    .returning({
-      id: schema.toolProviders.id,
-      projectId: schema.toolProviders.projectId,
-      type: schema.toolProviders.type,
-      url: schema.toolProviders.url,
-      customHeaders: schema.toolProviders.customHeaders,
-      mcpTransport: schema.toolProviders.mcpTransport,
-      mcpRequiresAuth: schema.toolProviders.mcpRequiresAuth,
-    });
+    .returning();
 
-  return server;
+  return {
+    id: server.id,
+    url: server.url!,
+    customHeaders: server.customHeaders,
+    mcpTransport: server.mcpTransport,
+    mcpRequiresAuth: server.mcpRequiresAuth,
+  };
 }
 
 /**

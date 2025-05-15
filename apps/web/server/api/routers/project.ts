@@ -1,7 +1,8 @@
 import { env } from "@/lib/env";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { hashKey, MCPTransport } from "@tambo-ai-cloud/core";
+import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
 import { operations } from "@tambo-ai-cloud/db";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const projectRouter = createTRPCRouter({
@@ -53,12 +54,24 @@ export const projectRouter = createTRPCRouter({
       }
       if (mcpServers) {
         for (const mcpServer of mcpServers) {
+          const validity = await validateMcpServer({
+            url: mcpServer.url,
+            customHeaders: mcpServer.customHeaders,
+            mcpTransport: mcpServer.mcpTransport,
+          });
+          if (!validity.valid) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `MCP server validation failed: ${validity.error}`,
+            });
+          }
           await operations.createMcpServer(
             ctx.db,
             project.id,
             mcpServer.url,
             mcpServer.customHeaders,
             mcpServer.mcpTransport,
+            validity.statusCode === 401,
           );
         }
       }

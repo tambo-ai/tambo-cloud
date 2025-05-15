@@ -126,6 +126,17 @@ export const toolsRouter = createTRPCRouter({
           message: `URL validation failed: ${safetyCheck.reason}`,
         });
       }
+      const validity = await validateMcpServer({
+        url,
+        customHeaders,
+        mcpTransport,
+      });
+      if (!validity.valid) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `MCP server validation failed: ${validity.error}`,
+        });
+      }
 
       const server = await operations.createMcpServer(
         ctx.db,
@@ -133,31 +144,15 @@ export const toolsRouter = createTRPCRouter({
         url,
         customHeaders,
         mcpTransport,
+        validity.statusCode === 401,
       );
-      return server;
-    }),
-  validateMcpServer: protectedProcedure
-    .input(
-      z.object({
-        url: z
-          .string()
-          .url()
-          .refine(
-            validateServerUrl,
-            "URL appears to be unsafe: must not point to internal, local, or private networks",
-          ),
-        customHeaders: customHeadersSchema,
-        mcpTransport: z.nativeEnum(MCPTransport),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      const { url, customHeaders, mcpTransport } = input;
-
-      return await validateMcpServer({
-        url,
-        customHeaders,
-        mcpTransport,
-      });
+      return {
+        id: server.id,
+        url: server.url,
+        customHeaders: server.customHeaders,
+        mcpTransport: server.mcpTransport,
+        mcpRequiresAuth: server.mcpRequiresAuth,
+      };
     }),
   authorizeMcpServer: protectedProcedure
     .input(
@@ -272,6 +267,18 @@ export const toolsRouter = createTRPCRouter({
       );
 
       const { projectId, serverId, url, customHeaders, mcpTransport } = input;
+      const validity = await validateMcpServer({
+        url,
+        customHeaders,
+        mcpTransport,
+      });
+      if (!validity.valid) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `MCP server validation failed: ${validity.error}`,
+        });
+      }
+
       const server = await operations.updateMcpServer(
         ctx.db,
         projectId,
@@ -279,8 +286,15 @@ export const toolsRouter = createTRPCRouter({
         url,
         customHeaders,
         mcpTransport,
+        validity.statusCode === 401,
       );
-      return server;
+      return {
+        id: server.id,
+        url: server.url,
+        customHeaders: server.customHeaders,
+        mcpTransport: server.mcpTransport,
+        mcpRequiresAuth: server.mcpRequiresAuth,
+      };
     }),
   updateComposioAuth: protectedProcedure
     .input(

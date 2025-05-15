@@ -74,21 +74,21 @@ export function McpServerRow({
     }
 
     if (isNew) {
-      await addServer({
+      return await addServer({
         projectId,
-        url: serverInfo.url,
-        customHeaders: serverInfo.customHeaders,
-        mcpTransport: serverInfo.mcpTransport,
-      });
-    } else {
-      await updateServer({
-        projectId,
-        serverId: server.id,
         url: serverInfo.url,
         customHeaders: serverInfo.customHeaders,
         mcpTransport: serverInfo.mcpTransport,
       });
     }
+
+    return await updateServer({
+      projectId,
+      serverId: server.id,
+      url: serverInfo.url,
+      customHeaders: serverInfo.customHeaders,
+      mcpTransport: serverInfo.mcpTransport,
+    });
   };
 
   const handleDelete = async () => {
