@@ -10,7 +10,7 @@ import {
 import type OpenAI from "openai";
 import { formatFunctionCall, generateAdditionalContext } from "./tools";
 
-export function threadMessagesToChatHistory(
+export function threadMessagesToChatCompletionMessageParam(
   messages: ThreadMessage[],
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam[] {
   // as per

@@ -10,7 +10,7 @@ import OpenAI from "openai";
 import { parse } from "partial-json";
 import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
 import { extractMessageContent } from "../../util/response-parsing";
-import { threadMessagesToChatHistory } from "../../util/threadMessagesToChatHistory";
+import { threadMessagesToChatCompletionMessageParam } from "../../util/threadMessagesToChatHistory";
 import {
   getLLMResponseMessage,
   getLLMResponseToolCallId,
@@ -54,7 +54,8 @@ export async function* runDecisionLoop(
 
   const { template: systemPrompt, args: systemPromptArgs } =
     generateDecisionLoopPrompt(customInstructions);
-  const chatHistory = threadMessagesToChatHistory(messages);
+  const chatCompletionMessages =
+    threadMessagesToChatCompletionMessageParam(messages);
   const promptMessages = objectTemplate<ChatCompletionMessageParam[]>([
     { role: "system", content: systemPrompt },
     { role: "chat_history" as "user", content: "{chat_history}" },
@@ -65,7 +66,7 @@ export async function* runDecisionLoop(
     tools: toolsWithStandardParameters,
     promptTemplateName: "decision-loop",
     promptTemplateParams: {
-      chat_history: chatHistory,
+      chat_history: chatCompletionMessages,
       ...systemPromptArgs,
     },
     stream: true,
