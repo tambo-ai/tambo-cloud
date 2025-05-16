@@ -5,7 +5,7 @@ import {
   ThreadMessage,
   ToolCallRequest,
 } from "@tambo-ai-cloud/core";
-import { threadMessagesToChatCompletionMessageParam } from "./threadMessagesToChatHistory";
+import { threadMessagesToChatCompletionMessageParam } from "./thread-message-conversion";
 
 const baseThreadMessage = {
   threadId: "test-thread",

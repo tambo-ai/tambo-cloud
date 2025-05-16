@@ -10,7 +10,7 @@ import OpenAI from "openai";
 import { parse } from "partial-json";
 import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
 import { extractMessageContent } from "../../util/response-parsing";
-import { threadMessagesToChatCompletionMessageParam } from "../../util/threadMessagesToChatHistory";
+import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
 import {
   getLLMResponseMessage,
   getLLMResponseToolCallId,
