@@ -9,6 +9,7 @@ interface McpServerRowProps {
   onRefresh: () => Promise<void>;
   isNew?: boolean;
   onCancel?: () => void;
+  redirectToAuth?: (url: string) => void;
 }
 
 export function McpServerRow({
@@ -17,6 +18,7 @@ export function McpServerRow({
   onRefresh,
   isNew = false,
   onCancel,
+  redirectToAuth,
 }: McpServerRowProps) {
   const [isEditing, setIsEditing] = useState(isNew);
 
@@ -74,21 +76,21 @@ export function McpServerRow({
     }
 
     if (isNew) {
-      await addServer({
+      return await addServer({
         projectId,
-        url: serverInfo.url,
-        customHeaders: serverInfo.customHeaders,
-        mcpTransport: serverInfo.mcpTransport,
-      });
-    } else {
-      await updateServer({
-        projectId,
-        serverId: server.id,
         url: serverInfo.url,
         customHeaders: serverInfo.customHeaders,
         mcpTransport: serverInfo.mcpTransport,
       });
     }
+
+    return await updateServer({
+      projectId,
+      serverId: server.id,
+      url: serverInfo.url,
+      customHeaders: serverInfo.customHeaders,
+      mcpTransport: serverInfo.mcpTransport,
+    });
   };
 
   const handleDelete = async () => {
@@ -107,6 +109,7 @@ export function McpServerRow({
 
   return (
     <McpServerEditor
+      projectId={projectId}
       server={server}
       isEditing={isEditing}
       isNew={isNew}
@@ -118,6 +121,7 @@ export function McpServerRow({
       onCancel={handleCancel}
       onSave={handleSave}
       onDelete={handleDelete}
+      redirectToAuth={redirectToAuth}
     />
   );
 }
