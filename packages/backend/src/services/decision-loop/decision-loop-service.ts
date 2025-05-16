@@ -29,7 +29,7 @@ import {
 
 export async function* runDecisionLoop(
   llmClient: LLMClient,
-  messageHistory: ThreadMessage[],
+  messages: ThreadMessage[],
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   customInstructions: string | undefined,
   forceToolChoice?: string,
@@ -54,7 +54,7 @@ export async function* runDecisionLoop(
 
   const { template: systemPrompt, args: systemPromptArgs } =
     generateDecisionLoopPrompt(customInstructions);
-  const chatHistory = threadMessagesToChatHistory(messageHistory);
+  const chatHistory = threadMessagesToChatHistory(messages);
   const promptMessages = objectTemplate<ChatCompletionMessageParam[]>([
     { role: "system", content: systemPrompt },
     { role: "chat_history" as "user", content: "{chat_history}" },

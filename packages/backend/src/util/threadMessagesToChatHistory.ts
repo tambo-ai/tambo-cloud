@@ -16,7 +16,7 @@ import {
 import { formatFunctionCall, generateAdditionalContext } from "./tools";
 
 export function threadMessagesToChatHistory(
-  messageHistory: ThreadMessage[],
+  messages: ThreadMessage[],
 ): ChatCompletionMessageParam[] {
   // as per
   // https://platform.openai.com/docs/guides/function-calling?api-mode=chat#handling-function-calls,
@@ -26,13 +26,13 @@ export function threadMessagesToChatHistory(
   // As of this moment, the client is not sending back the tool call id in the response,
   // so we have to convert tools to user + assistant messages. These hacks should go away once the client
   // passes the tool call id in the response.
-  const respondedToolIds: string[] = messageHistory
+  const respondedToolIds: string[] = messages
     .filter(
       (message) => message.role === MessageRole.Tool && message.tool_call_id,
     )
     .map((message) => message.tool_call_id)
     .filter((id) => id !== undefined);
-  const newMessages = messageHistory.flatMap(
+  const newMessages = messages.flatMap(
     (message): ChatCompletionMessageParam[] => {
       switch (message.role) {
         case MessageRole.Tool: {
