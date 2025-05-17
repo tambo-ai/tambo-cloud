@@ -16,7 +16,7 @@ export class TokenJSClient implements LLMClient {
   private client: TokenJS;
 
   constructor(
-    apiKey: string,
+    apiKey: string | undefined,
     private model: string,
     private provider: Provider,
     private chainId: string,

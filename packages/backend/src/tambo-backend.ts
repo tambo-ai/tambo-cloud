@@ -24,13 +24,13 @@ interface RunDecisionLoopParams {
 export default class TamboBackend {
   private llmClient: TokenJSClient;
   constructor(
-    openAIKey: string,
+    apiKey: string | undefined,
     private chainId: string,
     options: HydraBackendOptions = {},
   ) {
     const { model = "gpt-4o-mini", provider = "openai", baseURL } = options;
     this.llmClient = new TokenJSClient(
-      openAIKey,
+      apiKey,
       model,
       provider,
       chainId,
