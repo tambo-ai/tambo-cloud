@@ -577,7 +577,9 @@ async function getOAuthProvider(
   // If we have a user context with client info, use that directly
   if (userContext?.mcpOauthClientInfo) {
     return new OAuthLocalProvider(db, userContext.id, {
-      baseUrl: env.VERCEL_URL ?? "http://localhost:3000",
+      baseUrl: env.VERCEL_URL
+        ? `https://${env.VERCEL_URL}`
+        : "http://localhost:3000",
       serverUrl: url,
       clientInformation: userContext.mcpOauthClientInfo,
     });
@@ -609,7 +611,9 @@ async function getOAuthProvider(
   }
 
   return new OAuthLocalProvider(db, context.id, {
-    baseUrl: env.VERCEL_URL ?? "http://localhost:3000",
+    baseUrl: env.VERCEL_URL
+      ? `https://${env.VERCEL_URL}`
+      : "http://localhost:3000",
     serverUrl: url,
     clientInformation: client.sessionInfo.clientInformation,
     sessionId: client.sessionId,
