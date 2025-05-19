@@ -57,7 +57,7 @@ export const projects = pgTable(
     // New fields for default LLM configuration choices
     defaultLlmProviderName: text("default_llm_provider_name"), // e.g., "openai", "anthropic"
     defaultLlmModelName: text("default_llm_model_name"), // e.g., "gpt-4o-mini", "claude-3-opus-20240229"
-    customLlmModelName: text("custom_llm_model_name"), // User-defined custom model name
+    customLlmModelName: text("custom_llm_model_name"), // custom model name for "openai-compatible" provider type
     customLlmBaseURL: text("custom_llm_base_url"), // For "openai-compatible" provider type
   }),
   (table) => {

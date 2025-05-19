@@ -1,9 +1,9 @@
-import type { LlmConfig } from "./llm-config-types";
+import type { LlmProviderConfig } from "./llm-config-types";
 import { anthropicModels } from "./models/anthropic";
 import { mistralModels } from "./models/mistral";
 import { openaiModels } from "./models/openai";
 
-export const llmConfig: LlmConfig = {
+export const llmProviderConfig: LlmProviderConfig = {
   openai: {
     apiName: "openai",
     displayName: "OpenAI",

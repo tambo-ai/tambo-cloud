@@ -68,7 +68,7 @@ export class TokenJSClient implements LLMClient {
 
     if (params.stream) {
       const stream = await this.client.chat.completions.create({
-        provider: providerForTokenJSCall as any,
+        provider: providerForTokenJSCall,
         model: this.model,
         messages: messagesFormatted,
         temperature: 0,
@@ -91,7 +91,7 @@ export class TokenJSClient implements LLMClient {
     }
 
     const response = await this.client.chat.completions.create({
-      provider: providerForTokenJSCall as any,
+      provider: providerForTokenJSCall,
       model: this.model,
       messages: messagesFormatted,
       temperature: 0,

@@ -2,7 +2,7 @@ import { env } from "@/lib/env";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
 import { operations } from "@tambo-ai-cloud/db";
-import { projects } from "@tambo-ai-cloud/schema";
+import { schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -115,7 +115,7 @@ export const projectRouter = createTRPCRouter({
       );
 
       const project = await ctx.db.query.projects.findFirst({
-        where: eq(projects.id, projectId),
+        where: eq(schema.projects.id, projectId),
         columns: {
           defaultLlmProviderName: true,
           defaultLlmModelName: true,
@@ -258,7 +258,7 @@ export const projectRouter = createTRPCRouter({
 
       if (Object.keys(updateData).length === 0) {
         const currentProject = await ctx.db.query.projects.findFirst({
-          where: eq(projects.id, projectId),
+          where: eq(schema.projects.id, projectId),
         });
         if (!currentProject)
           throw new TRPCError({
@@ -274,9 +274,9 @@ export const projectRouter = createTRPCRouter({
       }
 
       const updatedProject = await ctx.db
-        .update(projects)
+        .update(schema.projects)
         .set(updateData)
-        .where(eq(projects.id, projectId))
+        .where(eq(schema.projects.id, projectId))
         .returning();
 
       if (!updatedProject || updatedProject.length === 0) {

@@ -14,18 +14,34 @@ import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLinkIcon, InfoIcon, KeyRound, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { ProjectResponseDto } from "../../../app/(authed)/dashboard/types/types";
+import { type RouterOutputs } from "@/trpc/react";
 
 interface ProviderKeySectionProps {
-  project: ProjectResponseDto;
+  project: RouterOutputs["project"]["getUserProjects"][number];
 }
+
+const sectionAnimationVariants = {
+  initial: { opacity: 0, height: 0 },
+  animate: {
+    opacity: 1,
+    height: "auto",
+    transition: { duration: 0.3, ease: "easeInOut" },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    transition: { duration: 0.2, ease: "easeInOut" },
+  },
+};
+
+const shortTransition = { duration: 0.2 };
 
 export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   const { toast } = useToast();
 
   // --- TRPC API Calls ---
-  const { data: llmConfigData, isLoading: isLoadingLlmConfig } =
-    api.llm.getLlmConfig.useQuery(undefined, {
+  const { data: llmProviderConfigData, isLoading: isLoadingLlmProviderConfig } =
+    api.llm.getLlmProviderConfig.useQuery(undefined, {
       staleTime: Infinity,
       refetchOnWindowFocus: false,
     });
@@ -115,10 +131,12 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     });
 
   // --- Derived State & Data (using TRPC data now) ---
-  const llmProvidersArray = llmConfigData ? Object.values(llmConfigData) : [];
+  const llmProvidersArray = llmProviderConfigData
+    ? Object.values(llmProviderConfigData)
+    : [];
   const currentProviderConfig =
-    selectedProviderApiName && llmConfigData
-      ? llmConfigData[selectedProviderApiName]
+    selectedProviderApiName && llmProviderConfigData
+      ? llmProviderConfigData[selectedProviderApiName]
       : undefined;
 
   const availableModelsArray =
@@ -298,21 +316,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
 
   // --- UI Rendering ---
   const isLoadingInitialData =
-    isLoadingLlmConfig || isLoadingProjectSettingsInitial;
-
-  const sectionAnimationVariants = {
-    initial: { opacity: 0, height: 0 },
-    animate: {
-      opacity: 1,
-      height: "auto",
-      transition: { duration: 0.3, ease: "easeInOut" },
-    },
-    exit: {
-      opacity: 0,
-      height: 0,
-      transition: { duration: 0.2, ease: "easeInOut" },
-    },
-  };
+    isLoadingLlmProviderConfig || isLoadingProjectSettingsInitial;
 
   if (isLoadingInitialData) {
     return (
@@ -346,7 +350,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
             disabled={
               isSavingDefaults ||
               !selectedProviderApiName ||
-              isLoadingLlmConfig ||
+              isLoadingLlmProviderConfig ||
               isLoadingProjectSettingsInitial
             }
           >
@@ -360,12 +364,12 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
           <Select
             value={selectedProviderApiName}
             onValueChange={handleProviderSelect}
-            disabled={isLoadingLlmConfig}
+            disabled={isLoadingLlmProviderConfig}
           >
             <SelectTrigger id="provider-select" className="w-full">
               <SelectValue
                 placeholder={
-                  isLoadingLlmConfig
+                  isLoadingLlmProviderConfig
                     ? "Loading providers..."
                     : "Select a provider"
                 }
@@ -417,13 +421,14 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                     value={selectedModelApiName}
                     onValueChange={handleModelSelect}
                     disabled={
-                      isLoadingLlmConfig || availableModelsArray.length === 0
+                      isLoadingLlmProviderConfig ||
+                      availableModelsArray.length === 0
                     }
                   >
                     <SelectTrigger id="model-select" className="w-full">
                       <SelectValue
                         placeholder={
-                          isLoadingLlmConfig
+                          isLoadingLlmProviderConfig
                             ? "Loading models..."
                             : availableModelsArray.length === 0
                               ? "No models configured for this provider"
@@ -544,7 +549,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={shortTransition}
                     className="space-y-2 overflow-hidden"
                   >
                     <Input
@@ -594,7 +599,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                     key="display-api-key"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.2 }}
+                    transition={shortTransition}
                   >
                     {isLoadingStoredKeysInitial ? (
                       <div className="h-8 w-48 bg-muted animate-pulse rounded"></div>
@@ -621,7 +626,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                 )}
               </div>
             </motion.div>
-          ) : selectedProviderApiName && !isLoadingLlmConfig ? (
+          ) : selectedProviderApiName && !isLoadingLlmProviderConfig ? (
             <motion.div
               key="provider_specific_skeleton"
               variants={sectionAnimationVariants}
@@ -635,7 +640,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                 <div className="h-16 bg-muted-foreground/10 rounded"></div>
               </div>
             </motion.div>
-          ) : !selectedProviderApiName && !isLoadingLlmConfig ? (
+          ) : !selectedProviderApiName && !isLoadingLlmProviderConfig ? (
             <motion.div
               key="select_provider_placeholder"
               variants={sectionAnimationVariants}
