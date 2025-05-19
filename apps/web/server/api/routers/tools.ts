@@ -1,11 +1,13 @@
 import { getBaseUrl } from "@/lib/base-url";
 import { getComposio } from "@/lib/composio";
+import { env } from "@/lib/env";
 import { customHeadersSchema } from "@/lib/headerValidation";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { auth } from "@modelcontextprotocol/sdk/client/auth.js";
 import {
   ComposioAuthMode,
   ComposioConnectorConfig,
+  MCPClient,
   MCPTransport,
   ToolProviderType,
   validateMcpServer,
@@ -20,6 +22,12 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { validateSafeURL, validateServerUrl } from "../../../lib/urlSecurity";
+
+type McpServer = Awaited<
+  ReturnType<typeof operations.getProjectMcpServers>
+>[number];
+
+type OAuthClientProvider = OAuthLocalProvider;
 
 export const toolsRouter = createTRPCRouter({
   listApps: protectedProcedure
@@ -490,6 +498,52 @@ export const toolsRouter = createTRPCRouter({
         lastCheckedAt: new Date(),
       };
     }),
+  inspectMcpServer: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        serverId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await operations.ensureProjectAccess(
+        ctx.db,
+        input.projectId,
+        ctx.session.user.id,
+      );
+
+      const server = await operations.getMcpServer(
+        ctx.db,
+        input.projectId,
+        input.serverId,
+        null,
+      );
+
+      if (!server || !server.url) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "MCP server not found",
+        });
+      }
+
+      if (server.mcpRequiresAuth && !server.contexts.length) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Server requires authentication",
+        });
+      }
+
+      const authProvider = await getAuthProvider(ctx.db, server);
+      const mcpClient = await MCPClient.create(
+        server.url,
+        server.mcpTransport,
+        server.customHeaders,
+        authProvider,
+      );
+
+      const tools = await mcpClient.listTools();
+      return tools;
+    }),
 });
 
 /** Validate the MCP server, leveraging the oauth info in the db if available */
@@ -641,4 +695,43 @@ async function ensureComposioAccount(
     redirectUrl,
     connectionStatus,
   };
+}
+
+/** Get the auth provider for an MCP server */
+async function getAuthProvider(
+  db: HydraDb,
+  mcpServer: McpServer,
+): Promise<OAuthClientProvider | undefined> {
+  if (!mcpServer.contexts.length) {
+    return undefined;
+  }
+  if (mcpServer.contexts.length > 1) {
+    console.warn(
+      `MCP server ${mcpServer.id} has multiple contexts, using the first one`,
+    );
+  }
+  if (!mcpServer.url) {
+    return undefined;
+  }
+  const context = mcpServer.contexts[0];
+  if (!mcpServer.mcpRequiresAuth) {
+    // this is fine, just means this server is not using OAuth
+    return undefined;
+  }
+  // we need to find the client information for this context
+  const client = await db.query.mcpOauthClients.findFirst({
+    // TODO: this should really come in from the toolProviderUserContext
+    where: eq(schema.mcpOauthClients.toolProviderUserContextId, context.id),
+  });
+  if (!client) {
+    return undefined;
+  }
+
+  const authProvider = new OAuthLocalProvider(db, context.id, {
+    baseUrl: env.VERCEL_URL ?? "http://localhost:3000",
+    serverUrl: mcpServer.url,
+    clientInformation: client.sessionInfo.clientInformation,
+    sessionId: client.sessionId,
+  });
+  return authProvider;
 }
