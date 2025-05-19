@@ -172,7 +172,6 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       }
       setSelectedModelApiName(undefined);
     }
-     
   }, [selectedProviderApiName, projectLlmSettings]);
 
   // --- Event Handlers (basic implementation for UI interaction) ---

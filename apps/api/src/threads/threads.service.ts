@@ -132,6 +132,11 @@ export class ThreadsService {
       projectId,
       providerName as Provider,
     );
+    if (!apiKey && providerName !== "openai-compatible") {
+      throw new Error(
+        `Provider key required but not found for project ${projectId} and provider ${providerName}`,
+      );
+    }
 
     return new TamboBackend(apiKey, chainId, {
       provider: providerName as Provider,
@@ -926,7 +931,7 @@ export class ThreadsService {
   private async validateProjectAndProviderKeys(
     projectId: string,
     providerName: Provider,
-  ): Promise<string> {
+  ): Promise<string | undefined> {
     const projectWithKeys =
       await this.projectsService.findOneWithKeys(projectId);
     if (!projectWithKeys) {
@@ -936,10 +941,12 @@ export class ThreadsService {
     const providerKeys = projectWithKeys.getProviderKeys();
 
     if (!providerKeys.length) {
-      this.logger.warn(
-        `No API keys found for project ${projectId}. Using fallback if configured, or calls might fail.`,
+      this.logger.error(
+        `No API keys configured for project ${projectId}. An API key is required to proceed.`,
       );
-      return undefined as any;
+      throw new NotFoundException(
+        `No API keys found for project ${projectId}. Please configure an API key.`,
+      );
     }
 
     const chosenKey = providerKeys.find(
@@ -952,10 +959,12 @@ export class ThreadsService {
     }
 
     if (!chosenKey.providerKeyEncrypted) {
-      this.logger.warn(
-        `Stored key for ${chosenKey.providerName} in project ${projectId} is empty.`,
+      this.logger.error(
+        `Stored key for provider ${chosenKey.providerName} in project ${projectId} is empty or invalid.`,
       );
-      return undefined as any;
+      throw new Error(
+        `API key for provider ${chosenKey.providerName} in project ${projectId} is missing or empty.`,
+      );
     }
 
     try {
@@ -968,7 +977,7 @@ export class ThreadsService {
         `Failed to decrypt API key for provider ${chosenKey.providerName} in project ${projectId}: ${error}`,
       );
       throw new Error(
-        `API key decryption failed for project ${projectId}, provider ${chosenKey.providerName}.`,
+        `API key decryption failed for project ${projectId}, provider ${chosenKey.providerName}. Ensure the key is correctly encrypted and the decryption key is available.`,
       );
     }
   }
