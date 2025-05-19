@@ -5,6 +5,10 @@ export interface ProjectResponseDto {
   userId: string;
   composioEnabled?: boolean;
   customInstructions?: string | null;
+  defaultLlmProviderName?: string | null;
+  defaultLlmModelName?: string | null;
+  customLlmModelName?: string | null;
+  customLlmBaseURL?: string | null;
 }
 
 export interface ProjectDto {
@@ -17,6 +21,10 @@ export interface Project {
   name: string;
   userId: string;
   customInstructions?: string | null;
+  defaultLlmProviderName?: string | null;
+  defaultLlmModelName?: string | null;
+  customLlmModelName?: string | null;
+  customLlmBaseURL?: string | null;
   apiKeys: APIKeyResponseDto[];
   providerKeys: ProviderKeyResponseDto[];
 }

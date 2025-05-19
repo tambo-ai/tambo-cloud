@@ -1,19 +1,6 @@
 import { LlmModelConfig } from "../llm-config-types";
 
 export const mistralModels: LlmModelConfig = {
-  "open-mixtral-8x22b": {
-    apiName: "open-mixtral-8x22b",
-    displayName: "open Mixtral 8x22b",
-    status: "untested",
-    notes:
-      "Mixtral 8x22B is Mistral's most powerful open-weight model, optimized for reasoning, coding, and math. Uses a sparse MoE setup with 39B active parameters per token.",
-    docLink: "https://mistral.ai/news/mixtral-8x22b",
-    tamboDocLink: "https://tambo.co/docs",
-    properties: {
-      supportsTools: true,
-      supportsJsonMode: true,
-    },
-  },
   "mistral-small-latest": {
     apiName: "mistral-small-latest",
     displayName: "Mistral Small",

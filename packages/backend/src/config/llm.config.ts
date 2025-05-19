@@ -1,6 +1,5 @@
 import type { LlmConfig } from "./llm-config-types";
 import { anthropicModels } from "./models/anthropic";
-import { groqModels } from "./models/groq";
 import { mistralModels } from "./models/mistral";
 import { openaiModels } from "./models/openai";
 
@@ -19,13 +18,6 @@ export const llmConfig: LlmConfig = {
     apiKeyLink: "https://console.anthropic.com/settings/keys",
     models: anthropicModels,
   },
-  groq: {
-    apiName: "groq",
-    displayName: "Groq",
-    docLinkRoot: "https://console.groq.com/docs",
-    apiKeyLink: "https://console.groq.com/keys",
-    models: groqModels,
-  },
   mistral: {
     apiName: "mistral",
     displayName: "Mistral",
@@ -33,8 +25,7 @@ export const llmConfig: LlmConfig = {
     apiKeyLink: "https://console.mistral.ai/api-keys",
     models: mistralModels,
   },
-  // TODO: when user selects openai-compatible, we should show UI to enter baseURL and custom models and provider name
-  openaiCompatible: {
+  "openai-compatible": {
     apiName: "openai-compatible",
     displayName: "OpenAI Compatible",
     docLinkRoot: "https://docs.tokenjs.ai/providers/openai-compatible",
@@ -42,3 +33,4 @@ export const llmConfig: LlmConfig = {
     requiresBaseUrl: true,
   },
 };
+// Not using Groq for now because it is still giving some issues.

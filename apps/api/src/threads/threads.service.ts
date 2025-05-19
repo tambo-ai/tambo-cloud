@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   generateChainId,
   getToolsFromSources,
+  Provider,
   SystemTools,
   TamboBackend,
 } from "@tambo-ai-cloud/backend";
@@ -89,22 +90,54 @@ export class ThreadsService {
   ): Promise<TamboBackend> {
     const chainId = await generateChainId(threadId);
 
-    // Get the thread's project ID from the database
     const threadData = await this.getDb().query.threads.findFirst({
       where: eq(schema.threads.id, threadId),
+      columns: { projectId: true },
     });
 
-    if (!threadData) {
-      throw new NotFoundException(`Thread with ID ${threadId} not found`);
+    if (!threadData?.projectId) {
+      throw new NotFoundException(
+        `Thread with ID ${threadId} not found or has no project associated.`,
+      );
     }
 
-    // Get the provider key from the database
-    const providerKey = await this.validateProjectAndProviderKeys(
-      threadData.projectId,
+    const projectId = threadData.projectId;
+
+    // 1. Fetch project-specific LLM settings
+    const project = await this.projectsService.findOne(projectId);
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found.`);
+    }
+
+    // Determine the provider, model, and baseURL from project settings
+    // Provider defaults to 'openai' if not set on the project, model to 'gpt-4o-mini'
+    const providerName = project.defaultLlmProviderName ?? "openai";
+    let modelName = project.defaultLlmModelName;
+    let customModelOverride = project.customLlmModelName;
+    const baseURL = project.customLlmBaseURL;
+
+    if (providerName === "openai-compatible") {
+      // For openai-compatible, the customLlmModelName is the actual model name
+      modelName = project.customLlmModelName ?? "gpt-4o-mini"; // Fallback if customLlmModelName is null
+      customModelOverride = undefined; // No separate override for openai-compatible
+    } else if (customModelOverride) {
+      // For other providers, if customLlmModelName is set, it overrides defaultLlmModelName
+      modelName = customModelOverride;
+    } else {
+      modelName = modelName ?? "gpt-4o-mini"; // Fallback if no default model and no override
+    }
+
+    // 2. Get the API key for the determined provider
+    const apiKey = await this.validateProjectAndProviderKeys(
+      projectId,
+      providerName as Provider,
     );
 
-    // Use the provider key from the database instead of the environment variable
-    return new TamboBackend(providerKey, chainId);
+    return new TamboBackend(apiKey, chainId, {
+      provider: providerName as Provider,
+      model: modelName,
+      baseURL: baseURL ?? undefined,
+    });
   }
 
   async createThread(createThreadDto: ThreadRequest): Promise<Thread> {
@@ -892,34 +925,52 @@ export class ThreadsService {
 
   private async validateProjectAndProviderKeys(
     projectId: string,
+    providerName: Provider,
   ): Promise<string> {
-    const project = await this.projectsService.findOneWithKeys(projectId);
-    if (!project) {
-      throw new NotFoundException("Project not found");
+    const projectWithKeys =
+      await this.projectsService.findOneWithKeys(projectId);
+    if (!projectWithKeys) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
 
-    const providerKeys = project.getProviderKeys();
+    const providerKeys = projectWithKeys.getProviderKeys();
 
-    // If no provider keys are set, use the fallback key
     if (!providerKeys.length) {
-      const fallbackKey = process.env.FALLBACK_OPENAI_API_KEY;
-      if (!fallbackKey) {
-        throw new NotFoundException(
-          "No provider keys found for project and no fallback key configured",
-        );
-      }
-      return fallbackKey;
+      this.logger.warn(
+        `No API keys found for project ${projectId}. Using fallback if configured, or calls might fail.`,
+      );
+      return undefined as any;
     }
 
-    // Use the last provider key if available
-    const providerKey =
-      providerKeys[providerKeys.length - 1].providerKeyEncrypted;
-    if (!providerKey) {
-      throw new NotFoundException("No provider key found for project");
+    const chosenKey = providerKeys.find(
+      (key) => key.providerName === providerName,
+    );
+    if (!chosenKey) {
+      throw new Error(
+        `No key found for provider ${providerName} in project ${projectId}`,
+      );
     }
 
-    const { providerKey: decryptedKey } = decryptProviderKey(providerKey);
-    return decryptedKey;
+    if (!chosenKey.providerKeyEncrypted) {
+      this.logger.warn(
+        `Stored key for ${chosenKey.providerName} in project ${projectId} is empty.`,
+      );
+      return undefined as any;
+    }
+
+    try {
+      const { providerKey: decryptedKey } = decryptProviderKey(
+        chosenKey.providerKeyEncrypted,
+      );
+      return decryptedKey;
+    } catch (error) {
+      this.logger.error(
+        `Failed to decrypt API key for provider ${chosenKey.providerName} in project ${projectId}: ${error}`,
+      );
+      throw new Error(
+        `API key decryption failed for project ${projectId}, provider ${chosenKey.providerName}.`,
+      );
+    }
   }
 }
 function isSystemToolCall(
