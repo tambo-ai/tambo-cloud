@@ -73,7 +73,7 @@ export class ThreadsService {
     private readonly db: HydraDatabase,
     private projectsService: ProjectsService,
     private readonly logger: CorrelationLoggerService,
-    private readonly emailService: EmailService,
+    private readonly emailService: EmailService
   ) {}
 
   getDb() {
@@ -86,7 +86,7 @@ export class ThreadsService {
   }
 
   private async createHydraBackendForThread(
-    threadId: string,
+    threadId: string
   ): Promise<TamboBackend> {
     const chainId = await generateChainId(threadId);
 
@@ -97,7 +97,7 @@ export class ThreadsService {
 
     if (!threadData?.projectId) {
       throw new NotFoundException(
-        `Thread with ID ${threadId} not found or has no project associated.`,
+        `Thread with ID ${threadId} not found or has no project associated.`
       );
     }
 
@@ -130,11 +130,11 @@ export class ThreadsService {
     // 2. Get the API key for the determined provider
     const apiKey = await this.validateProjectAndProviderKeys(
       projectId,
-      providerName as Provider,
+      providerName as Provider
     );
     if (!apiKey && providerName !== "openai-compatible") {
       throw new Error(
-        `Provider key required but not found for project ${projectId} and provider ${providerName}`,
+        `Provider key required but not found for project ${projectId} and provider ${providerName}`
       );
     }
 
@@ -165,12 +165,12 @@ export class ThreadsService {
 
   async findAllForProject(
     projectId: string,
-    params: { contextKey?: string; offset?: number; limit?: number } = {},
+    params: { contextKey?: string; offset?: number; limit?: number } = {}
   ): Promise<Thread[]> {
     const threads = await operations.getThreadsByProject(
       this.getDb(),
       projectId,
-      params,
+      params
     );
     return threads.map((thread) => ({
       id: thread.id,
@@ -186,12 +186,12 @@ export class ThreadsService {
 
   async countThreadsByProject(
     projectId: string,
-    params: { contextKey?: string } = {},
+    params: { contextKey?: string } = {}
   ): Promise<number> {
     return await operations.countThreadsByProject(
       this.getDb(),
       projectId,
-      params,
+      params
     );
   }
 
@@ -199,7 +199,7 @@ export class ThreadsService {
     const thread = await operations.getThreadForProjectId(
       this.getDb(),
       id,
-      projectId,
+      projectId
     );
     if (!thread) {
       throw new NotFoundException("Thread not found");
@@ -243,13 +243,13 @@ export class ThreadsService {
   async updateGenerationStage(
     id: string,
     generationStage: GenerationStage,
-    statusMessage?: string,
+    statusMessage?: string
   ) {
     return await updateGenerationStage(
       this.getDb(),
       id,
       generationStage,
-      statusMessage,
+      statusMessage
     );
   }
 
@@ -260,7 +260,7 @@ export class ThreadsService {
   private async checkMessageLimit(projectId: string): Promise<void> {
     const usage = await operations.getProjectMessageUsage(
       this.getDb(),
-      projectId,
+      projectId
     );
 
     // Check if we're using the fallback key
@@ -296,7 +296,7 @@ export class ThreadsService {
           await this.emailService.sendMessageLimitNotification(
             projectId,
             ownerEmail,
-            project.name,
+            project.name
           );
 
           // Update the notification sent timestamp
@@ -317,19 +317,19 @@ export class ThreadsService {
 
   async addMessage(
     threadId: string,
-    messageDto: MessageRequest,
+    messageDto: MessageRequest
   ): Promise<ThreadMessage> {
     return await addMessage(this.getDb(), threadId, messageDto);
   }
 
   async getMessages(
     threadId: string,
-    includeInternal: boolean = false,
+    includeInternal: boolean = false
   ): Promise<ThreadMessageDto[]> {
     const messages = await operations.getMessages(
       this.getDb(),
       threadId,
-      includeInternal,
+      includeInternal
     );
     return messages.map((message) => ({
       ...message,
@@ -356,7 +356,7 @@ export class ThreadsService {
     try {
       const message = await operations.getMessageWithAccess(
         this.getDb(),
-        messageId,
+        messageId
       );
       if (!message) {
         this.logger.warn(`Message not found: ${messageId}`);
@@ -380,14 +380,14 @@ export class ThreadsService {
     try {
       const suggestions = await operations.getSuggestions(
         this.getDb(),
-        messageId,
+        messageId
       );
       if (suggestions.length === 0) {
         throw new SuggestionNotFoundException(messageId);
       }
 
       this.logger.log(
-        `Found ${suggestions.length} suggestions for message: ${messageId}`,
+        `Found ${suggestions.length} suggestions for message: ${messageId}`
       );
       return suggestions.map(mapSuggestionToDto);
     } catch (error: unknown) {
@@ -399,7 +399,7 @@ export class ThreadsService {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `Error getting suggestions: ${errorMessage}`,
-        errorStack,
+        errorStack
       );
       throw new SuggestionGenerationError(messageId);
     }
@@ -407,7 +407,7 @@ export class ThreadsService {
 
   async generateSuggestions(
     messageId: string,
-    generateSuggestionsDto: SuggestionsGenerateDto,
+    generateSuggestionsDto: SuggestionsGenerateDto
   ): Promise<SuggestionDto[]> {
     const message = await this.getMessage(messageId);
 
@@ -420,7 +420,7 @@ export class ThreadsService {
         generateSuggestionsDto.maxSuggestions ?? 3,
         generateSuggestionsDto.availableComponents ?? [],
         message.threadId,
-        false,
+        false
       );
 
       if (!suggestions.suggestions.length) {
@@ -433,11 +433,11 @@ export class ThreadsService {
           messageId,
           title: suggestion.title,
           detailedSuggestion: suggestion.detailedSuggestion,
-        })),
+        }))
       );
 
       this.logger.log(
-        `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`,
+        `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`
       );
       return savedSuggestions.map(mapSuggestionToDto);
     } catch (error: unknown) {
@@ -446,7 +446,7 @@ export class ThreadsService {
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
         `Error generating suggestions: ${errorMessage}`,
-        errorStack,
+        errorStack
       );
       throw new SuggestionGenerationError(messageId, {
         maxSuggestions: generateSuggestionsDto.maxSuggestions,
@@ -457,12 +457,12 @@ export class ThreadsService {
 
   async updateComponentState(
     messageId: string,
-    newState: Record<string, unknown>,
+    newState: Record<string, unknown>
   ): Promise<ThreadMessageDto> {
     const message = await operations.updateMessageComponentState(
       this.getDb(),
       messageId,
-      newState,
+      newState
     );
     return {
       ...message,
@@ -489,21 +489,21 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
     stream?: true,
-    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+    depth?: number // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   async advanceThread(
     projectId: string,
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
     stream?: false,
-    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+    depth?: number // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
   ): Promise<AdvanceThreadResponseDto>;
   async advanceThread(
     projectId: string,
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
     stream?: boolean,
-    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+    depth?: number // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   >;
@@ -512,7 +512,7 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
     stream?: boolean,
-    depth = 0, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+    depth = 0 // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -526,7 +526,7 @@ export class ThreadsService {
     const thread = await this.ensureThread(
       projectId,
       unresolvedThreadId,
-      advanceRequestDto.contextKey,
+      advanceRequestDto.contextKey
     );
 
     // Ensure only one request per thread adds its user message and continues
@@ -534,7 +534,7 @@ export class ThreadsService {
       db,
       thread.id,
       advanceRequestDto.messageToAppend,
-      this.logger,
+      this.logger
     );
 
     // Use the shared method to create the TamboBackend instance
@@ -543,8 +543,8 @@ export class ThreadsService {
     // Log available components
     this.logger.log(
       `Available components for thread ${thread.id}: ${JSON.stringify(
-        advanceRequestDto.availableComponents?.map((comp) => comp.name),
-      )}`,
+        advanceRequestDto.availableComponents?.map((comp) => comp.name)
+      )}`
     );
 
     // Log detailed component information
@@ -555,8 +555,8 @@ export class ThreadsService {
             name: comp.name,
             description: comp.description,
             contextTools: comp.contextTools.length || 0,
-          })),
-        )}`,
+          }))
+        )}`
       );
     }
 
@@ -578,14 +578,14 @@ export class ThreadsService {
         userMessage,
         advanceRequestDto,
         customInstructions,
-        depth,
+        depth
       );
     }
 
     const systemTools = await getSystemTools(
       db,
       projectId,
-      null, // right now all provider contexts are stored with null context keys
+      null // right now all provider contexts are stored with null context keys
     );
 
     const responseMessage = await processThreadMessage(
@@ -595,7 +595,7 @@ export class ThreadsService {
       advanceRequestDto,
       tamboBackend,
       systemTools,
-      customInstructions,
+      customInstructions
     );
     const {
       responseMessageDto,
@@ -606,14 +606,14 @@ export class ThreadsService {
       thread.id,
       userMessage,
       responseMessage,
-      this.logger,
+      this.logger
     );
 
     const toolCallRequest = responseMessage.toolCallRequest;
     if (isSystemToolCall(toolCallRequest, systemTools)) {
       if (!responseMessage.toolCallId) {
         console.warn(
-          `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
+          `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`
         );
       }
       return await this.handleSystemToolCall(
@@ -625,7 +625,7 @@ export class ThreadsService {
         projectId,
         thread.id,
         false,
-        depth,
+        depth
       );
     }
 
@@ -649,7 +649,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: boolean,
-    depth: number,
+    depth: number
   ): Promise<AdvanceThreadResponseDto>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
@@ -660,7 +660,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: true,
-    depth: number,
+    depth: number
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
@@ -671,7 +671,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: boolean,
-    depth: number,
+    depth: number
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -680,7 +680,7 @@ export class ThreadsService {
       toolCallRequest,
       toolCallId,
       componentDecision,
-      advanceRequestDto,
+      advanceRequestDto
     );
     if (messageWithToolResponse === advanceRequestDto) {
       throw new Error("No tool call response, returning assistant message");
@@ -691,7 +691,7 @@ export class ThreadsService {
       messageWithToolResponse,
       threadId,
       stream,
-      depth + 1,
+      depth + 1
     );
   }
 
@@ -704,12 +704,12 @@ export class ThreadsService {
     userMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
     customInstructions: string | undefined,
-    depth: number,
+    depth: number
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
     const systemTools = await getSystemTools(
       db,
       projectId,
-      null, // right now all provider contexts are stored with null context keys
+      null // right now all provider contexts are stored with null context keys
     );
     const latestMessage = messages[messages.length - 1];
     if (latestMessage.role === MessageRole.Tool) {
@@ -717,11 +717,11 @@ export class ThreadsService {
         db,
         threadId,
         GenerationStage.HYDRATING_COMPONENT,
-        `Hydrating ${latestMessage.component?.componentName}...`,
+        `Hydrating ${latestMessage.component?.componentName}...`
       );
       // Since we don't a store tool responses in the db, assumes that the tool response is the messageToAppend
       const toolResponse = extractToolResponse(
-        advanceRequestDto.messageToAppend,
+        advanceRequestDto.messageToAppend
       );
       if (!toolResponse) {
         throw new Error("No tool response found");
@@ -729,7 +729,7 @@ export class ThreadsService {
       const { originalTools, strictTools } = getToolsFromSources(
         advanceRequestDto.availableComponents ?? [],
         advanceRequestDto.clientTools ?? [],
-        systemTools,
+        systemTools
       );
 
       const streamedResponseMessage = await tamboBackend.runDecisionLoop({
@@ -747,7 +747,7 @@ export class ThreadsService {
         systemTools,
         advanceRequestDto,
         originalTools,
-        depth,
+        depth
       );
     }
 
@@ -755,12 +755,12 @@ export class ThreadsService {
       db,
       threadId,
       GenerationStage.CHOOSING_COMPONENT,
-      `Choosing component...`,
+      `Choosing component...`
     );
     const { originalTools, strictTools } = getToolsFromSources(
       advanceRequestDto.availableComponents ?? [],
       advanceRequestDto.clientTools ?? [],
-      systemTools,
+      systemTools
     );
 
     const streamedResponseMessage = await tamboBackend.runDecisionLoop({
@@ -778,7 +778,7 @@ export class ThreadsService {
       systemTools,
       advanceRequestDto,
       originalTools,
-      depth,
+      depth
     );
   }
 
@@ -790,7 +790,7 @@ export class ThreadsService {
     systemTools: SystemTools,
     originalRequest: AdvanceThreadDto,
     originalTools: OpenAI.Chat.Completions.ChatCompletionTool[],
-    depth: number = 0,
+    depth: number = 0
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     const db = this.getDb();
     const logger = this.logger;
@@ -799,14 +799,14 @@ export class ThreadsService {
       db,
       threadId,
       GenerationStage.STREAMING_RESPONSE,
-      `Streaming response...`,
+      `Streaming response...`
     );
 
     const inProgressMessage = await addInProgressMessage(
       db,
       threadId,
       userMessage,
-      logger,
+      logger
     );
 
     // we hold on to the final thread message, in case we have to switch to a tool call
@@ -816,7 +816,7 @@ export class ThreadsService {
 
     for await (const threadMessage of convertDecisionStreamToMessageStream(
       stream,
-      inProgressMessage,
+      inProgressMessage
     )) {
       // Update db message on interval
       const currentTime = Date.now();
@@ -843,12 +843,12 @@ export class ThreadsService {
     // Initially, the call was made with a strict schema, so we need to remove non-required parameters
     const strictToolCallRequest = finalThreadMessage.toolCallRequest;
     const originalTool = originalTools.find(
-      (tool) => tool.function.name === strictToolCallRequest?.toolName,
+      (tool) => tool.function.name === strictToolCallRequest?.toolName
     );
 
     const toolCallRequest = unstrictifyToolCallRequest(
       originalTool,
-      strictToolCallRequest,
+      strictToolCallRequest
     );
 
     // Update the tool call to be the non-strict call
@@ -864,7 +864,7 @@ export class ThreadsService {
         userMessage,
         inProgressMessage.id,
         finalThreadMessage,
-        logger,
+        logger
       );
     const componentDecision = finalThreadMessage.component;
     if (componentDecision && isSystemToolCall(toolCallRequest, systemTools)) {
@@ -872,7 +872,7 @@ export class ThreadsService {
 
       if (!toolCallId) {
         console.warn(
-          `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${finalThreadMessage}, returning assistant message`,
+          `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${finalThreadMessage}, returning assistant message`
         );
       }
       // Note that this effectively consumes nonStrictToolCallRequest and finalToolCallId
@@ -885,7 +885,7 @@ export class ThreadsService {
         projectId,
         threadId,
         true,
-        depth,
+        depth
       );
 
       for await (const chunk of toolResponseMessageStream) {
@@ -906,7 +906,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string | undefined,
     contextKey: string | undefined,
-    preventCreate: boolean = false,
+    preventCreate: boolean = false
   ): Promise<Thread> {
     // If the threadId is provided, ensure that the thread belongs to the project
     if (threadId) {
@@ -930,10 +930,11 @@ export class ThreadsService {
 
   private async validateProjectAndProviderKeys(
     projectId: string,
-    providerName: Provider,
+    providerName: Provider
   ): Promise<string | undefined> {
-    const projectWithKeys =
-      await this.projectsService.findOneWithKeys(projectId);
+    const projectWithKeys = await this.projectsService.findOneWithKeys(
+      projectId
+    );
     if (!projectWithKeys) {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
@@ -942,49 +943,49 @@ export class ThreadsService {
 
     if (!providerKeys.length) {
       this.logger.error(
-        `No API keys configured for project ${projectId}. An API key is required to proceed.`,
+        `No provider API keys configured for project ${projectId}. An API key is required to proceed.`
       );
       throw new NotFoundException(
-        `No API keys found for project ${projectId}. Please configure an API key.`,
+        `No provider API keys found for project ${projectId}. Please configure an API key.`
       );
     }
 
     const chosenKey = providerKeys.find(
-      (key) => key.providerName === providerName,
+      (key) => key.providerName === providerName
     );
     if (!chosenKey) {
       throw new Error(
-        `No key found for provider ${providerName} in project ${projectId}`,
+        `No key found for provider ${providerName} in project ${projectId}`
       );
     }
 
     if (!chosenKey.providerKeyEncrypted) {
       this.logger.error(
-        `Stored key for provider ${chosenKey.providerName} in project ${projectId} is empty or invalid.`,
+        `Stored key for provider ${chosenKey.providerName} in project ${projectId} is empty or invalid.`
       );
       throw new Error(
-        `API key for provider ${chosenKey.providerName} in project ${projectId} is missing or empty.`,
+        `API key for provider ${chosenKey.providerName} in project ${projectId} is missing or empty.`
       );
     }
 
     try {
       const { providerKey: decryptedKey } = decryptProviderKey(
-        chosenKey.providerKeyEncrypted,
+        chosenKey.providerKeyEncrypted
       );
       return decryptedKey;
     } catch (error) {
       this.logger.error(
-        `Failed to decrypt API key for provider ${chosenKey.providerName} in project ${projectId}: ${error}`,
+        `Failed to decrypt API key for provider ${chosenKey.providerName} in project ${projectId}: ${error}`
       );
       throw new Error(
-        `API key decryption failed for project ${projectId}, provider ${chosenKey.providerName}. Ensure the key is correctly encrypted and the decryption key is available.`,
+        `API key decryption failed for project ${projectId}, provider ${chosenKey.providerName}. Ensure the key is correctly encrypted and the decryption key is available.`
       );
     }
   }
 }
 function isSystemToolCall(
   toolCallRequest: ToolCallRequest | undefined,
-  systemTools: SystemTools,
+  systemTools: SystemTools
 ): toolCallRequest is ToolCallRequest {
   return (
     !!toolCallRequest &&
