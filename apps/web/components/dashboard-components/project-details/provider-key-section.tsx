@@ -650,7 +650,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
               className="overflow-hidden text-center"
             >
               <p className="text-sm text-muted-foreground py-6">
-                Select a provider to configure its models and API key.
+                Select a provider to configure its models and API key. By default, Tambo will automatically choose an appropriate model for your project.
               </p>
             </motion.div>
           ) : null}
