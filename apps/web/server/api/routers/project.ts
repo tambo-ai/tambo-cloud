@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { validateServerUrl, validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
 import { operations } from "@tambo-ai-cloud/db";
@@ -223,6 +224,31 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName,
         customLlmBaseURL,
       } = input;
+
+      // ─── Validate custom base-URL for OpenAI-compatible providers ────────────
+      if (customLlmBaseURL && customLlmBaseURL.trim() !== "") {
+        // Basic URL syntax check
+        let asURL: URL;
+        try {
+          asURL = new URL(customLlmBaseURL.trim());
+        } catch {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid URL provided for custom LLM base URL.",
+          });
+        }
+
+        // Safety checks (local / private networks, etc.)
+        const isSafe = await validateServerUrl(asURL.href);
+        if (!isSafe) {
+          const { reason } = await validateSafeURL(asURL.href);
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `URL validation failed${reason ? `: ${reason}` : ""}`,
+          });
+        }
+      }
+
       await operations.ensureProjectAccess(
         ctx.db,
         projectId,
