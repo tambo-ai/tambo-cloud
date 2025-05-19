@@ -545,7 +545,21 @@ export const toolsRouter = createTRPCRouter({
       );
 
       const tools = await mcpClient.listTools();
-      return tools;
+      const validity = await validateMcpServer({
+        url: server.url,
+        customHeaders: server.customHeaders,
+        mcpTransport: server.mcpTransport,
+        oauthProvider: authProvider,
+      });
+
+      return {
+        tools,
+        serverInfo: {
+          version: validity.version,
+          instructions: validity.instructions,
+          capabilities: validity.capabilities,
+        },
+      };
     }),
 });
 
