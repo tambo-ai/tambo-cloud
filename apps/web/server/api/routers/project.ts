@@ -1,5 +1,5 @@
 import { env } from "@/lib/env";
-import { validateServerUrl, validateSafeURL } from "@/lib/urlSecurity";
+import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
 import { operations } from "@tambo-ai-cloud/db";
@@ -238,10 +238,9 @@ export const projectRouter = createTRPCRouter({
           });
         }
 
-        // Safety checks (local / private networks, etc.)
-        const isSafe = await validateServerUrl(asURL.href);
-        if (!isSafe) {
-          const { reason } = await validateSafeURL(asURL.href);
+        // Safety & SSRF checks (local / private networks, etc.)
+        const { safe, reason } = await validateSafeURL(asURL.href);
+        if (!safe) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: `URL validation failed${reason ? `: ${reason}` : ""}`,
