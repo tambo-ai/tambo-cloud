@@ -418,6 +418,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                   value={provider.apiName}
                 >
                   {provider.displayName}
+                  {provider.isDefaultProvider && " (default)"}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -476,7 +477,10 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                       {availableModelsArray.map((model) => (
                         <SelectItem key={model.apiName} value={model.apiName}>
                           <div className="flex items-center justify-between w-full">
-                            <span>{model.displayName}</span>
+                            <span>
+                              {model.displayName}
+                              {model.isDefaultModel && " (default)"}
+                            </span>
                             {model.status && (
                               <span
                                 className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
