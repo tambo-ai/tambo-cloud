@@ -157,8 +157,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   const maskedApiKeyDisplay = isLoadingStoredKeysInitial
     ? "Loading..."
     : currentApiKeyRecord
-    ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
-    : "No API key set";
+      ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
+      : "No API key set";
 
   // Effect to sync UI state when selectedProviderApiName changes,
   // especially after projectLlmSettings might have set it initially.
@@ -475,7 +475,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                         >
                           <ExternalLinkIcon className="h-3 w-3 mr-1" />
                           Model Documentation
-                        </a>
+                        </a> 
                       )}
                     </div>
                   )}
@@ -631,7 +631,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
               key="provider_specific_skeleton"
               variants={sectionAnimationVariants}
               initial="initial"
-              animate="animate"  
+              animate="animate"
               exit="exit"
               className="overflow-hidden"
             >

@@ -225,12 +225,18 @@ export const projectRouter = createTRPCRouter({
         customLlmBaseURL,
       } = input;
 
-      // ─── Validate custom base-URL for OpenAI-compatible providers ────────────
-      if (customLlmBaseURL && customLlmBaseURL.trim() !== "") {
+      // Always work with one trimmed instance so we don't repeat `trim()` calls
+      const sanitizedBaseURL =
+        typeof customLlmBaseURL === "string"
+          ? customLlmBaseURL.trim()
+          : customLlmBaseURL;
+
+      // ─── Validate custom base-URL for OpenAI-compatible providers ───────────
+      if (typeof sanitizedBaseURL === "string" && sanitizedBaseURL !== "") {
         // Basic URL syntax check
         let asURL: URL;
         try {
-          asURL = new URL(customLlmBaseURL.trim());
+          asURL = new URL(sanitizedBaseURL);
         } catch {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -271,7 +277,9 @@ export const projectRouter = createTRPCRouter({
         updateData.customLlmModelName = customLlmModelName ?? null;
       }
       if ("customLlmBaseURL" in input) {
-        updateData.customLlmBaseURL = customLlmBaseURL ?? null;
+        // Store the trimmed value (or null if blank/undefined)
+        updateData.customLlmBaseURL =
+          sanitizedBaseURL && sanitizedBaseURL !== "" ? sanitizedBaseURL : null;
       }
 
       if (
