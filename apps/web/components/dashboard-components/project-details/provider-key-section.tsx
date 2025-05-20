@@ -1,10 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,12 +12,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ExternalLinkIcon,
-  InfoIcon,
-  KeyRound,
-  Save,
-} from "lucide-react";
+import { ExternalLinkIcon, InfoIcon, KeyRound, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { type RouterOutputs } from "@/trpc/react";
 
@@ -64,7 +54,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     { projectId: project.id },
     {
       enabled: !!project.id,
-    },
+    }
   );
 
   const {
@@ -162,14 +152,13 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       : undefined;
 
   const currentApiKeyRecord = storedApiKeys?.find(
-    (k) => k.providerName === selectedProviderApiName,
+    (k) => k.providerName === selectedProviderApiName
   );
   const maskedApiKeyDisplay = isLoadingStoredKeysInitial
     ? "Loading..."
     : currentApiKeyRecord
-      ? currentApiKeyRecord.partiallyHiddenKey ||
-        "s•••••••••••••••••••••••key"
-      : "No API key set";
+    ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
+    : "No API key set";
 
   // Effect to sync UI state when selectedProviderApiName changes,
   // especially after projectLlmSettings might have set it initially.
@@ -184,7 +173,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
           setBaseUrl(projectLlmSettings.customLlmBaseURL ?? "");
         } else {
           setSelectedModelApiName(
-            projectLlmSettings.defaultLlmModelName ?? undefined,
+            projectLlmSettings.defaultLlmModelName ?? undefined
           );
           setCustomModelName("");
           setBaseUrl("");
@@ -442,8 +431,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                           isLoadingLlmProviderConfig
                             ? "Loading models..."
                             : availableModelsArray.length === 0
-                              ? "No models configured for this provider"
-                              : "Select a model"
+                            ? "No models configured for this provider"
+                            : "Select a model"
                         }
                       />
                     </SelectTrigger>
