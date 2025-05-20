@@ -66,10 +66,12 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   });
 
   // --- UI State ---
-  const [selectedProviderApiName, setSelectedProviderApiName] =
-    useState<string | undefined>();
-  const [selectedModelApiName, setSelectedModelApiName] =
-    useState<string | undefined>();
+  const [selectedProviderApiName, setSelectedProviderApiName] = useState<
+    string | undefined
+  >();
+  const [selectedModelApiName, setSelectedModelApiName] = useState<
+    string | undefined
+  >();
   const [customModelName, setCustomModelName] = useState<string>("");
   const [baseUrl, setBaseUrl] = useState<string>("");
 
@@ -155,8 +157,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   const maskedApiKeyDisplay = isLoadingStoredKeysInitial
     ? "Loading..."
     : currentApiKeyRecord
-    ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
-    : "No API key set";
+      ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
+      : "No API key set";
 
   // Effect to sync UI state when selectedProviderApiName changes,
   // especially after projectLlmSettings might have set it initially.
@@ -429,8 +431,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                           isLoadingLlmProviderConfig
                             ? "Loading models..."
                             : availableModelsArray.length === 0
-                            ? "No models configured for this provider"
-                            : "Select a model"
+                              ? "No models configured for this provider"
+                              : "Select a model"
                         }
                       />
                     </SelectTrigger>
