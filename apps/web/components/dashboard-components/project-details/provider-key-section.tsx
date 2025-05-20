@@ -10,11 +10,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLinkIcon, InfoIcon, KeyRound, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { type RouterOutputs } from "@/trpc/react";
 
 interface ProviderKeySectionProps {
   project: RouterOutputs["project"]["getUserProjects"][number];
@@ -54,7 +53,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     { projectId: project.id },
     {
       enabled: !!project.id,
-    },
+    }
   );
 
   const {
@@ -82,17 +81,37 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   useEffect(() => {
     if (projectLlmSettings) {
       const data = projectLlmSettings;
+      // If no provider is set, find and set OpenAI as default
+      if (!data.defaultLlmProviderName && llmProviderConfigData) {
+        const openaiProvider = Object.values(llmProviderConfigData).find(
+          (provider) => provider.apiName === "openai"
+        );
+        if (openaiProvider) {
+          setSelectedProviderApiName("openai");
+          setSelectedModelApiName("gpt-4o-mini");
+          return;
+        }
+      }
+
       setSelectedProviderApiName(data.defaultLlmProviderName ?? undefined);
       if (data.defaultLlmProviderName === "openai-compatible") {
         setCustomModelName(data.customLlmModelName ?? "");
         setSelectedModelApiName(undefined);
       } else {
-        setSelectedModelApiName(data.defaultLlmModelName ?? undefined);
+        // If OpenAI is selected and no model is set, default to gpt-4o-mini
+        if (
+          data.defaultLlmProviderName === "openai" &&
+          !data.defaultLlmModelName
+        ) {
+          setSelectedModelApiName("gpt-4o-mini");
+        } else {
+          setSelectedModelApiName(data.defaultLlmModelName ?? undefined);
+        }
         setCustomModelName("");
       }
       setBaseUrl(data.customLlmBaseURL ?? "");
     }
-  }, [projectLlmSettings]);
+  }, [projectLlmSettings, llmProviderConfigData]);
 
   // --- TRPC Mutations ---
   const { mutate: updateLlmSettings, isPending: isSavingDefaults } =
@@ -134,6 +153,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   const llmProvidersArray = llmProviderConfigData
     ? Object.values(llmProviderConfigData)
     : [];
+
   const currentProviderConfig =
     selectedProviderApiName && llmProviderConfigData
       ? llmProviderConfigData[selectedProviderApiName]
@@ -152,16 +172,17 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       : undefined;
 
   const currentApiKeyRecord = storedApiKeys?.find(
-    (k) => k.providerName === selectedProviderApiName,
+    (k) => k.providerName === selectedProviderApiName
   );
   const maskedApiKeyDisplay = isLoadingStoredKeysInitial
     ? "Loading..."
     : currentApiKeyRecord
-      ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
-      : "No API key set";
+    ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
+    : selectedProviderApiName === "openai" || !selectedProviderApiName
+    ? "using free messages"
+    : "No API key set";
 
-  // Effect to sync UI state when selectedProviderApiName changes,
-  // especially after projectLlmSettings might have set it initially.
+  // Effect to sync UI state when selectedProviderApiName changes
   useEffect(() => {
     if (selectedProviderApiName && projectLlmSettings) {
       const currentProviderFromSettings =
@@ -172,23 +193,38 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
           setSelectedModelApiName(undefined);
           setBaseUrl(projectLlmSettings.customLlmBaseURL ?? "");
         } else {
-          setSelectedModelApiName(
-            projectLlmSettings.defaultLlmModelName ?? undefined,
-          );
+          // If OpenAI is selected and no model is set, default to gpt-4o-mini
+          if (
+            selectedProviderApiName === "openai" &&
+            !projectLlmSettings.defaultLlmModelName
+          ) {
+            setSelectedModelApiName("gpt-4o-mini");
+          } else {
+            setSelectedModelApiName(
+              projectLlmSettings.defaultLlmModelName ?? undefined
+            );
+          }
           setCustomModelName("");
           setBaseUrl("");
         }
       } else {
-        setSelectedModelApiName(undefined);
+        // If switching to OpenAI and no model is selected, set gpt-4o-mini
+        if (selectedProviderApiName === "openai") {
+          setSelectedModelApiName("gpt-4o-mini");
+        } else {
+          setSelectedModelApiName(undefined);
+        }
         setCustomModelName("");
         setBaseUrl("");
       }
     } else if (selectedProviderApiName) {
-      if (selectedProviderApiName !== "openai-compatible") {
+      if (selectedProviderApiName === "openai") {
+        setSelectedModelApiName("gpt-4o-mini");
+      } else if (selectedProviderApiName !== "openai-compatible") {
         setCustomModelName("");
         setBaseUrl("");
+        setSelectedModelApiName(undefined);
       }
-      setSelectedModelApiName(undefined);
     }
   }, [selectedProviderApiName, projectLlmSettings]);
 
@@ -431,8 +467,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                           isLoadingLlmProviderConfig
                             ? "Loading models..."
                             : availableModelsArray.length === 0
-                              ? "No models configured for this provider"
-                              : "Select a model"
+                            ? "No models configured for this provider"
+                            : "Select a model"
                         }
                       />
                     </SelectTrigger>
@@ -556,7 +592,12 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                       type="password"
                       value={apiKeyInput}
                       onChange={(e) => setApiKeyInput(e.target.value)}
-                      placeholder={`Enter API Key${currentProviderConfig.displayName !== "OpenAI Compatible" ? ` for ${currentProviderConfig.displayName}` : ""}`}
+                      placeholder={`Enter API Key${
+                        currentProviderConfig.displayName !==
+                        "OpenAI Compatible"
+                          ? ` for ${currentProviderConfig.displayName}`
+                          : ""
+                      }`}
                       autoFocus
                       className="w-full font-sans"
                     />
