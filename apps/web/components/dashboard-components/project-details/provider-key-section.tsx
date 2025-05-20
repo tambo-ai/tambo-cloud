@@ -54,7 +54,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     { projectId: project.id },
     {
       enabled: !!project.id,
-    }
+    },
   );
 
   const {
@@ -66,12 +66,10 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   });
 
   // --- UI State ---
-  const [selectedProviderApiName, setSelectedProviderApiName] = useState<
-    string | undefined
-  >();
-  const [selectedModelApiName, setSelectedModelApiName] = useState<
-    string | undefined
-  >();
+  const [selectedProviderApiName, setSelectedProviderApiName] =
+    useState<string | undefined>();
+  const [selectedModelApiName, setSelectedModelApiName] =
+    useState<string | undefined>();
   const [customModelName, setCustomModelName] = useState<string>("");
   const [baseUrl, setBaseUrl] = useState<string>("");
 
@@ -152,7 +150,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       : undefined;
 
   const currentApiKeyRecord = storedApiKeys?.find(
-    (k) => k.providerName === selectedProviderApiName
+    (k) => k.providerName === selectedProviderApiName,
   );
   const maskedApiKeyDisplay = isLoadingStoredKeysInitial
     ? "Loading..."
@@ -173,7 +171,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
           setBaseUrl(projectLlmSettings.customLlmBaseURL ?? "");
         } else {
           setSelectedModelApiName(
-            projectLlmSettings.defaultLlmModelName ?? undefined
+            projectLlmSettings.defaultLlmModelName ?? undefined,
           );
           setCustomModelName("");
           setBaseUrl("");
