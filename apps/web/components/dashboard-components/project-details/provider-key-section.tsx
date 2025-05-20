@@ -56,6 +56,14 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     }
   );
 
+  const { data: messageUsage, isLoading: isLoadingMessageUsage } =
+    api.project.getProjectMessageUsage.useQuery(
+      { projectId: project.id },
+      {
+        enabled: !!project.id,
+      }
+    );
+
   const {
     data: storedApiKeys,
     isLoading: isLoadingStoredKeysInitial,
@@ -179,7 +187,9 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     : currentApiKeyRecord
     ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
     : selectedProviderApiName === "openai" || !selectedProviderApiName
-    ? "using free messages"
+    ? messageUsage?.messageCount && messageUsage.messageCount >= 0
+      ? "free messages used, please add a key"
+      : `using free messages (${messageUsage?.messageCount ?? 0}/500)`
     : "No API key set";
 
   // Effect to sync UI state when selectedProviderApiName changes

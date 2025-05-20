@@ -1,8 +1,7 @@
 import { env } from "@/lib/env";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
-import { operations } from "@tambo-ai-cloud/db";
-import { schema } from "@tambo-ai-cloud/db";
+import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -43,10 +42,10 @@ export const projectRouter = createTRPCRouter({
               url: z.string(),
               customHeaders: z.record(z.string(), z.string()),
               mcpTransport: z.nativeEnum(MCPTransport),
-            }),
+            })
           )
           .optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const { name, mcpServers, customInstructions } = input;
@@ -91,7 +90,7 @@ export const projectRouter = createTRPCRouter({
               mcpServer.url,
               mcpServer.customHeaders,
               mcpServer.mcpTransport,
-              validity.requiresAuth,
+              validity.requiresAuth
             );
           }
         }
@@ -111,7 +110,7 @@ export const projectRouter = createTRPCRouter({
       await operations.ensureProjectAccess(
         ctx.db,
         projectId,
-        ctx.session.user.id,
+        ctx.session.user.id
       );
 
       const project = await ctx.db.query.projects.findFirst({
@@ -148,7 +147,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: z.string().nullable().optional(),
         customLlmModelName: z.string().nullable().optional(),
         customLlmBaseURL: z.string().nullable().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const {
@@ -163,7 +162,7 @@ export const projectRouter = createTRPCRouter({
       await operations.ensureProjectAccess(
         ctx.db,
         projectId,
-        ctx.session.user.id,
+        ctx.session.user.id
       );
 
       const updatedProject = await operations.updateProject(ctx.db, projectId, {
@@ -173,19 +172,17 @@ export const projectRouter = createTRPCRouter({
         defaultLlmProviderName:
           defaultLlmProviderName === null
             ? undefined
-            : (defaultLlmProviderName ?? undefined),
+            : defaultLlmProviderName ?? undefined,
         defaultLlmModelName:
           defaultLlmModelName === null
             ? undefined
-            : (defaultLlmModelName ?? undefined),
+            : defaultLlmModelName ?? undefined,
         customLlmModelName:
           customLlmModelName === null
             ? undefined
-            : (customLlmModelName ?? undefined),
+            : customLlmModelName ?? undefined,
         customLlmBaseURL:
-          customLlmBaseURL === null
-            ? undefined
-            : (customLlmBaseURL ?? undefined),
+          customLlmBaseURL === null ? undefined : customLlmBaseURL ?? undefined,
       });
 
       if (!updatedProject) {
@@ -213,7 +210,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: z.string().nullable().optional(),
         customLlmModelName: z.string().nullable().optional(),
         customLlmBaseURL: z.string().nullable().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const {
@@ -226,7 +223,7 @@ export const projectRouter = createTRPCRouter({
       await operations.ensureProjectAccess(
         ctx.db,
         projectId,
-        ctx.session.user.id,
+        ctx.session.user.id
       );
 
       const updateData: Partial<{
@@ -300,7 +297,7 @@ export const projectRouter = createTRPCRouter({
       await operations.ensureProjectAccess(
         ctx.db,
         projectId,
-        ctx.session.user.id,
+        ctx.session.user.id
       );
       await operations.deleteProject(ctx.db, projectId);
     }),
@@ -311,14 +308,14 @@ export const projectRouter = createTRPCRouter({
         projectId: z.string(),
         provider: z.string(),
         providerKey: z.string().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const { projectId, provider: providerName, providerKey } = input;
       await operations.ensureProjectAccess(
         ctx.db,
         projectId,
-        ctx.session.user.id,
+        ctx.session.user.id
       );
 
       if (providerKey) {
@@ -330,7 +327,7 @@ export const projectRouter = createTRPCRouter({
             providerName,
             providerKey,
             userId: ctx.session.user.id,
-          },
+          }
         );
       }
 
@@ -343,7 +340,7 @@ export const projectRouter = createTRPCRouter({
       await operations.ensureProjectAccess(
         ctx.db,
         projectId,
-        ctx.session.user.id,
+        ctx.session.user.id
       );
       return await operations.getProviderKeys(ctx.db, projectId);
     }),
@@ -353,14 +350,14 @@ export const projectRouter = createTRPCRouter({
       z.object({
         projectId: z.string(),
         name: z.string(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const { projectId, name } = input;
       await operations.ensureProjectAccess(
         ctx.db,
         projectId,
-        ctx.session.user.id,
+        ctx.session.user.id
       );
 
       const encryptedKey = await operations.createApiKey(
@@ -370,7 +367,7 @@ export const projectRouter = createTRPCRouter({
           projectId,
           userId: ctx.session.user.id,
           name,
-        },
+        }
       );
 
       const apiKeys = await operations.getApiKeys(ctx.db, projectId);
@@ -392,7 +389,7 @@ export const projectRouter = createTRPCRouter({
       await operations.ensureProjectAccess(
         ctx.db,
         projectId,
-        ctx.session.user.id,
+        ctx.session.user.id
       );
       return await operations.getApiKeys(ctx.db, projectId);
     }),
@@ -402,14 +399,38 @@ export const projectRouter = createTRPCRouter({
       z.object({
         projectId: z.string(),
         apiKeyId: z.string(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       await operations.ensureProjectAccess(
         ctx.db,
         input.projectId,
-        ctx.session.user.id,
+        ctx.session.user.id
       );
       await operations.deleteApiKey(ctx.db, input.projectId, input.apiKeyId);
+    }),
+
+  getProjectMessageUsage: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { projectId } = input;
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id
+      );
+
+      const usage = await operations.getProjectMessageUsage(ctx.db, projectId);
+      if (!usage) {
+        return {
+          messageCount: 0,
+          hasApiKey: false,
+        };
+      }
+
+      return {
+        messageCount: usage.messageCount,
+        hasApiKey: usage.hasApiKey,
+      };
     }),
 });
