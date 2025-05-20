@@ -1,6 +1,7 @@
 import { PreloadResources } from "@/components/preload-resources";
 import { Schema } from "@/components/schema";
 import { TailwindIndicator } from "@/components/tailwind-indicator";
+import { MessageThreadCollapsible } from "@/components/ui/tambo/message-thread-collapsible";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { WebVitalsReporter } from "@/components/web-vitals";
@@ -18,6 +19,9 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 import { PHProvider, PostHogPageview } from "./providers";
+import { TamboProvider } from "@tambo-ai/react";
+import { env } from "@/lib/env";
+import { ComponentsThemeProvider } from "@/providers/components-theme-provider";
 
 export const metadata: Metadata = {
   title: {
@@ -64,34 +68,45 @@ export default function RootLayout({
       <head>
         <PreloadResources />
       </head>
-      <Suspense>
-        <PostHogPageview />
-      </Suspense>
-      <Suspense>
-        <WebVitalsReporter />
-      </Suspense>
-      <TRPCReactProvider>
-        <PHProvider>
-          <body
-            className={cn(
-              "min-h-screen bg-background antialiased w-full mx-auto scroll-smooth font-sans flex flex-col snap-y snap-proximity",
-            )}
-          >
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="light"
-              enableSystem={false}
-              forcedTheme="light"
+      <TamboProvider
+        apiKey={env.NEXT_PUBLIC_TAMBO_API_KEY!}
+        tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL}
+      >
+        <Suspense>
+          <PostHogPageview />
+        </Suspense>
+        <Suspense>
+          <WebVitalsReporter />
+        </Suspense>
+        <TRPCReactProvider>
+          <PHProvider>
+            <body
+              className={cn(
+                "min-h-screen bg-background antialiased w-full mx-auto scroll-smooth font-sans flex flex-col snap-y snap-proximity",
+              )}
             >
-              <RootProvider>{children}</RootProvider>
-              <TailwindIndicator />
-            </ThemeProvider>
-            <Toaster />
-            <Analytics />
-            <Schema jsonLd={[websiteSchema, organizationSchema]} />
-          </body>
-        </PHProvider>
-      </TRPCReactProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="light"
+                enableSystem={false}
+                forcedTheme="light"
+              >
+                <RootProvider>{children}</RootProvider>
+                <ComponentsThemeProvider defaultTheme="light">
+                  <MessageThreadCollapsible
+                    className="z-50"
+                    defaultOpen={false}
+                  />
+                </ComponentsThemeProvider>
+                <TailwindIndicator />
+              </ThemeProvider>
+              <Toaster />
+              <Analytics />
+              <Schema jsonLd={[websiteSchema, organizationSchema]} />
+            </body>
+          </PHProvider>
+        </TRPCReactProvider>
+      </TamboProvider>
     </html>
   );
 }
