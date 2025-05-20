@@ -40,7 +40,7 @@ export function Header({
             <Icons.logo className="h-6 w-auto" aria-label={siteConfig.name} />
           </Link>
 
-          {/* Inline GitHub link: visible ≥sm and <lg */}
+          {/* Inline GitHub link: visible >=sm and <lg */}
           <div className="hidden sm:block lg:hidden">
             <GitHubLink
               href="https://github.com/tambo-ai/tambo-cloud"
