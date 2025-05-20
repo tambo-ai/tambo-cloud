@@ -9,6 +9,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { GitHubLink } from "@/components/ui/github-link";
 import { siteConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -17,15 +18,21 @@ import { IoMenuSharp } from "react-icons/io5";
 interface MobileDrawerProps {
   showDashboardButton: boolean;
   showLogoutButton: boolean;
+  /**
+   * When true, render a reduced drawer that only contains the GitHub link.
+   * Defaults to `false` to retain the previous (full-featured) behaviour.
+   */
+  minimal?: boolean;
 }
 
 export function MobileDrawer({
   showDashboardButton,
   showLogoutButton,
+  minimal = false,
 }: MobileDrawerProps) {
   return (
     <Drawer>
-      <DrawerTrigger>
+      <DrawerTrigger aria-label="Open navigation">
         <IoMenuSharp className="text-2xl" />
       </DrawerTrigger>
       <DrawerContent>
@@ -44,40 +51,53 @@ export function MobileDrawer({
           </DrawerTitle>
           <DrawerDescription>{siteConfig.description}</DrawerDescription>
         </DrawerHeader>
-        <div className="px-6 flex flex-col gap-2">
-          {showDashboardButton && (
-            <Link
-              href="/dashboard"
-              className={cn(
-                buttonVariants({ variant: "ghost" }),
-                "justify-start text-base w-full",
+        {minimal ? (
+          // Reduced drawer: GitHub link only
+          <DrawerFooter>
+            {/* GitHubLink lives under ui/ */}
+            <GitHubLink
+              href="https://github.com/tambo-ai/tambo-cloud"
+              text="Star us on GitHub"
+            />
+          </DrawerFooter>
+        ) : (
+          <>
+            <div className="px-6 flex flex-col gap-2">
+              {showDashboardButton && (
+                <Link
+                  href="/dashboard"
+                  className={cn(
+                    buttonVariants({ variant: "ghost" }),
+                    "justify-start text-base w-full",
+                  )}
+                >
+                  Dashboard
+                </Link>
               )}
-            >
-              Dashboard
-            </Link>
-          )}
-          {showLogoutButton && (
-            <button
-              className={cn(
-                buttonVariants({ variant: "ghost" }),
-                "justify-start text-base w-full",
+              {showLogoutButton && (
+                <button
+                  className={cn(
+                    buttonVariants({ variant: "ghost" }),
+                    "justify-start text-base w-full",
+                  )}
+                >
+                  Logout
+                </button>
               )}
-            >
-              Logout
-            </button>
-          )}
-        </div>
-        <DrawerFooter>
-          <Link
-            href="/docs"
-            className={cn(
-              buttonVariants({ variant: "default" }),
-              "text-white rounded-full group",
-            )}
-          >
-            Docs
-          </Link>
-        </DrawerFooter>
+            </div>
+            <DrawerFooter>
+              <Link
+                href="/docs"
+                className={cn(
+                  buttonVariants({ variant: "default" }),
+                  "text-white rounded-full group",
+                )}
+              >
+                Docs
+              </Link>
+            </DrawerFooter>
+          </>
+        )}
       </DrawerContent>
     </Drawer>
   );

@@ -1,4 +1,5 @@
 import { Icons } from "@/components/icons";
+import { GitHubLink } from "@/components/ui/github-link";
 import { siteConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -39,6 +40,14 @@ export function Header({
             <Icons.logo className="h-6 w-auto" aria-label={siteConfig.name} />
           </Link>
 
+          {/* Inline GitHub link: visible ≥sm and <lg */}
+          <div className="hidden sm:block lg:hidden">
+            <GitHubLink
+              href="https://github.com/tambo-ai/tambo-cloud"
+              text="Star us on GitHub"
+            />
+          </div>
+
           {/* Desktop navigation - client component */}
           <HeaderActions
             showDashboardButton={showDashboardButton}
@@ -46,10 +55,12 @@ export function Header({
           />
 
           {/* Mobile navigation - client component */}
-          <div className="block cursor-pointer lg:hidden">
+          {/* On xs screens (<sm) we show a minimal drawer (GitHub-only) */}
+          <div className="block cursor-pointer sm:hidden">
             <MobileNavigation
-              showDashboardButton={showDashboardButton}
-              showLogoutButton={showLogoutButton}
+              showDashboardButton={false /* disabled in minimal mode */}
+              showLogoutButton={false /* disabled in minimal mode */}
+              minimal
             />
           </div>
         </div>
