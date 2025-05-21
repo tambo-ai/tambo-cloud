@@ -5,6 +5,10 @@ import {
   APIKeyListProps,
 } from "@/components/dashboard-components/project-details/api-key-list";
 import {
+  AvailableMcpServers,
+  AvailableMcpServersProps,
+} from "@/components/dashboard-components/project-details/available-mcp-servers";
+import {
   CustomInstructionsEditor,
   CustomInstructionsEditorProps,
 } from "@/components/dashboard-components/project-details/custom-instructions-editor";
@@ -22,6 +26,10 @@ import {
 } from "@/components/dashboard-components/project-table";
 import { TamboTool } from "@tambo-ai/react";
 import {
+  addNewMcpServer,
+  addNewMcpServerSchema,
+  authorizeMcpServerSchema,
+  authorizeMcpServerTool,
   checkUserLoginStatus,
   checkUserLoginStatusSchema,
   createNewProject,
@@ -40,6 +48,8 @@ import {
   fetchLlmConfigSchema,
   fetchLlmSettings,
   fetchLlmSettingsSchema,
+  fetchMcpServers,
+  fetchMcpServersSchema,
   fetchProject,
   fetchProjectSchema,
   fetchProjects,
@@ -50,8 +60,14 @@ import {
   generateApiKeySchema,
   getCurrentUser,
   getCurrentUserSchema,
+  inspectMcpServerSchema,
+  inspectMcpServerTool,
+  removeMcpServer,
+  removeMcpServerSchema,
   updateCustomInstructions,
   updateCustomInstructionsSchema,
+  updateExistingMcpServer,
+  updateExistingMcpServerSchema,
   updateLlmSettings,
   updateLlmSettingsSchema,
   updateProjectNameSchema,
@@ -95,6 +111,13 @@ export const TamboRegisteredComponents = [
       "A component for editing custom instructions for a project. Expects props conforming to CustomInstructionsEditorProps.",
     component: CustomInstructionsEditor,
     propsSchema: CustomInstructionsEditorProps,
+  },
+  {
+    name: "AvailableMcpServers",
+    description:
+      "A component for displaying a list of available MCP servers. Expects props conforming to AvailableMcpServersProps. Always call AuthCheck tool before calling this tool.",
+    component: AvailableMcpServers,
+    propsSchema: AvailableMcpServersProps,
   },
 ];
 
@@ -224,5 +247,47 @@ export const TamboRegisteredTools: TamboTool[] = [
       "Adds or updates an LLM provider API key for a project. Expects a project ID, provider name, and optionally the API key (undefined removes the key).",
     toolSchema: updateProviderKeySchema,
     tool: updateProviderKey,
+  },
+  {
+    name: "fetchMcpServers",
+    description:
+      "Fetches MCP servers for a specific project. Expects a project ID as input.",
+    toolSchema: fetchMcpServersSchema,
+    tool: fetchMcpServers,
+  },
+  {
+    name: "addMcpServer",
+    description:
+      "Adds a new MCP server to a project. Expects project ID, server URL, custom headers, and MCPTransport type as input.",
+    toolSchema: addNewMcpServerSchema,
+    tool: addNewMcpServer,
+  },
+  {
+    name: "updateMcpServer",
+    description:
+      "Updates an existing MCP server. Expects project ID, server ID, updated URL, custom headers, and MCPTransport type as input.",
+    toolSchema: updateExistingMcpServerSchema,
+    tool: updateExistingMcpServer,
+  },
+  {
+    name: "deleteMcpServer",
+    description:
+      "Deletes an MCP server. Expects project ID and server ID as input.",
+    toolSchema: removeMcpServerSchema,
+    tool: removeMcpServer,
+  },
+  {
+    name: "authorizeMcpServer",
+    description:
+      "Initiates authorization for an MCP server. Expects context key (or null) and tool provider ID (server ID) as input.",
+    toolSchema: authorizeMcpServerSchema,
+    tool: authorizeMcpServerTool,
+  },
+  {
+    name: "inspectMcpServer",
+    description:
+      "Inspects an MCP server to get available tools. Expects project ID and server ID as input.",
+    toolSchema: inspectMcpServerSchema,
+    tool: inspectMcpServerTool,
   },
 ];

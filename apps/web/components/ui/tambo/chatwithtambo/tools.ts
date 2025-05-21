@@ -1,9 +1,12 @@
 "use client";
 
 import {
+  addMcpServer,
   addOrUpdateProviderKey,
+  authorizeMcpServer,
   createProject,
   createProjectWithCustomInstructions,
+  deleteMcpServer,
   deleteProjectApiKey,
   fetchCurrentUser,
   fetchLlmProviderConfig,
@@ -11,17 +14,20 @@ import {
   fetchProjectById,
   fetchProjectCustomInstructions,
   fetchProjectLlmSettings,
+  fetchProjectMcpServers,
   fetchProviderKeys,
   fetchUserProjects,
   generateProjectApiKey,
+  inspectMcpServer,
   removeProject,
+  updateMcpServer,
   updateProjectCustomInstructions,
   updateProjectLlmSettings,
   updateProjectName,
 } from "@/app/(authed)/utils/project-utils";
 import { APIKeySchema } from "@/components/dashboard-components/project-details/api-key-list";
-import { ProjectInfoSchema } from "@/components/dashboard-components/project-details/project-info";
 import { ProjectTableSchema } from "@/components/dashboard-components/project-table";
+import { MCPTransport } from "@tambo-ai-cloud/core";
 import { z } from "zod";
 
 /**
@@ -1009,6 +1015,353 @@ export const getCurrentUserSchema = z
   .returns(
     z.object({
       user: z.any().nullable(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Fetches MCP servers for a specific project
+ * @param projectId - The ID of the project
+ * @returns Object containing MCP servers array or error information
+ */
+export const fetchMcpServers = async (projectId: string) => {
+  try {
+    const result = await fetchProjectMcpServers(projectId);
+
+    const authCheck = handleAuthAndErrors(result, "view MCP servers");
+
+    if (authCheck) {
+      return {
+        mcpServers: [],
+        ...authCheck,
+      };
+    }
+
+    return { mcpServers: result };
+  } catch (error) {
+    console.error("Error in fetchMcpServers tool:", error);
+    return {
+      mcpServers: [],
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for fetchMcpServers function
+ * Defines input as project ID and return type as object containing MCP servers or error information
+ */
+export const fetchMcpServersSchema = z
+  .function()
+  .args(z.string().describe("The project ID to fetch MCP servers for"))
+  .returns(
+    z.object({
+      mcpServers: z.array(z.any()),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Adds a new MCP server to a project
+ * @param projectId - The ID of the project
+ * @param url - URL of the MCP server
+ * @param customHeaders - Custom headers for the MCP server
+ * @param mcpTransport - Transport mechanism for MCP communication
+ * @returns Object containing the added MCP server or error information
+ */
+export const addNewMcpServer = async (
+  projectId: string,
+  url: string,
+  customHeaders: Record<string, string>,
+  mcpTransport: MCPTransport,
+) => {
+  try {
+    const result = await addMcpServer({
+      projectId,
+      url,
+      customHeaders,
+      mcpTransport,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "add an MCP server");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true, server: result };
+  } catch (error) {
+    console.error("Error in addNewMcpServer tool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for addNewMcpServer function
+ * Defines inputs for adding a new MCP server and return type as success status with server info or error
+ */
+export const addNewMcpServerSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The URL of the MCP server"),
+    z.record(z.string()).describe("Custom headers for the MCP server"),
+    z
+      .nativeEnum(MCPTransport)
+      .describe("Transport mechanism for MCP communication"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      server: z.any().optional(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Updates an existing MCP server
+ * @param projectId - The ID of the project
+ * @param serverId - ID of the MCP server to update
+ * @param url - Updated URL of the MCP server
+ * @param customHeaders - Updated custom headers for the MCP server
+ * @param mcpTransport - Updated transport mechanism for MCP communication
+ * @returns Object containing the updated MCP server or error information
+ */
+export const updateExistingMcpServer = async (
+  projectId: string,
+  serverId: string,
+  url: string,
+  customHeaders: Record<string, string>,
+  mcpTransport: MCPTransport,
+) => {
+  try {
+    const result = await updateMcpServer({
+      projectId,
+      serverId,
+      url,
+      customHeaders,
+      mcpTransport,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "update an MCP server");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true, server: result };
+  } catch (error) {
+    console.error("Error in updateExistingMcpServer tool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for updateExistingMcpServer function
+ * Defines inputs for updating an MCP server and return type as success status with server info or error
+ */
+export const updateExistingMcpServerSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The ID of the MCP server to update"),
+    z.string().describe("The updated URL of the MCP server"),
+    z.record(z.string()).describe("Updated custom headers for the MCP server"),
+    z
+      .nativeEnum(MCPTransport)
+      .describe("Updated transport mechanism for MCP communication"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      server: z.any().optional(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Deletes an MCP server from a project
+ * @param projectId - The ID of the project
+ * @param serverId - ID of the MCP server to delete
+ * @returns Object indicating success status or error information
+ */
+export const removeMcpServer = async (projectId: string, serverId: string) => {
+  try {
+    const result = await deleteMcpServer({
+      projectId,
+      serverId,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "delete an MCP server");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in removeMcpServer tool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for removeMcpServer function
+ * Defines inputs as project ID and server ID, and return type as success status or error information
+ */
+export const removeMcpServerSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The ID of the MCP server to delete"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Authorizes an MCP server
+ * @param contextKey - Optional context key for authorization
+ * @param toolProviderId - ID of the MCP server to authorize
+ * @returns Object containing authorization result or error information
+ */
+export const authorizeMcpServerTool = async (
+  contextKey: string | null,
+  toolProviderId: string,
+) => {
+  try {
+    const result = await authorizeMcpServer({
+      contextKey,
+      toolProviderId,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "authorize an MCP server");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true, authResult: result };
+  } catch (error) {
+    console.error("Error in authorizeMcpServerTool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for authorizeMcpServerTool function
+ * Defines inputs as context key and tool provider ID, and return type as success status with auth result or error
+ */
+export const authorizeMcpServerSchema = z
+  .function()
+  .args(
+    z
+      .union([z.string(), z.null()])
+      .describe("Optional context key for authorization"),
+    z.string().describe("The ID of the MCP server to authorize"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      authResult: z.any().optional(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Inspects an MCP server to get available tools
+ * @param projectId - The ID of the project
+ * @param serverId - ID of the MCP server to inspect
+ * @returns Object containing inspection result or error information
+ */
+export const inspectMcpServerTool = async (
+  projectId: string,
+  serverId: string,
+) => {
+  try {
+    const result = await inspectMcpServer({
+      projectId,
+      serverId,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "inspect an MCP server");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true, toolInfo: result };
+  } catch (error) {
+    console.error("Error in inspectMcpServerTool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for inspectMcpServerTool function
+ * Defines inputs as project ID and server ID, and return type as success status with tool info or error
+ */
+export const inspectMcpServerSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The ID of the MCP server to inspect"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      toolInfo: z.any().optional(),
       authRequired: z.boolean().optional(),
       loginUrl: z.string().optional(),
       message: z.string().optional(),

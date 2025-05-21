@@ -526,3 +526,213 @@ export async function fetchCurrentUser() {
     return { success: false, error: "Failed to fetch user" };
   }
 }
+
+/**
+ * Fetches MCP servers for a project
+ * @param projectId - ID of the project
+ * @returns List of MCP servers or error
+ */
+export async function fetchProjectMcpServers(projectId: string) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const mcpServers = await caller.tools.listMcpServers({
+      projectId,
+    });
+    return mcpServers;
+  } catch (error) {
+    console.error("Error fetching MCP servers:", error);
+    return { success: false, error: "Failed to fetch MCP servers" };
+  }
+}
+
+/**
+ * Adds a new MCP server to a project
+ * @param projectId - ID of the project
+ * @param url - URL of the MCP server
+ * @param customHeaders - Custom headers for the MCP server
+ * @param mcpTransport - Transport mechanism for MCP communication
+ * @returns Added MCP server or error
+ */
+export async function addMcpServer({
+  projectId,
+  url,
+  customHeaders,
+  mcpTransport,
+}: {
+  projectId: string;
+  url: string;
+  customHeaders: Record<string, string>;
+  mcpTransport: MCPTransport;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const mcpServer = await caller.tools.addMcpServer({
+      projectId,
+      url,
+      customHeaders,
+      mcpTransport,
+    });
+    return mcpServer;
+  } catch (error) {
+    console.error("Error adding MCP server:", error);
+    return { success: false, error: "Failed to add MCP server" };
+  }
+}
+
+/**
+ * Updates an existing MCP server
+ * @param projectId - ID of the project
+ * @param serverId - ID of the MCP server to update
+ * @param url - New URL for the MCP server
+ * @param customHeaders - New custom headers for the MCP server
+ * @param mcpTransport - New transport mechanism for MCP communication
+ * @returns Updated MCP server or error
+ */
+export async function updateMcpServer({
+  projectId,
+  serverId,
+  url,
+  customHeaders,
+  mcpTransport,
+}: {
+  projectId: string;
+  serverId: string;
+  url: string;
+  customHeaders: Record<string, string>;
+  mcpTransport: MCPTransport;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const mcpServer = await caller.tools.updateMcpServer({
+      projectId,
+      serverId,
+      url,
+      customHeaders,
+      mcpTransport,
+    });
+    return mcpServer;
+  } catch (error) {
+    console.error("Error updating MCP server:", error);
+    return { success: false, error: "Failed to update MCP server" };
+  }
+}
+
+/**
+ * Deletes an MCP server
+ * @param projectId - ID of the project
+ * @param serverId - ID of the MCP server to delete
+ * @returns Success status or error
+ */
+export async function deleteMcpServer({
+  projectId,
+  serverId,
+}: {
+  projectId: string;
+  serverId: string;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    await caller.tools.deleteMcpServer({
+      projectId,
+      serverId,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting MCP server:", error);
+    return { success: false, error: "Failed to delete MCP server" };
+  }
+}
+
+/**
+ * Authorizes an MCP server
+ * @param contextKey - Optional context key for authorization
+ * @param toolProviderId - ID of the MCP server to authorize
+ * @returns Authorization result or error
+ */
+export async function authorizeMcpServer({
+  contextKey,
+  toolProviderId,
+}: {
+  contextKey: string | null;
+  toolProviderId: string;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const authResult = await caller.tools.authorizeMcpServer({
+      contextKey,
+      toolProviderId,
+    });
+    return authResult;
+  } catch (error) {
+    console.error("Error authorizing MCP server:", error);
+    return { success: false, error: "Failed to authorize MCP server" };
+  }
+}
+
+/**
+ * Inspects an MCP server to get available tools
+ * @param projectId - ID of the project
+ * @param serverId - ID of the MCP server to inspect
+ * @returns List of available tools or error
+ */
+export async function inspectMcpServer({
+  projectId,
+  serverId,
+}: {
+  projectId: string;
+  serverId: string;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const toolInfo = await caller.tools.inspectMcpServer({
+      projectId,
+      serverId,
+    });
+    return toolInfo;
+  } catch (error) {
+    console.error("Error inspecting MCP server:", error);
+    return { success: false, error: "Failed to inspect MCP server" };
+  }
+}
