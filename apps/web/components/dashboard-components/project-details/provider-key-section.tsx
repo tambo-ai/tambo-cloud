@@ -35,6 +35,8 @@ const sectionAnimationVariants = {
 
 const shortTransition = { duration: 0.2 };
 
+export const FREE_MESSAGE_LIMIT = 500;
+
 export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   const { toast } = useToast();
 
@@ -53,7 +55,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     { projectId: project.id },
     {
       enabled: !!project.id,
-    }
+    },
   );
 
   const { data: messageUsage, isLoading: isLoadingMessageUsage } =
@@ -61,7 +63,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       { projectId: project.id },
       {
         enabled: !!project.id,
-      }
+      },
     );
 
   const {
@@ -92,7 +94,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       // If no provider is set, find and set OpenAI as default
       if (!data.defaultLlmProviderName && llmProviderConfigData) {
         const openaiProvider = Object.values(llmProviderConfigData).find(
-          (provider) => provider.apiName === "openai"
+          (provider) => provider.apiName === "openai",
         );
         if (openaiProvider) {
           setSelectedProviderApiName("openai");
@@ -180,17 +182,18 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       : undefined;
 
   const currentApiKeyRecord = storedApiKeys?.find(
-    (k) => k.providerName === selectedProviderApiName
+    (k) => k.providerName === selectedProviderApiName,
   );
   const maskedApiKeyDisplay = isLoadingStoredKeysInitial
     ? "Loading..."
     : currentApiKeyRecord
-    ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
-    : selectedProviderApiName === "openai" || !selectedProviderApiName
-    ? messageUsage?.messageCount && messageUsage.messageCount >= 0
-      ? "free messages used, please add a key"
-      : `using free messages (${messageUsage?.messageCount ?? 0}/500)`
-    : "No API key set";
+      ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
+      : selectedProviderApiName === "openai" || !selectedProviderApiName
+        ? messageUsage?.messageCount &&
+          messageUsage.messageCount >= FREE_MESSAGE_LIMIT
+          ? "free messages used, please add a key"
+          : `using free messages (${messageUsage?.messageCount ?? 0}/${FREE_MESSAGE_LIMIT})`
+        : "No API key set";
 
   // Effect to sync UI state when selectedProviderApiName changes
   useEffect(() => {
@@ -211,7 +214,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
             setSelectedModelApiName("gpt-4o-mini");
           } else {
             setSelectedModelApiName(
-              projectLlmSettings.defaultLlmModelName ?? undefined
+              projectLlmSettings.defaultLlmModelName ?? undefined,
             );
           }
           setCustomModelName("");
@@ -478,8 +481,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                           isLoadingLlmProviderConfig
                             ? "Loading models..."
                             : availableModelsArray.length === 0
-                            ? "No models configured for this provider"
-                            : "Select a model"
+                              ? "No models configured for this provider"
+                              : "Select a model"
                         }
                       />
                     </SelectTrigger>
