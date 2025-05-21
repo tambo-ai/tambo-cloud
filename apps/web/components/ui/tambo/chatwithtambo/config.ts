@@ -1,31 +1,45 @@
 "use client";
 
 import {
-  ProjectTable,
-  ProjectTableProps,
-} from "@/components/dashboard-components/project-table";
-import { TamboTool } from "@tambo-ai/react";
-import {
-  fetchApiKeys,
-  fetchApiKeysSchema,
-  fetchProjectInfoSchema,
-  fetchProjects,
-  fetchProjectsSchema,
-  generateApiKey,
-  generateApiKeySchema,
-  deleteApiKey,
-  deleteApiKeySchema,
-  checkUserLoginStatusSchema,
-  checkUserLoginStatus,
-} from "./tools";
+  APIKeyList,
+  APIKeyListProps,
+} from "@/components/dashboard-components/project-details/api-key-list";
 import {
   ProjectInfo,
   ProjectInfoProps,
 } from "@/components/dashboard-components/project-details/project-info";
 import {
-  APIKeyList,
-  APIKeyListProps,
-} from "@/components/dashboard-components/project-details/api-key-list";
+  ProviderKeySection,
+  ProviderKeySectionProps,
+} from "@/components/dashboard-components/project-details/provider-key-section";
+import {
+  ProjectTable,
+  ProjectTableProps,
+} from "@/components/dashboard-components/project-table";
+import { TamboTool } from "@tambo-ai/react";
+import {
+  checkUserLoginStatus,
+  checkUserLoginStatusSchema,
+  deleteApiKey,
+  deleteApiKeySchema,
+  fetchApiKeys,
+  fetchApiKeysSchema,
+  fetchLlmConfig,
+  fetchLlmConfigSchema,
+  fetchLlmSettings,
+  fetchLlmSettingsSchema,
+  fetchProjectInfoSchema,
+  fetchProjects,
+  fetchProjectsSchema,
+  fetchProviderApiKeys,
+  fetchProviderApiKeysSchema,
+  generateApiKey,
+  generateApiKeySchema,
+  updateLlmSettings,
+  updateLlmSettingsSchema,
+  updateProviderKey,
+  updateProviderKeySchema,
+} from "./tools";
 
 export const TamboRegisteredComponents = [
   {
@@ -48,6 +62,13 @@ export const TamboRegisteredComponents = [
       "A component for displaying a list of API keys. Expects props conforming to APIKeyListProps. Always use fetchApiKeys tool to get the API keys.",
     component: APIKeyList,
     propsSchema: APIKeyListProps,
+  },
+  {
+    name: "ProviderKeySection",
+    description:
+      "A component for configuring LLM providers and API keys. Expects props conforming to ProviderKeySectionProps. Use fetchLlmConfig, fetchLlmSettings, and fetchProviderApiKeys tools to get the configuration data.",
+    component: ProviderKeySection,
+    propsSchema: ProviderKeySectionProps,
   },
 ];
 
@@ -93,5 +114,40 @@ export const TamboRegisteredTools: TamboTool[] = [
       "Checks if the current user is authenticated. Returns the user's ID and email if authenticated, or null if not. Always use this tool before any other tools that require authentication.",
     toolSchema: checkUserLoginStatusSchema,
     tool: checkUserLoginStatus,
+  },
+  {
+    name: "fetchLlmConfig",
+    description:
+      "Fetches available LLM provider configuration options. Use this to get the list of supported LLM providers and their models.",
+    toolSchema: fetchLlmConfigSchema,
+    tool: fetchLlmConfig,
+  },
+  {
+    name: "fetchLlmSettings",
+    description:
+      "Fetches the current LLM settings for a specific project. Expects a project ID as input.",
+    toolSchema: fetchLlmSettingsSchema,
+    tool: fetchLlmSettings,
+  },
+  {
+    name: "fetchProviderApiKeys",
+    description:
+      "Fetches stored LLM provider API keys for a specific project. Expects a project ID as input.",
+    toolSchema: fetchProviderApiKeysSchema,
+    tool: fetchProviderApiKeys,
+  },
+  {
+    name: "updateLlmSettings",
+    description:
+      "Updates LLM configuration settings for a project. Expects a project ID and settings object containing provider name, model name, and other configuration options.",
+    toolSchema: updateLlmSettingsSchema,
+    tool: updateLlmSettings,
+  },
+  {
+    name: "updateProviderKey",
+    description:
+      "Adds or updates an LLM provider API key for a project. Expects a project ID, provider name, and optionally the API key (undefined removes the key).",
+    toolSchema: updateProviderKeySchema,
+    tool: updateProviderKey,
   },
 ];

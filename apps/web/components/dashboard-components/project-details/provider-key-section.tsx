@@ -10,14 +10,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLinkIcon, InfoIcon, KeyRound, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { type RouterOutputs } from "@/trpc/react";
+import { z } from "zod";
+
+export const ProviderKeySectionSchema = z
+  .object({
+    id: z.string().describe("The unique identifier for the project."),
+    name: z.string().describe("The name of the project."),
+  })
+  .describe("Project data from the router output.");
+
+export const ProviderKeySectionProps = z.object({
+  project: z
+    .lazy(() =>
+      ProviderKeySectionSchema.describe(
+        "The project to configure LLM providers for.",
+      ),
+    )
+    .optional()
+    .describe("Props for the ProviderKeySection component."),
+});
 
 interface ProviderKeySectionProps {
-  project: RouterOutputs["project"]["getUserProjects"][number];
+  project?: RouterOutputs["project"]["getUserProjects"][number];
 }
 
 const sectionAnimationVariants = {
@@ -51,9 +69,9 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     isLoading: isLoadingProjectSettingsInitial,
     refetch: refetchProjectLlmSettings,
   } = api.project.getProjectLlmSettings.useQuery(
-    { projectId: project.id },
+    { projectId: project?.id ?? "" },
     {
-      enabled: !!project.id,
+      enabled: !!project?.id,
     },
   );
 
@@ -61,8 +79,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     data: storedApiKeys,
     isLoading: isLoadingStoredKeysInitial,
     refetch: refetchStoredApiKeys,
-  } = api.project.getProviderKeys.useQuery(project.id, {
-    enabled: !!project.id,
+  } = api.project.getProviderKeys.useQuery(project?.id ?? "", {
+    enabled: !!project?.id,
   });
 
   // --- UI State ---
@@ -208,6 +226,15 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   }, []);
 
   const handleSaveDefaults = useCallback(() => {
+    if (!project?.id) {
+      toast({
+        title: "Error",
+        description: "No project selected.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!selectedProviderApiName) {
       toast({
         title: "Error",
@@ -275,15 +302,15 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     selectedModelApiName,
     baseUrl,
     updateLlmSettings,
-    project.id,
+    project?.id,
     toast,
   ]);
 
   const handleSaveApiKey = useCallback(() => {
-    if (!selectedProviderApiName) {
+    if (!project?.id) {
       toast({
         title: "Error",
-        description: "Please select a provider first.",
+        description: "No project selected.",
         variant: "destructive",
       });
       return;
@@ -302,14 +329,14 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
 
     addOrUpdateApiKey({
       projectId: project.id,
-      provider: selectedProviderApiName,
+      provider: selectedProviderApiName ?? "",
       providerKey: apiKeyInput.trim() || undefined,
     });
   }, [
     selectedProviderApiName,
     apiKeyInput,
     addOrUpdateApiKey,
-    project.id,
+    project?.id,
     toast,
     currentProviderConfig,
   ]);
@@ -332,6 +359,21 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
             <div className="h-24 bg-muted-foreground/10 rounded"></div>
             <div className="h-10 bg-muted-foreground/10 rounded"></div>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!project) {
+    return (
+      <Card className="border rounded-md overflow-hidden">
+        <CardHeader>
+          <CardTitle className="text-base font-heading font-semibold">
+            LLM Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No project selected</p>
         </CardContent>
       </Card>
     );

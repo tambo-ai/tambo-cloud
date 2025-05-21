@@ -1,10 +1,15 @@
 "use client";
 
 import {
+  addOrUpdateProviderKey,
   deleteProjectApiKey,
+  fetchLlmProviderConfig,
   fetchProjectApiKeys,
+  fetchProjectLlmSettings,
+  fetchProviderKeys,
   fetchUserProjects,
   generateProjectApiKey,
+  updateProjectLlmSettings,
 } from "@/app/(authed)/utils/project-utils";
 import { APIKeySchema } from "@/components/dashboard-components/project-details/api-key-list";
 import { ProjectInfoSchema } from "@/components/dashboard-components/project-details/project-info";
@@ -278,6 +283,268 @@ export const checkUserLoginStatusSchema = z
   .returns(
     z.object({
       isLoggedIn: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Fetches LLM provider configuration
+ * @returns Object containing provider configuration or error information
+ */
+export const fetchLlmConfig = async () => {
+  try {
+    const result = await fetchLlmProviderConfig();
+
+    const authCheck = handleAuthAndErrors(result, "view LLM configuration");
+
+    if (authCheck) {
+      return {
+        providers: {},
+        ...authCheck,
+      };
+    }
+
+    return { providers: result };
+  } catch (error) {
+    console.error("Error in fetchLlmConfig tool:", error);
+    return {
+      providers: {},
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for fetchLlmConfig function
+ * Defines the return type as an object containing provider configuration
+ */
+export const fetchLlmConfigSchema = z
+  .function()
+  .args()
+  .returns(
+    z.object({
+      providers: z.record(z.any()),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Fetches LLM settings for a specific project
+ * @param projectId - The ID of the project
+ * @returns Object containing project LLM settings or error information
+ */
+export const fetchLlmSettings = async (projectId: string) => {
+  try {
+    const result = await fetchProjectLlmSettings(projectId);
+
+    const authCheck = handleAuthAndErrors(result, "view project LLM settings");
+
+    if (authCheck) {
+      return {
+        settings: null,
+        ...authCheck,
+      };
+    }
+
+    return { settings: result };
+  } catch (error) {
+    console.error("Error in fetchLlmSettings tool:", error);
+    return {
+      settings: null,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for fetchLlmSettings function
+ * Defines input as project ID and return type as object containing LLM settings or error information
+ */
+export const fetchLlmSettingsSchema = z
+  .function()
+  .args(z.string().describe("The project ID to fetch LLM settings for"))
+  .returns(
+    z.object({
+      settings: z.any().nullable(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Fetches provider keys for a specific project
+ * @param projectId - The ID of the project
+ * @returns Object containing provider keys or error information
+ */
+export const fetchProviderApiKeys = async (projectId: string) => {
+  try {
+    const result = await fetchProviderKeys(projectId);
+
+    const authCheck = handleAuthAndErrors(result, "view provider keys");
+
+    if (authCheck) {
+      return {
+        providerKeys: [],
+        ...authCheck,
+      };
+    }
+
+    return { providerKeys: result };
+  } catch (error) {
+    console.error("Error in fetchProviderApiKeys tool:", error);
+    return {
+      providerKeys: [],
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for fetchProviderApiKeys function
+ * Defines input as project ID and return type as object containing provider keys or error information
+ */
+export const fetchProviderApiKeysSchema = z
+  .function()
+  .args(z.string().describe("The project ID to fetch provider keys for"))
+  .returns(
+    z.object({
+      providerKeys: z.array(z.any()),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Updates LLM settings for a specific project
+ * @param projectId - The ID of the project
+ * @param settings - The LLM settings to update
+ * @returns Object indicating success status or error information
+ */
+export const updateLlmSettings = async (
+  projectId: string,
+  settings: {
+    defaultLlmProviderName: string;
+    defaultLlmModelName: string | null;
+    customLlmModelName: string | null;
+    customLlmBaseURL: string | null;
+  },
+) => {
+  try {
+    const result = await updateProjectLlmSettings({
+      projectId,
+      ...settings,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "update LLM settings");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in updateLlmSettings tool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for updateLlmSettings function
+ * Defines inputs as project ID and settings object, and return type as success status or error information
+ */
+export const updateLlmSettingsSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z
+      .object({
+        defaultLlmProviderName: z.string(),
+        defaultLlmModelName: z.string().nullable(),
+        customLlmModelName: z.string().nullable(),
+        customLlmBaseURL: z.string().nullable(),
+      })
+      .describe("The LLM settings to update"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Adds or updates a provider API key for a specific project
+ * @param projectId - The ID of the project
+ * @param provider - The name of the provider
+ * @param providerKey - The API key for the provider (null to remove)
+ * @returns Object indicating success status or error information
+ */
+export const updateProviderKey = async (
+  projectId: string,
+  provider: string,
+  providerKey: string | null,
+) => {
+  try {
+    const result = await addOrUpdateProviderKey({
+      projectId,
+      provider,
+      providerKey: providerKey || undefined,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "update provider key");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in updateProviderKey tool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for updateProviderKey function
+ * Defines inputs as project ID, provider name, and optional API key, and return type as success status or error information
+ */
+export const updateProviderKeySchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The provider name"),
+    z
+      .union([z.string(), z.null()])
+      .describe("The provider API key (null to remove)"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
       authRequired: z.boolean().optional(),
       loginUrl: z.string().optional(),
       message: z.string().optional(),
