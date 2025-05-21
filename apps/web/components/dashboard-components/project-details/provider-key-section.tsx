@@ -87,6 +87,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   const [apiKeyInput, setApiKeyInput] = useState<string>("");
   const [isEditingApiKey, setIsEditingApiKey] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
@@ -261,6 +262,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   }, []);
 
   const handleSaveDefaults = useCallback(() => {
+    setShowValidationErrors(true);
+
     if (!selectedProviderApiName) {
       toast({
         title: "Error",
@@ -328,6 +331,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       baseUrlToSave = baseUrl.trim() || null;
     }
 
+    // If we made it here, clear validation errors and save
+    setShowValidationErrors(false);
     updateLlmSettings({
       projectId: project.id,
       defaultLlmProviderName: selectedProviderApiName,
@@ -345,6 +350,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     project.id,
     toast,
     currentApiKeyRecord,
+    setShowValidationErrors,
   ]);
 
   const handleSaveApiKey = useCallback(() => {
@@ -419,15 +425,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
             <Button
               size="sm"
               onClick={handleSaveDefaults}
-              disabled={
-                isSavingDefaults ||
-                !selectedProviderApiName ||
-                isLoadingLlmProviderConfig ||
-                isLoadingProjectSettingsInitial ||
-                !hasUnsavedChanges ||
-                (selectedProviderApiName !== "openai" &&
-                  !currentApiKeyRecord?.partiallyHiddenKey)
-              }
+              disabled={isSavingDefaults}
             >
               {isSavingDefaults ? "Saving..." : "Save Settings"}
             </Button>
@@ -538,6 +536,11 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                       ))}
                     </SelectContent>
                   </Select>
+                  {showValidationErrors && !selectedModelApiName && (
+                    <p className="text-sm text-destructive mt-1">
+                      Model selection is required
+                    </p>
+                  )}
                   {currentModelConfig && (
                     <div className="text-xs text-muted-foreground pt-1 space-y-0.5">
                       {currentModelConfig.notes && (
@@ -576,6 +579,11 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                         setHasUnsavedChanges(true);
                       }}
                     />
+                    {showValidationErrors && !customModelName.trim() && (
+                      <p className="text-sm text-destructive mt-1">
+                        Model name is required
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       Enter the exact model name your OpenAI-compatible endpoint
                       expects.
