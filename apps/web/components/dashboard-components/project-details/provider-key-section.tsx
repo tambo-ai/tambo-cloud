@@ -86,6 +86,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
 
   const [apiKeyInput, setApiKeyInput] = useState<string>("");
   const [isEditingApiKey, setIsEditingApiKey] = useState<boolean>(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
@@ -120,6 +121,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
         setCustomModelName("");
       }
       setBaseUrl(data.customLlmBaseURL ?? "");
+      setHasUnsavedChanges(false);
     }
   }, [projectLlmSettings, llmProviderConfigData]);
 
@@ -131,6 +133,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
           title: "Success",
           description: "LLM configuration saved.",
         });
+        setHasUnsavedChanges(false);
         await refetchProjectLlmSettings();
       },
       onError: (error) => {
@@ -247,13 +250,14 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     setSelectedModelApiName(undefined);
     setCustomModelName("");
     setBaseUrl("");
-
     setApiKeyInput("");
     setIsEditingApiKey(false);
+    setHasUnsavedChanges(true);
   }, []);
 
   const handleModelSelect = useCallback((modelApiName: string) => {
     setSelectedModelApiName(modelApiName);
+    setHasUnsavedChanges(true);
   }, []);
 
   const handleSaveDefaults = useCallback(() => {
@@ -411,20 +415,23 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
           <CardTitle className="text-base font-heading font-semibold">
             LLM Configuration
           </CardTitle>
-          <Button
-            size="sm"
-            onClick={handleSaveDefaults}
-            disabled={
-              isSavingDefaults ||
-              !selectedProviderApiName ||
-              isLoadingLlmProviderConfig ||
-              isLoadingProjectSettingsInitial ||
-              (selectedProviderApiName !== "openai" &&
-                !currentApiKeyRecord?.partiallyHiddenKey)
-            }
-          >
-            {isSavingDefaults ? "Saving..." : "Save Settings"}
-          </Button>
+          {hasUnsavedChanges && (
+            <Button
+              size="sm"
+              onClick={handleSaveDefaults}
+              disabled={
+                isSavingDefaults ||
+                !selectedProviderApiName ||
+                isLoadingLlmProviderConfig ||
+                isLoadingProjectSettingsInitial ||
+                !hasUnsavedChanges ||
+                (selectedProviderApiName !== "openai" &&
+                  !currentApiKeyRecord?.partiallyHiddenKey)
+              }
+            >
+              {isSavingDefaults ? "Saving..." : "Save Settings"}
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
@@ -564,7 +571,10 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                       type="text"
                       placeholder="e.g., llama3-8b-instruct, user/my-model-v1"
                       value={customModelName}
-                      onChange={(e) => setCustomModelName(e.target.value)}
+                      onChange={(e) => {
+                        setCustomModelName(e.target.value);
+                        setHasUnsavedChanges(true);
+                      }}
                     />
                     <p className="text-xs text-muted-foreground">
                       Enter the exact model name your OpenAI-compatible endpoint
@@ -579,7 +589,10 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                         type="url"
                         placeholder="e.g., http://localhost:11434/v1"
                         value={baseUrl}
-                        onChange={(e) => setBaseUrl(e.target.value)}
+                        onChange={(e) => {
+                          setBaseUrl(e.target.value);
+                          setHasUnsavedChanges(true);
+                        }}
                       />
                       <p className="text-xs text-muted-foreground">
                         The API endpoint URL for your compatible provider.
