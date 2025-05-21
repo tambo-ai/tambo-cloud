@@ -7,9 +7,34 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Plus, Trash2 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
+import { z } from "zod";
 import { APIKeyDialog } from "./api-key-dialog";
 import { DeleteAlertDialog } from "./delete-alert-dialog";
 import { AlertState } from "./project-details-dialog";
+
+export const APIKeySchema = z.object({
+  id: z.string().describe("The unique identifier for the API key."),
+  name: z.string().describe("The name of the API key."),
+  partiallyHiddenKey: z
+    .string()
+    .optional()
+    .describe("The partially hidden API key value."),
+  lastUsedAt: z.date().nullable().describe("When the key was last used."),
+});
+
+export const APIKeyListProps = z.object({
+  project: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+    })
+    .optional()
+    .describe("The project to fetch API keys for."),
+  isLoading: z
+    .boolean()
+    .optional()
+    .describe("Whether the API keys are loading."),
+});
 
 interface APIKeyListProps {
   project: RouterOutputs["project"]["getUserProjects"][number];
@@ -164,6 +189,27 @@ export function APIKeyList({ project }: APIKeyListProps) {
   };
 
   const isLoading = apiKeysLoading || isRemovingKey || isGeneratingKey;
+
+  if (!project) {
+    return (
+      <Card className="border rounded-md overflow-hidden">
+        <CardContent className="p-4">
+          <p className="text-sm text-muted-foreground">No project found</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Card className="border rounded-md overflow-hidden">
+        <CardContent className="p-4">
+          <p className="text-sm text-muted-foreground">Loading API keys...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border rounded-md overflow-hidden">

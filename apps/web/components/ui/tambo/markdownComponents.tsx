@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import type { Components } from "react-markdown";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, ExternalLink } from "lucide-react";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import DOMPurify from "dompurify";
@@ -215,9 +215,10 @@ export const createMarkdownComponents = (): Components => ({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-primary hover:underline"
+      className="text-primary font-medium px-1.5 py-0.5 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors inline-flex items-center gap-1.5"
     >
       {children}
+      <ExternalLink className="w-4 h-4" />
     </a>
   ),
 

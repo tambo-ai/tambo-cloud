@@ -1,4 +1,5 @@
 import { PreloadResources } from "@/components/preload-resources";
+import { TamboProviderWrapper } from "@/providers/tambo-provider";
 import { Schema } from "@/components/schema";
 import { TailwindIndicator } from "@/components/tailwind-indicator";
 import { MessageThreadCollapsible } from "@/components/ui/tambo/message-thread-collapsible";
@@ -12,6 +13,7 @@ import {
   generateWebsiteSchema,
 } from "@/lib/schema";
 import { cn } from "@/lib/utils";
+import { ComponentsThemeProvider } from "@/providers/components-theme-provider";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Analytics } from "@vercel/analytics/react";
 import { RootProvider } from "fumadocs-ui/provider";
@@ -19,9 +21,6 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 import { PHProvider, PostHogPageview } from "./providers";
-import { TamboProvider } from "@tambo-ai/react";
-import { env } from "@/lib/env";
-import { ComponentsThemeProvider } from "@/providers/components-theme-provider";
 
 export const metadata: Metadata = {
   title: {
@@ -68,10 +67,7 @@ export default function RootLayout({
       <head>
         <PreloadResources />
       </head>
-      <TamboProvider
-        apiKey={env.NEXT_PUBLIC_TAMBO_API_KEY!}
-        tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL}
-      >
+      <TamboProviderWrapper>
         <Suspense>
           <PostHogPageview />
         </Suspense>
@@ -106,7 +102,7 @@ export default function RootLayout({
             </body>
           </PHProvider>
         </TRPCReactProvider>
-      </TamboProvider>
+      </TamboProviderWrapper>
     </html>
   );
 }
