@@ -5,6 +5,10 @@ import {
   APIKeyListProps,
 } from "@/components/dashboard-components/project-details/api-key-list";
 import {
+  CustomInstructionsEditor,
+  CustomInstructionsEditorProps,
+} from "@/components/dashboard-components/project-details/custom-instructions-editor";
+import {
   ProjectInfo,
   ProjectInfoProps,
 } from "@/components/dashboard-components/project-details/project-info";
@@ -20,23 +24,38 @@ import { TamboTool } from "@tambo-ai/react";
 import {
   checkUserLoginStatus,
   checkUserLoginStatusSchema,
+  createNewProject,
+  createNewProjectSchema,
+  createProjectWithInstructions,
+  createProjectWithInstructionsSchema,
   deleteApiKey,
   deleteApiKeySchema,
+  deleteProject,
+  deleteProjectSchema,
   fetchApiKeys,
   fetchApiKeysSchema,
+  fetchCustomInstructions,
+  fetchCustomInstructionsSchema,
   fetchLlmConfig,
   fetchLlmConfigSchema,
   fetchLlmSettings,
   fetchLlmSettingsSchema,
-  fetchProjectInfoSchema,
+  fetchProject,
+  fetchProjectSchema,
   fetchProjects,
   fetchProjectsSchema,
   fetchProviderApiKeys,
   fetchProviderApiKeysSchema,
   generateApiKey,
   generateApiKeySchema,
+  getCurrentUser,
+  getCurrentUserSchema,
+  updateCustomInstructions,
+  updateCustomInstructionsSchema,
   updateLlmSettings,
   updateLlmSettingsSchema,
+  updateProjectNameSchema,
+  updateProjectNameTool,
   updateProviderKey,
   updateProviderKeySchema,
 } from "./tools";
@@ -59,7 +78,7 @@ export const TamboRegisteredComponents = [
   {
     name: "APIKeyList",
     description:
-      "A component for displaying a list of API keys. Expects props conforming to APIKeyListProps. Always use fetchApiKeys tool to get the API keys.",
+      "A component for displaying a list of API keys. Expects props conforming to APIKeyListProps. Always use fetchApiKeys tool to get the API keys. Always call AuthCheck tool before generating this component.",
     component: APIKeyList,
     propsSchema: APIKeyListProps,
   },
@@ -69,6 +88,13 @@ export const TamboRegisteredComponents = [
       "A component for configuring LLM providers and API keys. Expects props conforming to ProviderKeySectionProps. Use fetchLlmConfig, fetchLlmSettings, and fetchProviderApiKeys tools to get the configuration data.",
     component: ProviderKeySection,
     propsSchema: ProviderKeySectionProps,
+  },
+  {
+    name: "CustomInstructionsEditor",
+    description:
+      "A component for editing custom instructions for a project. Expects props conforming to CustomInstructionsEditorProps.",
+    component: CustomInstructionsEditor,
+    propsSchema: CustomInstructionsEditorProps,
   },
 ];
 
@@ -81,18 +107,67 @@ export const TamboRegisteredTools: TamboTool[] = [
     tool: fetchProjects,
   },
   {
-    name: "fetchProjectInfo",
-    description:
-      "Fetches project information for a given project ID. Expects a project ID as input.",
-    toolSchema: fetchProjectInfoSchema,
-    tool: fetchProjects,
-  },
-  {
     name: "fetchApiKeys",
     description:
-      "Fetches API keys for a given project ID. Expects a project ID as input.",
+      "Fetches API keys for a given project ID. Expects a project ID as input. Always call AuthCheck tool before calling this tool.",
     toolSchema: fetchApiKeysSchema,
     tool: fetchApiKeys,
+  },
+  {
+    name: "fetchProject",
+    description:
+      "Fetches detailed information for a specific project by ID. Expects a project ID as input.",
+    toolSchema: fetchProjectSchema,
+    tool: fetchProject,
+  },
+  {
+    name: "updateProjectName",
+    description:
+      "Updates the name of a specific project. Expects a project ID and new name as input.",
+    toolSchema: updateProjectNameSchema,
+    tool: updateProjectNameTool,
+  },
+  {
+    name: "fetchCustomInstructions",
+    description:
+      "Fetches custom instructions for a specific project. Expects a project ID as input.",
+    toolSchema: fetchCustomInstructionsSchema,
+    tool: fetchCustomInstructions,
+  },
+  {
+    name: "updateCustomInstructions",
+    description:
+      "Updates custom instructions for a specific project. Expects a project ID and new custom instructions text as input.",
+    toolSchema: updateCustomInstructionsSchema,
+    tool: updateCustomInstructions,
+  },
+  {
+    name: "createProject",
+    description:
+      "Creates a new project with a simple name. Expects a name for the project as input.",
+    toolSchema: createNewProjectSchema,
+    tool: createNewProject,
+  },
+  {
+    name: "createProjectWithCustomInstructions",
+    description:
+      "Creates a new project with custom instructions. Expects a name and custom instructions text as input.",
+    toolSchema: createProjectWithInstructionsSchema,
+    tool: createProjectWithInstructions,
+  },
+  {
+    name: "deleteProject",
+    description:
+      "Deletes a project by ID. Expects a project ID as input. This action cannot be undone.",
+    toolSchema: deleteProjectSchema,
+    tool: deleteProject,
+  },
+  {
+    name: "getCurrentUser",
+    description:
+      "Fetches details of the currently authenticated user. Useful for personalization and access control checks.",
+    toolSchema: getCurrentUserSchema,
+    tool: getCurrentUser,
   },
   {
     name: "generateApiKey",

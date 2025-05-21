@@ -2,14 +2,22 @@
 
 import {
   addOrUpdateProviderKey,
+  createProject,
+  createProjectWithCustomInstructions,
   deleteProjectApiKey,
+  fetchCurrentUser,
   fetchLlmProviderConfig,
   fetchProjectApiKeys,
+  fetchProjectById,
+  fetchProjectCustomInstructions,
   fetchProjectLlmSettings,
   fetchProviderKeys,
   fetchUserProjects,
   generateProjectApiKey,
+  removeProject,
+  updateProjectCustomInstructions,
   updateProjectLlmSettings,
+  updateProjectName,
 } from "@/app/(authed)/utils/project-utils";
 import { APIKeySchema } from "@/components/dashboard-components/project-details/api-key-list";
 import { ProjectInfoSchema } from "@/components/dashboard-components/project-details/project-info";
@@ -79,15 +87,6 @@ export const fetchProjectsSchema = z
   .function()
   .args()
   .returns(z.object({ projects: z.array(ProjectTableSchema) }));
-
-/**
- * Zod schema for fetchProjectInfo function
- * Defines input as project ID string and return type containing project info
- */
-export const fetchProjectInfoSchema = z
-  .function()
-  .args(z.string())
-  .returns(z.object({ project: ProjectInfoSchema }));
 
 /**
  * Fetches API keys for a specific project
@@ -545,6 +544,471 @@ export const updateProviderKeySchema = z
   .returns(
     z.object({
       success: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Fetches custom instructions for a specific project
+ * @param projectId - The ID of the project
+ * @returns Object containing custom instructions or error information
+ */
+export const fetchCustomInstructions = async (projectId: string) => {
+  try {
+    const result = await fetchProjectCustomInstructions(projectId);
+
+    const authCheck = handleAuthAndErrors(result, "view custom instructions");
+
+    if (authCheck) {
+      return {
+        customInstructions: null,
+        ...authCheck,
+      };
+    }
+
+    // Type guard to ensure result has the expected structure
+    if (
+      typeof result === "object" &&
+      result !== null &&
+      "success" in result &&
+      result.success &&
+      "customInstructions" in result
+    ) {
+      return { customInstructions: result.customInstructions || null };
+    }
+
+    return {
+      customInstructions: null,
+      error: "Unexpected response format",
+    };
+  } catch (error) {
+    console.error("Error in fetchCustomInstructions tool:", error);
+    return {
+      customInstructions: null,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for fetchCustomInstructions function
+ * Defines input as project ID and return type as object containing custom instructions or error information
+ */
+export const fetchCustomInstructionsSchema = z
+  .function()
+  .args(z.string().describe("The project ID to fetch custom instructions for"))
+  .returns(
+    z.object({
+      customInstructions: z.string().nullable(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Updates custom instructions for a specific project
+ * @param projectId - The ID of the project
+ * @param customInstructions - The new custom instructions text
+ * @returns Object indicating success status or error information
+ */
+export const updateCustomInstructions = async (
+  projectId: string,
+  customInstructions: string,
+) => {
+  try {
+    const result = await updateProjectCustomInstructions({
+      projectId,
+      customInstructions,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "update custom instructions");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in updateCustomInstructions tool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for updateCustomInstructions function
+ * Defines inputs as project ID and custom instructions text, and return type as success status or error information
+ */
+export const updateCustomInstructionsSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The custom instructions text"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Fetches a specific project by ID
+ * @param projectId - The ID of the project to fetch
+ * @returns Object containing project details or error information
+ */
+export const fetchProject = async (projectId: string) => {
+  try {
+    const result = await fetchProjectById(projectId);
+
+    const authCheck = handleAuthAndErrors(result, "view project details");
+
+    if (authCheck) {
+      return {
+        project: null,
+        ...authCheck,
+      };
+    }
+
+    return { project: result };
+  } catch (error) {
+    console.error("Error in fetchProject tool:", error);
+    return {
+      project: null,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for fetchProject function
+ * Defines input as project ID and return type as object containing project details or error information
+ */
+export const fetchProjectSchema = z
+  .function()
+  .args(z.string().describe("The project ID to fetch"))
+  .returns(
+    z.object({
+      project: z.any().nullable(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Updates the name of a specific project
+ * @param projectId - The ID of the project
+ * @param name - The new project name
+ * @returns Object indicating success status or error information
+ */
+export const updateProjectNameTool = async (
+  projectId: string,
+  name: string,
+) => {
+  try {
+    const result = await updateProjectName({
+      projectId,
+      name,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "update project name");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    // Type guard to ensure result has the expected structure
+    if (
+      typeof result === "object" &&
+      result !== null &&
+      "success" in result &&
+      result.success &&
+      "project" in result
+    ) {
+      return { success: true, project: result.project };
+    }
+
+    return {
+      success: false,
+      error: "Unexpected response format",
+    };
+  } catch (error) {
+    console.error("Error in updateProjectNameTool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for updateProjectNameTool function
+ * Defines inputs as project ID and project name, and return type as success status with updated project or error information
+ */
+export const updateProjectNameSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The new project name"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      project: z.any().optional(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Creates a new project with a simple name
+ * @param name - Name for the new project
+ * @returns Object containing the created project or error information
+ */
+export const createNewProject = async (name: string) => {
+  try {
+    const result = await createProject(name);
+
+    const authCheck = handleAuthAndErrors(result, "create a new project");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    // Type guard to ensure result has the expected structure
+    if (
+      typeof result === "object" &&
+      result !== null &&
+      "success" in result &&
+      result.success &&
+      "project" in result
+    ) {
+      return { success: true, project: result.project };
+    }
+
+    return {
+      success: false,
+      error: "Unexpected response format",
+    };
+  } catch (error) {
+    console.error("Error in createNewProject tool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for createNewProject function
+ * Defines input as project name and return type as success status with created project or error information
+ */
+export const createNewProjectSchema = z
+  .function()
+  .args(z.string().describe("The name for the new project"))
+  .returns(
+    z.object({
+      success: z.boolean(),
+      project: z.any().optional(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Creates a new project with custom instructions
+ * @param name - Name for the new project
+ * @param customInstructions - Custom instructions for the AI assistant
+ * @returns Object containing the created project or error information
+ */
+export const createProjectWithInstructions = async (
+  name: string,
+  customInstructions: string,
+) => {
+  try {
+    const result = await createProjectWithCustomInstructions({
+      name,
+      customInstructions,
+    });
+
+    const authCheck = handleAuthAndErrors(
+      result,
+      "create a project with custom instructions",
+    );
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    // Type guard to ensure result has the expected structure
+    if (
+      typeof result === "object" &&
+      result !== null &&
+      "success" in result &&
+      result.success &&
+      "project" in result
+    ) {
+      return { success: true, project: result.project };
+    }
+
+    return {
+      success: false,
+      error: "Unexpected response format",
+    };
+  } catch (error) {
+    console.error("Error in createProjectWithInstructions tool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for createProjectWithInstructions function
+ * Defines inputs as project name and custom instructions, and return type as success status with created project or error information
+ */
+export const createProjectWithInstructionsSchema = z
+  .function()
+  .args(
+    z.string().describe("The name for the new project"),
+    z.string().describe("The custom instructions for the project"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      project: z.any().optional(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Deletes a project by ID
+ * @param projectId - The ID of the project to delete
+ * @returns Object indicating success status or error information
+ */
+export const deleteProject = async (projectId: string) => {
+  try {
+    const result = await removeProject(projectId);
+
+    const authCheck = handleAuthAndErrors(result, "delete a project");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in deleteProject tool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for deleteProject function
+ * Defines input as project ID and return type as success status or error information
+ */
+export const deleteProjectSchema = z
+  .function()
+  .args(z.string().describe("The ID of the project to delete"))
+  .returns(
+    z.object({
+      success: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Fetches details of the currently authenticated user
+ * @returns Object containing user details or error information
+ */
+export const getCurrentUser = async () => {
+  try {
+    const result = await fetchCurrentUser();
+
+    const authCheck = handleAuthAndErrors(result, "fetch user details");
+
+    if (authCheck) {
+      return {
+        user: null,
+        ...authCheck,
+      };
+    }
+
+    // Type guard to ensure result has the expected structure
+    if (
+      typeof result === "object" &&
+      result !== null &&
+      "success" in result &&
+      result.success &&
+      "user" in result
+    ) {
+      return { user: result.user };
+    }
+
+    return {
+      user: null,
+      error: "Unexpected response format",
+    };
+  } catch (error) {
+    console.error("Error in getCurrentUser tool:", error);
+    return {
+      user: null,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for getCurrentUser function
+ * Defines return type as object containing user details or error information
+ */
+export const getCurrentUserSchema = z
+  .function()
+  .args()
+  .returns(
+    z.object({
+      user: z.any().nullable(),
       authRequired: z.boolean().optional(),
       loginUrl: z.string().optional(),
       message: z.string().optional(),

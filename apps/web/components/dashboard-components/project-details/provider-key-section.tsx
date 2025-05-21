@@ -32,10 +32,19 @@ export const ProviderKeySectionProps = z.object({
     )
     .optional()
     .describe("Props for the ProviderKeySection component."),
+  onEdited: z
+    .function()
+    .args()
+    .returns(z.void())
+    .optional()
+    .describe(
+      "Optional callback function triggered when settings are successfully updated.",
+    ),
 });
 
 interface ProviderKeySectionProps {
   project?: RouterOutputs["project"]["getUserProjects"][number];
+  onEdited?: () => void;
 }
 
 const sectionAnimationVariants = {
@@ -54,7 +63,10 @@ const sectionAnimationVariants = {
 
 const shortTransition = { duration: 0.2 };
 
-export function ProviderKeySection({ project }: ProviderKeySectionProps) {
+export function ProviderKeySection({
+  project,
+  onEdited,
+}: ProviderKeySectionProps) {
   const { toast } = useToast();
 
   // --- TRPC API Calls ---
@@ -82,6 +94,14 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
   } = api.project.getProviderKeys.useQuery(project?.id ?? "", {
     enabled: !!project?.id,
   });
+
+  // Re-fetch data when project changes
+  useEffect(() => {
+    if (project?.id) {
+      refetchProjectLlmSettings();
+      refetchStoredApiKeys();
+    }
+  }, [project?.id, refetchProjectLlmSettings, refetchStoredApiKeys]);
 
   // --- UI State ---
   const [selectedProviderApiName, setSelectedProviderApiName] = useState<
@@ -121,6 +141,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
           description: "LLM configuration saved.",
         });
         await refetchProjectLlmSettings();
+        onEdited?.();
       },
       onError: (error) => {
         toast({
@@ -138,6 +159,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
         await refetchStoredApiKeys();
         setIsEditingApiKey(false);
         setApiKeyInput("");
+        onEdited?.();
       },
       onError: (error) => {
         toast({

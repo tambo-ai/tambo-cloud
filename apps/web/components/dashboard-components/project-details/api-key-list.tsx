@@ -34,11 +34,20 @@ export const APIKeyListProps = z.object({
     .boolean()
     .optional()
     .describe("Whether the API keys are loading."),
+  onEdited: z
+    .function()
+    .args()
+    .returns(z.void())
+    .optional()
+    .describe(
+      "Optional callback function triggered when API keys are successfully updated.",
+    ),
 });
 
 interface APIKeyListProps {
   project?: RouterOutputs["project"]["getUserProjects"][number];
   isLoading?: boolean;
+  onEdited?: () => void;
 }
 
 const listItemVariants = {
@@ -59,6 +68,7 @@ const listItemVariants = {
 export function APIKeyList({
   project,
   isLoading: externalLoading,
+  onEdited,
 }: APIKeyListProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
@@ -86,6 +96,13 @@ export function APIKeyList({
 
   const { mutateAsync: generateApiKey, isPending: isGeneratingKey } =
     api.project.generateApiKey.useMutation();
+
+  // Re-fetch data when project changes
+  useEffect(() => {
+    if (project?.id) {
+      refetchApiKeys();
+    }
+  }, [project?.id, refetchApiKeys]);
 
   useEffect(() => {
     if (apiKeysError) {
@@ -130,6 +147,7 @@ export function APIKeyList({
             description: "New API key created successfully",
           });
         }
+        onEdited?.();
       } catch (_error) {
         toast({
           title: "Error",
@@ -140,7 +158,7 @@ export function APIKeyList({
         setIsCreating(false);
       }
     },
-    [generateApiKey, newKeyName, project?.id, refetchApiKeys, toast],
+    [generateApiKey, newKeyName, project?.id, refetchApiKeys, toast, onEdited],
   );
   // Auto-create first key if none exist
   useEffect(() => {
@@ -154,16 +172,21 @@ export function APIKeyList({
 
   const handleDeleteApiKey = async () => {
     try {
-      if (!alertState.data) return;
+      if (!alertState.data || !project?.id) return;
+
       await removeApiKey({
-        projectId: project?.id ?? "",
+        projectId: project.id,
         apiKeyId: alertState.data.id,
       });
+
       await refetchApiKeys();
+
       toast({
         title: "Success",
         description: "API key deleted successfully",
       });
+
+      onEdited?.();
     } catch (_error) {
       toast({
         title: "Error",

@@ -2,6 +2,7 @@
 
 import { createCaller } from "@/server/api/root";
 import { createTRPCContext } from "@/server/api/trpc";
+import { MCPTransport } from "@tambo-ai-cloud/core";
 
 /**
  * Checks if the current user is authenticated
@@ -278,5 +279,250 @@ export async function fetchProviderKeys(projectId: string) {
   } catch (error) {
     console.error("Error fetching provider keys:", error);
     return { success: false, error: "Failed to fetch provider keys" };
+  }
+}
+
+/**
+ * Fetches a specific project by ID
+ * @param projectId - ID of the project to fetch
+ * @returns Project details or authentication error
+ */
+export async function fetchProjectById(projectId: string) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const projects = await caller.project.getUserProjects();
+    const project = projects.find((p) => p.id === projectId);
+
+    if (!project) {
+      return { success: false, error: "Project not found" };
+    }
+
+    return project;
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    return { success: false, error: "Failed to fetch project" };
+  }
+}
+
+/**
+ * Fetches custom instructions for a project
+ * @param projectId - ID of the project
+ * @returns Project custom instructions or error
+ */
+export async function fetchProjectCustomInstructions(projectId: string) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const projects = await caller.project.getUserProjects();
+    const project = projects.find((p) => p.id === projectId);
+
+    if (!project) {
+      return {
+        success: false,
+        error: "Project not found",
+      };
+    }
+
+    return {
+      success: true,
+      customInstructions: project.customInstructions,
+    };
+  } catch (error) {
+    console.error("Error fetching project custom instructions:", error);
+    return {
+      success: false,
+      error: "Failed to fetch project custom instructions",
+    };
+  }
+}
+
+/**
+ * Updates custom instructions for a project
+ * @param projectId - ID of the project to update
+ * @param customInstructions - New custom instructions text
+ * @returns Success status or error
+ */
+export async function updateProjectCustomInstructions({
+  projectId,
+  customInstructions,
+}: {
+  projectId: string;
+  customInstructions: string;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    await caller.project.updateProject({
+      projectId,
+      customInstructions,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating custom instructions:", error);
+    return { success: false, error: "Failed to update custom instructions" };
+  }
+}
+
+/**
+ * Creates a new project with a simple name
+ * @param name - Name of the project
+ * @returns Newly created project or error
+ */
+export async function createProject(name: string) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const project = await caller.project.createProject(name);
+    return { success: true, project };
+  } catch (error) {
+    console.error("Error creating project:", error);
+    return { success: false, error: "Failed to create project" };
+  }
+}
+
+/**
+ * Creates a new project with custom instructions and optional MCP servers
+ * @param name - Name of the project
+ * @param customInstructions - Custom instructions for the AI assistant
+ * @param mcpServers - Optional array of MCP servers to configure
+ * @returns Newly created project or error
+ */
+export async function createProjectWithCustomInstructions({
+  name,
+  customInstructions,
+  mcpServers,
+}: {
+  name: string;
+  customInstructions?: string | null;
+  mcpServers?: Array<{
+    url: string;
+    customHeaders: Record<string, string>;
+    mcpTransport: MCPTransport;
+  }>;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const project = await caller.project.createProject2({
+      name,
+      customInstructions,
+      mcpServers,
+    });
+    return { success: true, project };
+  } catch (error) {
+    console.error("Error creating project with custom instructions:", error);
+    return {
+      success: false,
+      error: "Failed to create project with custom instructions",
+    };
+  }
+}
+
+/**
+ * Removes a project by ID
+ * @param projectId - ID of the project to remove
+ * @returns Success status or error
+ */
+export async function removeProject(projectId: string) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    await caller.project.removeProject(projectId);
+    return { success: true };
+  } catch (error) {
+    console.error("Error removing project:", error);
+    return { success: false, error: "Failed to remove project" };
+  }
+}
+
+/**
+ * Updates the project name
+ * @param projectId - ID of the project to update
+ * @param name - New name for the project
+ * @returns Updated project or error
+ */
+export async function updateProjectName({
+  projectId,
+  name,
+}: {
+  projectId: string;
+  name: string;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const updatedProject = await caller.project.updateProject({
+      projectId,
+      name,
+    });
+    return { success: true, project: updatedProject };
+  } catch (error) {
+    console.error("Error updating project name:", error);
+    return { success: false, error: "Failed to update project name" };
+  }
+}
+
+/**
+ * Fetches the current authenticated user details
+ * @returns User details or authentication error
+ */
+export async function fetchCurrentUser() {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const user = await caller.user.getUser();
+    return { success: true, user };
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return { success: false, error: "Failed to fetch user" };
   }
 }
