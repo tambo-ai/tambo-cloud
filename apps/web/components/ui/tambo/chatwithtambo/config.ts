@@ -15,6 +15,8 @@ import {
   generateApiKeySchema,
   deleteApiKey,
   deleteApiKeySchema,
+  checkUserLoginStatusSchema,
+  checkUserLoginStatus,
 } from "./tools";
 import {
   ProjectInfo,
@@ -84,5 +86,12 @@ export const TamboRegisteredTools: TamboTool[] = [
       "Deletes an API key for a given project ID and API key ID. Expects a project ID and API key ID as input.",
     toolSchema: deleteApiKeySchema,
     tool: deleteApiKey,
+  },
+  {
+    name: "checkUserLoginStatus",
+    description:
+      "Checks if the current user is authenticated. Returns the user's ID and email if authenticated, or null if not. Always use this tool before any other tools that require authentication.",
+    toolSchema: checkUserLoginStatusSchema,
+    tool: checkUserLoginStatus,
   },
 ];

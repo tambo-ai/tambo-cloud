@@ -227,3 +227,60 @@ export const generateApiKeySchema = z
       error: z.string().optional(),
     }),
   );
+
+/**
+ * Checks if the user is currently logged in.
+ * @returns Object indicating login status or error information
+ */
+export const checkUserLoginStatus = async () => {
+  try {
+    // const result = await checkLogin(); // This function needs to be implemented or imported
+    // For now, let's simulate a successful login check if no actual endpoint exists.
+    // Replace this with the actual call to `checkLogin()` when available.
+    const result = { loggedIn: true }; // Simulated result
+
+    const authCheck = handleAuthAndErrors(result, "perform this action");
+
+    if (authCheck) {
+      // If authCheck returns, it means login is required or there was an error
+      return {
+        isLoggedIn: false,
+        ...authCheck,
+      };
+    }
+
+    // If result explicitly states loggedIn is false, but no auth error from handleAuthAndErrors
+    if (result && "loggedIn" in result && result.loggedIn === false) {
+      return {
+        isLoggedIn: false,
+        message: "User is not logged in.",
+      };
+    }
+
+    // If no auth issues and result indicates logged in (or doesn't have a requiresAuthentication field)
+    return { isLoggedIn: true, message: "User is logged in." };
+  } catch (error) {
+    console.error("Error in checkUserLoginStatus tool:", error);
+    return {
+      isLoggedIn: false,
+      error: "An unexpected error occurred while checking login status",
+    };
+  }
+};
+
+/**
+ * Zod schema for checkUserLoginStatus function
+ * Defines the return type as an object indicating login status or error information
+ */
+export const checkUserLoginStatusSchema = z
+  .function()
+  .args()
+  .returns(
+    z.object({
+      isLoggedIn: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );

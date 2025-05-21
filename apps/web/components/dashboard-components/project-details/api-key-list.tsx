@@ -37,7 +37,8 @@ export const APIKeyListProps = z.object({
 });
 
 interface APIKeyListProps {
-  project: RouterOutputs["project"]["getUserProjects"][number];
+  project?: RouterOutputs["project"]["getUserProjects"][number];
+  isLoading?: boolean;
 }
 
 const listItemVariants = {
@@ -55,7 +56,10 @@ const listItemVariants = {
   exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } },
 };
 
-export function APIKeyList({ project }: APIKeyListProps) {
+export function APIKeyList({
+  project,
+  isLoading: externalLoading,
+}: APIKeyListProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
   const [newGeneratedKey, setNewGeneratedKey] = useState<string | null>(null);
@@ -76,7 +80,9 @@ export function APIKeyList({ project }: APIKeyListProps) {
     isLoading: apiKeysLoading,
     refetch: refetchApiKeys,
     error: apiKeysError,
-  } = api.project.getApiKeys.useQuery(project.id);
+  } = api.project.getApiKeys.useQuery(project?.id ?? "", {
+    enabled: !!project?.id,
+  });
 
   const { mutateAsync: generateApiKey, isPending: isGeneratingKey } =
     api.project.generateApiKey.useMutation();
@@ -106,7 +112,7 @@ export function APIKeyList({ project }: APIKeyListProps) {
       try {
         setIsCreating(true);
         const newKey = await generateApiKey({
-          projectId: project.id,
+          projectId: project?.id ?? "",
           name: name,
         });
         setNewGeneratedKey(newKey.apiKey);
@@ -134,7 +140,7 @@ export function APIKeyList({ project }: APIKeyListProps) {
         setIsCreating(false);
       }
     },
-    [generateApiKey, newKeyName, project.id, refetchApiKeys, toast],
+    [generateApiKey, newKeyName, project?.id, refetchApiKeys, toast],
   );
   // Auto-create first key if none exist
   useEffect(() => {
@@ -150,7 +156,7 @@ export function APIKeyList({ project }: APIKeyListProps) {
     try {
       if (!alertState.data) return;
       await removeApiKey({
-        projectId: project.id,
+        projectId: project?.id ?? "",
         apiKeyId: alertState.data.id,
       });
       await refetchApiKeys();
@@ -188,7 +194,8 @@ export function APIKeyList({ project }: APIKeyListProps) {
     }, 2000);
   };
 
-  const isLoading = apiKeysLoading || isRemovingKey || isGeneratingKey;
+  const isLoading =
+    apiKeysLoading || isRemovingKey || isGeneratingKey || externalLoading;
 
   if (!project) {
     return (
