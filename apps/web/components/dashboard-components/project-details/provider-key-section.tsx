@@ -266,6 +266,20 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       return;
     }
 
+    // Check if API key is required and present
+    if (
+      selectedProviderApiName !== "openai" &&
+      !currentApiKeyRecord?.partiallyHiddenKey
+    ) {
+      toast({
+        title: "Error",
+        description:
+          "Please add an API key before saving settings for this provider.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     let modelToSave: string | null = null;
     let customNameToSave: string | null = null;
 
@@ -326,6 +340,7 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
     updateLlmSettings,
     project.id,
     toast,
+    currentApiKeyRecord,
   ]);
 
   const handleSaveApiKey = useCallback(() => {
@@ -403,7 +418,9 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
               isSavingDefaults ||
               !selectedProviderApiName ||
               isLoadingLlmProviderConfig ||
-              isLoadingProjectSettingsInitial
+              isLoadingProjectSettingsInitial ||
+              (selectedProviderApiName !== "openai" &&
+                !currentApiKeyRecord?.partiallyHiddenKey)
             }
           >
             {isSavingDefaults ? "Saving..." : "Save Settings"}
@@ -612,14 +629,16 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                       type="password"
                       value={apiKeyInput}
                       onChange={(e) => setApiKeyInput(e.target.value)}
-                      placeholder={currentProviderConfig?.apiName === "openai"
+                      placeholder={
+                        currentProviderConfig?.apiName === "openai"
                           ? "Enter API Key or leave empty to use free messages"
                           : `Enter API Key${
                               currentProviderConfig?.displayName !==
                               "OpenAI Compatible"
                                 ? ` for ${currentProviderConfig?.displayName}`
                                 : ""
-                            }`}
+                            }`
+                      }
                       autoFocus
                       className="w-full font-sans"
                     />
