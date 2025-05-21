@@ -337,7 +337,10 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
       });
       return;
     }
+
+    // Allow empty key for OpenAI to switch back to free messages
     if (
+      currentProviderConfig?.apiName !== "openai" && // Changed from openai-compatible
       currentProviderConfig?.apiName !== "openai-compatible" &&
       !apiKeyInput.trim()
     ) {
@@ -609,12 +612,14 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                       type="password"
                       value={apiKeyInput}
                       onChange={(e) => setApiKeyInput(e.target.value)}
-                      placeholder={`Enter API Key${
-                        currentProviderConfig.displayName !==
-                        "OpenAI Compatible"
-                          ? ` for ${currentProviderConfig.displayName}`
-                          : ""
-                      }`}
+                      placeholder={currentProviderConfig?.apiName === "openai"
+                          ? "Enter API Key or leave empty to use free messages"
+                          : `Enter API Key${
+                              currentProviderConfig?.displayName !==
+                              "OpenAI Compatible"
+                                ? ` for ${currentProviderConfig?.displayName}`
+                                : ""
+                            }`}
                       autoFocus
                       className="w-full font-sans"
                     />
@@ -637,7 +642,8 @@ export function ProviderKeySection({ project }: ProviderKeySectionProps) {
                         disabled={
                           isUpdatingApiKey ||
                           (!apiKeyInput.trim() &&
-                            currentProviderConfig.apiName !==
+                            currentProviderConfig?.apiName !== "openai" &&
+                            currentProviderConfig?.apiName !==
                               "openai-compatible")
                         }
                       >
