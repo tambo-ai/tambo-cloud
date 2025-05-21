@@ -9,6 +9,10 @@ import {
   AvailableMcpServersProps,
 } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import {
+  AvailableTools,
+  AvailableToolsProps,
+} from "@/components/dashboard-components/project-details/available-tools";
+import {
   CustomInstructionsEditor,
   CustomInstructionsEditorProps,
 } from "@/components/dashboard-components/project-details/custom-instructions-editor";
@@ -30,6 +34,8 @@ import {
   addNewMcpServerSchema,
   authorizeMcpServerSchema,
   authorizeMcpServerTool,
+  checkComposioConnectedAccountStatusSchema,
+  checkComposioConnectedAccountStatusTool,
   checkUserLoginStatus,
   checkUserLoginStatusSchema,
   createNewProject,
@@ -40,6 +46,10 @@ import {
   deleteApiKeySchema,
   deleteProject,
   deleteProjectSchema,
+  disableAppSchema,
+  disableAppTool,
+  enableAppSchema,
+  enableAppTool,
   fetchApiKeys,
   fetchApiKeysSchema,
   fetchCustomInstructions,
@@ -58,12 +68,18 @@ import {
   fetchProviderApiKeysSchema,
   generateApiKey,
   generateApiKeySchema,
+  getComposioAuthSchema,
+  getComposioAuthTool,
   getCurrentUser,
   getCurrentUserSchema,
   inspectMcpServerSchema,
   inspectMcpServerTool,
+  listAvailableAppsSchema,
+  listAvailableAppsTool,
   removeMcpServer,
   removeMcpServerSchema,
+  updateComposioAuthSchema,
+  updateComposioAuthTool,
   updateCustomInstructions,
   updateCustomInstructionsSchema,
   updateExistingMcpServer,
@@ -118,6 +134,13 @@ export const TamboRegisteredComponents = [
       "A component for displaying a list of available MCP servers. Expects props conforming to AvailableMcpServersProps. Always call AuthCheck tool before calling this tool.",
     component: AvailableMcpServers,
     propsSchema: AvailableMcpServersProps,
+  },
+  {
+    name: "AvailableTools",
+    description:
+      "A component for displaying and managing available tools/apps for a project. Expects props conforming to AvailableToolsPropsSchema. Use listAvailableApps tool to get the list of tools.",
+    component: AvailableTools,
+    propsSchema: AvailableToolsProps,
   },
 ];
 
@@ -289,5 +312,47 @@ export const TamboRegisteredTools: TamboTool[] = [
       "Inspects an MCP server to get available tools. Expects project ID and server ID as input.",
     toolSchema: inspectMcpServerSchema,
     tool: inspectMcpServerTool,
+  },
+  {
+    name: "listAvailableApps",
+    description:
+      "Lists available apps/tools for a project. Expects project ID as input.",
+    toolSchema: listAvailableAppsSchema,
+    tool: listAvailableAppsTool,
+  },
+  {
+    name: "enableApp",
+    description:
+      "Enables an app/tool for a project. Expects project ID and app ID as input.",
+    toolSchema: enableAppSchema,
+    tool: enableAppTool,
+  },
+  {
+    name: "disableApp",
+    description:
+      "Disables an app/tool for a project. Expects project ID and app ID as input.",
+    toolSchema: disableAppSchema,
+    tool: disableAppTool,
+  },
+  {
+    name: "getComposioAuth",
+    description:
+      "Gets authentication details for a Composio tool. Expects project ID, app ID, and optional context key as input.",
+    toolSchema: getComposioAuthSchema,
+    tool: getComposioAuthTool,
+  },
+  {
+    name: "updateComposioAuth",
+    description:
+      "Updates authentication for a Composio tool. Expects project ID, app ID, context key, authentication mode, and authentication field values as input.",
+    toolSchema: updateComposioAuthSchema,
+    tool: updateComposioAuthTool,
+  },
+  {
+    name: "checkComposioConnectedAccountStatus",
+    description:
+      "Checks the status of a Composio connected account. Expects project ID, tool provider ID, and context key as input.",
+    toolSchema: checkComposioConnectedAccountStatusSchema,
+    tool: checkComposioConnectedAccountStatusTool,
   },
 ];

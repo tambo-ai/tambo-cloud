@@ -2,7 +2,7 @@
 
 import { createCaller } from "@/server/api/root";
 import { createTRPCContext } from "@/server/api/trpc";
-import { MCPTransport } from "@tambo-ai-cloud/core";
+import { ComposioAuthMode, MCPTransport } from "@tambo-ai-cloud/core";
 
 /**
  * Checks if the current user is authenticated
@@ -734,5 +734,218 @@ export async function inspectMcpServer({
   } catch (error) {
     console.error("Error inspecting MCP server:", error);
     return { success: false, error: "Failed to inspect MCP server" };
+  }
+}
+
+/**
+ * Lists available apps/tools for a project
+ * @param projectId - ID of the project
+ * @returns List of available apps or error
+ */
+export async function listAvailableApps(projectId: string) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const apps = await caller.tools.listApps({
+      projectId,
+    });
+    return apps;
+  } catch (error) {
+    console.error("Error listing available apps:", error);
+    return { success: false, error: "Failed to list available apps" };
+  }
+}
+
+/**
+ * Enables an app/tool for a project
+ * @param projectId - ID of the project
+ * @param appId - ID of the app to enable
+ * @returns Success status or error
+ */
+export async function enableApp({
+  projectId,
+  appId,
+}: {
+  projectId: string;
+  appId: string;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    await caller.tools.enableApp({
+      projectId,
+      appId,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error enabling app:", error);
+    return { success: false, error: "Failed to enable app" };
+  }
+}
+
+/**
+ * Disables an app/tool for a project
+ * @param projectId - ID of the project
+ * @param appId - ID of the app to disable
+ * @returns Success status or error
+ */
+export async function disableApp({
+  projectId,
+  appId,
+}: {
+  projectId: string;
+  appId: string;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    await caller.tools.disableApp({
+      projectId,
+      appId,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error disabling app:", error);
+    return { success: false, error: "Failed to disable app" };
+  }
+}
+
+/**
+ * Gets authentication details for a Composio tool
+ * @param projectId - ID of the project
+ * @param appId - ID of the app to get authentication for
+ * @param contextKey - Optional context key for the authentication
+ * @returns Authentication details or error
+ */
+export async function getComposioAuth({
+  projectId,
+  appId,
+  contextKey,
+}: {
+  projectId: string;
+  appId: string;
+  contextKey: string | null;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const authDetails = await caller.tools.getComposioAuth({
+      projectId,
+      appId,
+      contextKey,
+    });
+    return authDetails;
+  } catch (error) {
+    console.error("Error getting tool authentication:", error);
+    return { success: false, error: "Failed to get tool authentication" };
+  }
+}
+
+/**
+ * Updates authentication for a Composio tool
+ * @param projectId - ID of the project
+ * @param appId - ID of the app to update authentication for
+ * @param contextKey - Optional context key for the authentication
+ * @param authMode - Authentication mode to use
+ * @param authFields - Authentication field values
+ * @returns Success status or error
+ */
+export async function updateComposioAuth({
+  projectId,
+  appId,
+  contextKey,
+  authMode,
+  authFields,
+}: {
+  projectId: string;
+  appId: string;
+  contextKey: string | null;
+  authMode: ComposioAuthMode;
+  authFields: Record<string, string>;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    await caller.tools.updateComposioAuth({
+      projectId,
+      appId,
+      contextKey,
+      authMode,
+      authFields,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating tool authentication:", error);
+    return { success: false, error: "Failed to update tool authentication" };
+  }
+}
+
+/**
+ * Checks the status of a Composio connected account
+ * @param projectId - ID of the project
+ * @param toolProviderId - ID of the tool provider to check
+ * @param contextKey - Optional context key for the authentication
+ * @returns Connection status or error
+ */
+export async function checkComposioConnectedAccountStatus({
+  projectId,
+  toolProviderId,
+  contextKey,
+}: {
+  projectId: string;
+  toolProviderId: string;
+  contextKey: string | null;
+}) {
+  try {
+    const authCheck = await checkAuthentication();
+
+    if (!authCheck.authenticated) {
+      return authCheck;
+    }
+
+    const caller = createCaller(authCheck.ctx!);
+
+    const status = await caller.tools.checkComposioConnectedAccountStatus({
+      projectId,
+      toolProviderId,
+      contextKey,
+    });
+    return status;
+  } catch (error) {
+    console.error("Error checking connected account status:", error);
+    return {
+      success: false,
+      error: "Failed to check connected account status",
+    };
   }
 }

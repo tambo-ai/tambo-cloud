@@ -4,10 +4,13 @@ import {
   addMcpServer,
   addOrUpdateProviderKey,
   authorizeMcpServer,
+  checkComposioConnectedAccountStatus,
   createProject,
   createProjectWithCustomInstructions,
   deleteMcpServer,
   deleteProjectApiKey,
+  disableApp,
+  enableApp,
   fetchCurrentUser,
   fetchLlmProviderConfig,
   fetchProjectApiKeys,
@@ -18,16 +21,20 @@ import {
   fetchProviderKeys,
   fetchUserProjects,
   generateProjectApiKey,
+  getComposioAuth,
   inspectMcpServer,
+  listAvailableApps,
   removeProject,
+  updateComposioAuth,
   updateMcpServer,
   updateProjectCustomInstructions,
   updateProjectLlmSettings,
   updateProjectName,
 } from "@/app/(authed)/utils/project-utils";
 import { APIKeySchema } from "@/components/dashboard-components/project-details/api-key-list";
+import { ToolAppSchema } from "@/components/dashboard-components/project-details/available-tools";
 import { ProjectTableSchema } from "@/components/dashboard-components/project-table";
-import { MCPTransport } from "@tambo-ai-cloud/core";
+import { ComposioAuthMode, MCPTransport } from "@tambo-ai-cloud/core";
 import { z } from "zod";
 
 /**
@@ -1362,6 +1369,339 @@ export const inspectMcpServerSchema = z
     z.object({
       success: z.boolean(),
       toolInfo: z.any().optional(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Lists available apps/tools for a project
+ * @param projectId - The ID of the project to fetch apps for
+ * @returns Object containing apps array or error information
+ */
+export const listAvailableAppsTool = async (projectId: string) => {
+  try {
+    const result = await listAvailableApps(projectId);
+
+    const authCheck = handleAuthAndErrors(result, "view available apps");
+
+    if (authCheck) {
+      return {
+        apps: [],
+        ...authCheck,
+      };
+    }
+
+    return { apps: result };
+  } catch (error) {
+    console.error("Error in listAvailableAppsTool:", error);
+    return {
+      apps: [],
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for listAvailableAppsTool function
+ * Defines input as project ID and return type as object containing apps array or error information
+ */
+export const listAvailableAppsSchema = z
+  .function()
+  .args(z.string().describe("The project ID to fetch available apps for"))
+  .returns(
+    z.object({
+      apps: z.array(ToolAppSchema),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Enables an app/tool for a project
+ * @param projectId - The ID of the project
+ * @param appId - The ID of the app to enable
+ * @returns Object indicating success status or error information
+ */
+export const enableAppTool = async (projectId: string, appId: string) => {
+  try {
+    const result = await enableApp({ projectId, appId });
+
+    const authCheck = handleAuthAndErrors(result, "enable an app");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in enableAppTool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for enableAppTool function
+ * Defines inputs as project ID and app ID, and return type as success status or error information
+ */
+export const enableAppSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The ID of the app to enable"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Disables an app/tool for a project
+ * @param projectId - The ID of the project
+ * @param appId - The ID of the app to disable
+ * @returns Object indicating success status or error information
+ */
+export const disableAppTool = async (projectId: string, appId: string) => {
+  try {
+    const result = await disableApp({ projectId, appId });
+
+    const authCheck = handleAuthAndErrors(result, "disable an app");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in disableAppTool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for disableAppTool function
+ * Defines inputs as project ID and app ID, and return type as success status or error information
+ */
+export const disableAppSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The ID of the app to disable"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Gets authentication details for a Composio tool
+ * @param projectId - The ID of the project
+ * @param appId - The ID of the app to get authentication for
+ * @param contextKey - Optional context key for the authentication
+ * @returns Object containing authentication details or error information
+ */
+export const getComposioAuthTool = async (
+  projectId: string,
+  appId: string,
+  contextKey: string | null,
+) => {
+  try {
+    const result = await getComposioAuth({ projectId, appId, contextKey });
+
+    const authCheck = handleAuthAndErrors(result, "get tool authentication");
+
+    if (authCheck) {
+      return {
+        authDetails: null,
+        ...authCheck,
+      };
+    }
+
+    return { authDetails: result };
+  } catch (error) {
+    console.error("Error in getComposioAuthTool:", error);
+    return {
+      authDetails: null,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for getComposioAuthTool function
+ * Defines inputs as project ID, app ID, and context key, and return type as auth details or error information
+ */
+export const getComposioAuthSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The ID of the app to get authentication for"),
+    z
+      .union([z.string(), z.null()])
+      .describe("Optional context key for the authentication"),
+  )
+  .returns(
+    z.object({
+      authDetails: z.any().nullable(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Updates authentication for a Composio tool
+ * @param projectId - The ID of the project
+ * @param appId - The ID of the app to update authentication for
+ * @param contextKey - Optional context key for the authentication
+ * @param authMode - Authentication mode to use
+ * @param authFields - Authentication field values
+ * @returns Object indicating success status or error information
+ */
+export const updateComposioAuthTool = async (
+  projectId: string,
+  appId: string,
+  contextKey: string | null,
+  authMode: ComposioAuthMode,
+  authFields: Record<string, string>,
+) => {
+  try {
+    const result = await updateComposioAuth({
+      projectId,
+      appId,
+      contextKey,
+      authMode,
+      authFields,
+    });
+
+    const authCheck = handleAuthAndErrors(result, "update tool authentication");
+
+    if (authCheck) {
+      return {
+        success: false,
+        ...authCheck,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in updateComposioAuthTool:", error);
+    return {
+      success: false,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for updateComposioAuthTool function
+ * Defines inputs for updating authentication and return type as success status or error information
+ */
+export const updateComposioAuthSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The ID of the app to update authentication for"),
+    z
+      .union([z.string(), z.null()])
+      .describe("Optional context key for the authentication"),
+    z.nativeEnum(ComposioAuthMode).describe("Authentication mode to use"),
+    z.record(z.string()).describe("Authentication field values"),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  );
+
+/**
+ * Checks the status of a Composio connected account
+ * @param projectId - The ID of the project
+ * @param toolProviderId - The ID of the tool provider to check
+ * @param contextKey - Optional context key for the authentication
+ * @returns Object containing connection status or error information
+ */
+export const checkComposioConnectedAccountStatusTool = async (
+  projectId: string,
+  toolProviderId: string,
+  contextKey: string | null,
+) => {
+  try {
+    const result = await checkComposioConnectedAccountStatus({
+      projectId,
+      toolProviderId,
+      contextKey,
+    });
+
+    const authCheck = handleAuthAndErrors(
+      result,
+      "check connected account status",
+    );
+
+    if (authCheck) {
+      return {
+        status: null,
+        ...authCheck,
+      };
+    }
+
+    return { status: result };
+  } catch (error) {
+    console.error("Error in checkComposioConnectedAccountStatusTool:", error);
+    return {
+      status: null,
+      error: "An unexpected error occurred",
+    };
+  }
+};
+
+/**
+ * Zod schema for checkComposioConnectedAccountStatusTool function
+ * Defines inputs for checking connection status and return type as status info or error
+ */
+export const checkComposioConnectedAccountStatusSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The ID of the tool provider to check"),
+    z
+      .union([z.string(), z.null()])
+      .describe("Optional context key for the authentication"),
+  )
+  .returns(
+    z.object({
+      status: z.any().nullable(),
       authRequired: z.boolean().optional(),
       loginUrl: z.string().optional(),
       message: z.string().optional(),
