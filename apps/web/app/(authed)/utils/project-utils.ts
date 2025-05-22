@@ -28,26 +28,46 @@ export async function checkAuthentication() {
   };
 }
 
+export async function getCaller() {
+  const ctx = await createTRPCContext({
+    headers: new Headers(),
+  });
+  const caller = createCaller(ctx);
+  return caller;
+}
+
 /**
  * Fetches all projects associated with the authenticated user
  * @returns List of user projects or authentication error
  */
 export async function fetchUserProjects() {
-  try {
-    const authCheck = await checkAuthentication();
+  const caller = await getCaller();
+  const projects = await caller.project.getUserProjects();
+  return projects;
+}
 
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const projects = await caller.project.getUserProjects();
-    return projects;
-  } catch (error) {
-    console.error("Error fetching projects:", error);
-    return { success: false, error: "Failed to fetch projects" };
-  }
+export async function updateProject(
+  projectId: string,
+  project: {
+    name: string;
+    customInstructions: string;
+    defaultLlmProviderName: string;
+    defaultLlmModelName: string;
+    customLlmModelName: string;
+    customLlmBaseURL: string;
+  },
+) {
+  const caller = await getCaller();
+  const updatedProject = await caller.project.updateProject({
+    projectId,
+    name: project.name,
+    customInstructions: project.customInstructions,
+    defaultLlmProviderName: project.defaultLlmProviderName,
+    defaultLlmModelName: project.defaultLlmModelName,
+    customLlmModelName: project.customLlmModelName,
+    customLlmBaseURL: project.customLlmBaseURL,
+  });
+  return updatedProject;
 }
 
 /**

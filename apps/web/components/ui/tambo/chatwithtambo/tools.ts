@@ -19,7 +19,6 @@ import {
   fetchProjectLlmSettings,
   fetchProjectMcpServers,
   fetchProviderKeys,
-  fetchUserProjects,
   generateProjectApiKey,
   getComposioAuth,
   inspectMcpServer,
@@ -69,28 +68,36 @@ const handleAuthAndErrors = (result: any, authMessageTemplate: string) => {
  * Fetches all projects for the current user
  * @returns Object containing projects array or error information
  */
-export const fetchProjects = async () => {
-  try {
-    const result = await fetchUserProjects();
+// export const fetchProjects = async () => {
+//   const ctx = await createTRPCContext({
+//     headers: new Headers(),
+//   });
+//   const caller = createCaller(ctx);
 
-    const authCheck = handleAuthAndErrors(result, "view your projects");
+//   const projects = await caller.project.getUserProjects();
+//   return projects;
+//   const result = await api.client.project.;
+// try {
+// const result = await fetchUserProjects();
 
-    if (authCheck) {
-      return {
-        projects: [],
-        ...authCheck,
-      };
-    }
+//   const authCheck = handleAuthAndErrors(result, "view your projects");
 
-    return { projects: result };
-  } catch (error) {
-    console.error("Error in fetchAndDisplayUserProjects tool:", error);
-    return {
-      projects: [],
-      error: "An unexpected error occurred",
-    };
-  }
-};
+//   if (authCheck) {
+//     return {
+//       projects: [],
+//       ...authCheck,
+//     };
+//   }
+
+//   return { projects: result };
+// } catch (error) {
+//   console.error("Error in fetchAndDisplayUserProjects tool:", error);
+//   return {
+//     projects: [],
+//     error: "An unexpected error occurred",
+//   };
+// }
+// };
 
 /**
  * Zod schema for fetchProjects function
@@ -100,6 +107,26 @@ export const fetchProjectsSchema = z
   .function()
   .args()
   .returns(z.object({ projects: z.array(ProjectTableSchema) }));
+
+export const updateProjectSchema = z
+  .function()
+  .args(
+    z.object({
+      name: z.string().describe("The new name of the project"),
+      customInstructions: z
+        .string()
+        .describe("The new custom instructions for the project"),
+    }),
+  )
+  .returns(
+    z.object({
+      success: z.boolean(),
+      project: z.any().optional(),
+      authRequired: z.boolean().optional(),
+      loginUrl: z.string().optional(),
+      message: z.string().optional(),
+    }),
+  );
 
 /**
  * Fetches API keys for a specific project
