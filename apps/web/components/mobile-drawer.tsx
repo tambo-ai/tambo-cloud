@@ -36,21 +36,24 @@ export function MobileDrawer({
         <IoMenuSharp className="text-2xl" />
       </DrawerTrigger>
       <DrawerContent>
-        <DrawerHeader className="px-6">
-          <DrawerTitle>
-            <Link
-              href="/"
-              title="brand-logo"
-              className="relative mr-6 flex items-center space-x-2"
-            >
-              <Icons.logo
-                className="pl-4 h-6 w-auto"
-                aria-label={siteConfig.name}
-              />
-            </Link>
-          </DrawerTitle>
-          <DrawerDescription>{siteConfig.description}</DrawerDescription>
-        </DrawerHeader>
+        {/* Show the brand header only when the drawer is not in minimal mode */}
+        {!minimal && (
+          <DrawerHeader className="px-6">
+            <DrawerTitle>
+              <Link
+                href="/"
+                title="brand-logo"
+                className="relative mr-6 flex items-center space-x-2"
+              >
+                <Icons.logo
+                  className="pl-4 h-6 w-auto"
+                  aria-label={siteConfig.name}
+                />
+              </Link>
+            </DrawerTitle>
+            <DrawerDescription>{siteConfig.description}</DrawerDescription>
+          </DrawerHeader>
+        )}
         {minimal ? (
           // Reduced drawer: GitHub link only
           <DrawerFooter>
@@ -68,7 +71,7 @@ export function MobileDrawer({
                   href="/dashboard"
                   className={cn(
                     buttonVariants({ variant: "ghost" }),
-                    "justify-start text-base w-full",
+                    "justify-start text-base w-full"
                   )}
                 >
                   Dashboard
@@ -78,7 +81,7 @@ export function MobileDrawer({
                 <button
                   className={cn(
                     buttonVariants({ variant: "ghost" }),
-                    "justify-start text-base w-full",
+                    "justify-start text-base w-full"
                   )}
                 >
                   Logout
@@ -90,7 +93,7 @@ export function MobileDrawer({
                 href="/docs"
                 className={cn(
                   buttonVariants({ variant: "default" }),
-                  "text-white rounded-full group",
+                  "text-white rounded-full group"
                 )}
               >
                 Docs
