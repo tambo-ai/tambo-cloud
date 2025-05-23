@@ -144,8 +144,15 @@ const CollapsibleTrigger = ({
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between w-full p-4">
-        <div className="flex items-center">
+      <div className="flex items-center justify-between w-full p-4 border-b border-gray-200 shadow-sm">
+        <div className="flex items-center space-x-2">
+          <Image
+            src="/logo/icon/Octo-Icon.svg"
+            width={24}
+            height={24}
+            alt="Octo Icon"
+            className="w-4 h-4"
+          />
           <span>{config.labels.openState}</span>
         </div>
         <div
@@ -177,28 +184,30 @@ export const MessageThreadCollapsible = React.forwardRef<
    */
   const THREAD_CONFIG = {
     labels: {
-      openState: "tambo",
+      openState: "ask tambo",
     },
   };
 
   const defaultSuggestions: Suggestion[] = [
     {
       id: "suggestion-1",
-      title: "Get started",
-      detailedSuggestion: "What can you help me with?",
-      messageId: "welcome-query",
+      title: "View Project Details",
+      detailedSuggestion: "How can I see the details of one of my projects?",
+      messageId: "view-project-details-query",
     },
     {
       id: "suggestion-2",
-      title: "Learn more",
-      detailedSuggestion: "Tell me about your capabilities.",
-      messageId: "capabilities-query",
+      title: "Generate API Key",
+      detailedSuggestion:
+        "How do I create a new API key for one of my projects?",
+      messageId: "generate-apikey-query",
     },
     {
       id: "suggestion-3",
-      title: "Examples",
-      detailedSuggestion: "Show me some example queries I can try.",
-      messageId: "examples-query",
+      title: "Modify Project Config",
+      detailedSuggestion:
+        "How can I change the configuration or settings for one of my projects?",
+      messageId: "modify-project-config-query",
     },
   ];
 

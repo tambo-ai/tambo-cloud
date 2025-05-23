@@ -5,29 +5,9 @@ import { createTRPCContext } from "@/server/api/trpc";
 import { ComposioAuthMode, MCPTransport } from "@tambo-ai-cloud/core";
 
 /**
- * Checks if the current user is authenticated
- * @returns Authentication status with session if authenticated or login info if not
+ * Creates a TRPC caller instance with the current context.
+ * @returns A TRPC caller instance.
  */
-export async function checkAuthentication() {
-  const ctx = await createTRPCContext({
-    headers: new Headers(),
-  });
-
-  if (!ctx.session?.user) {
-    return {
-      authenticated: false,
-      requiresAuthentication: true,
-      loginUrl: "/login",
-    };
-  }
-
-  return {
-    authenticated: true,
-    session: ctx.session,
-    ctx: ctx,
-  };
-}
-
 export async function getCaller() {
   const ctx = await createTRPCContext({
     headers: new Headers(),
@@ -36,549 +16,196 @@ export async function getCaller() {
   return caller;
 }
 
+/** user management */
+
 /**
- * Fetches all projects associated with the authenticated user
- * @returns List of user projects or authentication error
+ * Fetches the current authenticated user details.
+ * @returns {Promise<User>} User details or authentication error.
  */
-export async function fetchUserProjects() {
+export async function fetchCurrentUser() {
+  const caller = await getCaller();
+  const user = await caller.user.getUser();
+  return user;
+}
+
+/** project management */
+
+/**
+ * Fetches all projects associated with the authenticated user.
+ * @returns {Promise<Project[]>} List of user projects or authentication error.
+ */
+export async function fetchAllProjects() {
   const caller = await getCaller();
   const projects = await caller.project.getUserProjects();
   return projects;
 }
 
-export async function updateProject(
-  projectId: string,
-  project: {
-    name: string;
-    customInstructions: string;
-    defaultLlmProviderName: string;
-    defaultLlmModelName: string;
-    customLlmModelName: string;
-    customLlmBaseURL: string;
-  },
-) {
+/**
+ * Fetches a specific project by ID.
+ * @param {string} projectId - ID of the project to fetch.
+ * @returns {Promise<Project | undefined>} Project details or undefined if not found, or an authentication error.
+ */
+export async function fetchProjectById(projectId: string) {
+  const caller = await getCaller();
+  const projects = await caller.project.getUserProjects();
+  const project = projects.find((p) => p.id === projectId);
+  return project;
+}
+
+/**
+ * Updates a project with new name, custom instructions, and LLM settings.
+ * @param {object} params - The project update parameters.
+ * @param {string} params.id - ID of the project to update.
+ * @param {string} params.name - New name for the project.
+ * @param {string} params.customInstructions - New custom instructions for the project.
+ * @param {string} params.defaultLlmProviderName - New default LLM provider name.
+ * @param {string} params.defaultLlmModelName - New default LLM model name.
+ * @param {string} params.customLlmModelName - New custom LLM model name (if applicable).
+ * @param {string} params.customLlmBaseURL - New custom LLM base URL (if applicable).
+ * @returns {Promise<Project>} Updated project details or error.
+ */
+export async function updateProject(params: {
+  id: string;
+  name: string;
+  customInstructions: string;
+  defaultLlmProviderName: string;
+  defaultLlmModelName: string;
+  customLlmModelName: string;
+  customLlmBaseURL: string;
+}) {
   const caller = await getCaller();
   const updatedProject = await caller.project.updateProject({
-    projectId,
-    name: project.name,
-    customInstructions: project.customInstructions,
-    defaultLlmProviderName: project.defaultLlmProviderName,
-    defaultLlmModelName: project.defaultLlmModelName,
-    customLlmModelName: project.customLlmModelName,
-    customLlmBaseURL: project.customLlmBaseURL,
+    projectId: params.id,
+    name: params.name,
+    customInstructions: params.customInstructions,
+    defaultLlmProviderName: params.defaultLlmProviderName,
+    defaultLlmModelName: params.defaultLlmModelName,
+    customLlmModelName: params.customLlmModelName,
+    customLlmBaseURL: params.customLlmBaseURL,
   });
   return updatedProject;
 }
 
 /**
- * Retrieves API keys for a specific project
- * @param projectId - ID of the project to fetch API keys for
- * @returns List of API keys or authentication error
- */
-export async function fetchProjectApiKeys(projectId: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const apiKeys = await caller.project.getApiKeys(projectId);
-    return apiKeys;
-  } catch (error) {
-    console.error("Error fetching API keys:", error);
-    return { success: false, error: "Failed to fetch API keys" };
-  }
-}
-
-/**
- * Generates a new API key for a project
- * @param projectId - ID of the project
- * @param name - Name for the new API key
- * @returns Newly created API key or error
- */
-export async function generateProjectApiKey(projectId: string, name: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const newKey = await caller.project.generateApiKey({
-      projectId,
-      name,
-    });
-    return newKey;
-  } catch (error) {
-    console.error("Error generating API key:", error);
-    return { success: false, error: "Failed to generate API key" };
-  }
-}
-
-/**
- * Deletes an API key from a project
- * @param projectId - ID of the project containing the API key
- * @param apiKeyId - ID of the API key to delete
- * @returns Success status or error
- */
-export async function deleteProjectApiKey(projectId: string, apiKeyId: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    await caller.project.removeApiKey({
-      projectId,
-      apiKeyId,
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting API key:", error);
-    return { success: false, error: "Failed to delete API key" };
-  }
-}
-
-/**
- * Updates LLM settings for a project
- * @param projectId - ID of the project
- * @param defaultLlmProviderName - Name of the default LLM provider
- * @param defaultLlmModelName - Name of the default LLM model
- * @param customLlmModelName - Custom LLM model name
- * @param customLlmBaseURL - Base URL for custom LLM
- * @returns Updated settings or error
- */
-export async function updateProjectLlmSettings({
-  projectId,
-  defaultLlmProviderName,
-  defaultLlmModelName,
-  customLlmModelName,
-  customLlmBaseURL,
-}: {
-  projectId: string;
-  defaultLlmProviderName: string;
-  defaultLlmModelName: string | null;
-  customLlmModelName: string | null;
-  customLlmBaseURL: string | null;
-}) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const updatedSettings = await caller.project.updateProjectLlmSettings({
-      projectId,
-      defaultLlmProviderName,
-      defaultLlmModelName,
-      customLlmModelName,
-      customLlmBaseURL,
-    });
-    return { success: true, data: updatedSettings };
-  } catch (error) {
-    console.error("Error updating LLM settings:", error);
-    return { success: false, error: "Failed to update LLM settings" };
-  }
-}
-
-/**
- * Adds or updates a provider API key for a project
- * @param projectId - ID of the project
- * @param provider - Name of the LLM provider
- * @param providerKey - API key for the provider
- * @returns Success status or error
- */
-export async function addOrUpdateProviderKey({
-  projectId,
-  provider,
-  providerKey,
-}: {
-  projectId: string;
-  provider: string;
-  providerKey: string | undefined;
-}) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    await caller.project.addProviderKey({
-      projectId,
-      provider,
-      providerKey,
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Error saving provider key:", error);
-    return { success: false, error: "Failed to save provider key" };
-  }
-}
-
-/**
- * Fetches LLM provider configuration
- * @returns LLM provider configuration or error
- */
-export async function fetchLlmProviderConfig() {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const config = await caller.llm.getLlmProviderConfig();
-    return config;
-  } catch (error) {
-    console.error("Error fetching LLM provider config:", error);
-    return {
-      success: false,
-      error: "Failed to fetch LLM provider configuration",
-    };
-  }
-}
-
-/**
- * Fetches LLM settings for a project
- * @param projectId - ID of the project
- * @returns Project LLM settings or error
- */
-export async function fetchProjectLlmSettings(projectId: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const settings = await caller.project.getProjectLlmSettings({
-      projectId,
-    });
-    return settings;
-  } catch (error) {
-    console.error("Error fetching project LLM settings:", error);
-    return { success: false, error: "Failed to fetch project LLM settings" };
-  }
-}
-
-/**
- * Fetches provider keys for a project
- * @param projectId - ID of the project
- * @returns Provider keys or error
- */
-export async function fetchProviderKeys(projectId: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const keys = await caller.project.getProviderKeys(projectId);
-    return keys;
-  } catch (error) {
-    console.error("Error fetching provider keys:", error);
-    return { success: false, error: "Failed to fetch provider keys" };
-  }
-}
-
-/**
- * Fetches a specific project by ID
- * @param projectId - ID of the project to fetch
- * @returns Project details or authentication error
- */
-export async function fetchProjectById(projectId: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const projects = await caller.project.getUserProjects();
-    const project = projects.find((p) => p.id === projectId);
-
-    if (!project) {
-      return { success: false, error: "Project not found" };
-    }
-
-    return project;
-  } catch (error) {
-    console.error("Error fetching project:", error);
-    return { success: false, error: "Failed to fetch project" };
-  }
-}
-
-/**
- * Fetches custom instructions for a project
- * @param projectId - ID of the project
- * @returns Project custom instructions or error
- */
-export async function fetchProjectCustomInstructions(projectId: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const projects = await caller.project.getUserProjects();
-    const project = projects.find((p) => p.id === projectId);
-
-    if (!project) {
-      return {
-        success: false,
-        error: "Project not found",
-      };
-    }
-
-    return {
-      success: true,
-      customInstructions: project.customInstructions,
-    };
-  } catch (error) {
-    console.error("Error fetching project custom instructions:", error);
-    return {
-      success: false,
-      error: "Failed to fetch project custom instructions",
-    };
-  }
-}
-
-/**
- * Updates custom instructions for a project
- * @param projectId - ID of the project to update
- * @param customInstructions - New custom instructions text
- * @returns Success status or error
- */
-export async function updateProjectCustomInstructions({
-  projectId,
-  customInstructions,
-}: {
-  projectId: string;
-  customInstructions: string;
-}) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    await caller.project.updateProject({
-      projectId,
-      customInstructions,
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating custom instructions:", error);
-    return { success: false, error: "Failed to update custom instructions" };
-  }
-}
-
-/**
- * Creates a new project with a simple name
- * @param name - Name of the project
- * @returns Newly created project or error
+ * Creates a new project with a simple name.
+ * @param {string} name - Name of the project.
+ * @returns {Promise<Project>} Newly created project or error.
  */
 export async function createProject(name: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const project = await caller.project.createProject(name);
-    return { success: true, project };
-  } catch (error) {
-    console.error("Error creating project:", error);
-    return { success: false, error: "Failed to create project" };
-  }
+  const caller = await getCaller();
+  const project = await caller.project.createProject(name);
+  return project;
 }
 
 /**
- * Creates a new project with custom instructions and optional MCP servers
- * @param name - Name of the project
- * @param customInstructions - Custom instructions for the AI assistant
- * @param mcpServers - Optional array of MCP servers to configure
- * @returns Newly created project or error
- */
-export async function createProjectWithCustomInstructions({
-  name,
-  customInstructions,
-  mcpServers,
-}: {
-  name: string;
-  customInstructions?: string | null;
-  mcpServers?: Array<{
-    url: string;
-    customHeaders: Record<string, string>;
-    mcpTransport: MCPTransport;
-  }>;
-}) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const project = await caller.project.createProject2({
-      name,
-      customInstructions,
-      mcpServers,
-    });
-    return { success: true, project };
-  } catch (error) {
-    console.error("Error creating project with custom instructions:", error);
-    return {
-      success: false,
-      error: "Failed to create project with custom instructions",
-    };
-  }
-}
-
-/**
- * Removes a project by ID
- * @param projectId - ID of the project to remove
- * @returns Success status or error
+ * Removes a project by ID.
+ * @param {string} projectId - ID of the project to remove.
+ * @returns {Promise<{ success: true }>} Success status or error.
  */
 export async function removeProject(projectId: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    await caller.project.removeProject(projectId);
-    return { success: true };
-  } catch (error) {
-    console.error("Error removing project:", error);
-    return { success: false, error: "Failed to remove project" };
-  }
+  const caller = await getCaller();
+  await caller.project.removeProject(projectId);
+  return { success: true };
 }
 
+/** tambo API key management */
+
 /**
- * Updates the project name
- * @param projectId - ID of the project to update
- * @param name - New name for the project
- * @returns Updated project or error
+ * Retrieves API keys for a specific project.
+ * @param {string} projectId - ID of the project to fetch API keys for.
+ * @returns {Promise<ApiKey[]>} List of API keys or authentication error.
  */
-export async function updateProjectName({
-  projectId,
-  name,
-}: {
-  projectId: string;
-  name: string;
-}) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const updatedProject = await caller.project.updateProject({
-      projectId,
-      name,
-    });
-    return { success: true, project: updatedProject };
-  } catch (error) {
-    console.error("Error updating project name:", error);
-    return { success: false, error: "Failed to update project name" };
-  }
+export async function fetchProjectApiKeys(projectId: string) {
+  const caller = await getCaller();
+  const apiKeys = await caller.project.getApiKeys(projectId);
+  return apiKeys;
 }
 
 /**
- * Fetches the current authenticated user details
- * @returns User details or authentication error
+ * Generates a new API key for a project.
+ * @param {string} projectId - ID of the project.
+ * @param {string} name - Name for the new API key.
+ * @returns {Promise<ApiKey>} Newly created API key or error.
  */
-export async function fetchCurrentUser() {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const user = await caller.user.getUser();
-    return { success: true, user };
-  } catch (error) {
-    console.error("Error fetching user:", error);
-    return { success: false, error: "Failed to fetch user" };
-  }
+export async function generateProjectApiKey(projectId: string, name: string) {
+  const caller = await getCaller();
+  const newKey = await caller.project.generateApiKey({
+    projectId,
+    name,
+  });
+  return newKey;
 }
 
 /**
- * Fetches MCP servers for a project
- * @param projectId - ID of the project
- * @returns List of MCP servers or error
+ * Deletes an API key from a project.
+ * @param {string} projectId - ID of the project containing the API key.
+ * @param {string} apiKeyId - ID of the API key to delete.
+ * @returns {Promise<{ deletedKey: undefined }>} Object indicating the key was processed for deletion or error.
+ */
+export async function deleteProjectApiKey(projectId: string, apiKeyId: string) {
+  const caller = await getCaller();
+  const deletedKey = await caller.project.removeApiKey({
+    projectId,
+    apiKeyId,
+  });
+  return { deletedKey: undefined };
+}
+
+/** llm provider settings management */
+
+/**
+ * Updates LLM settings for a project.
+ * @param {string} projectId - ID of the project.
+ * @param {object} settings - Object containing LLM settings to update.
+ * @param {string} settings.defaultLlmProviderName - The default LLM provider name.
+ * @param {string | null} settings.defaultLlmModelName - The default LLM model name.
+ * @param {string | null} settings.customLlmModelName - The custom LLM model name.
+ * @param {string | null} settings.customLlmBaseURL - The custom LLM base URL.
+ * @returns {Promise<ProjectLlmSettings>} Updated settings or error.
+ */
+export async function updateProjectLlmSettings(
+  projectId: string,
+  settings: {
+    defaultLlmProviderName: string;
+    defaultLlmModelName: string | null;
+    customLlmModelName: string | null;
+    customLlmBaseURL: string | null;
+  },
+) {
+  const caller = await getCaller();
+  const updatedSettings = await caller.project.updateProjectLlmSettings({
+    projectId: projectId,
+    defaultLlmProviderName: settings.defaultLlmProviderName,
+    defaultLlmModelName: settings.defaultLlmModelName,
+    customLlmModelName: settings.customLlmModelName,
+    customLlmBaseURL: settings.customLlmBaseURL,
+  });
+  return updatedSettings;
+}
+
+/** MCP server management */
+
+/**
+ * Fetches MCP servers for a project.
+ * @param {string} projectId - ID of the project.
+ * @returns {Promise<McpServer[]>} List of MCP servers or error.
  */
 export async function fetchProjectMcpServers(projectId: string) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const mcpServers = await caller.tools.listMcpServers({
-      projectId,
-    });
-    return mcpServers;
-  } catch (error) {
-    console.error("Error fetching MCP servers:", error);
-    return { success: false, error: "Failed to fetch MCP servers" };
-  }
+  const caller = await getCaller();
+  const mcpServers = await caller.tools.listMcpServers({
+    projectId,
+  });
+  return mcpServers;
 }
 
 /**
- * Adds a new MCP server to a project
- * @param projectId - ID of the project
- * @param url - URL of the MCP server
- * @param customHeaders - Custom headers for the MCP server
- * @param mcpTransport - Transport mechanism for MCP communication
- * @returns Added MCP server or error
+ * Adds a new MCP server to a project.
+ * @param {object} params - Parameters for adding an MCP server.
+ * @param {string} params.projectId - ID of the project.
+ * @param {string} params.url - URL of the MCP server.
+ * @param {Record<string, string>} params.customHeaders - Custom headers for the MCP server.
+ * @param {MCPTransport} params.mcpTransport - Transport mechanism for MCP communication.
+ * @returns {Promise<McpServer>} Added MCP server or error.
  */
 export async function addMcpServer({
   projectId,
@@ -591,36 +218,25 @@ export async function addMcpServer({
   customHeaders: Record<string, string>;
   mcpTransport: MCPTransport;
 }) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const mcpServer = await caller.tools.addMcpServer({
-      projectId,
-      url,
-      customHeaders,
-      mcpTransport,
-    });
-    return mcpServer;
-  } catch (error) {
-    console.error("Error adding MCP server:", error);
-    return { success: false, error: "Failed to add MCP server" };
-  }
+  const caller = await getCaller();
+  const mcpServer = await caller.tools.addMcpServer({
+    projectId,
+    url,
+    customHeaders,
+    mcpTransport,
+  });
+  return mcpServer;
 }
 
 /**
- * Updates an existing MCP server
- * @param projectId - ID of the project
- * @param serverId - ID of the MCP server to update
- * @param url - New URL for the MCP server
- * @param customHeaders - New custom headers for the MCP server
- * @param mcpTransport - New transport mechanism for MCP communication
- * @returns Updated MCP server or error
+ * Updates an existing MCP server.
+ * @param {object} params - Parameters for updating an MCP server.
+ * @param {string} params.projectId - ID of the project.
+ * @param {string} params.serverId - ID of the MCP server to update.
+ * @param {string} params.url - New URL for the MCP server.
+ * @param {Record<string, string>} params.customHeaders - New custom headers for the MCP server.
+ * @param {MCPTransport} params.mcpTransport - New transport mechanism for MCP communication.
+ * @returns {Promise<McpServer>} Updated MCP server or error.
  */
 export async function updateMcpServer({
   projectId,
@@ -635,34 +251,23 @@ export async function updateMcpServer({
   customHeaders: Record<string, string>;
   mcpTransport: MCPTransport;
 }) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const mcpServer = await caller.tools.updateMcpServer({
-      projectId,
-      serverId,
-      url,
-      customHeaders,
-      mcpTransport,
-    });
-    return mcpServer;
-  } catch (error) {
-    console.error("Error updating MCP server:", error);
-    return { success: false, error: "Failed to update MCP server" };
-  }
+  const caller = await getCaller();
+  const mcpServer = await caller.tools.updateMcpServer({
+    projectId,
+    serverId,
+    url,
+    customHeaders,
+    mcpTransport,
+  });
+  return mcpServer;
 }
 
 /**
- * Deletes an MCP server
- * @param projectId - ID of the project
- * @param serverId - ID of the MCP server to delete
- * @returns Success status or error
+ * Deletes an MCP server.
+ * @param {object} params - Parameters for deleting an MCP server.
+ * @param {string} params.projectId - ID of the project.
+ * @param {string} params.serverId - ID of the MCP server to delete.
+ * @returns {Promise<{ success: true }>} Success status or error.
  */
 export async function deleteMcpServer({
   projectId,
@@ -671,31 +276,20 @@ export async function deleteMcpServer({
   projectId: string;
   serverId: string;
 }) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    await caller.tools.deleteMcpServer({
-      projectId,
-      serverId,
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting MCP server:", error);
-    return { success: false, error: "Failed to delete MCP server" };
-  }
+  const caller = await getCaller();
+  await caller.tools.deleteMcpServer({
+    projectId,
+    serverId,
+  });
+  return { success: true };
 }
 
 /**
- * Authorizes an MCP server
- * @param contextKey - Optional context key for authorization
- * @param toolProviderId - ID of the MCP server to authorize
- * @returns Authorization result or error
+ * Authorizes an MCP server.
+ * @param {object} params - Parameters for authorizing an MCP server.
+ * @param {string | null} params.contextKey - Optional context key for authorization.
+ * @param {string} params.toolProviderId - ID of the MCP server to authorize.
+ * @returns {Promise<AuthorizationResult>} Authorization result or error.
  */
 export async function authorizeMcpServer({
   contextKey,
@@ -704,89 +298,84 @@ export async function authorizeMcpServer({
   contextKey: string | null;
   toolProviderId: string;
 }) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const authResult = await caller.tools.authorizeMcpServer({
-      contextKey,
-      toolProviderId,
-    });
-    return authResult;
-  } catch (error) {
-    console.error("Error authorizing MCP server:", error);
-    return { success: false, error: "Failed to authorize MCP server" };
-  }
+  const caller = await getCaller();
+  const authResult = await caller.tools.authorizeMcpServer({
+    contextKey,
+    toolProviderId,
+  });
+  return authResult;
 }
 
 /**
- * Inspects an MCP server to get available tools
- * @param projectId - ID of the project
- * @param serverId - ID of the MCP server to inspect
- * @returns List of available tools or error
+ * Inspects an MCP server to get available tools.
+ * @param {object} params - Parameters for inspecting an MCP server.
+ * @param {string} params.projectId - ID of the project.
+ * @param {string} params.serverId - ID of the MCP server to inspect.
+ * @returns {Promise<ToolInfo>} List of available tools or error.
  */
-export async function inspectMcpServer({
+export async function getMcpServerTools({
   projectId,
   serverId,
 }: {
   projectId: string;
   serverId: string;
 }) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const toolInfo = await caller.tools.inspectMcpServer({
-      projectId,
-      serverId,
-    });
-    return toolInfo;
-  } catch (error) {
-    console.error("Error inspecting MCP server:", error);
-    return { success: false, error: "Failed to inspect MCP server" };
-  }
+  const caller = await getCaller();
+  const toolInfo = await caller.tools.inspectMcpServer({
+    projectId,
+    serverId,
+  });
+  return toolInfo;
 }
 
 /**
- * Lists available apps/tools for a project
- * @param projectId - ID of the project
- * @returns List of available apps or error
+ * Checks the status of a Composio connected account.
+ * @param {object} params - Parameters for checking Composio connected account status.
+ * @param {string} params.projectId - ID of the project.
+ * @param {string} params.toolProviderId - ID of the tool provider to check.
+ * @param {string | null} params.contextKey - Optional context key for the authentication.
+ * @returns {Promise<ConnectionStatus>} Connection status or error.
  */
-export async function listAvailableApps(projectId: string) {
-  try {
-    const authCheck = await checkAuthentication();
+export async function checkComposioConnectedAccountStatus({
+  projectId,
+  toolProviderId,
+  contextKey,
+}: {
+  projectId: string;
+  toolProviderId: string;
+  contextKey: string | null;
+}) {
+  const caller = await getCaller();
+  const status = await caller.tools.checkComposioConnectedAccountStatus({
+    projectId,
+    toolProviderId,
+    contextKey,
+  });
+  return status;
+}
 
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
+// BELOW TOOLS ARE NOT TESTED YET
 
-    const caller = createCaller(authCheck.ctx!);
-
-    const apps = await caller.tools.listApps({
-      projectId,
-    });
-    return apps;
-  } catch (error) {
-    console.error("Error listing available apps:", error);
-    return { success: false, error: "Failed to list available apps" };
-  }
+/**
+ * Lists available apps/tools for a project.
+ * @param {object} params - Parameters for listing available apps.
+ * @param {string} params.projectId - ID of the project.
+ * @returns {Promise<App[]>} List of available apps or error.
+ */
+export async function listAvailableApps({ projectId }: { projectId: string }) {
+  const caller = await getCaller();
+  const apps = await caller.tools.listApps({
+    projectId,
+  });
+  return apps;
 }
 
 /**
- * Enables an app/tool for a project
- * @param projectId - ID of the project
- * @param appId - ID of the app to enable
- * @returns Success status or error
+ * Enables an app/tool for a project.
+ * @param {object} params - Parameters for enabling an app.
+ * @param {string} params.projectId - ID of the project.
+ * @param {string} params.appId - ID of the app to enable.
+ * @returns {Promise<{ success: true }>} Success status or error.
  */
 export async function enableApp({
   projectId,
@@ -795,31 +384,20 @@ export async function enableApp({
   projectId: string;
   appId: string;
 }) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    await caller.tools.enableApp({
-      projectId,
-      appId,
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Error enabling app:", error);
-    return { success: false, error: "Failed to enable app" };
-  }
+  const caller = await getCaller();
+  await caller.tools.enableApp({
+    projectId,
+    appId,
+  });
+  return { success: true };
 }
 
 /**
- * Disables an app/tool for a project
- * @param projectId - ID of the project
- * @param appId - ID of the app to disable
- * @returns Success status or error
+ * Disables an app/tool for a project.
+ * @param {object} params - Parameters for disabling an app.
+ * @param {string} params.projectId - ID of the project.
+ * @param {string} params.appId - ID of the app to disable.
+ * @returns {Promise<{ success: true }>} Success status or error.
  */
 export async function disableApp({
   projectId,
@@ -828,32 +406,21 @@ export async function disableApp({
   projectId: string;
   appId: string;
 }) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    await caller.tools.disableApp({
-      projectId,
-      appId,
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Error disabling app:", error);
-    return { success: false, error: "Failed to disable app" };
-  }
+  const caller = await getCaller();
+  await caller.tools.disableApp({
+    projectId,
+    appId,
+  });
+  return { success: true };
 }
 
 /**
- * Gets authentication details for a Composio tool
- * @param projectId - ID of the project
- * @param appId - ID of the app to get authentication for
- * @param contextKey - Optional context key for the authentication
- * @returns Authentication details or error
+ * Gets authentication details for a Composio tool.
+ * @param {object} params - Parameters for getting Composio authentication.
+ * @param {string} params.projectId - ID of the project.
+ * @param {string} params.appId - ID of the app to get authentication for.
+ * @param {string | null} params.contextKey - Optional context key for the authentication.
+ * @returns {Promise<ComposioAuthDetails>} Authentication details or error.
  */
 export async function getComposioAuth({
   projectId,
@@ -864,35 +431,24 @@ export async function getComposioAuth({
   appId: string;
   contextKey: string | null;
 }) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const authDetails = await caller.tools.getComposioAuth({
-      projectId,
-      appId,
-      contextKey,
-    });
-    return authDetails;
-  } catch (error) {
-    console.error("Error getting tool authentication:", error);
-    return { success: false, error: "Failed to get tool authentication" };
-  }
+  const caller = await getCaller();
+  const authDetails = await caller.tools.getComposioAuth({
+    projectId,
+    appId,
+    contextKey,
+  });
+  return authDetails;
 }
 
 /**
- * Updates authentication for a Composio tool
- * @param projectId - ID of the project
- * @param appId - ID of the app to update authentication for
- * @param contextKey - Optional context key for the authentication
- * @param authMode - Authentication mode to use
- * @param authFields - Authentication field values
- * @returns Success status or error
+ * Updates authentication for a Composio tool.
+ * @param {object} params - Parameters for updating Composio authentication.
+ * @param {string} params.projectId - ID of the project.
+ * @param {string} params.appId - ID of the app to update authentication for.
+ * @param {string | null} params.contextKey - Optional context key for the authentication.
+ * @param {ComposioAuthMode} params.authMode - Authentication mode to use.
+ * @param {Record<string, string>} params.authFields - Authentication field values.
+ * @returns {Promise<{ success: true }>} Success status or error.
  */
 export async function updateComposioAuth({
   projectId,
@@ -907,65 +463,13 @@ export async function updateComposioAuth({
   authMode: ComposioAuthMode;
   authFields: Record<string, string>;
 }) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    await caller.tools.updateComposioAuth({
-      projectId,
-      appId,
-      contextKey,
-      authMode,
-      authFields,
-    });
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating tool authentication:", error);
-    return { success: false, error: "Failed to update tool authentication" };
-  }
-}
-
-/**
- * Checks the status of a Composio connected account
- * @param projectId - ID of the project
- * @param toolProviderId - ID of the tool provider to check
- * @param contextKey - Optional context key for the authentication
- * @returns Connection status or error
- */
-export async function checkComposioConnectedAccountStatus({
-  projectId,
-  toolProviderId,
-  contextKey,
-}: {
-  projectId: string;
-  toolProviderId: string;
-  contextKey: string | null;
-}) {
-  try {
-    const authCheck = await checkAuthentication();
-
-    if (!authCheck.authenticated) {
-      return authCheck;
-    }
-
-    const caller = createCaller(authCheck.ctx!);
-
-    const status = await caller.tools.checkComposioConnectedAccountStatus({
-      projectId,
-      toolProviderId,
-      contextKey,
-    });
-    return status;
-  } catch (error) {
-    console.error("Error checking connected account status:", error);
-    return {
-      success: false,
-      error: "Failed to check connected account status",
-    };
-  }
+  const caller = await getCaller();
+  await caller.tools.updateComposioAuth({
+    projectId,
+    appId,
+    contextKey,
+    authMode,
+    authFields,
+  });
+  return { success: true };
 }
