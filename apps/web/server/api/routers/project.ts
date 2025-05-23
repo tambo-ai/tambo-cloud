@@ -225,12 +225,6 @@ export const projectRouter = createTRPCRouter({
         customLlmBaseURL,
       } = input;
 
-      // Always work with one trimmed instance so we don't repeat `trim()` calls
-      const sanitizedBaseURL =
-        typeof customLlmBaseURL === "string"
-          ? customLlmBaseURL.trim()
-          : customLlmBaseURL;
-
       // Ensure the user has access to the project before performing any further
       // (potentially expensive) validation logic.
       await operations.ensureProjectAccess(
@@ -238,6 +232,12 @@ export const projectRouter = createTRPCRouter({
         projectId,
         ctx.session.user.id,
       );
+
+      // Always work with one trimmed instance so we don't repeat `trim()` calls
+      const sanitizedBaseURL =
+        typeof customLlmBaseURL === "string"
+          ? customLlmBaseURL.trim()
+          : customLlmBaseURL;
 
       // ─── Validate custom base-URL for OpenAI-compatible providers ───────────
       if (typeof sanitizedBaseURL === "string" && sanitizedBaseURL !== "") {
