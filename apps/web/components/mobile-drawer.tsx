@@ -7,7 +7,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
+  DrawerTrigger
 } from "@/components/ui/drawer";
 import { GitHubLink } from "@/components/ui/github-link";
 import { siteConfig } from "@/lib/config";
