@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.52.5](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.52.4...repo-v0.52.5) (2025-05-22)
+
+
+### Bug Fixes
+
+* filter out tambo params from ui tools ([#1019](https://github.com/tambo-ai/tambo-cloud/issues/1019)) ([bbdc4d0](https://github.com/tambo-ai/tambo-cloud/commit/bbdc4d067f3d0eb79ea2516e8d92c38b47765858))
+
+## [0.52.4](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.52.3...repo-v0.52.4) (2025-05-21)
+
+
+### Bug Fixes
+
+* update provider key config ux ([#1014](https://github.com/tambo-ai/tambo-cloud/issues/1014)) ([40935b3](https://github.com/tambo-ai/tambo-cloud/commit/40935b35c3fb0ffce5fd046d3319d3560d6fef12))
+
+## [0.52.3](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.52.2...repo-v0.52.3) (2025-05-21)
+
+
+### Bug Fixes
+
+* handle tool calls with [] parameters ([#1012](https://github.com/tambo-ai/tambo-cloud/issues/1012)) ([e1b5d42](https://github.com/tambo-ai/tambo-cloud/commit/e1b5d42eae9f06fb877e104b2126d1effdc56ab8))
+
 ## [0.52.2](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.52.1...repo-v0.52.2) (2025-05-20)
 
 
