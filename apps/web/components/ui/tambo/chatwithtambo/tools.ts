@@ -46,6 +46,7 @@ export const fetchProjectByIdSchema = z
       id: z.string(),
       name: z.string(),
       userId: z.string(),
+      createdAt: z.string(),
       composioEnabled: z.boolean(),
       customInstructions: z.string().nullable(),
       defaultLlmProviderName: z.string().nullable(),

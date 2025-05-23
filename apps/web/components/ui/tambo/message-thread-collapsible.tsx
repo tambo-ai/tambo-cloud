@@ -1,6 +1,7 @@
 "use client";
 
 import type { messageVariants } from "@/components/ui/tambo/message";
+import { Message, MessageContent } from "@/components/ui/tambo/message";
 import {
   MessageInput,
   MessageInputError,
@@ -18,8 +19,13 @@ import {
   ThreadContent,
   ThreadContentMessages,
 } from "@/components/ui/tambo/thread-content";
+import { useSession } from "@/hooks/auth";
 import { cn } from "@/lib/utils";
-import type { Suggestion } from "@tambo-ai/react";
+import {
+  useTambo,
+  type Suggestion,
+  type TamboThreadMessage,
+} from "@tambo-ai/react";
 import { type VariantProps } from "class-variance-authority";
 import { XIcon } from "lucide-react";
 import Image from "next/image";
@@ -188,6 +194,23 @@ export const MessageThreadCollapsible = React.forwardRef<
     },
   };
 
+  const { data: session } = useSession();
+  const isUserLoggedIn = !!session;
+  const { thread } = useTambo();
+
+  // Starter message for when the thread is empty
+  const starterMessage: TamboThreadMessage = {
+    id: "starter-login-prompt",
+    role: "assistant",
+    content: [
+      { type: "text", text: "Please log in to ask Tambo about your projects." },
+    ],
+    createdAt: new Date().toISOString(),
+    actionType: undefined,
+    componentState: {},
+    threadId: "",
+  };
+
   const defaultSuggestions: Suggestion[] = [
     {
       id: "suggestion-1",
@@ -230,6 +253,13 @@ export const MessageThreadCollapsible = React.forwardRef<
         <div className="h-[700px] flex flex-col">
           {/* Message thread content */}
           <ScrollableMessageContainer className="p-4">
+            {/* Conditionally render the starter message */}
+            {!isUserLoggedIn && thread.messages.length === 0 && (
+              <Message role="assistant" message={starterMessage}>
+                <MessageContent />
+              </Message>
+            )}
+
             <ThreadContent variant={variant}>
               <ThreadContentMessages />
             </ThreadContent>

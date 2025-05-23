@@ -64,7 +64,7 @@ export function ProjectTable({ projects }: ProjectTableProps) {
                   </div>
                 </TableCell>
                 <TableCell className="py-4 text-sm text-muted-foreground">
-                  {new Date().toLocaleDateString()}
+                  {new Date(project.createdAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="py-4">
                   <div className="flex justify-end items-center">
