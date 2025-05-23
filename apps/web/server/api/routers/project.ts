@@ -231,6 +231,14 @@ export const projectRouter = createTRPCRouter({
           ? customLlmBaseURL.trim()
           : customLlmBaseURL;
 
+      // Ensure the user has access to the project before performing any further
+      // (potentially expensive) validation logic.
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id,
+      );
+
       // ─── Validate custom base-URL for OpenAI-compatible providers ───────────
       if (typeof sanitizedBaseURL === "string" && sanitizedBaseURL !== "") {
         // Basic URL syntax check
@@ -253,12 +261,6 @@ export const projectRouter = createTRPCRouter({
           });
         }
       }
-
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
 
       const updateData: Partial<{
         defaultLlmProviderName: string | null;
