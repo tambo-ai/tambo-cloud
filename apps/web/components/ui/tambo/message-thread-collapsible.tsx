@@ -203,7 +203,7 @@ export const MessageThreadCollapsible = React.forwardRef<
     id: "starter-login-prompt",
     role: "assistant",
     content: [
-      { type: "text", text: "Please log in to ask Tambo about your projects." },
+      { type: "text", text: "Please log in to ask tambo about your projects." },
     ],
     createdAt: new Date().toISOString(),
     actionType: undefined,
