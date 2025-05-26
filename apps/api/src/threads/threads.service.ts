@@ -21,6 +21,7 @@ import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { decryptProviderKey } from "../common/key.utils";
+import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/shared/constants";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
@@ -70,8 +71,6 @@ const MAX_TOOL_CALL_DEPTH = 3;
  * infinite loops.
  */
 const IDENTICAL_TOOL_LOOP_LIMIT = 3;
-
-const DEFAULT_OPENAI_MODEL = "gpt-4o";
 
 @Injectable()
 export class ThreadsService {

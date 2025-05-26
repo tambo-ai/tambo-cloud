@@ -1,0 +1,9 @@
+{
+  "name": "@tambo-ai-cloud/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./constants": "./src/constants.ts"
+  }
+}
