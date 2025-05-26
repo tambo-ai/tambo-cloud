@@ -1,10 +1,8 @@
 {
   "extends": "@tambo-ai-cloud/typescript-config/base",
   "compilerOptions": {
-    // Keep backend sources as first root directory
-    "rootDir": "./src",
-    // NEW - allow additional roots so paths under shared/src compile without error
-    "rootDirs": ["./src", "../../packages/shared/src"],
+    // Extend the root directory one level up so that shared sources are included
+    "rootDir": "..",
     "declaration": true,
     "outDir": "./dist",
     "esModuleInterop": true,
