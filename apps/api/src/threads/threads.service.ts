@@ -9,6 +9,7 @@ import {
 import {
   ComponentDecisionV2,
   ContentPartType,
+  DEFAULT_OPENAI_MODEL,
   GenerationStage,
   LegacyComponentDecision,
   MessageRole,
@@ -70,8 +71,6 @@ const MAX_TOOL_CALL_DEPTH = 3;
  * infinite loops.
  */
 const IDENTICAL_TOOL_LOOP_LIMIT = 3;
-
-const DEFAULT_OPENAI_MODEL = "gpt-4o";
 
 @Injectable()
 export class ThreadsService {

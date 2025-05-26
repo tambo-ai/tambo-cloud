@@ -1,6 +1,9 @@
-import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
+import {
+  DEFAULT_OPENAI_MODEL,
+  LegacyComponentDecision,
+  ThreadMessage,
+} from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
-import { DEFAULT_OPENAI_MODEL } from "./config/models/openai";
 import { AvailableComponent } from "./model/component-metadata";
 import { Provider } from "./model/providers";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";

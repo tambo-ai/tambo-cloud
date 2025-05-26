@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { api, type RouterOutputs } from "@/trpc/react";
+import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLinkIcon, InfoIcon, KeyRound, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { DEFAULT_OPENAI_MODEL } from "../../../../../packages/backend/src/config/models/openai";
 
 interface ProviderKeySectionProps {
   project: RouterOutputs["project"]["getUserProjects"][number];
