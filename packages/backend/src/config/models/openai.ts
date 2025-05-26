@@ -1,7 +1,5 @@
 import { LlmModelConfig } from "../llm-config-types";
 
-export const DEFAULT_OPENAI_MODEL = "gpt-4o";
-
 export const openaiModels: LlmModelConfig = {
   "gpt-4.5-preview": {
     apiName: "gpt-4.5-preview",
