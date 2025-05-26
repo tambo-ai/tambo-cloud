@@ -1,5 +1,6 @@
 import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
+import { DEFAULT_OPENAI_MODEL } from "./config/models/openai";
 import { AvailableComponent } from "./model/component-metadata";
 import { Provider } from "./model/providers";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
@@ -28,7 +29,11 @@ export default class TamboBackend {
     private chainId: string,
     options: HydraBackendOptions = {},
   ) {
-    const { model = "gpt-4o-mini", provider = "openai", baseURL } = options;
+    const {
+      model = DEFAULT_OPENAI_MODEL,
+      provider = "openai",
+      baseURL,
+    } = options;
     this.llmClient = new TokenJSClient(
       apiKey,
       model,

@@ -1,5 +1,7 @@
 import { LlmModelConfig } from "../llm-config-types";
 
+export const DEFAULT_OPENAI_MODEL = "gpt-4o";
+
 export const openaiModels: LlmModelConfig = {
   "gpt-4.5-preview": {
     apiName: "gpt-4.5-preview",
@@ -39,6 +41,7 @@ export const openaiModels: LlmModelConfig = {
       supportsTools: true,
       supportsJsonMode: true,
     },
+    isDefaultModel: true,
   },
   "gpt-4o-mini": {
     apiName: "gpt-4o-mini",
@@ -52,7 +55,6 @@ export const openaiModels: LlmModelConfig = {
       supportsTools: true,
       supportsJsonMode: true,
     },
-    isDefaultModel: true,
   },
   "gpt-4-turbo": {
     apiName: "gpt-4-turbo",
