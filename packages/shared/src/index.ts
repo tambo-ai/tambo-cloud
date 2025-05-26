@@ -3,4 +3,4 @@
 //
 //   import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/shared";
 //
-export { DEFAULT_OPENAI_MODEL } from "./constants.js";
+export { DEFAULT_OPENAI_MODEL } from "./constants";
