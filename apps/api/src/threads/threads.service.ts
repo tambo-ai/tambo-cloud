@@ -64,6 +64,12 @@ import { callSystemTool, extractToolResponse } from "./util/tool";
  */
 const MAX_TOOL_CALL_DEPTH = 3;
 
+/**
+ * The maximum number of identical tool calls we will make. This is to prevent
+ * infinite loops.
+ */
+const IDENTICAL_TOOL_LOOP_LIMIT = 3;
+
 @Injectable()
 export class ThreadsService {
   constructor(
@@ -895,6 +901,17 @@ export class ThreadsService {
     }
 
     // We only yield the final response with the tool call request and tool call id set if we did not call a system tool
+
+    //check for identical tool loop
+    if (
+      await this.isIdenticalToolLoop(
+        finalThreadMessage,
+        threadId,
+        IDENTICAL_TOOL_LOOP_LIMIT,
+      )
+    ) {
+      console.log("Identical tool loop detected");
+    }
     yield {
       responseMessageDto: finalThreadMessage,
       generationStage: resultingGenerationStage,
@@ -990,7 +1007,85 @@ export class ThreadsService {
       );
     }
   }
+
+  private async isIdenticalToolLoop(
+    responseToCaller: ThreadMessageDto,
+    threadId: string,
+    toolLoopLimit: number,
+  ): Promise<boolean> {
+    console.log("responseToCaller", responseToCaller);
+    // Only check for loops if there's a tool call request
+    if (!responseToCaller.toolCallRequest?.toolName) {
+      return false;
+    }
+
+    const previousMessages = await this.getMessages(threadId, true);
+
+    let identicalToolCallCount = 0;
+
+    // Loop backwards through messages
+    for (let i = previousMessages.length - 2; i >= 0; i--) {
+      const message = previousMessages[i];
+
+      // If we hit a message without a tool call, we can stop checking
+      if (!message.tool_call_id) {
+        console.log("no toolcall found in message:", message);
+
+        return false;
+      }
+
+      if (
+        message.role === "assistant" &&
+        message.toolCallRequest?.toolName ===
+          responseToCaller.toolCallRequest.toolName &&
+        this.areParametersEqual(
+          message.toolCallRequest.parameters,
+          responseToCaller.toolCallRequest.parameters,
+        )
+      ) {
+        identicalToolCallCount++;
+        if (identicalToolCallCount >= toolLoopLimit) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private areParametersEqual(params1: unknown, params2: unknown): boolean {
+    // Handle null/undefined cases
+    if (!params1 || !params2) {
+      return params1 === params2;
+    }
+
+    // Sort keys and compare values recursively
+    const sortObject = (
+      obj: Record<string, unknown>,
+    ): Record<string, unknown> => {
+      return Object.keys(obj)
+        .sort()
+        .reduce((result: Record<string, unknown>, key) => {
+          const value = obj[key];
+          result[key] =
+            value && typeof value === "object"
+              ? sortObject(value as Record<string, unknown>)
+              : value;
+          return result;
+        }, {});
+    };
+
+    try {
+      const sortedParams1 = sortObject(params1 as Record<string, unknown>);
+      const sortedParams2 = sortObject(params2 as Record<string, unknown>);
+      return JSON.stringify(sortedParams1) === JSON.stringify(sortedParams2);
+    } catch (_error) {
+      // If we can't sort the objects (e.g., if they're not objects), fall back to direct comparison
+      return JSON.stringify(params1) === JSON.stringify(params2);
+    }
+  }
 }
+
 function isSystemToolCall(
   toolCallRequest: ToolCallRequest | undefined,
   systemTools: SystemTools,
