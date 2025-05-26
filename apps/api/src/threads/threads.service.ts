@@ -21,7 +21,7 @@ import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { decryptProviderKey } from "../common/key.utils";
-import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/shared/constants";
+import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/shared";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";

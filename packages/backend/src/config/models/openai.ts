@@ -1,5 +1,5 @@
 import { LlmModelConfig } from "../llm-config-types";
-import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/shared/constants";
+import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/shared";
 
 export const openaiModels: LlmModelConfig = {
   "gpt-4.5-preview": {

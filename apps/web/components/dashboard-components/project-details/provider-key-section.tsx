@@ -14,7 +14,7 @@ import { api, type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLinkIcon, InfoIcon, KeyRound, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/shared/constants";
+import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/shared";
 
 interface ProviderKeySectionProps {
   project: RouterOutputs["project"]["getUserProjects"][number];
