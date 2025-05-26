@@ -112,7 +112,8 @@ export const TamboRegisteredComponents = [
 export const TamboRegisteredTools: TamboTool[] = [
   {
     name: "fetchCurrentUser",
-    description: "Fetches the current user.",
+    description:
+      "Fetches the current user. If the user is not logged in, return a link that leads to the login page at /login",
     toolSchema: fetchCurrentUserSchema,
     tool: fetchCurrentUser,
   },
