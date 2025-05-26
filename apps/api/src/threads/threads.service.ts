@@ -8,6 +8,7 @@ import {
 } from "@tambo-ai-cloud/backend";
 import {
   ComponentDecisionV2,
+  ContentPartType,
   GenerationStage,
   LegacyComponentDecision,
   MessageRole,
@@ -911,6 +912,10 @@ export class ThreadsService {
       )
     ) {
       console.log("Identical tool loop detected");
+      finalThreadMessage = await this.handleIdenticalToolLoop(
+        finalThreadMessage,
+        inProgressMessage.id,
+      );
     }
     yield {
       responseMessageDto: finalThreadMessage,
@@ -1008,12 +1013,18 @@ export class ThreadsService {
     }
   }
 
+  /**
+   * Checks if the tool call request is identical to a number of previous tool call requests in the thread
+   * @param responseToCaller - The response to the caller
+   * @param threadId - The thread ID
+   * @param toolLoopLimit - The limit of identical tool calls in a row
+   * @returns true if the tool call request is identical to a number of previous tool call requests in the thread, false otherwise
+   */
   private async isIdenticalToolLoop(
     responseToCaller: ThreadMessageDto,
     threadId: string,
-    toolLoopLimit: number,
+    toolLoopLimit = IDENTICAL_TOOL_LOOP_LIMIT,
   ): Promise<boolean> {
-    console.log("responseToCaller", responseToCaller);
     // Only check for loops if there's a tool call request
     if (!responseToCaller.toolCallRequest?.toolName) {
       return false;
@@ -1029,8 +1040,6 @@ export class ThreadsService {
 
       // If we hit a message without a tool call, we can stop checking
       if (!message.tool_call_id) {
-        console.log("no toolcall found in message:", message);
-
         return false;
       }
 
@@ -1044,13 +1053,46 @@ export class ThreadsService {
         )
       ) {
         identicalToolCallCount++;
-        if (identicalToolCallCount >= toolLoopLimit) {
+        if (identicalToolCallCount >= toolLoopLimit - 1) {
           return true;
         }
       }
     }
 
     return false;
+  }
+
+  /**
+   * Handles an identical tool loop by replacing the latest toolcall request message in the thread with an assistant message describing the error.
+   *
+   * @returns A message to return to the client in place of the tool call request message.
+   */
+  private async handleIdenticalToolLoop(
+    responseToCaller: ThreadMessageDto,
+    messageId: string,
+  ): Promise<ThreadMessageDto> {
+    const errorMessage = `I've detected that I'm stuck in a loop making the same tool call. Trying again might help, but if the problem persists, please try a different approach or contact support.`;
+
+    const updatedMessage: ThreadMessageDto = {
+      ...responseToCaller,
+      content: [
+        {
+          type: ContentPartType.Text,
+          text: errorMessage,
+        },
+      ],
+      // Remove the tool call request to break the loop
+      toolCallRequest: undefined,
+      tool_call_id: undefined,
+      actionType: undefined,
+    };
+
+    // Replace the latest tool call request message in db with the updated message
+    await updateMessage(this.getDb(), messageId, {
+      ...updatedMessage,
+    });
+
+    return updatedMessage;
   }
 
   private areParametersEqual(params1: unknown, params2: unknown): boolean {
