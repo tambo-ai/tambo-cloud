@@ -19,7 +19,7 @@ import { api, type RouterOutputs } from "@/trpc/react";
 import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLinkIcon, InfoIcon, KeyRound, Save } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
 export const ProviderKeySectionSchema = z
@@ -133,8 +133,6 @@ export function ProviderKeySection({
   const [isEditingApiKey, setIsEditingApiKey] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
-  const [apiKeyValidation, setApiKeyValidation] =
-    useState<ApiKeyValidationResult>({ isValid: true });
 
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
@@ -294,20 +292,17 @@ export function ProviderKeySection({
     }
   }, [selectedProviderApiName, projectLlmSettings]);
 
-  // --- Validation Effect ---
-  useEffect(() => {
-    if (apiKeyInput && selectedProviderApiName) {
-      const validation = validateApiKey(apiKeyInput, selectedProviderApiName, {
-        allowEmpty:
-          selectedProviderApiName === "openai" ||
-          selectedProviderApiName === "openai-compatible",
+  // --- API Key Validation ---
+  const apiKeyValidation = useMemo(
+    () =>
+      validateApiKey(apiKeyInput, selectedProviderApiName ?? "", {
+        allowEmpty: ["openai", "openai-compatible"].includes(
+          selectedProviderApiName ?? "",
+        ),
         strictMode: true,
-      });
-      setApiKeyValidation(validation);
-    } else {
-      setApiKeyValidation({ isValid: true });
-    }
-  }, [apiKeyInput, selectedProviderApiName]);
+      }),
+    [apiKeyInput, selectedProviderApiName],
+  );
 
   // --- Event Handlers (basic implementation for UI interaction) ---
   const handleProviderSelect = useCallback((apiName: string) => {
@@ -806,7 +801,6 @@ export function ProviderKeySection({
                         onClick={() => {
                           setIsEditingApiKey(false);
                           setApiKeyInput("");
-                          setApiKeyValidation({ isValid: true });
                         }}
                         disabled={isUpdatingApiKey}
                       >
