@@ -97,9 +97,14 @@ function createToolCallSignature(toolCallRequest: ToolCallRequest): string {
  * @returns An error message if limits are exceeded, undefined if valid
  */
 function validateToolCallLimits(
+  messages: ThreadMessage[],
   toolCallCounts: Record<string, number>,
   newToolCallRequest?: ToolCallRequest,
 ): string | undefined {
+  if (newToolCallRequest && isIdenticalToolLoop(messages, newToolCallRequest)) {
+    return `I've detected that I'm making the same tool call repeatedly (${newToolCallRequest.toolName}). This suggests I'm stuck in a loop. Please try a different approach or contact support if this persists.`;
+  }
+
   const totalCalls = Object.values(toolCallCounts).reduce(
     (sum, count) => sum + count,
     0,
@@ -136,6 +141,78 @@ function updateToolCallCounts(
     ...toolCallCounts,
     [signature]: (toolCallCounts[signature] || 0) + 1,
   };
+}
+
+/**
+ * Check if we are in an identical tool loop.
+ * @param messages - The messages in the thread.
+ * @param toolCallRequest - The tool call request.
+ * @returns True if we are in an identical tool loop.
+ */
+function isIdenticalToolLoop(
+  messages: ThreadMessage[],
+  toolCallRequest: ToolCallRequest,
+): boolean {
+  // Get the last few messages to check for loops
+  const recentMessages = messages.slice(-6); // Check last 6 messages
+
+  // Count how many times we've seen this exact tool call
+  let identicalToolCallCount = 0;
+
+  for (const message of recentMessages) {
+    if (
+      message.role === MessageRole.Assistant &&
+      message.toolCallRequest &&
+      message.toolCallRequest.toolName === toolCallRequest.toolName &&
+      areParametersEqual(
+        message.toolCallRequest.parameters,
+        toolCallRequest.parameters,
+      )
+    ) {
+      identicalToolCallCount++;
+    }
+  }
+
+  // If we've seen this exact tool call 3 or more times, it's a loop
+  return identicalToolCallCount >= 3;
+}
+
+/**
+ * Compare two parameter objects for equality.
+ * @param params1 - First parameter object
+ * @param params2 - Second parameter object
+ * @returns True if parameters are equal
+ */
+function areParametersEqual(params1: unknown, params2: unknown): boolean {
+  // Handle null/undefined cases
+  if (!params1 || !params2) {
+    return params1 === params2;
+  }
+
+  // Sort keys and compare values recursively
+  const sortObject = (
+    obj: Record<string, unknown>,
+  ): Record<string, unknown> => {
+    return Object.keys(obj)
+      .sort()
+      .reduce((result: Record<string, unknown>, key) => {
+        const value = obj[key];
+        result[key] =
+          value && typeof value === "object"
+            ? sortObject(value as Record<string, unknown>)
+            : value;
+        return result;
+      }, {});
+  };
+
+  try {
+    const sortedParams1 = sortObject(params1 as Record<string, unknown>);
+    const sortedParams2 = sortObject(params2 as Record<string, unknown>);
+    return JSON.stringify(sortedParams1) === JSON.stringify(sortedParams2);
+  } catch (_error) {
+    // If we can't sort the objects (e.g., if they're not objects), fall back to direct comparison
+    return JSON.stringify(params1) === JSON.stringify(params2);
+  }
 }
 
 @Injectable()
@@ -686,6 +763,7 @@ export class ThreadsService {
     // Check tool call limits if we have a tool call request
     if (toolCallRequest) {
       const validationResult = validateToolCallLimits(
+        threadMessageDtoToThreadMessage(messages),
         toolCallCounts,
         toolCallRequest,
       );
@@ -693,7 +771,6 @@ export class ThreadsService {
         // Replace the tool call request with an error message
         const errorMessage = await this.handleToolCallLimitViolation(
           validationResult,
-          thread.id,
           responseMessageDto.id,
         );
         return {
@@ -843,6 +920,7 @@ export class ThreadsService {
         projectId,
         threadId,
         streamedResponseMessage,
+        messages,
         userMessage,
         systemTools,
         advanceRequestDto,
@@ -874,6 +952,7 @@ export class ThreadsService {
       projectId,
       threadId,
       streamedResponseMessage,
+      messages,
       userMessage,
       systemTools,
       advanceRequestDto,
@@ -886,6 +965,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: AsyncIterableIterator<LegacyComponentDecision>,
+    threadMessages: ThreadMessage[],
     userMessage: ThreadMessage,
     systemTools: SystemTools,
     originalRequest: AdvanceThreadDto,
@@ -960,6 +1040,7 @@ export class ThreadsService {
     // Check tool call limits if we have a tool call request
     if (toolCallRequest) {
       const validationResult = validateToolCallLimits(
+        threadMessages,
         toolCallCounts,
         toolCallRequest,
       );
@@ -967,7 +1048,6 @@ export class ThreadsService {
         // Replace the tool call request with an error message
         const errorMessage = await this.handleToolCallLimitViolation(
           validationResult,
-          threadId,
           inProgressMessage.id,
         );
         yield {
@@ -1136,12 +1216,9 @@ export class ThreadsService {
    */
   private async handleToolCallLimitViolation(
     errorMessage: string,
-    threadId: string,
     messageId: string,
   ): Promise<ThreadMessageDto> {
-    const updatedMessage: ThreadMessageDto = {
-      id: messageId,
-      threadId,
+    const updatedMessage: MessageRequest = {
       role: MessageRole.Assistant,
       content: [
         {
@@ -1150,7 +1227,6 @@ export class ThreadsService {
         },
       ],
       componentState: {},
-      createdAt: new Date(),
       // Remove any tool call request to break the loop
       toolCallRequest: undefined,
       tool_call_id: undefined,
@@ -1158,41 +1234,7 @@ export class ThreadsService {
     };
 
     // Update the message in the database
-    await updateMessage(this.getDb(), messageId, updatedMessage);
-
-    return updatedMessage;
-  }
-
-  private areParametersEqual(params1: unknown, params2: unknown): boolean {
-    // Handle null/undefined cases
-    if (!params1 || !params2) {
-      return params1 === params2;
-    }
-
-    // Sort keys and compare values recursively
-    const sortObject = (
-      obj: Record<string, unknown>,
-    ): Record<string, unknown> => {
-      return Object.keys(obj)
-        .sort()
-        .reduce((result: Record<string, unknown>, key) => {
-          const value = obj[key];
-          result[key] =
-            value && typeof value === "object"
-              ? sortObject(value as Record<string, unknown>)
-              : value;
-          return result;
-        }, {});
-    };
-
-    try {
-      const sortedParams1 = sortObject(params1 as Record<string, unknown>);
-      const sortedParams2 = sortObject(params2 as Record<string, unknown>);
-      return JSON.stringify(sortedParams1) === JSON.stringify(sortedParams2);
-    } catch (_error) {
-      // If we can't sort the objects (e.g., if they're not objects), fall back to direct comparison
-      return JSON.stringify(params1) === JSON.stringify(params2);
-    }
+    return await updateMessage(this.getDb(), messageId, updatedMessage);
   }
 }
 
