@@ -154,7 +154,7 @@ export const HighlightedCodeBlock: React.FC<HighlightedCodeBlockProps> = ({
   const lines = highlighted.split(/\n/);
   return (
     <>
-      {lines.map((line, idx) => {
+      {lines.map((line: string, idx: number) => {
         const lineNumber = idx + 1;
         const isHighlighted = highlightedLines.includes(lineNumber);
         return (
