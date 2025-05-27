@@ -13,7 +13,7 @@ import {
   MonitorIcon,
   PackageIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { InteractiveDemo } from "./interactive-demo";
 
 hljs.registerLanguage("typescript", typescript);
@@ -138,6 +138,58 @@ export const tamboComponents = [
     propsSchema: EmailProps, // the zod schema for the props,
   },
 ];`,
+};
+
+// HighlightedCodeBlock component for code rendering with highlight.js
+interface HighlightedCodeBlockProps {
+  code: string;
+  highlightedLines?: number[];
+}
+
+export const HighlightedCodeBlock: React.FC<HighlightedCodeBlockProps> = ({
+  code,
+  highlightedLines = [],
+}) => {
+  const highlighted = hljs.highlight(code, { language: "typescript" }).value;
+  const lines = highlighted.split(/\n/);
+  return (
+    <>
+      {lines.map((line, idx) => {
+        const lineNumber = idx + 1;
+        const isHighlighted = highlightedLines.includes(lineNumber);
+        return (
+          <div
+            key={lineNumber}
+            style={{
+              display: "block",
+              backgroundColor: isHighlighted
+                ? "rgba(0, 150, 255, 0.15)"
+                : undefined,
+              borderLeft: isHighlighted
+                ? "3px solid rgb(0, 120, 255)"
+                : "3px solid transparent",
+              paddingLeft: 4,
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: 28,
+                color: "#b0b0b0",
+                userSelect: "none",
+                textAlign: "right",
+                marginRight: 8,
+                fontSize: "0.85em",
+              }}
+            >
+              {lineNumber}
+            </span>
+            <span dangerouslySetInnerHTML={{ __html: line || "\u200B" }} />
+          </div>
+        );
+      })}
+    </>
+  );
 };
 
 export function CodeExamples() {
@@ -325,53 +377,10 @@ export function CodeExamples() {
                   }}
                 >
                   <code>
-                    {(() => {
-                      const code = codeExamples[activeTab];
-                      const highlighted = hljs.highlight(code, {
-                        language: "typescript",
-                      }).value;
-                      // Split highlighted HTML by lines
-                      const lines = highlighted.split(/\n/);
-                      const highlightArr = highlightedLines[activeTab] || [];
-                      return lines.map((line, idx) => {
-                        const lineNumber = idx + 1;
-                        const isHighlighted = highlightArr.includes(lineNumber);
-                        return (
-                          <div
-                            key={lineNumber}
-                            style={{
-                              display: "block",
-                              backgroundColor: isHighlighted
-                                ? "rgba(0, 150, 255, 0.15)"
-                                : undefined,
-                              borderLeft: isHighlighted
-                                ? "3px solid rgb(0, 120, 255)"
-                                : "3px solid transparent",
-                              paddingLeft: 4,
-                            }}
-                          >
-                            <span
-                              style={{
-                                display: "inline-block",
-                                width: 28,
-                                color: "#b0b0b0",
-                                userSelect: "none",
-                                textAlign: "right",
-                                marginRight: 8,
-                                fontSize: "0.85em",
-                              }}
-                            >
-                              {lineNumber}
-                            </span>
-                            <span
-                              dangerouslySetInnerHTML={{
-                                __html: line || "\u200B",
-                              }}
-                            />
-                          </div>
-                        );
-                      });
-                    })()}
+                    <HighlightedCodeBlock
+                      code={codeExamples[activeTab]}
+                      highlightedLines={highlightedLines[activeTab]}
+                    />
                   </code>
                 </pre>
               )}
