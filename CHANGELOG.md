@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.54.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.54.0...repo-v0.54.1) (2025-05-27)
+
+
+### Bug Fixes
+
+* create SimpleProjectResponse so we are not bleeding fields into other APIs ([#1043](https://github.com/tambo-ai/tambo-cloud/issues/1043)) ([9ef4923](https://github.com/tambo-ai/tambo-cloud/commit/9ef49231bf82eaec107fed31946664c5870900f3))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump globals from 16.1.0 to 16.2.0 ([#1037](https://github.com/tambo-ai/tambo-cloud/issues/1037)) ([1f4659c](https://github.com/tambo-ai/tambo-cloud/commit/1f4659cf9ca1a55b99800372b2e64f659eb906b9))
+* **deps:** bump @tanstack/react-query from 5.76.2 to 5.77.1 ([#1036](https://github.com/tambo-ai/tambo-cloud/issues/1036)) ([731bd65](https://github.com/tambo-ai/tambo-cloud/commit/731bd65f98da32b65e31ae2a7e0129d5ac2a03f1))
+* **deps:** bump zod from 3.25.27 to 3.25.28 ([#1034](https://github.com/tambo-ai/tambo-cloud/issues/1034)) ([e6911de](https://github.com/tambo-ai/tambo-cloud/commit/e6911de96516c43cc83fa8adbff3ed6974558b33))
+
+## [0.54.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.53.0...repo-v0.54.0) (2025-05-26)
+
+
+### Features
+
+* use gpt-4o as default model  ([#1040](https://github.com/tambo-ai/tambo-cloud/issues/1040)) ([a0545d5](https://github.com/tambo-ai/tambo-cloud/commit/a0545d5eb15634974c854d35dbc4f936470f712f))
+
+## [0.53.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.52.5...repo-v0.53.0) (2025-05-26)
+
+
+### Features
+
+* update openai-compatible host suggestions and enforce safe host validation ([#1007](https://github.com/tambo-ai/tambo-cloud/issues/1007)) ([c1f3bbb](https://github.com/tambo-ai/tambo-cloud/commit/c1f3bbb5e472942c65fdd965d230afb7640f746e))
+
+
+### Bug Fixes
+
+* Block identical toolcall loops ([#1038](https://github.com/tambo-ai/tambo-cloud/issues/1038)) ([1432d3d](https://github.com/tambo-ai/tambo-cloud/commit/1432d3d620f369068be53c551b1bfe92d1c4b25c))
+
+
+### Miscellaneous Chores
+
+* **config:** enable beta.forceAllCheckCommands in charlie config ([#1018](https://github.com/tambo-ai/tambo-cloud/issues/1018)) ([b25d633](https://github.com/tambo-ai/tambo-cloud/commit/b25d633b27878691c80001825d17b8792ce1db5e))
+* **deps-dev:** bump @types/node from 20.17.48 to 20.17.50 ([#1030](https://github.com/tambo-ai/tambo-cloud/issues/1030)) ([d940898](https://github.com/tambo-ai/tambo-cloud/commit/d940898d8c1772e72dcc4d97d8ebdc1955129bdd))
+* **deps:** bump @supabase/supabase-js from 2.49.4 to 2.49.8 ([#1029](https://github.com/tambo-ai/tambo-cloud/issues/1029)) ([8be28cb](https://github.com/tambo-ai/tambo-cloud/commit/8be28cb4e631f941f5c6223a7b263cbe1c8be851))
+* **deps:** bump @tanstack/react-query from 5.76.1 to 5.76.2 ([#1025](https://github.com/tambo-ai/tambo-cloud/issues/1025)) ([affc13e](https://github.com/tambo-ai/tambo-cloud/commit/affc13efff5831f7ed72cb46a998b77e92f5ad0d))
+* **deps:** bump framer-motion from 12.12.1 to 12.12.2 ([#1028](https://github.com/tambo-ai/tambo-cloud/issues/1028)) ([2d45bb6](https://github.com/tambo-ai/tambo-cloud/commit/2d45bb6eea6ddaf6aa1c42b7ba7c49674f9b9147))
+* **deps:** bump openai from 4.100.0 to 4.103.0 ([#1031](https://github.com/tambo-ai/tambo-cloud/issues/1031)) ([2bdb3f9](https://github.com/tambo-ai/tambo-cloud/commit/2bdb3f926f621687ee8a2ba39e9689423b6f7824))
+* **deps:** bump posthog-js from 1.240.6 to 1.246.0 ([#1027](https://github.com/tambo-ai/tambo-cloud/issues/1027)) ([f9430ce](https://github.com/tambo-ai/tambo-cloud/commit/f9430ce56dbac037683142e896aa9f9cba405130))
+* **deps:** bump the radix-ui group with 16 updates ([#1023](https://github.com/tambo-ai/tambo-cloud/issues/1023)) ([e765590](https://github.com/tambo-ai/tambo-cloud/commit/e7655907ff13947abfd028152d69914db8d6c13a))
+* **deps:** bump zod from 3.24.4 to 3.25.27 ([#1026](https://github.com/tambo-ai/tambo-cloud/issues/1026)) ([bdaaede](https://github.com/tambo-ai/tambo-cloud/commit/bdaaede04a5f6c4d7d952dc410b243e64c0ce295))
+
 ## [0.52.5](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.52.4...repo-v0.52.5) (2025-05-22)
 
 

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { api, type RouterOutputs } from "@/trpc/react";
+import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLinkIcon, InfoIcon, KeyRound, Save } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -139,7 +140,7 @@ export function ProviderKeySection({
         );
         if (openaiProvider) {
           setSelectedProviderApiName("openai");
-          setSelectedModelApiName("gpt-4o-mini");
+          setSelectedModelApiName(DEFAULT_OPENAI_MODEL);
           return;
         }
       }
@@ -149,12 +150,12 @@ export function ProviderKeySection({
         setCustomModelName(data.customLlmModelName ?? "");
         setSelectedModelApiName(undefined);
       } else {
-        // If OpenAI is selected and no model is set, default to gpt-4o-mini
+        // If OpenAI is selected and no model is set, default to DEFAULT_OPENAI_MODEL
         if (
           data.defaultLlmProviderName === "openai" &&
           !data.defaultLlmModelName
         ) {
-          setSelectedModelApiName("gpt-4o-mini");
+          setSelectedModelApiName(DEFAULT_OPENAI_MODEL);
         } else {
           setSelectedModelApiName(data.defaultLlmModelName ?? undefined);
         }
@@ -256,7 +257,7 @@ export function ProviderKeySection({
             selectedProviderApiName === "openai" &&
             !projectLlmSettings.defaultLlmModelName
           ) {
-            setSelectedModelApiName("gpt-4o-mini");
+            setSelectedModelApiName(DEFAULT_OPENAI_MODEL);
           } else {
             setSelectedModelApiName(
               projectLlmSettings.defaultLlmModelName ?? undefined,
@@ -266,9 +267,9 @@ export function ProviderKeySection({
           setBaseUrl("");
         }
       } else {
-        // If switching to OpenAI and no model is selected, set gpt-4o-mini
+        // If switching to OpenAI and no model is selected, set DEFAULT_OPENAI_MODEL
         if (selectedProviderApiName === "openai") {
-          setSelectedModelApiName("gpt-4o-mini");
+          setSelectedModelApiName(DEFAULT_OPENAI_MODEL);
         } else {
           setSelectedModelApiName(undefined);
         }
@@ -277,7 +278,7 @@ export function ProviderKeySection({
       }
     } else if (selectedProviderApiName) {
       if (selectedProviderApiName === "openai") {
-        setSelectedModelApiName("gpt-4o-mini");
+        setSelectedModelApiName(DEFAULT_OPENAI_MODEL);
       } else if (selectedProviderApiName !== "openai-compatible") {
         setCustomModelName("");
         setBaseUrl("");
@@ -447,17 +448,17 @@ export function ProviderKeySection({
 
   if (isLoadingInitialData) {
     return (
-      <Card className="border rounded-md overflow-hidden">
+      <Card className="overflow-hidden rounded-md border">
         <CardHeader>
-          <CardTitle className="text-base font-heading font-semibold">
+          <CardTitle className="font-heading text-base font-semibold">
             LLM Configuration
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-60 w-full bg-muted animate-pulse rounded-md p-4 space-y-4">
-            <div className="h-10 bg-muted-foreground/10 rounded"></div>
-            <div className="h-24 bg-muted-foreground/10 rounded"></div>
-            <div className="h-10 bg-muted-foreground/10 rounded"></div>
+          <div className="h-60 w-full animate-pulse space-y-4 rounded-md bg-muted p-4">
+            <div className="h-10 rounded bg-muted-foreground/10" />
+            <div className="h-24 rounded bg-muted-foreground/10" />
+            <div className="h-10 rounded bg-muted-foreground/10" />
           </div>
         </CardContent>
       </Card>
@@ -480,10 +481,10 @@ export function ProviderKeySection({
   }
 
   return (
-    <Card className="border rounded-md overflow-hidden">
-      <CardHeader className="pt-4 pb-0">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-base font-heading font-semibold">
+    <Card className="overflow-hidden rounded-md border">
+      <CardHeader className="pb-0 pt-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="font-heading text-base font-semibold">
             LLM Configuration
           </CardTitle>
           {hasUnsavedChanges && (
@@ -497,7 +498,7 @@ export function ProviderKeySection({
           )}
         </div>
       </CardHeader>
-      <CardContent className="p-6 space-y-6">
+      <CardContent className="space-y-6 p-6">
         <div className="space-y-2">
           <Label htmlFor="provider-select">Provider</Label>
           <Select
@@ -536,10 +537,10 @@ export function ProviderKeySection({
               initial="initial"
               animate="animate"
               exit="exit"
-              className="border rounded-md p-4 bg-muted/10 space-y-4 overflow-hidden"
+              className="space-y-4 overflow-hidden rounded-md border bg-muted/10 p-4"
             >
-              <div className="flex justify-between items-center">
-                <h4 className="text-sm font-medium mb-1">
+              <div className="flex items-center justify-between">
+                <h4 className="mb-1 text-sm font-medium">
                   Configure {currentProviderConfig.displayName}
                 </h4>
                 {currentProviderConfig.docLinkRoot && (
@@ -579,14 +580,14 @@ export function ProviderKeySection({
                     <SelectContent>
                       {availableModelsArray.map((model) => (
                         <SelectItem key={model.apiName} value={model.apiName}>
-                          <div className="flex items-center justify-between w-full">
+                          <div className="flex w-full items-center justify-between">
                             <span>
                               {model.displayName}
                               {model.isDefaultModel && " (default)"}
                             </span>
                             {model.status && (
                               <span
-                                className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                                className={`ml-2 rounded-full px-1.5 py-0.5 text-xs ${
                                   model.status === "untested"
                                     ? "bg-gray-200 text-gray-700"
                                     : "bg-green-100 text-green-700"
@@ -607,10 +608,10 @@ export function ProviderKeySection({
                     </p>
                   )}
                   {currentModelConfig && (
-                    <div className="text-xs text-muted-foreground pt-1 space-y-0.5">
+                    <div className="space-y-0.5 pt-1 text-xs text-muted-foreground">
                       {currentModelConfig.notes && (
-                        <p className="flex items-start mb-2">
-                          <InfoIcon className="h-3.5 w-3.5 mr-1.5 mt-0.5 flex-shrink-0" />{" "}
+                        <p className="mb-2 flex items-start">
+                          <InfoIcon className="mr-1.5 mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
                           {currentModelConfig.notes}
                         </p>
                       )}
@@ -619,9 +620,9 @@ export function ProviderKeySection({
                           href={currentModelConfig.docLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-link text-xs hover:underline inline-flex items-center"
+                          className="inline-flex items-center text-link text-xs hover:underline"
                         >
-                          <ExternalLinkIcon className="h-3 w-3 mr-1" />
+                          <ExternalLinkIcon className="mr-1 h-3 w-3" />
                           Model Documentation
                         </a>
                       )}
@@ -660,7 +661,7 @@ export function ProviderKeySection({
                       <Input
                         id="base-url"
                         type="url"
-                        placeholder="e.g., http://localhost:11434/v1"
+                        placeholder="e.g., https://example-provider.com/v1"
                         value={baseUrl}
                         onChange={(e) => {
                           setBaseUrl(e.target.value);
@@ -675,8 +676,8 @@ export function ProviderKeySection({
                 </div>
               )}
 
-              <div className="space-y-2 pt-2 border-t border-border/60">
-                <div className="flex justify-between items-center">
+              <div className="space-y-2 border-t border-border/60 pt-2">
+                <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium">
                     API Key
                     {currentProviderConfig.displayName !==
@@ -696,7 +697,7 @@ export function ProviderKeySection({
                       }}
                       disabled={isLoadingStoredKeysInitial}
                     >
-                      <KeyRound className="h-3 w-3 mr-1.5" />
+                      <KeyRound className="mr-1.5 h-3 w-3" />
                       {currentApiKeyRecord ? "Update Key" : "Add Key"}
                     </Button>
                   )}
@@ -728,7 +729,7 @@ export function ProviderKeySection({
                       autoFocus
                       className="w-full font-sans"
                     />
-                    <div className="flex gap-2 justify-end">
+                    <div className="flex justify-end gap-2">
                       <Button
                         size="sm"
                         variant="ghost"
@@ -756,7 +757,7 @@ export function ProviderKeySection({
                           "Saving..."
                         ) : (
                           <>
-                            <Save className="h-3 w-3 mr-1.5" />
+                            <Save className="mr-1.5 h-3 w-3" />
                             Save Key
                           </>
                         )}
@@ -771,25 +772,25 @@ export function ProviderKeySection({
                     transition={shortTransition}
                   >
                     {isLoadingStoredKeysInitial ? (
-                      <div className="h-8 w-48 bg-muted animate-pulse rounded"></div>
+                      <div className="h-8 w-48 animate-pulse rounded bg-muted" />
                     ) : (
-                      <code className="px-2 py-1.5 bg-background text-sm font-mono rounded-md border block truncate">
+                      <code className="block truncate rounded-md border bg-background px-2 py-1.5 font-mono text-sm">
                         {maskedApiKeyDisplay}
                       </code>
                     )}
                   </motion.div>
                 )}
                 {currentProviderConfig.apiKeyLink && (
-                  <p className="text-xs text-muted-foreground pt-1">
+                  <p className="pt-1 text-xs text-muted-foreground">
                     Need an API key?{" "}
                     <a
                       href={currentProviderConfig.apiKeyLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-link hover:underline inline-flex items-center"
+                      className="inline-flex items-center text-link hover:underline"
                     >
-                      Get one from {currentProviderConfig.displayName}{" "}
-                      <ExternalLinkIcon className="h-3 w-3 ml-1" />
+                      Get one from {currentProviderConfig.displayName}
+                      <ExternalLinkIcon className="ml-1 h-3 w-3" />
                     </a>
                   </p>
                 )}
@@ -804,9 +805,9 @@ export function ProviderKeySection({
               exit="exit"
               className="overflow-hidden"
             >
-              <div className="h-40 w-full bg-muted animate-pulse rounded-md p-4 space-y-4 mt-4">
-                <div className="h-10 bg-muted-foreground/10 rounded"></div>
-                <div className="h-16 bg-muted-foreground/10 rounded"></div>
+              <div className="mt-4 h-40 w-full animate-pulse space-y-4 rounded-md bg-muted p-4">
+                <div className="h-10 rounded bg-muted-foreground/10" />
+                <div className="h-16 rounded bg-muted-foreground/10" />
               </div>
             </motion.div>
           ) : !selectedProviderApiName && !isLoadingLlmProviderConfig ? (
@@ -818,7 +819,7 @@ export function ProviderKeySection({
               exit="exit"
               className="overflow-hidden text-center"
             >
-              <p className="text-sm text-muted-foreground py-6">
+              <p className="py-6 text-sm text-muted-foreground">
                 Select a provider to configure its models and API key.
               </p>
             </motion.div>
