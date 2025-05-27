@@ -177,11 +177,27 @@ export const deleteProjectApiKeySchema = z
   )
   .returns(
     z.object({
-      deletedKey: z.undefined(),
+      deletedKey: z.void(),
     }),
   );
 
 /** llm provider settings management */
+
+/**
+ * Zod schema for the `fetchProjectLlmSettings` function.
+ * Defines the argument as a project ID string and the return type as an object containing LLM settings.
+ */
+export const fetchProjectLlmSettingsSchema = z
+  .function()
+  .args(z.string().describe("The project ID to fetch LLM settings for"))
+  .returns(
+    z.object({
+      defaultLlmProviderName: z.string().nullable(),
+      defaultLlmModelName: z.string().nullable(),
+      customLlmModelName: z.string().nullable(),
+      customLlmBaseURL: z.string().nullable(),
+    }),
+  );
 
 /**
  * Zod schema for the `updateProjectLlmSettings` function.

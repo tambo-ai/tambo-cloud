@@ -10,14 +10,15 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { z } from "zod";
 
-interface AuthFormProps {
-  routeOnSuccess: string;
-}
+export const AuthFormPropsSchema = z.object({});
+
+type AuthFormProps = Record<string, never>;
 
 type AuthProvider = "github" | "google";
 
-export function AuthForm({ routeOnSuccess }: AuthFormProps) {
+export function AuthForm(_props: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const supabase = getSupabaseClient();
@@ -28,7 +29,7 @@ export function AuthForm({ routeOnSuccess }: AuthFormProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}${routeOnSuccess}`,
+          redirectTo: `${window.location.origin}/dashboard`,
         },
       });
       if (error) throw error;

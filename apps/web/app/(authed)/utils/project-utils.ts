@@ -148,10 +148,23 @@ export async function deleteProjectApiKey(projectId: string, apiKeyId: string) {
     projectId,
     apiKeyId,
   });
-  return { deletedKey: undefined };
+  return { deletedKey };
 }
 
 /** llm provider settings management */
+
+/**
+ * Fetches LLM settings for a project.
+ * @param {string} projectId - ID of the project.
+ * @returns {Promise<ProjectLlmSettings>} LLM settings or error.
+ */
+export async function fetchProjectLlmSettings(projectId: string) {
+  const caller = await getCaller();
+  const llmSettings = await caller.project.getProjectLlmSettings({
+    projectId,
+  });
+  return llmSettings;
+}
 
 /**
  * Updates LLM settings for a project.

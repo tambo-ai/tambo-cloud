@@ -17,6 +17,7 @@ import {
   removeProject,
   updateMcpServer,
   updateProject,
+  fetchProjectLlmSettings,
   updateProjectLlmSettings,
 } from "@/app/(authed)/utils/project-utils";
 import { TamboTool } from "@tambo-ai/react";
@@ -36,6 +37,7 @@ import {
   getMcpServerToolsSchema,
   removeProjectSchema,
   updateMcpServerSchema,
+  fetchProjectLlmSettingsSchema,
   updateProjectLlmSettingsSchema,
   updateProjectSchema,
 } from "./tools";
@@ -63,53 +65,61 @@ import {
   AvailableMcpServers,
   AvailableMcpServersProps,
 } from "@/components/dashboard-components/project-details/available-mcp-servers";
+import { AuthForm, AuthFormPropsSchema } from "@/components/auth/auth-form";
 
-export const TamboRegisteredComponents = [
+export const tamboRegisteredComponents = [
   {
     name: "ProjectTable",
     description:
-      "A component for displaying a table of projects. Expects props conforming to ProjectTableProps.",
+      "Displays a comprehensive table of all user projects with project names, IDs (with copy functionality), creation dates, and navigation links to project details. Use when users want to view, browse, or select from their existing projects. Shows 'No projects found' message when empty and includes project count at the bottom.",
     component: ProjectTable,
     propsSchema: ProjectTableProps,
   },
   {
     name: "ProjectInfo",
     description:
-      "A component for displaying project information. Expects props conforming to ProjectInfoProps.",
+      "Shows detailed information about a specific project including project name, unique ID (with copy button), owner details, and creation date. Features smooth animations and handles loading states. Use when displaying project overview information or when users need to reference project details like copying the project ID.",
     component: ProjectInfo,
     propsSchema: ProjectInfoProps,
   },
   {
     name: "APIKeyList",
     description:
-      "A component for displaying a list of API keys. Expects props conforming to APIKeyListProps.",
+      "Manages project API keys with full CRUD operations - create, view, and delete API keys. Automatically generates a first key for new projects. Shows masked key values, last usage dates, and provides secure key generation with one-time display. Includes animated interactions and handles loading states. Use when users need to manage authentication keys for their project.",
     component: APIKeyList,
     propsSchema: APIKeyListProps,
   },
   {
     name: "ProviderKeySection",
     description:
-      "A component for configuring LLM providers and API keys. Expects props conforming to ProviderKeySectionProps.",
+      "Comprehensive LLM provider configuration interface allowing users to select AI providers (OpenAI, Anthropic, etc.), configure models, set API keys, and manage custom endpoints. Handles free message limits, provider-specific settings, base URLs for custom providers, and validation. Shows real-time configuration status and supports both standard and OpenAI-compatible providers. Use when users need to configure or modify their AI model settings.",
     component: ProviderKeySection,
     propsSchema: ProviderKeySectionProps,
   },
   {
     name: "CustomInstructionsEditor",
     description:
-      "A component for editing custom instructions for a project. Expects props conforming to CustomInstructionsEditorProps.",
+      "Allows users to create and edit custom instructions that are automatically included in every AI conversation for their project. Features inline editing with save/cancel functionality, preview mode, and handles empty states. Use when users want to set project-wide AI behavior guidelines, context, or specific instructions that should apply to all interactions.",
     component: CustomInstructionsEditor,
     propsSchema: CustomInstructionsEditorProps,
   },
   {
     name: "AvailableMcpServers",
     description:
-      "A component for displaying a list of available MCP servers. Expects props conforming to AvailableMcpServersProps.",
+      "Manages Model Context Protocol (MCP) servers for extending AI capabilities with external tools and data sources. Allows adding, configuring, and removing MCP servers with authentication handling. Shows server status, transport methods, and provides integration management. Use when users need to connect external tools, APIs, or data sources to enhance their AI assistant's capabilities.",
     component: AvailableMcpServers,
     propsSchema: AvailableMcpServersProps,
   },
+  {
+    name: "AuthForm",
+    description:
+      "A form that allows users to authenticate with GitHub or Google. Use when users are not authenticated and need to log in to access features or when the fetchCurrentUser tool indicates the user is not logged in.",
+    component: AuthForm,
+    propsSchema: AuthFormPropsSchema,
+  },
 ];
 
-export const TamboRegisteredTools: TamboTool[] = [
+export const tamboRegisteredTools: TamboTool[] = [
   {
     name: "fetchCurrentUser",
     description:
@@ -164,6 +174,12 @@ export const TamboRegisteredTools: TamboTool[] = [
     description: "Deletes an API key for a project.",
     toolSchema: deleteProjectApiKeySchema,
     tool: deleteProjectApiKey,
+  },
+  {
+    name: "fetchProjectLlmSettings",
+    description: "Fetches LLM configuration settings for a project.",
+    toolSchema: fetchProjectLlmSettingsSchema,
+    tool: fetchProjectLlmSettings,
   },
   {
     name: "updateProjectLlmSettings",
