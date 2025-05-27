@@ -65,7 +65,8 @@ import {
   AvailableMcpServers,
   AvailableMcpServersProps,
 } from "@/components/dashboard-components/project-details/available-mcp-servers";
-import { AuthForm, AuthFormPropsSchema } from "@/components/auth/auth-form";
+import { AuthForm } from "@/components/auth/auth-form";
+import { z } from "zod";
 
 export const tamboRegisteredComponents = [
   {
@@ -115,7 +116,7 @@ export const tamboRegisteredComponents = [
     description:
       "A form that allows users to authenticate with GitHub or Google. Use when users are not authenticated and need to log in to access features or when the fetchCurrentUser tool indicates the user is not logged in.",
     component: AuthForm,
-    propsSchema: AuthFormPropsSchema,
+    propsSchema: z.object({}),
   },
 ];
 
