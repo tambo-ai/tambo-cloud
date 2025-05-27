@@ -4,9 +4,13 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import type { Components } from "react-markdown";
 import { Copy, Check } from "lucide-react";
-import hljs from "highlight.js";
+import hljs from "highlight.js/lib/core";
+import ts from "highlight.js/lib/languages/typescript";
 import "highlight.js/styles/github.css";
 import DOMPurify from "dompurify";
+
+// Register the single language we need to keep the bundle lean
+hljs.registerLanguage("typescript", ts);
 
 /**
  * Markdown Components for React-Markdown

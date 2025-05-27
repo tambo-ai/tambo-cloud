@@ -3,7 +3,7 @@
 import { Section } from "@/components/section";
 import { clsx } from "clsx";
 import { motion, useScroll, useTransform } from "framer-motion";
-import hljs from "highlight.js";
+import hljs from "highlight.js/lib/core";
 import typescript from "highlight.js/lib/languages/typescript";
 import "highlight.js/styles/stackoverflow-light.css";
 import {
