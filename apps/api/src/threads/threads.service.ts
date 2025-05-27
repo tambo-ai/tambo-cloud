@@ -61,16 +61,82 @@ import {
 import { callSystemTool, extractToolResponse } from "./util/tool";
 
 /**
- * The maximum depth of tool calls we will make. This is to prevent infinite
- * loops.
- */
-const MAX_TOOL_CALL_DEPTH = 3;
-
-/**
  * The maximum number of identical tool calls we will make. This is to prevent
  * infinite loops.
  */
-const IDENTICAL_TOOL_LOOP_LIMIT = 3;
+const MAX_IDENTICAL_TOOL_CALLS = 3;
+
+/**
+ * The maximum total number of tool calls we will make. This is to prevent
+ * infinite loops.
+ */
+const MAX_TOTAL_TOOL_CALLS = 10;
+
+/**
+ * Creates a unique signature for a tool call request for tracking purposes.
+ * Excludes the tool_call_id as it's not part of the actual tool call logic.
+ */
+function createToolCallSignature(toolCallRequest: ToolCallRequest): string {
+  const sortedParams = toolCallRequest.parameters
+    .map(({ parameterName, parameterValue }) => ({
+      parameterName,
+      parameterValue,
+    }))
+    .sort((a, b) => a.parameterName.localeCompare(b.parameterName));
+
+  return JSON.stringify({
+    toolName: toolCallRequest.toolName,
+    parameters: sortedParams,
+  });
+}
+
+/**
+ * Validates tool call limits to prevent infinite loops.
+ * @param toolCallCounts - Dictionary mapping tool call signatures to their counts
+ * @param newToolCallRequest - The new tool call request to validate
+ * @returns An error message if limits are exceeded, undefined if valid
+ */
+function validateToolCallLimits(
+  toolCallCounts: Record<string, number>,
+  newToolCallRequest?: ToolCallRequest,
+): string | undefined {
+  const totalCalls = Object.values(toolCallCounts).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+
+  if (totalCalls >= MAX_TOTAL_TOOL_CALLS) {
+    return `I've reached the maximum number of tool calls (${MAX_TOTAL_TOOL_CALLS}). This usually indicates I'm stuck in a loop. Please try a different approach or contact support if this persists.`;
+  }
+
+  if (newToolCallRequest) {
+    const signature = createToolCallSignature(newToolCallRequest);
+    const currentCount = toolCallCounts[signature] || 0;
+
+    if (currentCount >= MAX_IDENTICAL_TOOL_CALLS) {
+      return `I've detected that I'm making the same tool call repeatedly (${newToolCallRequest.toolName}). This suggests I'm stuck in a loop. Please try a different approach or contact support if this persists.`;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Updates the tool call counts with a new tool call request.
+ * @param toolCallCounts - Current tool call counts
+ * @param toolCallRequest - The tool call request to add
+ * @returns Updated tool call counts
+ */
+function updateToolCallCounts(
+  toolCallCounts: Record<string, number>,
+  toolCallRequest: ToolCallRequest,
+): Record<string, number> {
+  const signature = createToolCallSignature(toolCallRequest);
+  return {
+    ...toolCallCounts,
+    [signature]: (toolCallCounts[signature] || 0) + 1,
+  };
+}
 
 @Injectable()
 export class ThreadsService {
@@ -490,6 +556,7 @@ export class ThreadsService {
    * @param advanceRequestDto - The advance request DTO, including optional message to append, context key, and available components.
    * @param unresolvedThreadId - The thread ID, if any
    * @param stream - Whether to stream the response.
+   * @param toolCallCounts - Dictionary mapping tool call signatures to their counts for loop prevention.
    * @returns The the generated response thread message, generation stage, and status message.
    */
   async advanceThread(
@@ -497,21 +564,21 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
     stream?: true,
-    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+    toolCallCounts?: Record<string, number>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   async advanceThread(
     projectId: string,
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
     stream?: false,
-    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+    toolCallCounts?: Record<string, number>,
   ): Promise<AdvanceThreadResponseDto>;
   async advanceThread(
     projectId: string,
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
     stream?: boolean,
-    depth?: number, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+    toolCallCounts?: Record<string, number>,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   >;
@@ -520,16 +587,13 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     unresolvedThreadId?: string,
     stream?: boolean,
-    depth = 0, // sets a maximum depth for when we do multiple tool calls (which we do with recursion)
+    toolCallCounts: Record<string, number> = {},
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
     const db = this.getDb();
 
     await this.checkMessageLimit(projectId);
-    if (depth > MAX_TOOL_CALL_DEPTH) {
-      throw new Error("Maximum tool call depth reached");
-    }
 
     const thread = await this.ensureThread(
       projectId,
@@ -586,7 +650,7 @@ export class ThreadsService {
         userMessage,
         advanceRequestDto,
         customInstructions,
-        depth,
+        toolCallCounts,
       );
     }
 
@@ -618,6 +682,28 @@ export class ThreadsService {
     );
 
     const toolCallRequest = responseMessage.toolCallRequest;
+
+    // Check tool call limits if we have a tool call request
+    if (toolCallRequest) {
+      const validationResult = validateToolCallLimits(
+        toolCallCounts,
+        toolCallRequest,
+      );
+      if (validationResult) {
+        // Replace the tool call request with an error message
+        const errorMessage = await this.handleToolCallLimitViolation(
+          validationResult,
+          thread.id,
+          responseMessageDto.id,
+        );
+        return {
+          responseMessageDto: errorMessage,
+          generationStage: GenerationStage.COMPLETE,
+          statusMessage: "Tool call limit reached",
+        };
+      }
+    }
+
     if (isSystemToolCall(toolCallRequest, systemTools)) {
       if (!responseMessage.toolCallId) {
         console.warn(
@@ -633,7 +719,7 @@ export class ThreadsService {
         projectId,
         thread.id,
         false,
-        depth,
+        toolCallCounts,
       );
     }
 
@@ -657,7 +743,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: boolean,
-    depth: number,
+    toolCallCounts: Record<string, number>,
   ): Promise<AdvanceThreadResponseDto>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
@@ -668,7 +754,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: true,
-    depth: number,
+    toolCallCounts: Record<string, number>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
@@ -679,7 +765,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     stream: boolean,
-    depth: number,
+    toolCallCounts: Record<string, number>,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -694,12 +780,18 @@ export class ThreadsService {
       throw new Error("No tool call response, returning assistant message");
     }
 
+    // Update tool call counts with the current tool call
+    const updatedToolCallCounts = updateToolCallCounts(
+      toolCallCounts,
+      toolCallRequest,
+    );
+
     return await this.advanceThread(
       projectId,
       messageWithToolResponse,
       threadId,
       stream,
-      depth + 1,
+      updatedToolCallCounts,
     );
   }
 
@@ -712,7 +804,7 @@ export class ThreadsService {
     userMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
     customInstructions: string | undefined,
-    depth: number,
+    toolCallCounts: Record<string, number>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
     const systemTools = await getSystemTools(
       db,
@@ -755,7 +847,7 @@ export class ThreadsService {
         systemTools,
         advanceRequestDto,
         originalTools,
-        depth,
+        toolCallCounts,
       );
     }
 
@@ -786,7 +878,7 @@ export class ThreadsService {
       systemTools,
       advanceRequestDto,
       originalTools,
-      depth,
+      toolCallCounts,
     );
   }
 
@@ -798,7 +890,7 @@ export class ThreadsService {
     systemTools: SystemTools,
     originalRequest: AdvanceThreadDto,
     originalTools: OpenAI.Chat.Completions.ChatCompletionTool[],
-    depth: number = 0,
+    toolCallCounts: Record<string, number>,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     const db = this.getDb();
     const logger = this.logger;
@@ -865,6 +957,28 @@ export class ThreadsService {
       toolCallRequest,
     };
 
+    // Check tool call limits if we have a tool call request
+    if (toolCallRequest) {
+      const validationResult = validateToolCallLimits(
+        toolCallCounts,
+        toolCallRequest,
+      );
+      if (validationResult) {
+        // Replace the tool call request with an error message
+        const errorMessage = await this.handleToolCallLimitViolation(
+          validationResult,
+          threadId,
+          inProgressMessage.id,
+        );
+        yield {
+          responseMessageDto: errorMessage,
+          generationStage: GenerationStage.COMPLETE,
+          statusMessage: "Tool call limit reached",
+        };
+        return;
+      }
+    }
+
     const { resultingGenerationStage, resultingStatusMessage } =
       await finishInProgressMessage(
         db,
@@ -907,7 +1021,7 @@ export class ThreadsService {
         projectId,
         threadId,
         true,
-        depth,
+        toolCallCounts,
       );
 
       for await (const chunk of toolResponseMessageStream) {
@@ -918,20 +1032,6 @@ export class ThreadsService {
 
     // We only yield the final response with the tool call request and tool call id set if we did not call a system tool
 
-    //check for identical tool loop
-    if (
-      await this.isIdenticalToolLoop(
-        finalThreadMessage,
-        threadId,
-        IDENTICAL_TOOL_LOOP_LIMIT,
-      )
-    ) {
-      console.log("Identical tool loop detected");
-      finalThreadMessage = await this.handleIdenticalToolLoop(
-        finalThreadMessage,
-        inProgressMessage.id,
-      );
-    }
     yield {
       responseMessageDto: finalThreadMessage,
       generationStage: resultingGenerationStage,
@@ -1029,83 +1129,36 @@ export class ThreadsService {
   }
 
   /**
-   * Checks if the tool call request is identical to a number of previous tool call requests in the thread
-   * @param responseToCaller - The response to the caller
-   * @param threadId - The thread ID
-   * @param toolLoopLimit - The limit of identical tool calls in a row
-   * @returns true if the tool call request is identical to a number of previous tool call requests in the thread, false otherwise
-   */
-  private async isIdenticalToolLoop(
-    responseToCaller: ThreadMessageDto,
-    threadId: string,
-    toolLoopLimit = IDENTICAL_TOOL_LOOP_LIMIT,
-  ): Promise<boolean> {
-    // Only check for loops if there's a tool call request
-    if (!responseToCaller.toolCallRequest?.toolName) {
-      return false;
-    }
-
-    const previousMessages = await this.getMessages(threadId, true);
-
-    let identicalToolCallCount = 0;
-
-    // Loop backwards through messages
-    for (let i = previousMessages.length - 2; i >= 0; i--) {
-      const message = previousMessages[i];
-
-      // If we hit a message without a tool call, we can stop checking
-      if (!message.tool_call_id) {
-        return false;
-      }
-
-      if (
-        message.role === "assistant" &&
-        message.toolCallRequest?.toolName ===
-          responseToCaller.toolCallRequest.toolName &&
-        this.areParametersEqual(
-          message.toolCallRequest.parameters,
-          responseToCaller.toolCallRequest.parameters,
-        )
-      ) {
-        identicalToolCallCount++;
-        if (identicalToolCallCount >= toolLoopLimit - 1) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * Handles an identical tool loop by replacing the latest toolcall request message in the thread with an assistant message describing the error.
-   *
+   * Handles a tool call limit violation by creating an error message.
+   * @param errorMessage - The error message to display
+   * @param messageId - The message ID to update
    * @returns A message to return to the client in place of the tool call request message.
    */
-  private async handleIdenticalToolLoop(
-    responseToCaller: ThreadMessageDto,
+  private async handleToolCallLimitViolation(
+    errorMessage: string,
+    threadId: string,
     messageId: string,
   ): Promise<ThreadMessageDto> {
-    const errorMessage = `I've detected that I'm stuck in a loop making the same tool call. Trying again might help, but if the problem persists, please try a different approach or contact support.`;
-
     const updatedMessage: ThreadMessageDto = {
-      ...responseToCaller,
+      id: messageId,
+      threadId,
+      role: MessageRole.Assistant,
       content: [
         {
           type: ContentPartType.Text,
           text: errorMessage,
         },
       ],
-      // Remove the tool call request to break the loop
+      componentState: {},
+      createdAt: new Date(),
+      // Remove any tool call request to break the loop
       toolCallRequest: undefined,
       tool_call_id: undefined,
       actionType: undefined,
     };
 
-    // Replace the latest tool call request message in db with the updated message
-    await updateMessage(this.getDb(), messageId, {
-      ...updatedMessage,
-    });
+    // Update the message in the database
+    await updateMessage(this.getDb(), messageId, updatedMessage);
 
     return updatedMessage;
   }
