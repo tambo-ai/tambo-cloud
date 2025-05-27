@@ -10,6 +10,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import {
+  getProviderKeyRequirements,
+  validateApiKey,
+  type ApiKeyValidationResult,
+} from "@/lib/api-key-validation";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
@@ -90,7 +95,7 @@ export function ProviderKeySection({
     },
   );
 
-  const { data: messageUsage, isLoading: isLoadingMessageUsage } =
+  const { data: messageUsage, isLoading: _isLoadingMessageUsage } =
     api.project.getProjectMessageUsage.useQuery(
       { projectId: project?.id ?? "" },
       {
@@ -128,6 +133,8 @@ export function ProviderKeySection({
   const [isEditingApiKey, setIsEditingApiKey] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [apiKeyValidation, setApiKeyValidation] =
+    useState<ApiKeyValidationResult>({ isValid: true });
 
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
@@ -287,6 +294,21 @@ export function ProviderKeySection({
     }
   }, [selectedProviderApiName, projectLlmSettings]);
 
+  // --- Validation Effect ---
+  useEffect(() => {
+    if (apiKeyInput && selectedProviderApiName) {
+      const validation = validateApiKey(apiKeyInput, selectedProviderApiName, {
+        allowEmpty:
+          selectedProviderApiName === "openai" ||
+          selectedProviderApiName === "openai-compatible",
+        strictMode: true,
+      });
+      setApiKeyValidation(validation);
+    } else {
+      setApiKeyValidation({ isValid: true });
+    }
+  }, [apiKeyInput, selectedProviderApiName]);
+
   // --- Event Handlers (basic implementation for UI interaction) ---
   const handleProviderSelect = useCallback((apiName: string) => {
     setSelectedProviderApiName(apiName);
@@ -412,6 +434,25 @@ export function ProviderKeySection({
         variant: "destructive",
       });
       return;
+    }
+
+    // Validate API key before saving
+    if (apiKeyInput.trim() && selectedProviderApiName) {
+      const validation = validateApiKey(apiKeyInput, selectedProviderApiName, {
+        allowEmpty:
+          selectedProviderApiName === "openai" ||
+          selectedProviderApiName === "openai-compatible",
+        strictMode: true,
+      });
+
+      if (!validation.isValid) {
+        toast({
+          title: "Invalid API Key",
+          description: validation.error || "Please check your API key format.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     // Allow empty key for OpenAI to switch back to free messages
@@ -727,8 +768,37 @@ export function ProviderKeySection({
                             }`
                       }
                       autoFocus
-                      className="w-full font-sans"
+                      className={`w-full font-sans ${
+                        !apiKeyValidation.isValid && apiKeyInput
+                          ? "border-destructive"
+                          : ""
+                      }`}
                     />
+                    {!apiKeyValidation.isValid && apiKeyInput && (
+                      <p className="text-sm text-destructive mt-1">
+                        {apiKeyValidation.error}
+                      </p>
+                    )}
+                    {selectedProviderApiName && (
+                      <div className="text-xs text-muted-foreground">
+                        {(() => {
+                          const requirements = getProviderKeyRequirements(
+                            selectedProviderApiName,
+                          );
+                          return (
+                            <div>
+                              <p>
+                                <strong>Expected format:</strong>{" "}
+                                {requirements.format}
+                              </p>
+                              <p>
+                                <strong>Example:</strong> {requirements.example}
+                              </p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                     <div className="flex justify-end gap-2">
                       <Button
                         size="sm"
@@ -736,6 +806,7 @@ export function ProviderKeySection({
                         onClick={() => {
                           setIsEditingApiKey(false);
                           setApiKeyInput("");
+                          setApiKeyValidation({ isValid: true });
                         }}
                         disabled={isUpdatingApiKey}
                       >
@@ -750,7 +821,8 @@ export function ProviderKeySection({
                           (!apiKeyInput.trim() &&
                             currentProviderConfig?.apiName !== "openai" &&
                             currentProviderConfig?.apiName !==
-                              "openai-compatible")
+                              "openai-compatible") ||
+                          (!apiKeyValidation.isValid && !!apiKeyInput.trim())
                         }
                       >
                         {isUpdatingApiKey ? (
