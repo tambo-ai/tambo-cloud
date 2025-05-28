@@ -21,6 +21,7 @@ export const ProjectTableSchema = z
     name: z.string().describe("The human-readable name of the project."),
     createdAt: z
       .string()
+      .datetime()
       .describe("The date and time the project was created."),
   })
   .describe(
