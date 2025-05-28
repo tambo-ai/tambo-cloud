@@ -18,8 +18,14 @@ import {
 import { api, type RouterOutputs } from "@/trpc/react";
 import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
-import { ExternalLinkIcon, InfoIcon, KeyRound, Save } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ExternalLinkIcon,
+  InfoIcon,
+  KeyRound,
+  Loader2,
+  Save,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 
 export const ProviderKeySectionSchema = z
@@ -134,6 +140,14 @@ export function ProviderKeySection({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
 
+  // --- API Key Validation State ---
+  const [apiKeyValidation, setApiKeyValidation] =
+    useState<ApiKeyValidationResult>({
+      isValid: true,
+      provider: undefined,
+    });
+  const [isValidatingApiKey, setIsValidatingApiKey] = useState(false);
+
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
     if (projectLlmSettings) {
@@ -170,6 +184,47 @@ export function ProviderKeySection({
       setHasUnsavedChanges(false);
     }
   }, [projectLlmSettings, llmProviderConfigData]);
+
+  // --- Async API Key Validation Effect ---
+  useEffect(() => {
+    const validateKey = async () => {
+      if (!apiKeyInput || !selectedProviderApiName) {
+        setApiKeyValidation({
+          isValid: true,
+          provider: selectedProviderApiName,
+        });
+        setIsValidatingApiKey(false);
+        return;
+      }
+
+      setIsValidatingApiKey(true);
+      try {
+        const result = await validateApiKey(
+          apiKeyInput,
+          selectedProviderApiName,
+          {
+            allowEmpty: ["openai", "openai-compatible"].includes(
+              selectedProviderApiName,
+            ),
+            timeout: 5000,
+          },
+        );
+        setApiKeyValidation(result);
+      } catch (error) {
+        setApiKeyValidation({
+          isValid: false,
+          error: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+          provider: selectedProviderApiName,
+        });
+      } finally {
+        setIsValidatingApiKey(false);
+      }
+    };
+
+    // Debounce the validation to avoid excessive API calls
+    const timeoutId = setTimeout(validateKey, 500);
+    return () => clearTimeout(timeoutId);
+  }, [apiKeyInput, selectedProviderApiName]);
 
   // --- TRPC Mutations ---
   const { mutate: updateLlmSettings, isPending: isSavingDefaults } =
@@ -292,18 +347,6 @@ export function ProviderKeySection({
     }
   }, [selectedProviderApiName, projectLlmSettings]);
 
-  // --- API Key Validation ---
-  const apiKeyValidation = useMemo(
-    () =>
-      validateApiKey(apiKeyInput, selectedProviderApiName ?? "", {
-        allowEmpty: ["openai", "openai-compatible"].includes(
-          selectedProviderApiName ?? "",
-        ),
-        strictMode: true,
-      }),
-    [apiKeyInput, selectedProviderApiName],
-  );
-
   // --- Event Handlers (basic implementation for UI interaction) ---
   const handleProviderSelect = useCallback((apiName: string) => {
     setSelectedProviderApiName(apiName);
@@ -343,7 +386,7 @@ export function ProviderKeySection({
 
     // Check if API key is required and present
     if (
-      selectedProviderApiName !== "openai" &&
+      !["openai", "openai-compatible"].includes(selectedProviderApiName) &&
       !currentApiKeyRecord?.partiallyHiddenKey
     ) {
       toast({
@@ -421,7 +464,7 @@ export function ProviderKeySection({
     setShowValidationErrors,
   ]);
 
-  const handleSaveApiKey = useCallback(() => {
+  const handleSaveApiKey = useCallback(async () => {
     if (!project?.id) {
       toast({
         title: "Error",
@@ -433,17 +476,36 @@ export function ProviderKeySection({
 
     // Validate API key before saving
     if (apiKeyInput.trim() && selectedProviderApiName) {
-      const validation = validateApiKey(apiKeyInput, selectedProviderApiName, {
-        allowEmpty:
-          selectedProviderApiName === "openai" ||
-          selectedProviderApiName === "openai-compatible",
-        strictMode: true,
-      });
+      try {
+        const validation = await validateApiKey(
+          apiKeyInput,
+          selectedProviderApiName,
+          {
+            allowEmpty:
+              selectedProviderApiName === "openai" ||
+              selectedProviderApiName === "openai-compatible",
+            timeout: 10000, // Longer timeout for save operation
+          },
+        );
 
-      if (!validation.isValid) {
+        if (!validation.isValid) {
+          toast({
+            title: "Invalid API Key",
+            description:
+              validation.error || "Please check your API key format.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Show success message if dynamic validation provided additional info
+        if (validation.details?.note) {
+          console.log("API key validation details:", validation.details);
+        }
+      } catch (error) {
         toast({
-          title: "Invalid API Key",
-          description: validation.error || "Please check your API key format.",
+          title: "Validation Error",
+          description: `Failed to validate API key: ${error instanceof Error ? error.message : "Unknown error"}`,
           variant: "destructive",
         });
         return;
@@ -452,7 +514,7 @@ export function ProviderKeySection({
 
     // Allow empty key for OpenAI to switch back to free messages
     if (
-      currentProviderConfig?.apiName !== "openai" && // Changed from openai-compatible
+      currentProviderConfig?.apiName !== "openai" &&
       currentProviderConfig?.apiName !== "openai-compatible" &&
       !apiKeyInput.trim()
     ) {
@@ -748,52 +810,68 @@ export function ProviderKeySection({
                     transition={shortTransition}
                     className="space-y-2 overflow-hidden"
                   >
-                    <Input
-                      type="password"
-                      value={apiKeyInput}
-                      onChange={(e) => setApiKeyInput(e.target.value)}
-                      placeholder={
-                        currentProviderConfig?.apiName === "openai"
-                          ? "Enter API Key or leave empty to use free messages"
-                          : `Enter API Key${
-                              currentProviderConfig?.displayName !==
-                              "OpenAI Compatible"
-                                ? ` for ${currentProviderConfig?.displayName}`
-                                : ""
-                            }`
-                      }
-                      autoFocus
-                      className={`w-full font-sans ${
-                        !apiKeyValidation.isValid && apiKeyInput
-                          ? "border-destructive"
-                          : ""
-                      }`}
-                    />
-                    {!apiKeyValidation.isValid && apiKeyInput && (
-                      <p className="text-sm text-destructive mt-1">
-                        {apiKeyValidation.error}
-                      </p>
-                    )}
-                    {selectedProviderApiName && (
-                      <div className="text-xs text-muted-foreground">
-                        {(() => {
-                          const requirements = getProviderKeyRequirements(
-                            selectedProviderApiName,
-                          );
-                          return (
-                            <div>
-                              <p>
-                                <strong>Expected format:</strong>{" "}
-                                {requirements.format}
-                              </p>
-                              <p>
-                                <strong>Example:</strong> {requirements.example}
-                              </p>
-                            </div>
-                          );
-                        })()}
+                    <div className="relative">
+                      <div className="relative">
+                        <Input
+                          type="password"
+                          value={apiKeyInput}
+                          onChange={(e) => setApiKeyInput(e.target.value)}
+                          placeholder={
+                            currentProviderConfig?.apiName === "openai"
+                              ? "Enter API Key or leave empty to use free messages"
+                              : `Enter API Key${
+                                  currentProviderConfig?.displayName !==
+                                  "OpenAI Compatible"
+                                    ? ` for ${currentProviderConfig?.displayName}`
+                                    : ""
+                                }`
+                          }
+                          autoFocus
+                          className={`w-full font-sans pr-8 ${
+                            !apiKeyValidation.isValid && apiKeyInput
+                              ? "border-destructive"
+                              : ""
+                          }`}
+                        />
+                        {isValidatingApiKey && (
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      {selectedProviderApiName && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {
+                            getProviderKeyRequirements(selectedProviderApiName)
+                              .description
+                          }
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Validation feedback */}
+                    {apiKeyInput && (
+                      <div className="space-y-1">
+                        {!apiKeyValidation.isValid && (
+                          <p className="text-sm text-destructive">
+                            {apiKeyValidation.error}
+                          </p>
+                        )}
+                        {apiKeyValidation.isValid &&
+                          apiKeyValidation.details?.note && (
+                            <p className="text-sm text-green-600">
+                              ✓ {apiKeyValidation.details.note}
+                            </p>
+                          )}
+                        {apiKeyValidation.isValid &&
+                          apiKeyValidation.details?.modelCount && (
+                            <p className="text-sm text-green-600">
+                              ✓ API key is valid
+                            </p>
+                          )}
                       </div>
                     )}
+
                     <div className="flex justify-end gap-2">
                       <Button
                         size="sm"
@@ -812,6 +890,7 @@ export function ProviderKeySection({
                         onClick={handleSaveApiKey}
                         disabled={
                           isUpdatingApiKey ||
+                          isValidatingApiKey ||
                           (!apiKeyInput.trim() &&
                             currentProviderConfig?.apiName !== "openai" &&
                             currentProviderConfig?.apiName !==
