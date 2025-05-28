@@ -1059,6 +1059,8 @@ export class ThreadsService {
       const finalThreadMessageDto: AdvanceThreadResponseDto = {
         responseMessageDto: {
           ...finalThreadMessage,
+          content: convertContentPartToDto(finalThreadMessage.content),
+          componentState: finalThreadMessage.componentState ?? {},
           toolCallRequest: undefined,
           tool_call_id: undefined,
         },
