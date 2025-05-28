@@ -97,11 +97,12 @@ function createToolCallSignature(toolCallRequest: ToolCallRequest): string {
  * @returns An error message if limits are exceeded, undefined if valid
  */
 function validateToolCallLimits(
+  finalThreadMessage: ThreadMessage,
   messages: ThreadMessage[],
   toolCallCounts: Record<string, number>,
   newToolCallRequest?: ToolCallRequest,
 ): string | undefined {
-  if (newToolCallRequest && isIdenticalToolLoop(messages, newToolCallRequest)) {
+  if (newToolCallRequest && isIdenticalToolLoop(finalThreadMessage, messages)) {
     return `I've detected that I'm making the same tool call repeatedly (${newToolCallRequest.toolName}). This suggests I'm stuck in a loop. Please try a different approach or contact support if this persists.`;
   }
 
@@ -145,36 +146,45 @@ function updateToolCallCounts(
 
 /**
  * Check if we are in an identical tool loop.
- * @param messages - The messages in the thread.
+ * @param previousMessages - The messages in the thread.
  * @param toolCallRequest - The tool call request.
  * @returns True if we are in an identical tool loop.
  */
 function isIdenticalToolLoop(
-  messages: ThreadMessage[],
-  toolCallRequest: ToolCallRequest,
+  responseToCaller: ThreadMessage,
+  previousMessages: ThreadMessage[],
 ): boolean {
-  // Get the last few messages to check for loops
-  const recentMessages = messages.slice(-6); // Check last 6 messages
-
-  // Count how many times we've seen this exact tool call
+  // Only check for loops if there's a tool call request
+  if (!responseToCaller.toolCallRequest?.toolName) {
+    return false;
+  }
   let identicalToolCallCount = 0;
 
-  for (const message of recentMessages) {
+  // Loop backwards through messages
+  for (let i = previousMessages.length - 2; i >= 0; i--) {
+    const message = previousMessages[i];
+
+    // If we hit a message without a tool call, we can stop checking
+    if (!message.tool_call_id) {
+      return false;
+    }
+
     if (
-      message.role === MessageRole.Assistant &&
-      message.toolCallRequest &&
-      message.toolCallRequest.toolName === toolCallRequest.toolName &&
+      message.role === "assistant" &&
+      message.toolCallRequest?.toolName ===
+        responseToCaller.toolCallRequest.toolName &&
       areParametersEqual(
         message.toolCallRequest.parameters,
-        toolCallRequest.parameters,
+        responseToCaller.toolCallRequest.parameters,
       )
     ) {
       identicalToolCallCount++;
+      if (identicalToolCallCount >= MAX_IDENTICAL_TOOL_CALLS - 1) {
+        return true;
+      }
     }
   }
-
-  // If we've seen this exact tool call 3 or more times, it's a loop
-  return identicalToolCallCount >= 3;
+  return false;
 }
 
 /**
@@ -763,6 +773,7 @@ export class ThreadsService {
     // Check tool call limits if we have a tool call request
     if (toolCallRequest) {
       const validationResult = validateToolCallLimits(
+        responseMessageDto,
         threadMessageDtoToThreadMessage(messages),
         toolCallCounts,
         toolCallRequest,
@@ -990,7 +1001,7 @@ export class ThreadsService {
     );
 
     // we hold on to the final thread message, in case we have to switch to a tool call
-    let finalThreadMessage: ThreadMessageDto | undefined;
+    let finalThreadMessage: ThreadMessage | undefined;
     let lastUpdateTime = 0;
     const updateIntervalMs = 500;
 
@@ -1001,7 +1012,10 @@ export class ThreadsService {
       // Update db message on interval
       const currentTime = Date.now();
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
-        await updateMessage(db, inProgressMessage.id, threadMessage);
+        await updateMessage(db, inProgressMessage.id, {
+          ...threadMessage,
+          content: convertContentPartToDto(threadMessage.content),
+        });
         lastUpdateTime = currentTime;
       }
 
@@ -1009,7 +1023,11 @@ export class ThreadsService {
       // might have to switch to an internal tool call
       if (!threadMessage.toolCallRequest) {
         yield {
-          responseMessageDto: threadMessage,
+          responseMessageDto: {
+            ...threadMessage,
+            content: convertContentPartToDto(threadMessage.content),
+            componentState: threadMessage.componentState ?? {},
+          },
           generationStage: GenerationStage.STREAMING_RESPONSE,
           statusMessage: `Streaming response...`,
         };
@@ -1040,6 +1058,7 @@ export class ThreadsService {
     // Check tool call limits if we have a tool call request
     if (toolCallRequest) {
       const validationResult = validateToolCallLimits(
+        finalThreadMessage,
         threadMessages,
         toolCallCounts,
         toolCallRequest,
@@ -1113,7 +1132,11 @@ export class ThreadsService {
     // We only yield the final response with the tool call request and tool call id set if we did not call a system tool
 
     yield {
-      responseMessageDto: finalThreadMessage,
+      responseMessageDto: {
+        ...finalThreadMessage,
+        content: convertContentPartToDto(finalThreadMessage.content),
+        componentState: finalThreadMessage.componentState ?? {},
+      },
       generationStage: resultingGenerationStage,
       statusMessage: resultingStatusMessage,
     };
