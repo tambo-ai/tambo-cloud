@@ -84,6 +84,7 @@ function createToolCallSignature(toolCallRequest: ToolCallRequest): string {
     }))
     .sort((a, b) => a.parameterName.localeCompare(b.parameterName));
 
+  // TODO: deal with order of keys if data within the parameters themselves are objects
   return JSON.stringify({
     toolName: toolCallRequest.toolName,
     parameters: sortedParams,
@@ -92,21 +93,25 @@ function createToolCallSignature(toolCallRequest: ToolCallRequest): string {
 
 /**
  * Validates tool call limits to prevent infinite loops.
- * @param toolCallCounts - Dictionary mapping tool call signatures to their counts
+ * @param finalThreadMessage - The final thread message that will be added to the thread
+ * @param messages - All messages in the thread (usually from the db)
+ * @param currentToolCounts - Dictionary mapping tool call signatures to their counts, within the current request
  * @param newToolCallRequest - The new tool call request to validate
  * @returns An error message if limits are exceeded, undefined if valid
  */
 function validateToolCallLimits(
   finalThreadMessage: ThreadMessage,
   messages: ThreadMessage[],
-  toolCallCounts: Record<string, number>,
-  newToolCallRequest?: ToolCallRequest,
+  currentToolCounts: Record<string, number>,
+  newToolCallRequest: ToolCallRequest,
 ): string | undefined {
-  if (newToolCallRequest && isIdenticalToolLoop(finalThreadMessage, messages)) {
+  // Handle cases where tool calls are happening across requests - like we're
+  // bouncing to the browser to make tool calls multiple times in a row
+  if (isIdenticalToolLoop(finalThreadMessage, messages)) {
     return `I've detected that I'm making the same tool call repeatedly (${newToolCallRequest.toolName}). This suggests I'm stuck in a loop. Please try a different approach or contact support if this persists.`;
   }
 
-  const totalCalls = Object.values(toolCallCounts).reduce(
+  const totalCalls = Object.values(currentToolCounts).reduce(
     (sum, count) => sum + count,
     0,
   );
@@ -115,13 +120,11 @@ function validateToolCallLimits(
     return `I've reached the maximum number of tool calls (${MAX_TOTAL_TOOL_CALLS}). This usually indicates I'm stuck in a loop. Please try a different approach or contact support if this persists.`;
   }
 
-  if (newToolCallRequest) {
-    const signature = createToolCallSignature(newToolCallRequest);
-    const currentCount = toolCallCounts[signature] || 0;
+  const signature = createToolCallSignature(newToolCallRequest);
+  const currentCount = currentToolCounts[signature] || 0;
 
-    if (currentCount >= MAX_IDENTICAL_TOOL_CALLS) {
-      return `I've detected that I'm making the same tool call repeatedly (${newToolCallRequest.toolName}). This suggests I'm stuck in a loop. Please try a different approach or contact support if this persists.`;
-    }
+  if (currentCount >= MAX_IDENTICAL_TOOL_CALLS) {
+    return `I've detected that I'm making the same tool call repeatedly (${newToolCallRequest.toolName}). This suggests I'm stuck in a loop. Please try a different approach or contact support if this persists.`;
   }
 
   return undefined;
@@ -160,23 +163,22 @@ function isIdenticalToolLoop(
   }
   let identicalToolCallCount = 0;
 
+  const responseToCallerSignature = createToolCallSignature(
+    responseToCaller.toolCallRequest,
+  );
   // Loop backwards through messages
   for (let i = previousMessages.length - 2; i >= 0; i--) {
     const message = previousMessages[i];
 
     // If we hit a message without a tool call, we can stop checking
-    if (!message.tool_call_id) {
+    if (!message.tool_call_id || !message.toolCallRequest) {
       return false;
     }
+    const messageSignature = createToolCallSignature(message.toolCallRequest);
 
     if (
       message.role === "assistant" &&
-      message.toolCallRequest?.toolName ===
-        responseToCaller.toolCallRequest.toolName &&
-      areParametersEqual(
-        message.toolCallRequest.parameters,
-        responseToCaller.toolCallRequest.parameters,
-      )
+      messageSignature === responseToCallerSignature
     ) {
       identicalToolCallCount++;
       if (identicalToolCallCount >= MAX_IDENTICAL_TOOL_CALLS - 1) {
@@ -185,44 +187,6 @@ function isIdenticalToolLoop(
     }
   }
   return false;
-}
-
-/**
- * Compare two parameter objects for equality.
- * @param params1 - First parameter object
- * @param params2 - Second parameter object
- * @returns True if parameters are equal
- */
-function areParametersEqual(params1: unknown, params2: unknown): boolean {
-  // Handle null/undefined cases
-  if (!params1 || !params2) {
-    return params1 === params2;
-  }
-
-  // Sort keys and compare values recursively
-  const sortObject = (
-    obj: Record<string, unknown>,
-  ): Record<string, unknown> => {
-    return Object.keys(obj)
-      .sort()
-      .reduce((result: Record<string, unknown>, key) => {
-        const value = obj[key];
-        result[key] =
-          value && typeof value === "object"
-            ? sortObject(value as Record<string, unknown>)
-            : value;
-        return result;
-      }, {});
-  };
-
-  try {
-    const sortedParams1 = sortObject(params1 as Record<string, unknown>);
-    const sortedParams2 = sortObject(params2 as Record<string, unknown>);
-    return JSON.stringify(sortedParams1) === JSON.stringify(sortedParams2);
-  } catch (_error) {
-    // If we can't sort the objects (e.g., if they're not objects), fall back to direct comparison
-    return JSON.stringify(params1) === JSON.stringify(params2);
-  }
 }
 
 @Injectable()
