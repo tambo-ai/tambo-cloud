@@ -101,7 +101,7 @@ export function CustomInstructionsEditor({
           <div className="min-h-[150px] space-y-3 animate-pulse">
             <div className="min-h-[100px] rounded-md border border-muted bg-muted/50 p-3 space-y-2">
               <div className="h-4 w-full bg-muted rounded" />
-              <div className="h-4 w-4/5 bg-muted rounded" />
+              <div className="h-4 w-[80%] bg-muted rounded" />
               <div className="h-4 w-3/4 bg-muted rounded" />
               <div className="h-4 w-5/6 bg-muted rounded" />
             </div>
