@@ -1,161 +1,83 @@
-import { NextResponse } from "next/server";
+import {
+  validateBasicFormat,
+  type ApiKeyValidationResult,
+} from "@/lib/api-key-validation";
+import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 
-interface ValidateApiKeyRequest {
-  apiKey: string;
-  provider: string;
-  options?: {
-    allowEmpty?: boolean;
-    timeout?: number;
-  };
-}
+const ApiKeyValidationOptionsSchema = z.object({
+  allowEmpty: z.boolean().optional(),
+  timeout: z.number().optional().default(10000),
+});
 
-interface ApiKeyValidationResult {
-  isValid: boolean;
-  error?: string;
-  provider?: string;
-  details?: {
-    note?: string;
-    modelCount?: number;
-    quotaInfo?: any;
-  };
-}
+export const validateRouter = createTRPCRouter({
+  validateApiKey: publicProcedure
+    .input(
+      z.object({
+        apiKey: z.string(),
+        provider: z.string(),
+        options: ApiKeyValidationOptionsSchema.optional().default({}),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { apiKey, provider, options = {} } = input;
+      const { timeout = 10000 } = options as { timeout: number };
 
-export async function POST(req: Request) {
-  try {
-    let parsedBody: ValidateApiKeyRequest;
-    try {
-      parsedBody = await req.json();
-    } catch (e) {
-      console.error("Failed to parse request body:", e);
-      return NextResponse.json(
-        { error: "Invalid request body" },
-        { status: 400 },
-      );
-    }
+      // Validate required fields
+      if (!apiKey || !provider) {
+        const missingFields = [];
+        if (!apiKey) missingFields.push("apiKey");
+        if (!provider) missingFields.push("provider");
 
-    const { apiKey, provider, options = {} } = parsedBody;
-    const { timeout = 10000 } = options;
-
-    // Validate required fields
-    if (!apiKey || !provider) {
-      const missingFields = [];
-      if (!apiKey) missingFields.push("apiKey");
-      if (!provider) missingFields.push("provider");
-
-      return NextResponse.json(
-        { error: "Missing required fields", fields: missingFields },
-        { status: 400 },
-      );
-    }
-
-    // Basic format validation first
-    const basicValidation = validateBasicFormat(apiKey.trim(), provider);
-    if (!basicValidation.isValid) {
-      return NextResponse.json(basicValidation);
-    }
-
-    // Perform provider-specific validation
-    let result: ApiKeyValidationResult;
-    switch (provider.toLowerCase()) {
-      case "openai":
-        result = await validateOpenAIKey(apiKey.trim(), timeout);
-        break;
-      case "anthropic":
-        result = await validateAnthropicKey(apiKey.trim(), timeout);
-        break;
-      case "mistral":
-        result = await validateMistralKey(apiKey.trim(), timeout);
-        break;
-      case "openai-compatible":
-        // Static validation only for OpenAI-compatible providers
-        result = {
-          isValid: true,
-          provider,
-          details: {
-            note: "Format validation only - endpoint structures vary by provider",
-          },
-        };
-        break;
-      default:
-        result = {
-          isValid: true,
-          provider,
-          details: {
-            note: "Dynamic validation not available for this provider - basic format validation only",
-          },
-        };
-    }
-
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error("API key validation error:", error);
-    return NextResponse.json(
-      {
-        isValid: false,
-        error: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      },
-      { status: 500 },
-    );
-  }
-}
-
-// Basic format validation
-function validateBasicFormat(
-  key: string,
-  providerName: string,
-): ApiKeyValidationResult {
-  if (key.length < 8) {
-    return {
-      isValid: false,
-      error: "API key appears to be too short",
-      provider: providerName,
-    };
-  }
-
-  const invalidPatterns = [
-    /^(your|api|key|token|secret|test|demo|example|sample)/i,
-    /\s/,
-    /<|>/,
-    /^[x]+$/i,
-    /\*{3,}/,
-  ];
-
-  for (const pattern of invalidPatterns) {
-    if (pattern.test(key)) {
-      return {
-        isValid: false,
-        error:
-          "API key appears to be a placeholder or contains invalid characters",
-        provider: providerName,
-      };
-    }
-  }
-
-  // Provider-specific basic format checks
-  switch (providerName.toLowerCase()) {
-    case "openai":
-      if (!key.startsWith("sk-")) {
-        return {
-          isValid: false,
-          error: "OpenAI API key must start with 'sk-'",
-          provider: providerName,
-        };
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Missing required fields",
+          cause: { fields: missingFields },
+        });
       }
-      break;
-    case "anthropic":
-      if (!key.startsWith("sk-ant-api03-")) {
-        return {
-          isValid: false,
-          error: "Anthropic API key must start with 'sk-ant-api03-'",
-          provider: providerName,
-        };
-      }
-      break;
-    // No specific format requirements for Mistral or OpenAI-compatible
-  }
 
-  return { isValid: true, provider: providerName };
-}
+      // Basic format validation first
+      const basicValidation = validateBasicFormat(apiKey.trim(), provider);
+      if (!basicValidation.isValid) {
+        return basicValidation;
+      }
+
+      // Perform provider-specific validation
+      let result: ApiKeyValidationResult;
+      switch (provider.toLowerCase()) {
+        case "openai":
+          result = await validateOpenAIKey(apiKey.trim(), timeout);
+          break;
+        case "anthropic":
+          result = await validateAnthropicKey(apiKey.trim(), timeout);
+          break;
+        case "mistral":
+          result = await validateMistralKey(apiKey.trim(), timeout);
+          break;
+        case "openai-compatible":
+          // Static validation only for OpenAI-compatible providers
+          result = {
+            isValid: true,
+            provider,
+            details: {
+              note: "Format validation only - endpoint structures vary by provider",
+            },
+          };
+          break;
+        default:
+          result = {
+            isValid: true,
+            provider,
+            details: {
+              note: "Dynamic validation not available for this provider - basic format validation only",
+            },
+          };
+      }
+
+      return result;
+    }),
+});
 
 // OpenAI validation
 async function validateOpenAIKey(

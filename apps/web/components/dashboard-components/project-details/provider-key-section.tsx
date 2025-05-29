@@ -12,7 +12,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   getProviderKeyRequirements,
-  validateApiKey,
   type ApiKeyValidationResult,
 } from "@/lib/api-key-validation";
 import { api, type RouterOutputs } from "@/trpc/react";
@@ -185,13 +184,22 @@ export function ProviderKeySection({
     }
   }, [projectLlmSettings, llmProviderConfigData]);
 
-  // --- Async API Key Validation Effect ---
+  // --- TRPC Mutation for API Key Validation ---
+  const validateApiKeyMutation = api.validate.validateApiKey.useMutation();
+
+  // --- API Key Validation Effect ---
   useEffect(() => {
     const validateKey = async () => {
       if (!apiKeyInput || !selectedProviderApiName) {
-        setApiKeyValidation({
-          isValid: true,
-          provider: selectedProviderApiName,
+        // Only update if the current state is different
+        setApiKeyValidation((prev) => {
+          if (prev.isValid && prev.provider === selectedProviderApiName) {
+            return prev;
+          }
+          return {
+            isValid: true,
+            provider: selectedProviderApiName,
+          };
         });
         setIsValidatingApiKey(false);
         return;
@@ -199,16 +207,16 @@ export function ProviderKeySection({
 
       setIsValidatingApiKey(true);
       try {
-        const result = await validateApiKey(
-          apiKeyInput,
-          selectedProviderApiName,
-          {
+        const result = await validateApiKeyMutation.mutateAsync({
+          apiKey: apiKeyInput,
+          provider: selectedProviderApiName,
+          options: {
             allowEmpty: ["openai", "openai-compatible"].includes(
               selectedProviderApiName,
             ),
             timeout: 5000,
           },
-        );
+        });
         setApiKeyValidation(result);
       } catch (error) {
         setApiKeyValidation({
@@ -474,42 +482,15 @@ export function ProviderKeySection({
       return;
     }
 
-    // Validate API key before saving
-    if (apiKeyInput.trim() && selectedProviderApiName) {
-      try {
-        const validation = await validateApiKey(
-          apiKeyInput,
-          selectedProviderApiName,
-          {
-            allowEmpty:
-              selectedProviderApiName === "openai" ||
-              selectedProviderApiName === "openai-compatible",
-            timeout: 10000, // Longer timeout for save operation
-          },
-        );
-
-        if (!validation.isValid) {
-          toast({
-            title: "Invalid API Key",
-            description:
-              validation.error || "Please check your API key format.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Show success message if dynamic validation provided additional info
-        if (validation.details?.note) {
-          console.log("API key validation details:", validation.details);
-        }
-      } catch (error) {
-        toast({
-          title: "Validation Error",
-          description: `Failed to validate API key: ${error instanceof Error ? error.message : "Unknown error"}`,
-          variant: "destructive",
-        });
-        return;
-      }
+    // Use existing validation state instead of re-validating
+    if (apiKeyInput.trim() && !apiKeyValidation.isValid) {
+      toast({
+        title: "Invalid API Key",
+        description:
+          apiKeyValidation.error || "Please check your API key format.",
+        variant: "destructive",
+      });
+      return;
     }
 
     // Allow empty key for OpenAI to switch back to free messages
@@ -534,6 +515,7 @@ export function ProviderKeySection({
   }, [
     selectedProviderApiName,
     apiKeyInput,
+    apiKeyValidation,
     addOrUpdateApiKey,
     project?.id,
     toast,

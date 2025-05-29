@@ -1,9 +1,8 @@
 /**
- * API Key Validation Utilities
+ * Shared API Key Validation Utilities
  *
- * This module provides validation for various LLM provider API keys
- * using server-side validation for major providers (OpenAI, Anthropic, Mistral)
- * and static validation for OpenAI-compatible providers.
+ * This module contains validation logic shared between client-side and server-side
+ * validation functions to avoid code duplication.
  */
 
 export interface ApiKeyValidationResult {
@@ -17,111 +16,11 @@ export interface ApiKeyValidationResult {
   };
 }
 
-export interface ApiKeyValidationOptions {
-  allowEmpty?: boolean;
-  timeout?: number; // in milliseconds, default 10000
-  skipDynamicValidation?: boolean; // fallback to basic format check
-}
-
 /**
- * Main validation function that uses server-side validation for major providers
+ * Basic format validation for API keys
+ * Performs client-side validation for immediate feedback without API calls
  */
-export async function validateApiKey(
-  apiKey: string,
-  providerName: string,
-  options: ApiKeyValidationOptions = {},
-): Promise<ApiKeyValidationResult> {
-  const {
-    allowEmpty = false,
-    timeout = 10000,
-    skipDynamicValidation = false,
-  } = options;
-
-  // Handle empty keys
-  if (!apiKey || !apiKey.trim()) {
-    if (allowEmpty) {
-      return { isValid: true, provider: providerName };
-    }
-    return {
-      isValid: false,
-      error: "API key cannot be empty",
-      provider: providerName,
-    };
-  }
-
-  const trimmedKey = apiKey.trim();
-
-  // Basic format validation first (quick client-side check)
-  const basicValidation = validateBasicFormat(trimmedKey, providerName);
-  if (!basicValidation.isValid) {
-    return basicValidation;
-  }
-
-  // Skip dynamic validation if requested or for OpenAI-compatible providers
-  if (
-    skipDynamicValidation ||
-    providerName.toLowerCase() === "openai-compatible"
-  ) {
-    const note =
-      providerName.toLowerCase() === "openai-compatible"
-        ? "Format validation only - endpoint structures vary by provider"
-        : "Basic format validation only";
-
-    return {
-      isValid: true,
-      provider: providerName,
-      details: { note },
-    };
-  }
-
-  // Use server-side validation for major providers only
-  const supportedProviders = ["openai", "anthropic", "mistral"];
-  if (!supportedProviders.includes(providerName.toLowerCase())) {
-    return {
-      isValid: true,
-      provider: providerName,
-      details: {
-        note: "Dynamic validation not available for this provider - basic format validation only",
-      },
-    };
-  }
-
-  try {
-    const response = await fetch("/api/validate-api-key", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        apiKey: trimmedKey,
-        provider: providerName,
-        options: { timeout },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return {
-        isValid: false,
-        error: errorData.error || `Server error: ${response.status}`,
-        provider: providerName,
-      };
-    }
-
-    return await response.json();
-  } catch (error) {
-    return {
-      isValid: false,
-      error: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      provider: providerName,
-    };
-  }
-}
-
-/**
- * Basic format validation (client-side for immediate feedback)
- */
-function validateBasicFormat(
+export function validateBasicFormat(
   key: string,
   providerName: string,
 ): ApiKeyValidationResult {
