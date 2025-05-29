@@ -145,7 +145,6 @@ export function ProviderKeySection({
       isValid: true,
       provider: undefined,
     });
-  const [isValidatingApiKey, setIsValidatingApiKey] = useState(false);
 
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
@@ -186,6 +185,7 @@ export function ProviderKeySection({
 
   // --- TRPC Mutation for API Key Validation ---
   const validateApiKeyMutation = api.validate.validateApiKey.useMutation();
+  const isValidatingApiKey = validateApiKeyMutation.isPending;
 
   // --- API Key Validation Effect ---
   useEffect(() => {
@@ -201,11 +201,9 @@ export function ProviderKeySection({
             provider: selectedProviderApiName,
           };
         });
-        setIsValidatingApiKey(false);
         return;
       }
 
-      setIsValidatingApiKey(true);
       try {
         const result = await validateApiKeyMutation.mutateAsync({
           apiKey: apiKeyInput,
@@ -224,8 +222,6 @@ export function ProviderKeySection({
           error: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
           provider: selectedProviderApiName,
         });
-      } finally {
-        setIsValidatingApiKey(false);
       }
     };
 
@@ -482,7 +478,6 @@ export function ProviderKeySection({
       return;
     }
 
-    // Use existing validation state instead of re-validating
     if (apiKeyInput.trim() && !apiKeyValidation.isValid) {
       toast({
         title: "Invalid API Key",
@@ -495,8 +490,9 @@ export function ProviderKeySection({
 
     // Allow empty key for OpenAI to switch back to free messages
     if (
-      currentProviderConfig?.apiName !== "openai" &&
-      currentProviderConfig?.apiName !== "openai-compatible" &&
+      !["openai", "openai-compatible"].includes(
+        currentProviderConfig?.apiName ?? "",
+      ) &&
       !apiKeyInput.trim()
     ) {
       toast({

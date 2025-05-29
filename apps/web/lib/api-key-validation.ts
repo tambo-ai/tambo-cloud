@@ -25,7 +25,7 @@ export function validateBasicFormat(
   providerName: string,
 ): ApiKeyValidationResult {
   // Basic length check
-  if (key.length < 8) {
+  if (key.length < 15) {
     return {
       isValid: false,
       error: "API key appears to be too short",
