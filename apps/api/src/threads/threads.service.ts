@@ -791,8 +791,8 @@ export class ThreadsService {
     await updateGenerationStage(
       db,
       threadId,
-      GenerationStage.CHOOSING_COMPONENT,
-      `Choosing component...`,
+      GenerationStage.FETCHING_CONTEXT,
+      `Fetching data...`,
     );
     const { originalTools, strictTools } = getToolsFromSources(
       advanceRequestDto.availableComponents ?? [],
