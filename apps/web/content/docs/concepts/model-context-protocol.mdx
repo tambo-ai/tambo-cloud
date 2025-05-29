@@ -34,6 +34,8 @@ Tambo offers two approaches for connecting to MCP servers.
 
 Server-side MCP integration allows you to configure MCP servers at the project level through the Tambo dashboard.
 
+This is the recommended approach for most use cases.
+
 This approach is beneficial when:
 
 - MCP servers need to be shared across all users of your application
@@ -53,6 +55,19 @@ Once configured, the MCP servers will be available to all agents in your project
 **Note:** _When an MCP server is authenticated, the authenticatated user is currently shared across **all** users of the project. In the future Tambo will support per-user authentication._
 
 If your server does not support OAuth-based authentication, you can add a custom header to the MCP server configuration.
+
+This is how server-side MCP works:
+
+```mermaid
+sequenceDiagram
+    Browser->>Tambo: Show me issues in the last 30 days
+    Note over Tambo: Tambo transforms the user's message into a tool call
+    Tambo->>MCP: list_issues({since: '2025-04-29'})
+    MCP->>Tambo: Issues list: [{...}, {...}, {...}]
+    Note over Tambo: Tambo chooses a component
+    Note over Tambo: Tambo reformats the data into component props
+    Tambo->>Browser: "<IssuesTable issues={...} />"
+```
 
 ### 2. Client-Side Support
 
@@ -93,6 +108,25 @@ function MyApp() {
 ```
 
 The `TamboMcpProvider` establishes connections to the specified MCP servers and makes their tools available to Tambo agents in your application.
+
+This is how client-side MCP works:
+
+```mermaid
+sequenceDiagram
+    participant MCP
+    participant Browser
+    participant Tambo
+
+    Browser->>Tambo: "Show me issues in the last 30 days"
+    Note over Tambo: Tambo transforms the user's message into a tool call
+    Tambo->>Browser: Please call tool: `list_issues({since: '2025-04-29'})`
+    Browser->>MCP: `list_issues({since: '2025-04-29'})`
+    MCP->>Browser: Issues list: [{...}, {...}, {...}]
+    Browser->>Tambo: Issues list: [{...}, {...}, {...}]
+    Note over Tambo: Tambo chooses a component
+    Note over Tambo: Tambo reformats the data into component props
+    Tambo->>Browser: "<IssuesTable issues={...} />"
+```
 
 ## Limitations
 
