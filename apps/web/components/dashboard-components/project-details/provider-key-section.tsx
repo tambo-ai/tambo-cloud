@@ -24,7 +24,7 @@ import {
   Loader2,
   Save,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 export const ProviderKeySectionSchema = z
@@ -81,6 +81,9 @@ export function ProviderKeySection({
   onEdited,
 }: ProviderKeySectionProps) {
   const { toast } = useToast();
+
+  // --- Request tracking for API validation race condition prevention ---
+  const requestIdRef = useRef(0);
 
   // --- TRPC API Calls ---
   const { data: llmProviderConfigData, isLoading: isLoadingLlmProviderConfig } =
@@ -205,6 +208,9 @@ export function ProviderKeySection({
       }
 
       try {
+        // Track the current request to prevent race conditions
+        const currentRequest = ++requestIdRef.current;
+
         const result = await validateApiKeyMutation.mutateAsync({
           apiKey: apiKeyInput,
           provider: selectedProviderApiName,
@@ -215,13 +221,23 @@ export function ProviderKeySection({
             timeout: 5000,
           },
         });
-        setApiKeyValidation(result);
+
+        // Only update state if this is still the most recent request
+        if (requestIdRef.current === currentRequest) {
+          setApiKeyValidation(result);
+        }
       } catch (error) {
-        setApiKeyValidation({
-          isValid: false,
-          error: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-          provider: selectedProviderApiName,
-        });
+        // Track the current request for error handling too
+        const currentRequest = requestIdRef.current;
+
+        // Only update state if this is still the most recent request
+        if (requestIdRef.current === currentRequest) {
+          setApiKeyValidation({
+            isValid: false,
+            error: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+            provider: selectedProviderApiName,
+          });
+        }
       }
     };
 

@@ -22,19 +22,34 @@ export const validateRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const { apiKey, provider, options = {} } = input;
-      const { timeout = 10000 } = options as { timeout: number };
+      const { allowEmpty = false, timeout = 10000 } = options as z.infer<
+        typeof ApiKeyValidationOptionsSchema
+      >;
 
       // Validate required fields
-      if (!apiKey || !provider) {
-        const missingFields = [];
-        if (!apiKey) missingFields.push("apiKey");
-        if (!provider) missingFields.push("provider");
-
+      if (!provider) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Missing required fields",
-          cause: { fields: missingFields },
+          message: "Missing required field: provider",
         });
+      }
+
+      // Handle empty API key based on allowEmpty flag
+      if (!apiKey.trim()) {
+        if (allowEmpty) {
+          return {
+            isValid: true,
+            provider,
+            details: {
+              note: "Empty API key accepted for this provider",
+            },
+          };
+        }
+        return {
+          isValid: false,
+          error: "API key cannot be empty",
+          provider,
+        };
       }
 
       // Basic format validation first
