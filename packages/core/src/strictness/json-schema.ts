@@ -84,12 +84,15 @@ export function strictifyJSONSchemaProperty(
   const prop = typeof property === "object" ? property : {};
   const originalKeys = Object.keys(prop);
   const restKeys = Object.keys(restOfProperty);
-  const droppedKeys = originalKeys.filter(
-    (key) =>
-      !restKeys.includes(key) &&
-      prop[key as keyof typeof prop] != null &&
-      prop[key as keyof typeof prop] !== undefined, // filters out null and undefined
-  );
+  const droppedKeys = originalKeys
+    .filter(
+      (key) =>
+        !restKeys.includes(key) &&
+        prop[key as keyof typeof prop] != null &&
+        prop[key as keyof typeof prop] !== undefined, // filters out null and undefined
+    )
+    // default will be handled by the tool call strictifier
+    .filter((key) => key !== "default");
   if (droppedKeys.length > 0) {
     console.warn(
       `Sanitizing JSON dropped key(s) at ${debugKey}: ${droppedKeys.join(", ")}`,

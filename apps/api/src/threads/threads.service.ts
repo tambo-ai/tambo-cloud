@@ -737,11 +737,16 @@ export class ThreadsService {
     customInstructions: string | undefined,
     toolCallCounts: Record<string, number>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
+    const systemToolsStart = Date.now();
     const systemTools = await getSystemTools(
       db,
       projectId,
       null, // right now all provider contexts are stored with null context keys
     );
+    const systemToolsEnd = Date.now();
+    const systemToolsDuration = systemToolsEnd - systemToolsStart;
+    this.logger.log(`System tools took ${systemToolsDuration}ms to fetch`);
+
     const latestMessage = messages[messages.length - 1];
     if (latestMessage.role === MessageRole.Tool) {
       await updateGenerationStage(
