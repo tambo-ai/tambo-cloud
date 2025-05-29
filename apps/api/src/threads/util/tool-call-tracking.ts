@@ -4,21 +4,19 @@ import { ThreadMessage, ToolCallRequest } from "@tambo-ai-cloud/core";
  * The maximum number of identical tool calls we will make. This is to prevent
  * infinite loops.
  */
-export const MAX_IDENTICAL_TOOL_CALLS = 3;
+const MAX_IDENTICAL_TOOL_CALLS = 3;
 
 /**
  * The maximum total number of tool calls we will make. This is to prevent
  * infinite loops.
  */
-export const MAX_TOTAL_TOOL_CALLS = 10;
+const MAX_TOTAL_TOOL_CALLS = 10;
 
 /**
  * Creates a unique signature for a tool call request for tracking purposes.
  * Excludes the tool_call_id as it's not part of the actual tool call logic.
  */
-export function createToolCallSignature(
-  toolCallRequest: ToolCallRequest,
-): string {
+function createToolCallSignature(toolCallRequest: ToolCallRequest): string {
   const sortedParams = toolCallRequest.parameters
     .map(({ parameterName, parameterValue }) => ({
       parameterName,
@@ -95,7 +93,7 @@ export function updateToolCallCounts(
  * @param previousMessages - The messages in the thread.
  * @returns True if we are in an identical tool loop.
  */
-export function isIdenticalToolLoop(
+function isIdenticalToolLoop(
   responseToCaller: ThreadMessage,
   previousMessages: ThreadMessage[],
 ): boolean {
