@@ -10,10 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import {
-  getProviderKeyRequirements,
-  type ApiKeyValidationResult,
-} from "@/lib/api-key-validation";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
@@ -24,7 +20,8 @@ import {
   Loader2,
   Save,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useDebounce } from "use-debounce";
 import { z } from "zod";
 
 export const ProviderKeySectionSchema = z
@@ -82,9 +79,6 @@ export function ProviderKeySection({
 }: ProviderKeySectionProps) {
   const { toast } = useToast();
 
-  // --- Request tracking for API validation race condition prevention ---
-  const requestIdRef = useRef(0);
-
   // --- TRPC API Calls ---
   const { data: llmProviderConfigData, isLoading: isLoadingLlmProviderConfig } =
     api.llm.getLlmProviderConfig.useQuery(undefined, {
@@ -103,13 +97,12 @@ export function ProviderKeySection({
     },
   );
 
-  const { data: messageUsage, isLoading: _isLoadingMessageUsage } =
-    api.project.getProjectMessageUsage.useQuery(
-      { projectId: project?.id ?? "" },
-      {
-        enabled: !!project?.id,
-      },
-    );
+  const { data: messageUsage } = api.project.getProjectMessageUsage.useQuery(
+    { projectId: project?.id ?? "" },
+    {
+      enabled: !!project?.id,
+    },
+  );
 
   const {
     data: storedApiKeys,
@@ -141,13 +134,6 @@ export function ProviderKeySection({
   const [isEditingApiKey, setIsEditingApiKey] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
-
-  // --- API Key Validation State ---
-  const [apiKeyValidation, setApiKeyValidation] =
-    useState<ApiKeyValidationResult>({
-      isValid: true,
-      provider: undefined,
-    });
 
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
@@ -186,65 +172,27 @@ export function ProviderKeySection({
     }
   }, [projectLlmSettings, llmProviderConfigData]);
 
-  // --- TRPC Mutation for API Key Validation ---
-  const validateApiKeyMutation = api.validate.validateApiKey.useMutation();
-  const isValidatingApiKey = validateApiKeyMutation.isPending;
+  // API key validation
+  const [debouncedApiKey] = useDebounce(apiKeyInput, 500);
 
-  // --- API Key Validation Effect ---
-  useEffect(() => {
-    const validateKey = async () => {
-      if (!apiKeyInput || !selectedProviderApiName) {
-        // Only update if the current state is different
-        setApiKeyValidation((prev) => {
-          if (prev.isValid && prev.provider === selectedProviderApiName) {
-            return prev;
-          }
-          return {
-            isValid: true,
-            provider: selectedProviderApiName,
-          };
-        });
-        return;
-      }
-
-      try {
-        // Track the current request to prevent race conditions
-        const currentRequest = ++requestIdRef.current;
-
-        const result = await validateApiKeyMutation.mutateAsync({
-          apiKey: apiKeyInput,
-          provider: selectedProviderApiName,
-          options: {
-            allowEmpty: ["openai", "openai-compatible"].includes(
-              selectedProviderApiName,
-            ),
-            timeout: 5000,
-          },
-        });
-
-        // Only update state if this is still the most recent request
-        if (requestIdRef.current === currentRequest) {
-          setApiKeyValidation(result);
-        }
-      } catch (error) {
-        // Track the current request for error handling too
-        const currentRequest = requestIdRef.current;
-
-        // Only update state if this is still the most recent request
-        if (requestIdRef.current === currentRequest) {
-          setApiKeyValidation({
-            isValid: false,
-            error: `Validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-            provider: selectedProviderApiName,
-          });
-        }
-      }
-    };
-
-    // Debounce the validation to avoid excessive API calls
-    const timeoutId = setTimeout(validateKey, 500);
-    return () => clearTimeout(timeoutId);
-  }, [apiKeyInput, selectedProviderApiName]);
+  const { data: apiKeyValidation, isFetching: isValidatingApiKey } =
+    api.validate.validateApiKey.useQuery(
+      {
+        apiKey: debouncedApiKey,
+        provider: selectedProviderApiName ?? "",
+        options: {
+          allowEmpty: ["openai", "openai-compatible"].includes(
+            selectedProviderApiName ?? "",
+          ),
+          timeout: 5000,
+        },
+      },
+      {
+        enabled: !!selectedProviderApiName && !!debouncedApiKey,
+        staleTime: 30000,
+        retry: false,
+      },
+    );
 
   // --- TRPC Mutations ---
   const { mutate: updateLlmSettings, isPending: isSavingDefaults } =
@@ -494,11 +442,11 @@ export function ProviderKeySection({
       return;
     }
 
-    if (apiKeyInput.trim() && !apiKeyValidation.isValid) {
+    if (apiKeyInput.trim() && apiKeyValidation && !apiKeyValidation.isValid) {
       toast({
         title: "Invalid API Key",
         description:
-          apiKeyValidation.error || "Please check your API key format.",
+          apiKeyValidation.error || "Please make sure you have a valid api key",
         variant: "destructive",
       });
       return;
@@ -822,7 +770,7 @@ export function ProviderKeySection({
                           }
                           autoFocus
                           className={`w-full font-sans pr-8 ${
-                            !apiKeyValidation.isValid && apiKeyInput
+                            !apiKeyValidation?.isValid && apiKeyInput
                               ? "border-destructive"
                               : ""
                           }`}
@@ -833,18 +781,10 @@ export function ProviderKeySection({
                           </div>
                         )}
                       </div>
-                      {selectedProviderApiName && (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {
-                            getProviderKeyRequirements(selectedProviderApiName)
-                              .description
-                          }
-                        </p>
-                      )}
                     </div>
 
                     {/* Validation feedback */}
-                    {apiKeyInput && (
+                    {apiKeyInput && apiKeyValidation && (
                       <div className="space-y-1">
                         {!apiKeyValidation.isValid && (
                           <p className="text-sm text-destructive">
@@ -889,7 +829,7 @@ export function ProviderKeySection({
                             currentProviderConfig?.apiName !== "openai" &&
                             currentProviderConfig?.apiName !==
                               "openai-compatible") ||
-                          (!apiKeyValidation.isValid && !!apiKeyInput.trim())
+                          (!apiKeyValidation?.isValid && !!apiKeyInput.trim())
                         }
                       >
                         {isUpdatingApiKey ? (
