@@ -1,4 +1,4 @@
-import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -45,7 +45,7 @@ const PROVIDER_CONFIGS = {
 } as const;
 
 export const validateRouter = createTRPCRouter({
-  validateApiKey: publicProcedure
+  validateApiKey: protectedProcedure
     .input(
       z.object({
         apiKey: z.string(),
@@ -81,12 +81,11 @@ export const validateRouter = createTRPCRouter({
         };
       }
 
-      const providerKey = provider.toLowerCase();
       const config =
-        PROVIDER_CONFIGS[providerKey as keyof typeof PROVIDER_CONFIGS];
+        PROVIDER_CONFIGS[provider as keyof typeof PROVIDER_CONFIGS];
 
       if (!config) {
-        if (providerKey === "openai-compatible") {
+        if (provider === "openai-compatible") {
           return {
             isValid: true,
             provider,
