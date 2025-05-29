@@ -24,7 +24,7 @@ export function strictifyJSONSchemaProperties(
         strictifyJSONSchemaProperty(
           value,
           requiredProperties.includes(key),
-          debugKey ? `${debugKey}.${key}` : key,
+          debugKey ? `${debugKey}.${key}` : `$.${key}`,
         ),
       ] as const;
     }),
@@ -92,7 +92,7 @@ export function strictifyJSONSchemaProperty(
   );
   if (droppedKeys.length > 0) {
     console.warn(
-      `Sanitizing JSON dropped keys at ${debugKey}: ${droppedKeys.join(", ")}`,
+      `Sanitizing JSON dropped key(s) at ${debugKey}: ${droppedKeys.join(", ")}`,
     );
   }
 
