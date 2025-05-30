@@ -285,8 +285,10 @@ const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
               <div
                 id={toolDetailsId}
                 className={cn(
-                  "flex flex-col gap-1 pl-4 overflow-hidden transition-all duration-300",
-                  isToolcallExpanded ? "h-auto opacity-100" : "h-0 opacity-0",
+                  "flex flex-col gap-1 pl-4 overflow-hidden transition-[max-height,opacity] duration-300",
+                  isToolcallExpanded
+                    ? "max-h-96 opacity-100"
+                    : "max-h-0 opacity-0",
                 )}
               >
                 <span>tool: {message.toolCallRequest?.toolName}</span>
