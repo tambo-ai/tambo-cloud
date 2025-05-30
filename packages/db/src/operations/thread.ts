@@ -28,7 +28,7 @@ export async function createThread(
       projectId,
       contextKey,
       metadata,
-      name: name,
+      name,
     })
     .returning();
 
