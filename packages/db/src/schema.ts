@@ -249,6 +249,7 @@ export const threads = pgTable(
       .notNull()
       .unique()
       .default(sql`generate_custom_id('thr_')`),
+    name: text("name").notNull().default("new thread"),
     projectId: text("project_id")
       .references(() => projects.id)
       .notNull(),
