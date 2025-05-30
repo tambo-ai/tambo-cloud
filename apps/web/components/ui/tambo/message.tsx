@@ -9,6 +9,7 @@ import { Check, ChevronDown, ExternalLink, Loader2, X } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
+import stringify from "json-stringify-pretty-compact";
 
 /**
  * CSS variants for the message container
@@ -293,8 +294,7 @@ const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
               >
                 <span>tool: {message.toolCallRequest?.toolName}</span>
                 <span>
-                  parameters:{" "}
-                  {JSON.stringify(message.toolCallRequest?.parameters)}
+                  parameters: {stringify(message.toolCallRequest?.parameters)}
                 </span>
               </div>
             </div>
