@@ -5,20 +5,19 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
 import { LLMClient, LLMResponse } from "../llm/llm-client";
 
-const nameLengthLimit = 20;
+const nameLengthLimit = 30;
 
 const ThreadNameSchema = z.object({
-  name: z.string().max(nameLengthLimit).describe(`The name for the thread.
-      It should be no more than ${nameLengthLimit} characters.
-      Do not include any other text than the name, and do not include quotes.`),
+  name: z.string().max(nameLengthLimit)
+    .describe(`The name to use for the thread.
+      It should be less than ${nameLengthLimit} characters.`),
 });
 
 export const threadNameTool: ChatCompletionTool = {
   type: "function",
   function: {
     name: "generate_thread_name",
-    description:
-      "Generate a name for the thread which summarizes the conversation and can be used to identify the thread.",
+    description: `Generate a short name for the thread which summarizes the conversation and can be used to identify the thread. When completed, the name should be no more than ${nameLengthLimit} characters.`,
     strict: true,
     parameters: zodToJsonSchema(ThreadNameSchema) as FunctionParameters,
   },
