@@ -88,6 +88,11 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
               >
                 Created
               </TableHead>
+              {!compact && (
+                <TableHead className={headerClass}>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
