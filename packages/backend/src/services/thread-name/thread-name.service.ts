@@ -6,6 +6,13 @@ import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-me
 import { LLMClient, LLMResponse } from "../llm/llm-client";
 
 const nameLengthLimit = 20;
+
+const ThreadNameSchema = z.object({
+  name: z.string().max(nameLengthLimit).describe(`The name for the thread.
+      It should be no more than ${nameLengthLimit} characters.
+      Do not include any other text than the name, and do not include quotes.`),
+});
+
 export const threadNameTool: ChatCompletionTool = {
   type: "function",
   function: {
@@ -13,13 +20,7 @@ export const threadNameTool: ChatCompletionTool = {
     description:
       "Generate a name for the thread which summarizes the conversation and can be used to identify the thread.",
     strict: true,
-    parameters: zodToJsonSchema(
-      z.object({
-        name: z.string().describe(`The name for the thread.
-            It should be no more than ${nameLengthLimit} characters.
-            Do not include any other text than the name, and do not include quotes.`),
-      }),
-    ) as FunctionParameters,
+    parameters: zodToJsonSchema(ThreadNameSchema) as FunctionParameters,
   },
 };
 
@@ -43,14 +44,19 @@ export async function generateThreadName(
     stream: false,
   });
 
-  return await extractThreadName(response);
+  return extractThreadName(response);
 }
 
-async function extractThreadName(response: LLMResponse) {
+function extractThreadName(response: LLMResponse) {
   const extractedName = response.message.tool_calls?.[0].function.arguments;
   if (!extractedName) {
-    throw new Error("Thread name could not be extracted from response");
+    throw new Error("Thread name could not be generated");
   }
-  const parsedName = JSON.parse(extractedName);
-  return parsedName.name;
+  try {
+    const parsedName = ThreadNameSchema.parse(JSON.parse(extractedName));
+    return parsedName.name;
+  } catch (error) {
+    console.error(error);
+    throw new Error("Thread name could not be parsed from response");
+  }
 }
