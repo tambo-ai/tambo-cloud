@@ -468,8 +468,11 @@ export class ThreadsService {
     threadId: string,
     projectId: string,
   ): Promise<Thread> {
-    const thread = await this.findOne(threadId, projectId);
-    const name = await generateThreadName(thread.messages);
+    const messages = await this.getMessages(threadId, true);
+    const tamboBackend = await this.getHydraBackend(threadId);
+    const name = await tamboBackend.generateThreadName(
+      messages as ThreadMessage[],
+    );
     const updatedThread = await this.update(threadId, { projectId, name });
     return {
       ...updatedThread,
