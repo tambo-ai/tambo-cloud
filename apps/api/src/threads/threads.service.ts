@@ -464,6 +464,23 @@ export class ThreadsService {
     }
   }
 
+  async generateThreadName(
+    threadId: string,
+    projectId: string,
+  ): Promise<Thread> {
+    const thread = await this.findOne(threadId, projectId);
+    const name = await generateThreadName(thread.messages);
+    const updatedThread = await this.update(threadId, { projectId, name });
+    return {
+      ...updatedThread,
+      contextKey: updatedThread.contextKey ?? undefined,
+      metadata: updatedThread.metadata ?? undefined,
+      generationStage: updatedThread.generationStage,
+      statusMessage: updatedThread.statusMessage ?? undefined,
+      name: updatedThread.name ?? undefined,
+    };
+  }
+
   async updateComponentState(
     messageId: string,
     newState: Record<string, unknown>,

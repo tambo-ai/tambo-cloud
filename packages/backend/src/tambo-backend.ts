@@ -88,6 +88,17 @@ export default class TamboBackend {
       params.forceToolChoice,
     );
   }
+
+  /**
+   * Generates a 'summary' name for a thread based on the messages in the thread
+   * @param messages - The messages in the thread
+   * @returns A name for the thread
+   */
+  public async generateThreadName(messages: ThreadMessage[]): Promise<string> {
+    // return generateThreadName(messages);
+    console.log(messages);
+    return "Test name";
+  }
 }
 
 /**
