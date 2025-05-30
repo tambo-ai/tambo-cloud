@@ -1,21 +1,27 @@
-import { objectTemplate } from "@libretto/openai";
-import {
-  ChatCompletionMessageParam,
-  ThreadMessage,
-} from "@tambo-ai-cloud/core";
+import { ThreadMessage } from "@tambo-ai-cloud/core";
+import { ChatCompletionTool, FunctionParameters } from "openai/resources/index";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
-import { getLLMResponseMessage, LLMClient } from "../llm/llm-client";
+import { LLMClient, LLMResponse } from "../llm/llm-client";
 
 const nameLengthLimit = 20;
-const systemPrompt = `
-You are a machine that generates a name for a thread.
-
-The name should be a short, descriptive phrase that captures the essence of the thread.
-
-the name should be no more than ${nameLengthLimit} characters
-`;
-
-const finalPrompt = `Please generate a name for the thread.`;
+export const threadNameTool: ChatCompletionTool = {
+  type: "function",
+  function: {
+    name: "generate_thread_name",
+    description:
+      "Generate a name for the thread which summarizes the conversation and can be used to identify the thread.",
+    strict: true,
+    parameters: zodToJsonSchema(
+      z.object({
+        name: z.string().describe(`The name for the thread.
+            It should be no more than ${nameLengthLimit} characters.
+            Do not include any other text than the name, and do not include quotes.`),
+      }),
+    ) as FunctionParameters,
+  },
+};
 
 export async function generateThreadName(
   llmClient: LLMClient,
@@ -23,20 +29,28 @@ export async function generateThreadName(
 ) {
   const chatCompletionMessages =
     threadMessagesToChatCompletionMessageParam(messages);
-  const promptMessages = objectTemplate<ChatCompletionMessageParam[]>([
-    { role: "system", content: systemPrompt },
-    ...chatCompletionMessages,
-    { role: "user", content: finalPrompt },
-  ]);
   const response = await llmClient.complete({
-    messages: promptMessages,
-    promptTemplateName: "suggestion-generation",
+    messages: chatCompletionMessages,
+    promptTemplateName: "thread-name-generation",
     promptTemplateParams: {},
-    tools: [],
+    tools: [threadNameTool],
+    tool_choice: {
+      type: "function",
+      function: {
+        name: "generate_thread_name",
+      },
+    },
     stream: false,
   });
 
-  const extractedResponse = getLLMResponseMessage(response);
-  console.log(extractedResponse);
-  return "Test name";
+  return await extractThreadName(response);
+}
+
+async function extractThreadName(response: LLMResponse) {
+  const extractedName = response.message.tool_calls?.[0].function.arguments;
+  if (!extractedName) {
+    throw new Error("Thread name could not be extracted from response");
+  }
+  const parsedName = JSON.parse(extractedName);
+  return parsedName.name;
 }
