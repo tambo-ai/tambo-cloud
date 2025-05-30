@@ -154,11 +154,13 @@ export class ThreadsService {
       projectId: createThreadDto.projectId,
       contextKey: createThreadDto.contextKey,
       metadata: createThreadDto.metadata,
+      name: createThreadDto.name,
     });
     return {
       id: thread.id,
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,
+      name: thread.name ?? undefined,
       contextKey: thread.contextKey ?? undefined,
       metadata: thread.metadata ?? undefined,
       generationStage: thread.generationStage,
@@ -185,6 +187,7 @@ export class ThreadsService {
       generationStage: thread.generationStage,
       statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
+      name: thread.name ?? undefined,
     }));
   }
 
@@ -217,6 +220,7 @@ export class ThreadsService {
       generationStage: thread.generationStage,
       statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
+      name: thread.name ?? undefined,
       messages: thread.messages.map((message) => ({
         id: message.id,
         threadId: message.threadId,
@@ -240,6 +244,7 @@ export class ThreadsService {
       metadata: updateThreadDto.metadata,
       generationStage: updateThreadDto.generationStage,
       statusMessage: updateThreadDto.statusMessage,
+      name: updateThreadDto.name,
     });
     return thread;
   }
@@ -457,6 +462,26 @@ export class ThreadsService {
         availableComponents: generateSuggestionsDto.availableComponents,
       });
     }
+  }
+
+  async generateThreadName(
+    threadId: string,
+    projectId: string,
+  ): Promise<Thread> {
+    const messages = await this.getMessages(threadId, true);
+    const tamboBackend = await this.getHydraBackend(threadId);
+    const name = await tamboBackend.generateThreadName(
+      messages as ThreadMessage[],
+    );
+    const updatedThread = await this.update(threadId, { projectId, name });
+    return {
+      ...updatedThread,
+      contextKey: updatedThread.contextKey ?? undefined,
+      metadata: updatedThread.metadata ?? undefined,
+      generationStage: updatedThread.generationStage,
+      statusMessage: updatedThread.statusMessage ?? undefined,
+      name: updatedThread.name ?? undefined,
+    };
   }
 
   async updateComponentState(
