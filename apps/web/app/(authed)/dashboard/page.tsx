@@ -10,6 +10,7 @@ import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CreateProjectDialog } from "../../../components/dashboard-components/create-project-dialog";
 import { ProjectTable } from "../../../components/dashboard-components/project-table";
+import { ComponentsThemeProvider } from "@/providers/components-theme-provider";
 
 // Animation variants
 const containerVariants = {
@@ -113,31 +114,37 @@ export default function DashboardPage() {
   }
 
   return (
-    <motion.div initial="hidden" animate="visible" variants={containerVariants}>
-      <>
-        <motion.div
-          className="flex items-center justify-between pb-4"
-          variants={itemVariants}
-        >
-          <h1 className="text-2xl font-heading font-bold">Projects</h1>
-          <Button
-            onClick={() => setIsCreateDialogOpen(true)}
-            className="text-sm px-4 gap-2"
-            variant="default"
+    <ComponentsThemeProvider defaultTheme="light">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <>
+          <motion.div
+            className="flex items-center justify-between pb-4"
+            variants={itemVariants}
           >
-            <Plus className="h-4 w-4" />
-            Create Project
-          </Button>
-        </motion.div>
-        <motion.div variants={itemVariants}>
-          <ProjectTable projects={projects || []} />
-        </motion.div>
-        <CreateProjectDialog
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-          onSubmit={handleCreateProject}
-        />
-      </>
-    </motion.div>
+            <h1 className="text-2xl font-heading font-bold">Projects</h1>
+            <Button
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="text-sm px-4 gap-2"
+              variant="default"
+            >
+              <Plus className="h-4 w-4" />
+              Create Project
+            </Button>
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <ProjectTable projects={projects || []} />
+          </motion.div>
+          <CreateProjectDialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            onSubmit={handleCreateProject}
+          />
+        </>
+      </motion.div>
+    </ComponentsThemeProvider>
   );
 }

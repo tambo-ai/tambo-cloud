@@ -68,7 +68,7 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
   };
 
   return (
-    <div className="rounded-md border w-full overflow-hidden">
+    <div className="rounded-md border w-full overflow-hidden bg-background">
       <div className="overflow-x-auto">
         <Table className="w-full">
           <TableHeader>
@@ -119,7 +119,7 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
                 return (
                   <TableRow
                     key={projectId || `project-${index}`}
-                    className="hover:bg-accent/5"
+                    className="hover:bg-container"
                   >
                     <TableCell
                       className={`${cellClass} font-medium ${compact ? "px-4" : ""}`}
@@ -156,7 +156,7 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
                       </div>
                     </TableCell>
                     <TableCell
-                      className={`${cellClass} text-muted-foreground ${compact ? "px-4 hidden md:table-cell text-primary" : "text-sm"}`}
+                      className={`${cellClass} text-primary ${compact ? "px-4 hidden md:table-cell text-primary" : "text-sm"}`}
                     >
                       {formatDate(project.createdAt)}
                     </TableCell>
@@ -167,7 +167,7 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="flex items-center gap-1"
+                              className="flex items-center gap-1 hover:bg-backdrop"
                               asChild
                             >
                               <Link href={`/dashboard/${projectId}`}>

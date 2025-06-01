@@ -80,7 +80,7 @@ export function InstallationSteps() {
               href={`/docs/getting-started/quickstart${
                 activeTab === "template" ? "#template" : "#existing-app"
               }`}
-              className="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary/80 text-black rounded-lg font-sans text-sm font-medium transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary/80 text-white rounded-lg font-sans text-sm font-medium transition-colors"
             >
               view full installation guide
             </Link>

@@ -15,6 +15,7 @@ import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useCallback, useState } from "react";
+import { ComponentsThemeProvider } from "@/providers/components-theme-provider";
 
 interface ProjectPageClientProps {
   projectId: string;
@@ -116,80 +117,82 @@ export function ProjectPage({ projectId }: ProjectPageClientProps) {
   }
 
   return (
-    <motion.div
-      className="flex flex-col"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      {/* Main Content Area */}
-      <div className="space-y-6 mb-6">
-        <motion.div variants={itemVariants}>
-          <ProjectInfo
-            project={project}
-            createdAt={new Date(project.createdAt).toLocaleDateString()}
-          />
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <ComponentsThemeProvider defaultTheme="light">
+      <motion.div
+        className="flex flex-col"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        {/* Main Content Area */}
+        <div className="space-y-6 mb-6">
           <motion.div variants={itemVariants}>
-            <ProviderKeySection project={project} />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <APIKeyList project={project} />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            <CustomInstructionsEditor
+            <ProjectInfo
               project={project}
-              onEdited={handleRefreshProject}
+              createdAt={new Date(project.createdAt).toLocaleDateString()}
             />
           </motion.div>
-          <motion.div variants={itemVariants}>
-            <AvailableMcpServers project={project} />
-          </motion.div>
-          <motion.div variants={itemVariants}>
-            {project.composioEnabled && <AvailableTools project={project} />}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <motion.div variants={itemVariants}>
+              <ProviderKeySection project={project} />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <APIKeyList project={project} />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <CustomInstructionsEditor
+                project={project}
+                onEdited={handleRefreshProject}
+              />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <AvailableMcpServers project={project} />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              {project.composioEnabled && <AvailableTools project={project} />}
+            </motion.div>
+          </div>
+          <motion.div className="pt-2" variants={itemVariants}>
+            <Separator className="mb-4" />
+            <div className="bg-destructive/5 p-4 rounded-md border border-destructive/20">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <h4 className="text-sm font-heading font-semibold text-destructive">
+                  Danger Zone
+                </h4>
+              </div>
+              <p className="text-xs font-sans text-muted-foreground mb-3">
+                Deleting this project will permanently remove all associated
+                data, API keys, and settings. This action cannot be undone.
+              </p>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2 font-sans"
+                onClick={() =>
+                  setAlertState({
+                    show: true,
+                    title: "Delete Project",
+                    description:
+                      "Are you sure you want to delete this project? This action cannot be undone.",
+                  })
+                }
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-4 w-4" />
+                {isDeleting ? "Deleting..." : "Delete Project"}
+              </Button>
+            </div>
           </motion.div>
         </div>
-        <motion.div className="pt-2" variants={itemVariants}>
-          <Separator className="mb-4" />
-          <div className="bg-destructive/5 p-4 rounded-md border border-destructive/20">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              <h4 className="text-sm font-heading font-semibold text-destructive">
-                Danger Zone
-              </h4>
-            </div>
-            <p className="text-xs font-sans text-muted-foreground mb-3">
-              Deleting this project will permanently remove all associated data,
-              API keys, and settings. This action cannot be undone.
-            </p>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="gap-2 font-sans"
-              onClick={() =>
-                setAlertState({
-                  show: true,
-                  title: "Delete Project",
-                  description:
-                    "Are you sure you want to delete this project? This action cannot be undone.",
-                })
-              }
-              disabled={isDeleting}
-            >
-              <Trash2 className="h-4 w-4" />
-              {isDeleting ? "Deleting..." : "Delete Project"}
-            </Button>
-          </div>
-        </motion.div>
-      </div>
 
-      <DeleteAlertDialog
-        alertState={alertState}
-        setAlertState={setAlertState}
-        onConfirm={handleDeleteProject}
-      />
-    </motion.div>
+        <DeleteAlertDialog
+          alertState={alertState}
+          setAlertState={setAlertState}
+          onConfirm={handleDeleteProject}
+        />
+      </motion.div>
+    </ComponentsThemeProvider>
   );
 }

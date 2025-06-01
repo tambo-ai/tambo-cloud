@@ -5,7 +5,7 @@ export function GitHubLink({ href, text }: { href: string; text: string }) {
   return (
     <Link
       href={href}
-      className="flex items-center space-x-2 rounded-lg bg-secondary/80 px-3 py-2 text-sm font-medium text-secondary-foreground ring-1 ring-inset ring-secondary hover:bg-secondary/90 transition-colors whitespace-nowrap"
+      className="flex items-center space-x-2 rounded-lg px-3 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 ring-1 ring-inset ring-secondary transition-colors whitespace-nowrap"
       target="_blank"
       rel="noopener noreferrer"
     >
