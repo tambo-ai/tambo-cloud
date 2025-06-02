@@ -26,10 +26,10 @@
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.0.0",
+    "lint-staged": "^16.1.0",
     "prettier": "^3.5.3",
     "tsx": "^4.19.4",
-    "turbo": "^2.5.3",
+    "turbo": "^2.5.4",
     "typescript": "^5.8.3"
   },
   "workspaces": [
@@ -45,5 +45,5 @@
     "npm": "10.9.2"
   },
   "packageManager": "npm@10.9.2",
-  "version": "0.61.2"
+  "version": "0.61.3"
 }
