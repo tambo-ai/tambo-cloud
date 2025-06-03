@@ -4,7 +4,7 @@ import { Section } from "@/components/section";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { ExternalLinkIcon, EyeIcon } from "lucide-react";
+import { EyeIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -54,14 +54,14 @@ export function Showcase() {
 
         {/* Content */}
         <motion.div
-          className="flex-1 text-center lg:text-left"
+          className="flex-1 text-center lg:text-left space-y-4 sm:space-y-6"
           initial={{ opacity: 0, x: -20 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease }}
         >
           <motion.h2
-            className="text-3xl sm:text-4xl md:text-5xl font-heading mb-4 sm:mb-6 tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-heading tracking-tight"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -71,7 +71,7 @@ export function Showcase() {
           </motion.h2>
 
           <motion.p
-            className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl lg:max-w-none"
+            className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl lg:max-w-none"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -96,7 +96,10 @@ export function Showcase() {
                 "text-base flex items-center gap-2 py-3 px-6 rounded-md justify-center hover:scale-105 transition-transform",
               )}
             >
-              <showcaseContent.cta.primary.icon className="h-4 w-4" />
+              {(() => {
+                const Icon = showcaseContent.cta.primary.icon;
+                return <Icon className="h-4 w-4" />;
+              })()}
               {showcaseContent.cta.primary.text}
             </Link>
           </motion.div>
