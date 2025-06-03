@@ -47,7 +47,6 @@ export async function callSystemTool(
         p.parameterValue,
       ]),
     );
-    console.log("calling tool", toolCallRequest.toolName, params);
     const result = await toolSource.callTool(toolCallRequest.toolName, params);
     const responseContent =
       typeof result === "string"
