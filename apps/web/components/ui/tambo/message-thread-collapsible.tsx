@@ -31,6 +31,7 @@ import { XIcon } from "lucide-react";
 import Image from "next/image";
 import { Collapsible } from "radix-ui";
 import * as React from "react";
+import { useTamboManagementTools } from "./chatwithtambo/tools";
 
 /**
  * Props for the MessageThreadCollapsible component
@@ -180,6 +181,7 @@ export const MessageThreadCollapsible = React.forwardRef<
   MessageThreadCollapsibleProps
 >(({ className, contextKey, defaultOpen = false, variant, ...props }, ref) => {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  useTamboManagementTools();
 
   const handleThreadChange = React.useCallback(() => {
     setIsOpen(true);

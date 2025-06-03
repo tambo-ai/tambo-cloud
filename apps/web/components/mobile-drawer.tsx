@@ -1,3 +1,6 @@
+"use client";
+
+import { LogoutButton } from "@/components/auth/logout-button";
 import { Icons } from "@/components/icons";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -56,16 +59,7 @@ export function MobileDrawer({
               Dashboard
             </Link>
           )}
-          {showLogoutButton && (
-            <button
-              className={cn(
-                buttonVariants({ variant: "ghost" }),
-                "justify-start text-base w-full",
-              )}
-            >
-              Logout
-            </button>
-          )}
+          {showLogoutButton && <LogoutButton mobile={true} />}
         </div>
         <DrawerFooter>
           <Link
