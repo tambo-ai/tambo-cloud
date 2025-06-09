@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { GitHubLink } from "@/components/ui/github-link";
 import { DiscordLink } from "@/components/ui/discord-link";
 import { cn } from "@/lib/utils";
+import { siteConfig } from "@/config/site";
 import Link from "next/link";
 
 interface HeaderActionsProps {
