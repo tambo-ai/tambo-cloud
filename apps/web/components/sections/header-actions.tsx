@@ -3,6 +3,7 @@
 import { LogoutButton } from "@/components/auth/logout-button";
 import { buttonVariants } from "@/components/ui/button";
 import { GitHubLink } from "@/components/ui/github-link";
+import { DiscordLink } from "@/components/ui/discord-link";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -26,7 +27,8 @@ export function HeaderActions({
       >
         Docs
       </Link>
-      <GitHubLink href="https://github.com/tambo-ai/tambo" text="Github" />
+      <GitHubLink href={siteConfig.links.github} text="Github" />
+      <DiscordLink href={siteConfig.links.discord} text="Discord" />
       {showDashboardButton && (
         <Link
           href="/dashboard"
