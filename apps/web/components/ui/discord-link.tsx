@@ -1,7 +1,13 @@
 import { Icons } from "@/components/icons";
 import Link from "next/link";
+import type { FC } from "react";
 
-export function DiscordLink({ href, text }: { href: string; text: string }) {
+interface DiscordLinkProps {
+  href: string;
+  text: string;
+}
+
+export const DiscordLink: FC<DiscordLinkProps> = ({ href, text }) => {
   return (
     <Link
       href={href}
@@ -13,4 +19,4 @@ export function DiscordLink({ href, text }: { href: string; text: string }) {
       <span>{text}</span>
     </Link>
   );
-}
+};
