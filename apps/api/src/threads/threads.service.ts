@@ -1149,14 +1149,18 @@ export class ThreadsService {
       tool_call_id: undefined,
       actionType: undefined,
     };
-    await operations.updateThreadGenerationStatus(
-      this.getDb(),
-      threadId,
-      GenerationStage.COMPLETE,
-      "Tool call limit reached",
-    );
+    // Perform both operations in a single transaction
+    return await this.getDb().transaction(async (tx) => {
+      // Update thread generation status
+      await operations.updateThreadGenerationStatus(
+        tx,
+        threadId,
+        GenerationStage.COMPLETE,
+        "Tool call limit reached",
+      );
 
-    // Update the message in the database
-    return await updateMessage(this.getDb(), messageId, updatedMessage);
+      // Update the message and return the result
+      return await updateMessage(tx, messageId, updatedMessage);
+    });
   }
 }
