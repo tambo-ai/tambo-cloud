@@ -1,8 +1,15 @@
 {
-  "name": "@tambo-ai/mcp-proxy",
+  "name": "@tambo-ai-cloud/mcp-proxy",
   "version": "0.0.1",
   "description": "A proxy for Tambo that connects to all known MCP servers for a given project",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "build:esm": "tsc --project tsconfig.esm.json",
