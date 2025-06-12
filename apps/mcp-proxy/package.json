@@ -1,0 +1,20 @@
+{
+  "name": "@tambo-ai/mcp-proxy",
+  "version": "0.0.1",
+  "description": "A proxy for Tambo that connects to all known MCP servers for a given project",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "build:esm": "tsc --project tsconfig.esm.json",
+    "start": "node dist/index.js",
+    "lint": "eslint",
+    "test": "jest",
+    "check-types": "tsc --noEmit"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "typescript": "^5.8.3"
+  }
+}
