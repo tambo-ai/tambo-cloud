@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  type CallToolRequest,
+} from "@modelcontextprotocol/sdk/types.js";
 import { Command } from "commander";
 import express from "express";
 import { McpServiceRegistry } from "./mcp-service.js";
@@ -44,8 +49,28 @@ const server = new Server(
   },
 );
 
-// Setup server with all registered services
-serviceRegistry.setupServer(server);
+// Setup server request handlers
+// Handle list tools request
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: serviceRegistry.getAllTools(),
+  };
+});
+
+// Handle call tool request
+server.setRequestHandler(
+  CallToolRequestSchema,
+  async (request: CallToolRequest) => {
+    const { name, arguments: args } = request.params;
+
+    const handler = serviceRegistry.getHandler(name);
+    if (!handler) {
+      throw new Error(`Unknown tool: ${name}`);
+    }
+
+    return await handler(args);
+  },
+);
 
 // Start the server using the utilities
 async function main() {
@@ -62,6 +87,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("Fatal error in main():", error);
+  console.error("Failed to start server:", error);
   process.exit(1);
 });

@@ -1,10 +1,4 @@
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  type CallToolRequest,
-  type Tool,
-} from "@modelcontextprotocol/sdk/types.js";
+import { type Tool } from "@modelcontextprotocol/sdk/types.js";
 
 // Generic tool handler type
 export type ToolHandler = (args: any) => Promise<{
@@ -49,31 +43,6 @@ export class McpServiceRegistry {
   // Get handler for a specific tool
   getHandler(toolName: string): ToolHandler | undefined {
     return this.toolHandlers[toolName];
-  }
-
-  // Setup MCP server with all registered services
-  setupServer(server: Server): void {
-    // Handle list tools request
-    server.setRequestHandler(ListToolsRequestSchema, async () => {
-      return {
-        tools: this.getAllTools(),
-      };
-    });
-
-    // Handle call tool request
-    server.setRequestHandler(
-      CallToolRequestSchema,
-      async (request: CallToolRequest) => {
-        const { name, arguments: args } = request.params;
-
-        const handler = this.getHandler(name);
-        if (!handler) {
-          throw new Error(`Unknown tool: ${name}`);
-        }
-
-        return await handler(args);
-      },
-    );
   }
 
   // Get registered services info
