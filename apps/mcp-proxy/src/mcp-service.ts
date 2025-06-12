@@ -1,10 +1,15 @@
 import { type Tool } from "@modelcontextprotocol/sdk/types.js";
 
-// Generic tool handler type
-export type ToolHandler = (args: any) => Promise<{
-  content: Array<{ type: string; text: string }>;
+type ToolResponse = {
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
   isError?: boolean;
-}>;
+};
+
+// Generic tool handler type
+export type ToolHandler<A = any> = (args: A) => Promise<ToolResponse>;
 
 // MCP Service interface
 export interface McpService {
