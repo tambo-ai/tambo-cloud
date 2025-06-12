@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   type CallToolRequest,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Command } from "commander";
-import express, { Request, Response } from "express";
-import { createServer } from "http";
+import express from "express";
+import { startMCPServer } from "./server.js";
 
 // see https://github.com/modelcontextprotocol/servers/blob/main/src/everything/streamableHttp.ts
 // for a more complete example of how to use the StreamableHTTPServerTransport, and still have sessions, etc
@@ -34,48 +33,6 @@ program
   .parse(process.argv);
 
 const options = program.opts();
-
-// Determine the port to use
-function getDesiredPort(): number {
-  // Priority: CLI flag > environment variable > default (3003)
-  if (options.port) {
-    return options.port;
-  }
-  if (process.env.PORT) {
-    return parseInt(process.env.PORT, 10);
-  }
-  return 3003;
-}
-
-// Function to check if a port is available
-async function isPortAvailable(port: number): Promise<boolean> {
-  return await new Promise((resolve) => {
-    const server = createServer();
-    server.listen(port, () => {
-      server.close(() => resolve(true));
-    });
-    server.on("error", () => resolve(false));
-  });
-}
-
-// Function to find an available port starting from the desired port
-async function findAvailablePort(startPort: number): Promise<number> {
-  let port = startPort;
-  const maxAttempts = 100; // Prevent infinite loop
-  let attempts = 0;
-
-  while (attempts < maxAttempts) {
-    if (await isPortAvailable(port)) {
-      return port;
-    }
-    port++;
-    attempts++;
-  }
-
-  throw new Error(
-    `Could not find an available port after ${maxAttempts} attempts starting from ${startPort}`,
-  );
-}
 
 // Server instance
 const server = new Server(
@@ -269,37 +226,9 @@ Forecast: ${period.detailedForecast}
   },
 );
 
-// Start the server
+// Start the server using the utilities
 async function main() {
-  try {
-    const desiredPort = getDesiredPort();
-    const port = await findAvailablePort(desiredPort);
-
-    const transport = new StreamableHTTPServerTransport({
-      // creates stateless sessions
-      sessionIdGenerator: undefined,
-    });
-
-    app.post("/mcp", (req: Request, res: Response) => {
-      transport.handleRequest(req, res);
-    });
-
-    await server.connect(transport);
-
-    app.listen(port, () => {
-      console.error(
-        `Tambo MCP proxy server running on http://localhost:${port}/mcp`,
-      );
-      if (port !== desiredPort) {
-        console.error(
-          `Note: Started on port ${port} instead of requested port ${desiredPort} (port was not available)`,
-        );
-      }
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
+  await startMCPServer(server, app, { port: options.port });
 }
 
 main().catch((error) => {
