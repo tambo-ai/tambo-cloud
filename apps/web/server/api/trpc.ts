@@ -60,7 +60,7 @@ export const createTRPCContext = async (opts: {
   } = await supabase.auth.getSession();
   const db = getDb(env.DATABASE_URL);
 
-  // TAM-183 – ensure new users are added to our Resend audience
+  // TAM-183 - ensure new users are added to our Resend audience
   try {
     if (session?.user?.email) {
       const email = session.user.email;
@@ -92,7 +92,8 @@ export const createTRPCContext = async (opts: {
               resendAudienceId: process.env.RESEND_AUDIENCE_ID,
             },
           })
-          .onConflictDoNothing(); // ignore race-condition duplicates
+          /* rely on unique-key error handling via outer try/catch */
+          ;
 
         // Attempt remote subscription (non-blocking)
         await subscribeEmailToResendAudience(email, firstName, lastName);

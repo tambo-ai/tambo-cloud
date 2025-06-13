@@ -4,12 +4,12 @@ import { Resend } from "resend";
  * Subscribe an email address to a Resend audience.
  *
  * If either RESEND_API_KEY or RESEND_AUDIENCE_ID is missing this is a no-op.
- * The function never throws – on any error it logs and resolves, ensuring it
+ * The function never throws - on any error it logs and resolves, ensuring it
  * will never block a user-facing flow (TAM-183).
  *
- * @param email – The email address to subscribe.
- * @param firstName – Optional first name (sent to Resend if provided).
- * @param lastName – Optional last name (sent to Resend if provided).
+ * @param email - The email address to subscribe.
+ * @param firstName - Optional first name (sent to Resend if provided).
+ * @param lastName - Optional last name (sent to Resend if provided).
  */
 export async function subscribeEmailToResendAudience(
   email: string,
@@ -21,7 +21,7 @@ export async function subscribeEmailToResendAudience(
 
   if (!apiKey || !audienceId) {
     console.warn(
-      "[subscribeEmailToResendAudience] RESEND_API_KEY or RESEND_AUDIENCE_ID not set – skipping subscription",
+      "[subscribeEmailToResendAudience] RESEND_API_KEY or RESEND_AUDIENCE_ID not set - skipping subscription",
     );
     return;
   }
@@ -41,7 +41,7 @@ export async function subscribeEmailToResendAudience(
         "[subscribeEmailToResendAudience] Resend API error:",
         response.error,
       );
-      // We intentionally do **not** throw – failures shouldn’t block signup.
+      // We intentionally do **not** throw - failures shouldn't block signup.
     }
   } catch (error) {
     console.error(
