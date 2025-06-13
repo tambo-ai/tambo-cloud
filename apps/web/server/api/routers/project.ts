@@ -26,18 +26,48 @@ export const projectRouter = createTRPCRouter({
   getUserProjects: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
     const projects = await operations.getProjectsForUser(ctx.db, userId);
-    return projects.map((project) => ({
-      id: project.id,
-      name: project.name,
-      userId: userId,
-      createdAt: project.createdAt,
-      composioEnabled: project.composioEnabled,
-      customInstructions: project.customInstructions,
-      defaultLlmProviderName: project.defaultLlmProviderName,
-      defaultLlmModelName: project.defaultLlmModelName,
-      customLlmModelName: project.customLlmModelName,
-      customLlmBaseURL: project.customLlmBaseURL,
-    }));
+    // Get message and user counts for all projects in parallel
+    const projectsWithCounts = await Promise.all(
+      projects.map(async (project) => {
+        // Get message count for this project
+        const messageCount = await ctx.db
+          .select({ count: count() })
+          .from(schema.messages)
+          .innerJoin(
+            schema.threads,
+            eq(schema.messages.threadId, schema.threads.id),
+          )
+          .where(eq(schema.threads.projectId, project.id));
+
+        // Get unique user count for this project
+        const uniqueUsers = await ctx.db
+          .selectDistinct({ contextKey: schema.threads.contextKey })
+          .from(schema.threads)
+          .where(
+            and(
+              eq(schema.threads.projectId, project.id),
+              isNotNull(schema.threads.contextKey),
+            ),
+          );
+
+        return {
+          id: project.id,
+          name: project.name,
+          userId: userId,
+          createdAt: project.createdAt,
+          composioEnabled: project.composioEnabled,
+          customInstructions: project.customInstructions,
+          defaultLlmProviderName: project.defaultLlmProviderName,
+          defaultLlmModelName: project.defaultLlmModelName,
+          customLlmModelName: project.customLlmModelName,
+          customLlmBaseURL: project.customLlmBaseURL,
+          messages: messageCount[0]?.count || 0,
+          users: uniqueUsers.length,
+        };
+      }),
+    );
+
+    return projectsWithCounts;
   }),
 
   createProject: protectedProcedure
@@ -545,7 +575,6 @@ export const projectRouter = createTRPCRouter({
 
       const dateFilter = getDateFilter(period);
 
-      // Build where conditions
       const whereConditions = [
         inArray(schema.threads.projectId, projectIds),
         isNotNull(schema.threads.contextKey),

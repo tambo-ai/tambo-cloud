@@ -3,12 +3,13 @@
 import { DashboardCard } from "@/components/dashboard-components/DashboardCard";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useSession } from "@/hooks/auth";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { CreateProjectDialog } from "../../../components/dashboard-components/create-project-dialog";
 import { ProjectTable } from "../../../components/dashboard-components/project-table";
 
@@ -37,6 +38,7 @@ export default function DashboardPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [messagesPeriod, setMessagesPeriod] = useState("all time");
   const [usersPeriod, setUsersPeriod] = useState("all time");
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const { data: session, isLoading: isAuthLoading } = useSession();
 
@@ -115,6 +117,19 @@ export default function DashboardPage() {
     { value: "per week", label: "per week" },
   ];
 
+  // Filter projects based on search term
+  const filteredProjects = useMemo(() => {
+    if (!projects) return [];
+    if (!searchTerm) return projects;
+
+    const term = searchTerm.toLowerCase();
+    return projects.filter(
+      (project) =>
+        project.name.toLowerCase().includes(term) ||
+        project.id.toLowerCase().includes(term),
+    );
+  }, [projects, searchTerm]);
+
   const LoadingSpinner = () => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -159,17 +174,30 @@ export default function DashboardPage() {
           variants={itemVariants}
         >
           <h1 className="text-4xl font-bold">Projects</h1>
-          <Button
-            onClick={() => setIsCreateDialogOpen(true)}
-            className="text-sm px-4 gap-2"
-            variant="default"
-          >
-            <Plus className="h-4 w-4" />
-            Create Project
-          </Button>
+        </motion.div>
+        <motion.div variants={itemVariants} className="mb-6">
+          <div className="relative flex items-center justify-between gap-2">
+            <div className="relative flex items-center">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 rounded-full max-w-xs"
+              />
+            </div>
+            <Button
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="text-sm px-4 gap-2"
+              variant="default"
+            >
+              <Plus className="h-4 w-4" />
+              Create Project
+            </Button>
+          </div>
         </motion.div>
         <motion.div variants={itemVariants}>
-          <ProjectTable projects={projects || []} />
+          <ProjectTable projects={filteredProjects || []} />
         </motion.div>
         <CreateProjectDialog
           open={isCreateDialogOpen}

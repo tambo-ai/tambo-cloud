@@ -1,7 +1,6 @@
 "use client";
 
 import { CopyButton } from "@/components/copy-button";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -11,14 +10,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type RouterOutputs } from "@/trpc/react";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { z } from "zod";
 
 export const ProjectTableSchema = z
   .object({
     id: z.string().describe("The unique identifier for the project."),
     name: z.string().describe("The human-readable name of the project."),
+    messages: z.number().describe("The number of messages in the project."),
+    users: z.number().describe("The number of users in the project."),
     createdAt: z
       .string()
       .datetime()
@@ -45,11 +47,26 @@ interface ProjectTableProps {
 }
 
 export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const projectsPerPage = 4;
+
   const cellClass = compact ? "py-2 text-sm" : "py-4";
   const headerClass = compact ? "text-sm font-medium" : "";
 
   const isLoading = projects === undefined;
   const hasProjects = projects && projects.length > 0;
+
+  // Pagination calculations
+  const totalProjects = projects?.length || 0;
+  const totalPages = Math.ceil(totalProjects / projectsPerPage);
+  const startIndex = (currentPage - 1) * projectsPerPage;
+  const endIndex = startIndex + projectsPerPage;
+
+  // Get current page projects
+  const currentProjects = useMemo(() => {
+    if (!projects) return [];
+    return projects.slice(startIndex, endIndex);
+  }, [projects, startIndex, endIndex]);
 
   const formatDate = (dateValue: Date | string) => {
     try {
@@ -67,8 +84,38 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
   return (
-    <div className="rounded-md border w-full overflow-hidden">
+    <div className="rounded-md w-full overflow-hidden">
+      {/* Pagination moved above the table */}
+      {hasProjects && (
+        <div className="flex items-center justify-end gap-2 px-4 py-2">
+          <span className="text-sm text-muted-foreground">
+            {startIndex + 1}-{Math.min(endIndex, totalProjects)} of{" "}
+            {totalProjects}
+          </span>
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <Table className="w-full">
           <TableHeader>
@@ -76,22 +123,34 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
               <TableHead
                 className={`${headerClass} ${compact ? "px-4 text-primary" : ""}`}
               >
-                Name
+                Project
               </TableHead>
               <TableHead
                 className={`${headerClass} ${compact ? "px-4 hidden sm:table-cell text-primary" : ""}`}
               >
-                Project ID
+                ID
               </TableHead>
+              {!compact && (
+                <>
+                  <TableHead
+                    className={`${headerClass} ${compact ? "px-4 hidden sm:table-cell text-primary" : ""}`}
+                  >
+                    Messages
+                  </TableHead>
+                  <TableHead
+                    className={`${headerClass} ${compact ? "px-4 hidden sm:table-cell text-primary" : ""}`}
+                  >
+                    Users
+                  </TableHead>
+                </>
+              )}
               <TableHead
                 className={`${headerClass} ${compact ? "px-4 hidden md:table-cell text-primary" : ""}`}
               >
                 Created
               </TableHead>
               {!compact && (
-                <TableHead className={headerClass}>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
+                <TableHead className={headerClass}>Actions</TableHead>
               )}
             </TableRow>
           </TableHeader>
@@ -109,7 +168,7 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
                 </TableCell>
               </TableRow>
             ) : hasProjects ? (
-              projects.map((project, index) => {
+              currentProjects.map((project, index) => {
                 const projectId = project.id || "";
                 const displayId =
                   compact && projectId
@@ -155,6 +214,20 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
                         )}
                       </div>
                     </TableCell>
+                    {!compact && (
+                      <>
+                        <TableCell
+                          className={`${cellClass} text-muted-foreground text-sm`}
+                        >
+                          {project.messages}
+                        </TableCell>
+                        <TableCell
+                          className={`${cellClass} text-muted-foreground text-sm`}
+                        >
+                          {project.users}
+                        </TableCell>
+                      </>
+                    )}
                     <TableCell
                       className={`${cellClass} text-muted-foreground ${compact ? "px-4 hidden md:table-cell text-primary" : "text-sm"}`}
                     >
@@ -162,19 +235,14 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
                     </TableCell>
                     {!compact && !isLoading && (
                       <TableCell className={cellClass}>
-                        <div className="flex justify-end items-center">
+                        <div className="flex items-center">
                           {projectId ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="flex items-center gap-1"
-                              asChild
+                            <Link
+                              href={`/dashboard/${projectId}`}
+                              className="text-muted-foreground hover:bg-accent/50 rounded-md p-1"
                             >
-                              <Link href={`/dashboard/${projectId}`}>
-                                <span>Project Details</span>
-                                <ArrowRight className="h-4 w-4" />
-                              </Link>
-                            </Button>
+                              View
+                            </Link>
                           ) : (
                             <span className="text-muted-foreground text-sm">
                               No ID
@@ -199,12 +267,6 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
           </TableBody>
         </Table>
       </div>
-      {!compact && !isLoading && (
-        <div className="py-3 px-4 text-sm text-muted-foreground border-t">
-          {projects ? projects.length : 0} project
-          {projects && projects.length !== 1 ? "s" : ""}
-        </div>
-      )}
     </div>
   );
 }
