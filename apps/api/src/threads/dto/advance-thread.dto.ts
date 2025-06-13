@@ -1,4 +1,4 @@
-import { ApiSchema } from "@nestjs/swagger";
+import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import { GenerationStage } from "@tambo-ai-cloud/core";
 import {
   AvailableComponentDto,
@@ -21,4 +21,10 @@ export class AdvanceThreadResponseDto {
   responseMessageDto!: ThreadMessageDto;
   generationStage!: GenerationStage;
   statusMessage?: string;
+  @ApiProperty({
+    description:
+      "MCP access token to be used as bearer token when talking to the Tambo MCP server",
+    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  })
+  mcpAccessToken!: string;
 }
