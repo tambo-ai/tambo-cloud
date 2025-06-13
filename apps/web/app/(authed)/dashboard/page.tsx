@@ -177,13 +177,13 @@ export default function DashboardPage() {
         </motion.div>
         <motion.div variants={itemVariants} className="mb-6">
           <div className="relative flex items-center justify-between gap-2">
-            <div className="relative flex items-center">
+            <div className="relative flex items-center flex-1 max-w-xl">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 rounded-full max-w-xs"
+                className="pl-9 rounded-full w-full"
               />
             </div>
             <Button
@@ -197,7 +197,10 @@ export default function DashboardPage() {
           </div>
         </motion.div>
         <motion.div variants={itemVariants}>
-          <ProjectTable projects={filteredProjects || []} />
+          <ProjectTable
+            projects={filteredProjects || []}
+            onProjectsDeleted={refetchProjects}
+          />
         </motion.div>
         <CreateProjectDialog
           open={isCreateDialogOpen}

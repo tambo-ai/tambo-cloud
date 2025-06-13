@@ -385,6 +385,24 @@ export const projectRouter = createTRPCRouter({
       await operations.deleteProject(ctx.db, projectId);
     }),
 
+  removeMultipleProjects: protectedProcedure
+    .input(z.array(z.string()).min(1, "At least one project ID is required"))
+    .mutation(async ({ ctx, input: projectIds }) => {
+      const userId = ctx.session.user.id;
+
+      // Ensure user has access to all projects before deleting any
+      for (const projectId of projectIds) {
+        await operations.ensureProjectAccess(ctx.db, projectId, userId);
+      }
+
+      // Delete all projects
+      for (const projectId of projectIds) {
+        await operations.deleteProject(ctx.db, projectId);
+      }
+
+      return { deletedCount: projectIds.length };
+    }),
+
   addProviderKey: protectedProcedure
     .input(
       z.object({

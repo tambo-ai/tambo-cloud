@@ -1,6 +1,7 @@
 "use client";
 
 import { CopyButton } from "@/components/copy-button";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,10 +11,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type RouterOutputs } from "@/trpc/react";
-import { ArrowRight, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { z } from "zod";
+import { DeleteProjectsDialog } from "./delete-projects-dialog";
 
 export const ProjectTableSchema = z
   .object({
@@ -44,10 +52,20 @@ export const ProjectTableProps = z.object({
 interface ProjectTableProps {
   projects?: RouterOutputs["project"]["getUserProjects"];
   compact?: boolean;
+  onProjectsDeleted?: () => void;
 }
 
-export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
+export function ProjectTable({
+  projects,
+  compact = false,
+  onProjectsDeleted,
+}: ProjectTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(
+    new Set(),
+  );
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   const projectsPerPage = 4;
 
   const cellClass = compact ? "py-2 text-sm" : "py-4";
@@ -67,6 +85,18 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
     if (!projects) return [];
     return projects.slice(startIndex, endIndex);
   }, [projects, startIndex, endIndex]);
+
+  // Get selected project details for the dialog
+  const selectedProjectDetails = useMemo(() => {
+    if (!projects) return { ids: [], names: [] };
+    const selectedProjectsData = projects.filter(
+      (p) => p.id && selectedProjects.has(p.id),
+    );
+    return {
+      ids: selectedProjectsData.map((p) => p.id).filter(Boolean),
+      names: selectedProjectsData.map((p) => p.name),
+    };
+  }, [projects, selectedProjects]);
 
   const formatDate = (dateValue: Date | string) => {
     try {
@@ -90,29 +120,69 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
     }
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const newSelected = new Set(
+        currentProjects.map((p) => p.id).filter(Boolean),
+      );
+      setSelectedProjects(newSelected);
+    } else {
+      setSelectedProjects(new Set());
+    }
+  };
+
+  const handleSelectProject = (projectId: string, checked: boolean) => {
+    const newSelected = new Set(selectedProjects);
+    if (checked) {
+      newSelected.add(projectId);
+    } else {
+      newSelected.delete(projectId);
+    }
+    setSelectedProjects(newSelected);
+  };
+
+  const handleProjectsDeleted = () => {
+    setSelectedProjects(new Set());
+    onProjectsDeleted?.();
+  };
+
   return (
     <div className="rounded-md w-full overflow-hidden">
-      {/* Pagination moved above the table */}
       {hasProjects && (
-        <div className="flex items-center justify-end gap-2 px-4 py-2">
-          <span className="text-sm text-muted-foreground">
-            {startIndex + 1}-{Math.min(endIndex, totalProjects)} of{" "}
-            {totalProjects}
-          </span>
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+        <div className="flex items-center justify-between gap-2 px-4 py-2">
+          <div className="flex items-center gap-2 h-9">
+            {selectedProjects.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="gap-2"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Selected
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {startIndex + 1}-{Math.min(endIndex, totalProjects)} of{" "}
+              {totalProjects}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -120,6 +190,19 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
         <Table className="w-full">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
+              <TableHead className={headerClass}>
+                <input
+                  type="checkbox"
+                  checked={
+                    currentProjects.length > 0 &&
+                    currentProjects.every(
+                      (p) => p.id && selectedProjects.has(p.id),
+                    )
+                  }
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+              </TableHead>
               <TableHead
                 className={`${headerClass} ${compact ? "px-4 text-primary" : ""}`}
               >
@@ -129,6 +212,11 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
                 className={`${headerClass} ${compact ? "px-4 hidden sm:table-cell text-primary" : ""}`}
               >
                 ID
+              </TableHead>
+              <TableHead
+                className={`${headerClass} ${compact ? "px-4 hidden md:table-cell text-primary" : ""}`}
+              >
+                Created
               </TableHead>
               {!compact && (
                 <>
@@ -144,11 +232,6 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
                   </TableHead>
                 </>
               )}
-              <TableHead
-                className={`${headerClass} ${compact ? "px-4 hidden md:table-cell text-primary" : ""}`}
-              >
-                Created
-              </TableHead>
               {!compact && (
                 <TableHead className={headerClass}>Actions</TableHead>
               )}
@@ -158,7 +241,7 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
             {isLoading ? (
               <TableRow key="loading">
                 <TableCell
-                  colSpan={compact ? 3 : 4}
+                  colSpan={compact ? 4 : 7}
                   className={`text-center ${cellClass}`}
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -180,6 +263,19 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
                     key={projectId || `project-${index}`}
                     className="hover:bg-accent/5"
                   >
+                    <TableCell className={`${cellClass} w-4`}>
+                      <input
+                        type="checkbox"
+                        checked={
+                          projectId ? selectedProjects.has(projectId) : false
+                        }
+                        onChange={(e) =>
+                          projectId &&
+                          handleSelectProject(projectId, e.target.checked)
+                        }
+                        className="rounded border-gray-300"
+                      />
+                    </TableCell>
                     <TableCell
                       className={`${cellClass} font-medium ${compact ? "px-4" : ""}`}
                     >
@@ -257,7 +353,7 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
             ) : (
               <TableRow key="no-projects">
                 <TableCell
-                  colSpan={compact ? 3 : 4}
+                  colSpan={compact ? 4 : 7}
                   className={`text-center ${cellClass}`}
                 >
                   No projects found.
@@ -267,6 +363,13 @@ export function ProjectTable({ projects, compact = false }: ProjectTableProps) {
           </TableBody>
         </Table>
       </div>
+      <DeleteProjectsDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        selectedProjectIds={selectedProjectDetails.ids}
+        selectedProjectNames={selectedProjectDetails.names}
+        onProjectsDeleted={handleProjectsDeleted}
+      />
     </div>
   );
 }
