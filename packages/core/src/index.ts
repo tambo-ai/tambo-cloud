@@ -10,4 +10,5 @@ export * from "./strictness/tool-call-strict";
 export * from "./templates";
 export * from "./threads";
 export * from "./tools";
+export { subscribeEmailToResendAudience } from "./subscribeEmailToResendAudience";
 export type * from "./typeutils";
