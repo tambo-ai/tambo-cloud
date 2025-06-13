@@ -75,7 +75,6 @@ export class AppController {
 
     return {
       mcpAccessToken,
-      expiresIn: 900, // 15 minutes in seconds
     };
   }
 }

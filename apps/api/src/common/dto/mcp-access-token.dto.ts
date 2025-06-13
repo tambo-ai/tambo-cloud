@@ -17,10 +17,4 @@ export class McpAccessTokenResponseDto {
     example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   })
   mcpAccessToken!: string;
-
-  @ApiProperty({
-    description: "Token expiry time in seconds",
-    example: 900,
-  })
-  expiresIn!: number;
 }
