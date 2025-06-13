@@ -21,24 +21,31 @@ export class AuthService {
   /**
    * Generates an MCP access token (JWT) that includes projectId and contextKey
    * with a 15-minute expiry
+   *
+   * Only pass in the knownContextKey if you have already resolved the contextKey,
+   * otherwise the thread will be fetched from the database from the threadId.
    */
   async generateMcpAccessToken(
     projectId: string,
     threadId: string,
+    knownContextKey?: string | null,
   ): Promise<string> {
     const secret = this.configService.get<string>("API_KEY_SECRET");
     if (!secret) {
       throw new Error("API_KEY_SECRET is not configured");
     }
-    const thread = await operations.getThreadForProjectId(
-      this.getDb(),
-      threadId,
-      projectId,
-    );
-    if (!thread) {
-      throw new Error("Thread not found");
+    let contextKey = knownContextKey;
+    if (!contextKey) {
+      const thread = await operations.getThreadForProjectId(
+        this.getDb(),
+        threadId,
+        projectId,
+      );
+      if (!thread) {
+        throw new Error("Thread not found");
+      }
+      contextKey = thread.contextKey;
     }
-    const contextKey = thread.contextKey;
 
     const payload: McpAccessTokenPayload = {
       sub: `${projectId}:${contextKey}`,
