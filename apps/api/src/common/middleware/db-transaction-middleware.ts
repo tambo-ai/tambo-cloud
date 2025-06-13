@@ -6,6 +6,7 @@ import {
   Scope,
   UnauthorizedException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { REQUEST } from "@nestjs/core";
 import { decryptApiKey } from "@tambo-ai-cloud/core";
 import {
@@ -43,6 +44,7 @@ export class TransactionMiddleware implements NestMiddleware {
   constructor(
     @Inject(DATABASE)
     private readonly db: HydraDatabase,
+    private readonly configService: ConfigService,
   ) {}
   async use(req: HydraRequest, res: Response, next: NextFunction) {
     const currentRequestSerialNumber = requestSerialNumber++;
@@ -51,7 +53,7 @@ export class TransactionMiddleware implements NestMiddleware {
       ? apiKeyHeader[0]
       : apiKeyHeader;
 
-    const apiKeySecret = process.env.API_KEY_SECRET;
+    const apiKeySecret = this.configService.get<string>("API_KEY_SECRET");
     if (!apiKeySecret) {
       throw new UnauthorizedException("API_KEY_SECRET is not configured");
     }

@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   generateChainId,
   getToolsFromSources,
@@ -78,6 +79,7 @@ export class ThreadsService {
     private projectsService: ProjectsService,
     private readonly logger: CorrelationLoggerService,
     private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   getDb() {
@@ -1110,7 +1112,9 @@ export class ThreadsService {
     }
 
     try {
-      const providerKeySecret = process.env.PROVIDER_KEY_SECRET;
+      const providerKeySecret = this.configService.get<string>(
+        "PROVIDER_KEY_SECRET",
+      );
       if (!providerKeySecret) {
         throw new Error("PROVIDER_KEY_SECRET is not configured");
       }
