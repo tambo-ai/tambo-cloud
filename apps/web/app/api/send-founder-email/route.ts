@@ -107,14 +107,12 @@ export async function POST(req: Request) {
         console.log(
           `Subscribing ${usersEmail} to audience ${env.RESEND_AUDIENCE_ID}`,
         );
-        const contact = await resend.contacts.create({
+        const contactResponse = await resend.contacts.create({
           audienceId: env.RESEND_AUDIENCE_ID,
           email: usersEmail,
           unsubscribed: false,
         });
-        console.log(
-          `Successfully subscribed contact (id=${contact.id ?? "unknown"})`,
-        );
+        console.log("Successfully subscribed contact", contactResponse);
       } catch (subscriptionError) {
         console.warn(
           "Audience subscription failed (continuing with email send):",
