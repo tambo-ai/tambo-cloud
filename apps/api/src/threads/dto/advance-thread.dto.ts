@@ -18,8 +18,19 @@ export class AdvanceThreadDto {
 
 @ApiSchema({ name: "AdvanceThreadResponse" })
 export class AdvanceThreadResponseDto {
+  @ApiProperty({
+    description: "Response message",
+    example: {
+      role: "assistant",
+      content: "Hello, how are you?",
+    },
+  })
   responseMessageDto!: ThreadMessageDto;
   generationStage!: GenerationStage;
+  @ApiProperty({
+    description: "Status message for the generation stage",
+    example: "Streaming response...",
+  })
   statusMessage?: string;
   @ApiProperty({
     description:
