@@ -47,16 +47,22 @@ export class AuthService {
       contextKey = thread.contextKey;
     }
 
+    // https://www.rfc-editor.org/rfc/rfc7519#section-4.1.4
+    // For our purposes we round down to the nearest 5 minutes, then add 20 minutes. This makes sure
+    // if we keep signing, we'll keep generating the same token for each 5
+    // minute interval, and it will be good for at least 15 minutes
+    const expiration =
+      Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000) +
+      15 * 60 * 1000;
     const payload: McpAccessTokenPayload = {
       sub: `${projectId}:${contextKey}`,
+      exp: expiration / 1000, // jwt.sign expects the expiration in seconds
       projectId,
       threadId: threadId,
       contextKey,
     };
 
-    return jwt.sign(payload, secret, {
-      expiresIn: "15m", // 15 minutes
-    });
+    return jwt.sign(payload, secret);
   }
 
   /**
