@@ -1,5 +1,6 @@
 "use client";
 
+import { DashboardCard } from "@/components/dashboard-components/DashboardCard";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/auth";
@@ -34,6 +35,8 @@ const itemVariants = {
 
 export default function DashboardPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [messagesPeriod, setMessagesPeriod] = useState("all time");
+  const [usersPeriod, setUsersPeriod] = useState("all time");
   const { toast } = useToast();
   const { data: session, isLoading: isAuthLoading } = useSession();
 
@@ -45,6 +48,16 @@ export default function DashboardPage() {
   } = api.project.getUserProjects.useQuery(undefined, {
     enabled: !!session,
   });
+
+  const { data: totalUsage } = api.project.getTotalMessageUsage.useQuery(
+    { period: messagesPeriod },
+    { enabled: !!session },
+  );
+
+  const { data: totalUsers } = api.project.getTotalUsers.useQuery(
+    { period: usersPeriod },
+    { enabled: !!session },
+  );
 
   useEffect(() => {
     if (projectLoadingError) {
@@ -96,6 +109,12 @@ export default function DashboardPage() {
     }
   };
 
+  const periodOptions = [
+    { value: "all time", label: "all time" },
+    { value: "per month", label: "per month" },
+    { value: "per week", label: "per week" },
+  ];
+
   const LoadingSpinner = () => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -115,11 +134,31 @@ export default function DashboardPage() {
   return (
     <motion.div initial="hidden" animate="visible" variants={containerVariants}>
       <>
+        <div className="flex items-center gap-2 space-x-6 py-14">
+          <DashboardCard
+            title="Number of Projects"
+            value={projects?.length || 0}
+          />
+          <DashboardCard
+            title="Messages"
+            value={totalUsage?.totalMessages || 0}
+            defaultPeriod="all time"
+            periodOptions={periodOptions}
+            onPeriodChange={setMessagesPeriod}
+          />
+          <DashboardCard
+            title="Users"
+            value={totalUsers?.totalUsers || 0}
+            defaultPeriod="all time"
+            periodOptions={periodOptions}
+            onPeriodChange={setUsersPeriod}
+          />
+        </div>
         <motion.div
-          className="flex items-center justify-between pb-4"
+          className="flex items-center justify-between py-8"
           variants={itemVariants}
         >
-          <h1 className="text-2xl font-heading font-bold">Projects</h1>
+          <h1 className="text-4xl font-bold">Projects</h1>
           <Button
             onClick={() => setIsCreateDialogOpen(true)}
             className="text-sm px-4 gap-2"

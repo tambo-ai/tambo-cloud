@@ -4,8 +4,23 @@ import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, gte, inArray, isNotNull } from "drizzle-orm";
 import { z } from "zod";
+
+// Helper function to get date filter based on period
+function getDateFilter(period: string): Date | null {
+  const now = new Date();
+
+  switch (period) {
+    case "per week":
+      return new Date(now.setDate(now.getDate() - 7));
+    case "per month":
+      return new Date(now.setMonth(now.getMonth() - 1));
+    case "all time":
+    default:
+      return null;
+  }
+}
 
 export const projectRouter = createTRPCRouter({
   getUserProjects: protectedProcedure.query(async ({ ctx }) => {
@@ -481,5 +496,71 @@ export const projectRouter = createTRPCRouter({
         messageCount: usage.messageCount,
         hasApiKey: usage.hasApiKey,
       };
+    }),
+
+  getTotalMessageUsage: protectedProcedure
+    .input(z.object({ period: z.string().optional().default("all time") }))
+    .query(async ({ ctx, input }) => {
+      const { period } = input;
+      const userId = ctx.session.user.id;
+      const projects = await operations.getProjectsForUser(ctx.db, userId);
+      const projectIds = projects.map((p) => p.id);
+
+      if (projectIds.length === 0) {
+        return { totalMessages: 0 };
+      }
+
+      const dateFilter = getDateFilter(period);
+
+      // count from messages table
+      const whereConditions = [inArray(schema.threads.projectId, projectIds)];
+
+      if (dateFilter) {
+        whereConditions.push(gte(schema.messages.createdAt, dateFilter));
+      }
+
+      const result = await ctx.db
+        .select({ count: count() })
+        .from(schema.messages)
+        .innerJoin(
+          schema.threads,
+          eq(schema.messages.threadId, schema.threads.id),
+        )
+        .where(and(...whereConditions));
+
+      return { totalMessages: result[0]?.count || 0 };
+    }),
+
+  getTotalUsers: protectedProcedure
+    .input(z.object({ period: z.string().optional().default("all time") }))
+    .query(async ({ ctx, input }) => {
+      const { period } = input;
+      const userId = ctx.session.user.id;
+      const projects = await operations.getProjectsForUser(ctx.db, userId);
+      const projectIds = projects.map((p) => p.id);
+
+      if (projectIds.length === 0) {
+        return { totalUsers: 0 };
+      }
+
+      const dateFilter = getDateFilter(period);
+
+      // Build where conditions
+      const whereConditions = [
+        inArray(schema.threads.projectId, projectIds),
+        isNotNull(schema.threads.contextKey),
+      ];
+
+      if (dateFilter) {
+        whereConditions.push(gte(schema.threads.createdAt, dateFilter));
+      }
+
+      // Get unique context keys (users) across all user's projects within period
+      const uniqueUsers = await ctx.db
+        .selectDistinct({ contextKey: schema.threads.contextKey })
+        .from(schema.threads)
+        .where(and(...whereConditions));
+
+      return { totalUsers: uniqueUsers.length };
     }),
 });

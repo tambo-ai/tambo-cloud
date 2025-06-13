@@ -76,7 +76,7 @@ html {
 @layer base {
   :root {
     /* Main background and text colors */
-    --background: 150 30% 96%; /* #F2F8F6 */
+    --background: 0 0% 100%; /* #F2F8F6 */
     --foreground: 162 30% 8%; /* #0E1A17 */
 
     /* Card and popover styling */
