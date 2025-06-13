@@ -9,6 +9,7 @@ import {
 import {
   ComponentDecisionV2,
   ContentPartType,
+  decryptProviderKey,
   DEFAULT_OPENAI_MODEL,
   GenerationStage,
   LegacyComponentDecision,
@@ -21,7 +22,6 @@ import type { HydraDatabase } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
-import { decryptProviderKey } from "../common/key.utils";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
@@ -1110,8 +1110,14 @@ export class ThreadsService {
     }
 
     try {
+      const providerKeySecret = process.env.PROVIDER_KEY_SECRET;
+      if (!providerKeySecret) {
+        throw new Error("PROVIDER_KEY_SECRET is not configured");
+      }
+
       const { providerKey: decryptedKey } = decryptProviderKey(
         chosenKey.providerKeyEncrypted,
+        providerKeySecret,
       );
       return decryptedKey;
     } catch (error) {
