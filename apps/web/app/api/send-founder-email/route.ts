@@ -18,26 +18,6 @@ export async function POST(req: Request) {
   if (!env.RESEND_API_KEY) {
     console.error("RESEND_API_KEY environment variable is not set");
     return NextResponse.json(
-import { env } from "@/lib/env";
-import { validate } from "deep-email-validator";
-import { NextResponse } from "next/server";
-import { Resend } from "resend";
-
-// Define the expected request body shape
-interface FounderEmailRequest {
-  subject: string;
-  body: string;
-  usersEmail: string;
-}
-
-// The email address where founder emails should be sent
-// Ideally this would be in your environment variables
-const FOUNDER_EMAIL = "magan@tambo.co";
-
-export async function POST(req: Request) {
-  if (!env.RESEND_API_KEY) {
-    console.error("RESEND_API_KEY environment variable is not set");
-    return NextResponse.json(
       { error: "RESEND_API_KEY is not set" },
       { status: 500 },
     );
@@ -47,7 +27,7 @@ export async function POST(req: Request) {
     const resend = new Resend(env.RESEND_API_KEY);
 
     // Parse the request body
-    let parsedBody;
+    let parsedBody: unknown;
     try {
       parsedBody = await req.json();
     } catch (e) {
@@ -62,7 +42,7 @@ export async function POST(req: Request) {
 
     // Validate required fields
     if (!subject || !body || !usersEmail) {
-      const missingFields = [];
+      const missingFields: string[] = [];
       if (!subject) missingFields.push("subject");
       if (!body) missingFields.push("body");
       if (!usersEmail) missingFields.push("usersEmail");
