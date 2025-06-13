@@ -1,4 +1,4 @@
-/**
+/ **
  * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
  * 1. You want to modify request context (see Part 1).
  * 2. You want to create a new middleware or type of procedure (see Part 3).
@@ -15,8 +15,12 @@ import { env } from "@/lib/env";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
 import { getDb, HydraDb } from "@tambo-ai-cloud/db";
 import { sql } from "drizzle-orm";
+import { schema } from "@tambo-ai-cloud/db";
+import { eq } from "drizzle-orm";
+import { subscribeEmailToResendAudience } from "@tambo-ai-cloud/core";
 import jwt from "jsonwebtoken";
 import { getServerSupabaseclient } from "../supabase";
+
 export type Context = {
   db: HydraDb;
   session: Session | null;
@@ -55,6 +59,51 @@ export const createTRPCContext = async (opts: {
     data: { session },
   } = await supabase.auth.getSession();
   const db = getDb(env.DATABASE_URL);
+
+  // TAM-183 – ensure new users are added to our Resend audience
+  try {
+    if (session?.user?.email) {
+      const email = session.user.email;
+      const fullName: string | undefined = (
+        session.user.user_metadata as { full_name?: string }
+      )?.full_name;
+      const [firstName = "", ...rest] = (fullName ?? "")
+        .split(" ")
+        .filter(Boolean);
+      const lastName = rest.join(" ") || undefined;
+
+      // Check if we already have this contact in our DB
+      const existing = await db
+        .select({ id: schema.contacts.id })
+        .from(schema.contacts)
+        .where(eq(schema.contacts.email, email))
+        .limit(1);
+
+      if (existing.length === 0) {
+        // Persist locally
+        await db
+          .insert(schema.contacts)
+          .values({
+            firstName: firstName || "unknown",
+            ...(lastName ? { lastName } : {}),
+            email,
+            metadata: {
+              source: "signup",
+              resendAudienceId: process.env.RESEND_AUDIENCE_ID,
+            },
+          })
+          .onConflictDoNothing(); // ignore race-condition duplicates
+
+        // Attempt remote subscription (non-blocking)
+        await subscribeEmailToResendAudience(email, firstName, lastName);
+      }
+    }
+  } catch (err) {
+    console.error(
+      "[TAM-183] Failed to subscribe user to Resend audience:",
+      err,
+    );
+  }
 
   let decoded: SupabaseToken | null = null;
   if (session?.access_token) {
