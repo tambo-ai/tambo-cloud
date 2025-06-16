@@ -76,12 +76,21 @@ async function getMcpTools(
       | Record<string, string>
       | undefined;
 
-    const mcpClient = await MCPClient.create(
-      mcpServer.url,
-      mcpServer.mcpTransport,
-      customHeaders,
-      authProvider,
-    );
+    let mcpClient: MCPClient;
+    try {
+      mcpClient = await MCPClient.create(
+        mcpServer.url,
+        mcpServer.mcpTransport,
+        customHeaders,
+        authProvider,
+      );
+    } catch (error) {
+      // TODO: attach this error to the project
+      console.error(
+        `Error creating MCP client for server ${mcpServer.id} in project ${projectId}: ${error}`,
+      );
+      continue;
+    }
     const tools = await mcpClient.listTools();
     mcpTools.push(
       ...tools.map((tool): OpenAI.Chat.Completions.ChatCompletionTool => {
