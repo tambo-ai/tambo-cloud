@@ -93,7 +93,7 @@ function MyApp() {
           {
             // MCP server configuration
             url: "http://localhost:8123/",
-            customHeaders: {}, // Optional custom headers
+            customHeaders: {}, // Optional custom headers, eg. { "Authorization": `Bearer ${token}` }
             transport: MCPTransport.HTTP, // optional, defaults to SSE
           },
         ]}
