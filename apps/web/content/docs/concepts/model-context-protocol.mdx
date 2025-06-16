@@ -26,11 +26,21 @@ tools in Tambo.
 
 Future support for resources and prompts is in active development. Please reach out to us if you have specific use cases in mind.
 
-Tambo offers two approaches for connecting to MCP servers.
+Tambo offers two approaches for connecting to MCP servers: client-side and server-side.
+
+```mermaid
+graph LR
+    Browser <--> Tambo[[Tambo]]
+    Browser <--client-side---> MCP1[localhost]
+    Tambo <--server-side--> MCP2[mcp.app1.com\nwith OAuth]
+    Tambo <--server-side--> MCP3[mcp.app2.com]
+```
 
 ### 1. Server-Side Support
 
-Server-side MCP integration allows you to configure MCP servers at the project level through the Tambo dashboard.
+Server-side MCP integration allows you to configure MCP servers at the project
+level through the Tambo dashboard. This generally gives the best end-user performance and
+allows you to use OAuth-based authentication.
 
 This is the recommended approach for most use cases.
 
@@ -42,13 +52,14 @@ This approach is beneficial when:
 
 To configure server-side MCP:
 
-1. Navigate to your project dashboard
-2. Find the "MCP Servers" section
-3. Click "Add MCP Server"
-4. Enter the server URL and server type (SSE or StreamableHTTP), and click the save button.
-5. Tambo will automatically detect if an MCP server requires authentication. If so, the "Begin Authentication" button will be shown. Click it to begin the authentication process.
+1. Navigate to [your project dashboard](https://tambo.co/dashboard)
+2. Click on your project
+3. Find the "MCP Servers" section
+4. Click "Add MCP Server"
+5. Enter the server URL and server type (StreamableHTTP or SSE), and click the save button.
+6. Tambo will automatically detect if an MCP server requires authentication. If so, the "Begin Authentication" button will be shown. Click it to begin the authentication process.
 
-Once configured, the MCP servers will be available to all agents in your project without any additional client-side setup.
+Once configured, the MCP servers will be available to all users of your project without any additional client-side setup.
 
 **Note:** _When an MCP server is authenticated, the authenticated user is currently shared across **all** users of the project. In the future Tambo will support per-user authentication._
 
@@ -69,7 +80,9 @@ sequenceDiagram
 
 ### 2. Client-Side Support
 
-Client-side MCP integration allows your application to connect to MCP servers that are accessible from the end user's browser.
+Client-side MCP integration allows your application to connect to MCP servers
+that are accessible from the end user's browser, for instance when using a local
+MCP server.
 
 This is useful for:
 
