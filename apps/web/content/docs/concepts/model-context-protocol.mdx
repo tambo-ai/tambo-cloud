@@ -36,13 +36,11 @@ graph LR
     Tambo <--server-side--> MCP3[mcp.app2.com]
 ```
 
-### 1. Server-Side Support
+### 1. Server-Side Support (recommended)
 
 Server-side MCP integration allows you to configure MCP servers at the project
 level through the Tambo dashboard. This generally gives the best end-user performance and
 allows you to use OAuth-based authentication.
-
-This is the recommended approach for most use cases.
 
 This approach is beneficial when:
 
@@ -63,7 +61,7 @@ Once configured, the MCP servers will be available to all users of your project 
 
 **Note:** _When an MCP server is authenticated, the authenticated user is currently shared across **all** users of the project. In the future Tambo will support per-user authentication._
 
-If your server does not support OAuth-based authentication, you can add a custom header to the MCP server configuration.
+If your server does not support OAuth-based authentication, you can add a custom header to the MCP server configuration. (e.g. `X-Api-Key`)
 
 This is how server-side MCP works:
 
@@ -106,7 +104,9 @@ function MyApp() {
           {
             // MCP server configuration
             url: "http://localhost:8123/",
-            customHeaders: {}, // Optional custom headers, eg. { "Authorization": `Bearer ${token}` }
+            // Optional custom headers, eg.
+            // { "Authorization": `Bearer ${token}` } or { "X-Api-Key": "1234567890" }
+            customHeaders: {},
             transport: MCPTransport.HTTP, // optional, defaults to SSE
           },
         ]}
