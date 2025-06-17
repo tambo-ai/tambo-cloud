@@ -16,22 +16,23 @@ const config: JestConfigWithTsJest = {
 
   testEnvironment: "jsdom",
 
-  /**
-   * Tell Jest those extensions must be treated as ESM so that imports using
-   * the native `import` syntax keep working in tests.
-   */
   extensionsToTreatAsEsm: [".ts", ".tsx"],
 
-  /** Module-alias mapping that mirrors the aliases from tsconfig. */
+  /** 👇 NEW: ensure ts-jest always transforms .ts/.tsx sources */
+  transform: {
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        useESM: true,
+      },
+    ],
+  },
+
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
     "^@tambo-ai-cloud/(.*)$": "<rootDir>/../../packages/$1/src",
   },
 
-  /**
-   * Global ts-jest options.
-   * `useESM: true` enables ESM output; the project tsconfig is reused.
-   */
   globals: {
     "ts-jest": {
       useESM: true,
@@ -39,13 +40,8 @@ const config: JestConfigWithTsJest = {
     },
   },
 
-  /** Prettier is used for snapshot formatting. */
   prettierPath: require.resolve("prettier"),
-
-  /** Per-test setup (RTL, jest-dom, etc.). */
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
-
-  /** Ignore build artefacts & Next.js output when looking for tests. */
   testPathIgnorePatterns: ["/node_modules/", "/.next/", "/dist/"],
 };
 
