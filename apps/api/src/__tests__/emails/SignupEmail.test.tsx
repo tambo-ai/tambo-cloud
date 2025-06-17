@@ -9,17 +9,13 @@ describe("SignupEmail template", () => {
     });
 
     // Basic structure
-    expect(text).toContain("Hi Taylor,");
-    expect(text).toContain("Thanks for signing up for Tambo!");
-    expect(text).toContain("quick-start guide:");
+    expect(text).toContain("welcome, Taylor!");
+    expect(text).toContain("Thanks for signing up!");
+    expect(text).toContain("npx create-tambo@latest");
     expect(text).toContain("https://docs.tambo.co/quick-start");
 
-    // Call-to-action and signature
-    expect(text).toContain("If you have any questions at all, just reply to this email");
-    expect(text).toContain("— The Tambo Team");
-
-    // Unsubscribe footer
-    expect(text).toContain("Prefer not to receive onboarding emails?");
-    expect(text).toContain("https://tambo.co/unsub?id=123");
+    // Signature and footer
+    expect(text).toContain("— michael & the tambo team");
+    expect(text).toContain("Unsubscribe: https://tambo.co/unsub?id=123");
   });
 });
