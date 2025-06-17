@@ -9,9 +9,7 @@ function toTitleCase(input: string): string {
   return input.replace(/\w\S*/g, (txt) => txt[0].toUpperCase() + txt.slice(1));
 }
 
-// -----------------------------------------------------------------------------
-// Variants
-// -----------------------------------------------------------------------------
+// Define the variant type explicitly
 type ButtonVariantType =
   | "default"
   | "destructive"
