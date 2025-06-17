@@ -435,15 +435,25 @@ async function* throttleChunks<T>(
   let lastYieldedChunk: T | undefined = undefined;
   let lastChunk: T | undefined = undefined;
   let lastUpdateTime = 0;
+  let isFirstChunkYielded = false;
   for await (const chunk of stream) {
     lastChunk = chunk;
+
+    // Make sure not to yield duplicate chunks, just a waste of bandwidth
     if (lastYieldedChunk !== undefined && isEqual(chunk, lastYieldedChunk)) {
       continue;
     }
+
+    // Throttle the stream to avoid sending too many updates to the client,
+    // but still yield the first chunk immediately
     const currentTime = Date.now();
-    if (currentTime - lastUpdateTime < STREAMING_UPDATE_INTERVAL_MS) {
+    if (
+      !isFirstChunkYielded &&
+      currentTime - lastUpdateTime < STREAMING_UPDATE_INTERVAL_MS
+    ) {
       continue;
     }
+    isFirstChunkYielded = true;
     lastUpdateTime = currentTime;
     lastYieldedChunk = chunk;
     yield chunk;
