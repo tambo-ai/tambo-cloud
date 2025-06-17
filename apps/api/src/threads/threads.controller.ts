@@ -53,7 +53,7 @@ import { ThreadsService } from "./threads.service";
  * This is to avoid sending too many updates to the client, which can cause
  * performance issues.
  */
-const STREAMING_UPDATE_INTERVAL_MS = 200;
+const STREAMING_UPDATE_INTERVAL_MS = 100;
 
 @ApiTags("threads")
 @ApiSecurity("apiKey")
@@ -434,8 +434,8 @@ async function* throttleChunks<T>(
 ): AsyncIterableIterator<T> {
   let lastYieldedChunk: T | undefined = undefined;
   let lastChunk: T | undefined = undefined;
+  // Start at 0 to make sure the first chunk is yielded immediately
   let lastUpdateTime = 0;
-  let isFirstChunkYielded = false;
   for await (const chunk of stream) {
     lastChunk = chunk;
 
@@ -444,16 +444,11 @@ async function* throttleChunks<T>(
       continue;
     }
 
-    // Throttle the stream to avoid sending too many updates to the client,
-    // but still yield the first chunk immediately
+    // Throttle the stream to avoid sending too many updates to the client
     const currentTime = Date.now();
-    if (
-      !isFirstChunkYielded &&
-      currentTime - lastUpdateTime < STREAMING_UPDATE_INTERVAL_MS
-    ) {
+    if (currentTime - lastUpdateTime < STREAMING_UPDATE_INTERVAL_MS) {
       continue;
     }
-    isFirstChunkYielded = true;
     lastUpdateTime = currentTime;
     lastYieldedChunk = chunk;
     yield chunk;
