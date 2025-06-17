@@ -8,6 +8,7 @@
     "noImplicitAny": false,
     "moduleResolution": "node",
     "module": "commonjs",
+    "jsx": "react-jsx",
     "resolveJsonModule": true,
     "sourceMap": true,
     "paths": {
