@@ -53,7 +53,7 @@ import { ThreadsService } from "./threads.service";
  * This is to avoid sending too many updates to the client, which can cause
  * performance issues.
  */
-const STREAMING_UPDATE_INTERVAL_MS = 100;
+const STREAMING_UPDATE_INTERVAL_MS = 50;
 
 @ApiTags("threads")
 @ApiSecurity("apiKey")
