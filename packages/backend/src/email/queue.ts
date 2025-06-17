@@ -17,10 +17,12 @@ export const boss =
     ? new PgBoss({ connectionString })
     : undefined;
 
+let started = false;
+
 export async function initEmailQueue() {
-  if (!boss) return;
-  if (boss.isStarted) return;
+  if (!boss || started) return;
   await boss.start();
+  started = true;
 }
 
 export async function enqueueEmail(payload: EmailJobPayload) {
@@ -32,12 +34,9 @@ export function attachEmailWorker(
   handler: (payload: EmailJobPayload) => Promise<void>,
 ) {
   if (!boss) return;
-  boss.work(EMAIL_JOB_NAME, async (job) => {
-    try {
-      await handler(job.data as EmailJobPayload);
-      await job.done();
-    } catch (err) {
-      await job.done(err as Error);
+  boss.work<EmailJobPayload>(EMAIL_JOB_NAME, async (jobs) => {
+    for (const job of jobs) {
+      await handler(job.data);
     }
   });
 }

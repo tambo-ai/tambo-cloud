@@ -34,17 +34,17 @@ export async function sendEmail<P extends Record<string, unknown>>(
   // Use createElement to avoid JSX in .ts file
   const html = render(React.createElement(Component, props));
 
-  try {
-    const { id } = await resend.emails.send({
-      from: from ?? process.env.RESEND_FROM_ADDR ?? "noreply@tambo.ai", // eslint-disable-line turbo/no-undeclared-env-vars
-      to,
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      subject: subject ?? Component.displayName ?? Component.name ?? "Email",
-      html,
-    });
+  const response = await resend.emails.send({
+    from: from ?? process.env.RESEND_FROM_ADDR ?? "noreply@tambo.ai", // eslint-disable-line turbo/no-undeclared-env-vars
+    to,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    subject: subject ?? Component.displayName ?? Component.name ?? "Email",
+    html,
+  });
 
-    return { id, success: true };
-  } catch (error) {
-    return { id: null, success: false, error };
-  }
+  return {
+    id: response.data?.id ?? null,
+    success: response.error == null,
+    error: response.error ?? undefined,
+  };
 }

@@ -1,4 +1,9 @@
-import { attachEmailWorker, initEmailQueue, EmailJobPayload } from "./queue";
+import {
+  attachEmailWorker,
+  initEmailQueue,
+  EmailJobPayload,
+  boss,
+} from "./queue";
 import { sendEmail } from "./sendEmail";
 
 async function loadEmailComponent(name: string) {
@@ -14,7 +19,7 @@ export async function startEmailWorker() {
     const Component = await loadEmailComponent(payload.componentName);
     await sendEmail({
       to: payload.to,
-      component: Component,  
+      component: Component,
       props: payload.props,
       subject: payload.subject,
       from: payload.from,
@@ -26,8 +31,7 @@ export async function startEmailWorker() {
 }
 
 async function gracefulShutdown() {
-  const { boss } = await import("./queue");
-  if (boss && boss.isStarted) {
+  if (boss) {
     await boss.stop();
   }
   process.exit(0);
