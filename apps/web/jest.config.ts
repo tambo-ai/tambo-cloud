@@ -31,6 +31,9 @@ const config: JestConfigWithTsJest = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
     "^@tambo-ai-cloud/(.*)$": "<rootDir>/../../packages/$1/src",
+
+    // 👇 NEW – map static asset extensions to the generic file mock
+    "\\.(png|jpe?g|gif|webp|avif|svg)$": "<rootDir>/__mocks__/fileMock.ts",
   },
 
   globals: {
