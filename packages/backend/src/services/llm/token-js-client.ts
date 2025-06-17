@@ -1,7 +1,6 @@
 import { formatTemplate } from "@libretto/openai/lib/src/template";
 import { StreamCompletionResponse, TokenJS } from "@libretto/token.js";
 import { ChatCompletionMessageParam } from "@tambo-ai-cloud/core";
-import { encode } from "gpt-tokenizer";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { ResponseFormatJSONObject } from "openai/resources";
@@ -12,6 +11,7 @@ import {
   LLMResponse,
   StreamingCompleteParams,
 } from "./llm-client";
+import { limitTokens } from "./token-limiter";
 
 export class TokenJSClient implements LLMClient {
   private client: TokenJS;
@@ -67,44 +67,7 @@ export class TokenJSClient implements LLMClient {
         ? "openai-compatible"
         : this.provider;
 
-    const tokenEncoding = encode(JSON.stringify(messagesFormatted));
-
-    const tokenLimit = 120000;
-    if (tokenEncoding.length > tokenLimit) {
-      // Apply token limiting strategy
-      const systemMessage = messagesFormatted.find(
-        (msg: any) => msg.role === "system",
-      );
-      const nonSystemMessages = messagesFormatted.filter(
-        (msg: any) => msg.role !== "system",
-      );
-
-      const limitedMessages: any[] = [];
-      let currentTokenCount = systemMessage
-        ? encode(JSON.stringify([systemMessage])).length
-        : 0;
-
-      for (let i = nonSystemMessages.length - 1; i >= 0; i--) {
-        const message = nonSystemMessages[i];
-        const messageTokens = encode(JSON.stringify([message])).length;
-
-        if (currentTokenCount + messageTokens <= tokenLimit) {
-          limitedMessages.unshift(message);
-          currentTokenCount += messageTokens;
-        } else {
-          break;
-        }
-      }
-
-      if (systemMessage) {
-        limitedMessages.unshift(systemMessage);
-      }
-
-      messagesFormatted = limitedMessages;
-      console.log(
-        `Token limit exceeded. Reduced from ${tokenEncoding.length} to ${currentTokenCount} tokens`,
-      );
-    }
+    messagesFormatted = limitTokens(messagesFormatted, 120000);
 
     if (params.stream) {
       const stream = await this.client.chat.completions.create({
