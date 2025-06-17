@@ -16,7 +16,7 @@ Thanks for signing up for Tambo!
 To help you get started, check out our quick-start guide:
 https://docs.tambo.co/quick-start
 
-If you have any questions at all, just reply to this email—our team is always happy to help.
+If you have any questions at all, just reply to this email — our team is always happy to help.
 
 — The Tambo Team
 
