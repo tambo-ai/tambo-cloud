@@ -54,5 +54,7 @@ function truncateLimitingStrategy(
     limitedMessages.unshift(systemMessage);
   }
 
+  console.log(`Token limit exceeded. Reduced to ${currentTokenCount} tokens`);
+
   return limitedMessages;
 }
