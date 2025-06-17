@@ -8,7 +8,6 @@ import { ComposioAuthMode, MCPTransport } from "@tambo-ai-cloud/core";
  * Creates a TRPC caller instance with the current context.
  * @returns A TRPC caller instance.
  */
-// @ts-expect-error: TRPC caller type too complex to name across package boundaries
 export async function getCaller() {
   const ctx = await createTRPCContext({
     headers: new Headers(),
