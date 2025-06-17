@@ -25,7 +25,8 @@ export class WelcomeEmailQueue {
    */
   async work(boss: PgBoss) {
     await boss.work<WelcomeEmailPayload>(WELCOME_EMAIL_JOB, async (job) => {
-      const { userId, email, firstName } = job.data;
+      // `pg-boss` defines `data: unknown`; cast once for strong typing
+      const { userId, email, firstName } = job.data as WelcomeEmailPayload;
 
       // Call the shared util to send the actual email
       await sendWelcomeEmail(this.emailService, {
@@ -35,8 +36,7 @@ export class WelcomeEmailQueue {
       });
 
       // Record the send event (very light for now, can be extended)
-      await this.db.insert(
-        // @ts-ignore - email_events not yet in typed schema; raw query for now
+      await this.db.execute(
         `insert into email_events (user_id, event_type, created_at) values ($1, 'welcome_email', now())`,
         [userId],
       );

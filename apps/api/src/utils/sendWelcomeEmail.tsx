@@ -23,7 +23,8 @@ export async function sendWelcomeEmail(
     unsubscribeUrl,
   } as const;
 
-  const html = render(<SignupEmail {...emailProps} />);
+  // `render` can be sync or async depending on the template; handle both.
+  const html = await render(<SignupEmail {...emailProps} />);
   const text = renderSignupEmailText(emailProps);
 
   await emailService.sendEmail({
