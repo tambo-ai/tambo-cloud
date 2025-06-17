@@ -4,6 +4,7 @@ import { ChatCompletionMessageParam } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { ResponseFormatJSONObject } from "openai/resources";
+import { llmProviderConfig } from "../../config/llm.config";
 import { Provider } from "../../model/providers";
 import {
   CompleteParams,
@@ -67,7 +68,10 @@ export class TokenJSClient implements LLMClient {
         ? "openai-compatible"
         : this.provider;
 
-    messagesFormatted = limitTokens(messagesFormatted, 120000);
+    const providerConfig = llmProviderConfig[this.provider];
+    const modelTokenLimit =
+      providerConfig.models?.[this.model]?.properties.inputTokenLimit ?? 120000;
+    messagesFormatted = limitTokens(messagesFormatted, modelTokenLimit);
 
     if (params.stream) {
       const stream = await this.client.chat.completions.create({
