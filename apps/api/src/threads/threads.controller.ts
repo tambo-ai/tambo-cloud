@@ -23,7 +23,6 @@ import {
 } from "@nestjs/swagger";
 import { GenerationStage } from "@tambo-ai-cloud/core";
 import { Request } from "express";
-import isEqual from "react-fast-compare";
 import { ApiKeyGuard, ProjectId } from "../projects/guards/apikey.guard";
 import {
   ProjectAccessOwnGuard,
@@ -46,14 +45,7 @@ import {
 } from "./dto/thread.dto";
 import { ThreadInProjectGuard } from "./guards/thread-in-project-guard";
 import { ThreadsService } from "./threads.service";
-
-/**
- * The interval at which to send updates to the client.
- *
- * This is to avoid sending too many updates to the client, which can cause
- * performance issues.
- */
-const STREAMING_UPDATE_INTERVAL_MS = 50;
+import { throttleChunks } from "./util/streaming";
 
 @ApiTags("threads")
 @ApiSecurity("apiKey")
@@ -416,7 +408,10 @@ export class ThreadsController {
     }>,
   ) {
     try {
-      for await (const chunk of throttleChunks(stream)) {
+      for await (const chunk of throttleChunks(
+        stream,
+        (m1, m2) => m1.responseMessageDto.id !== m2.responseMessageDto.id,
+      )) {
         response.write(`data: ${JSON.stringify(chunk)}\n\n`);
       }
     } catch (error: any) {
@@ -426,39 +421,5 @@ export class ThreadsController {
       response.write("data: DONE\n\n");
       response.end();
     }
-  }
-}
-
-async function* throttleChunks<T>(
-  stream: AsyncIterableIterator<T>,
-): AsyncIterableIterator<T> {
-  let lastYieldedChunk: T | undefined = undefined;
-  let lastChunk: T | undefined = undefined;
-  // Start at 0 to make sure the first chunk is yielded immediately
-  let lastUpdateTime = 0;
-  for await (const chunk of stream) {
-    // Save in case we need to yield the last chunk
-    lastChunk = chunk;
-
-    // Make sure not to yield duplicate chunks, just a waste of bandwidth
-    if (lastYieldedChunk !== undefined && isEqual(chunk, lastYieldedChunk)) {
-      continue;
-    }
-
-    // Throttle the stream to avoid sending too many updates to the client
-    const currentTime = Date.now();
-    if (currentTime - lastUpdateTime < STREAMING_UPDATE_INTERVAL_MS) {
-      continue;
-    }
-    lastUpdateTime = currentTime;
-    lastYieldedChunk = chunk;
-    yield chunk;
-  }
-  // The last chunk may have been skipped due to throttling, so we yield it if
-  // it's different from the last yielded chunk. Note that we do not need deep
-  // equality here because the only real reason to emit here is because of
-  // throttling so we're virtually guaranteed to have a different chunk.
-  if (lastChunk !== undefined && lastChunk !== lastYieldedChunk) {
-    yield lastChunk;
   }
 }
