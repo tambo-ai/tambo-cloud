@@ -12,7 +12,6 @@ const MAX_POOL_SIZE = 50;
 const combinedSchema = { ...schema, ...emailSchema } as const;
 
 function getDb(databaseUrl: string): HydraDatabase {
-  // quick hack to get the db connection
   if (!globalPool) {
     const pool = new Pool({
       connectionString: databaseUrl,
@@ -32,6 +31,8 @@ async function closeDb() {
   }
 }
 
+export * from "./schema";
+export * from "./emailSchema";
 export * from "./oauth/OAuthLocalProvider";
 export * from "./types";
 export { closeDb, getDb, operations, combinedSchema as schema };
