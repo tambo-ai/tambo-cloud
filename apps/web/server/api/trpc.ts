@@ -13,10 +13,8 @@ import { ZodError } from "zod";
 
 import { env } from "@/lib/env";
 import { Session, SupabaseClient } from "@supabase/supabase-js";
-import { getDb, HydraDb } from "@tambo-ai-cloud/db";
-import { sql } from "drizzle-orm";
-import { schema } from "@tambo-ai-cloud/db";
-import { eq } from "drizzle-orm";
+import { getDb, HydraDb, schema } from "@tambo-ai-cloud/db";
+import { sql, eq } from "drizzle-orm";
 import { subscribeEmailToResendAudience } from "@tambo-ai-cloud/core";
 import jwt from "jsonwebtoken";
 import { getServerSupabaseclient } from "../supabase";
@@ -81,19 +79,16 @@ export const createTRPCContext = async (opts: {
 
       if (existing.length === 0) {
         // Persist locally
-        await db
-          .insert(schema.contacts)
-          .values({
-            firstName: firstName || "unknown",
-            ...(lastName ? { lastName } : {}),
-            email,
-            metadata: {
-              source: "signup",
-              resendAudienceId: process.env.RESEND_AUDIENCE_ID,
-            },
-          })
-          /* rely on unique-key error handling via outer try/catch */
-          ;
+        await db.insert(schema.contacts).values({
+          firstName: firstName || "unknown",
+          ...(lastName ? { lastName } : {}),
+          email,
+          metadata: {
+            source: "signup",
+            resendAudienceId: process.env.RESEND_AUDIENCE_ID,
+          },
+        });
+        /* rely on unique-key error handling via outer try/catch */
 
         // Attempt remote subscription (non-blocking)
         await subscribeEmailToResendAudience(email, firstName, lastName);
@@ -210,7 +205,7 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
         -- auth.uid()
         select set_config('request.jwt.claim.sub', '${sql.raw(
           token?.sub ?? "",
-        )}', TRUE);												
+        )}', TRUE);
         -- set local role
         set local role ${sql.raw(token?.role ?? "anon")};
       `);
@@ -224,7 +219,7 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
         select set_config('request.jwt.claims', NULL, TRUE);
         select set_config('request.jwt.claim.sub', NULL, TRUE);
         reset role;
-        `);
+      `);
     }
   });
 });
