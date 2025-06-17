@@ -507,15 +507,9 @@ export const mcpOauthClientRelations = relations(
 );
 export type DBMcpOauthClient = typeof mcpOauthClients.$inferSelect;
 
-// ────────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Project-level warning / error / alert logs
-// ────────────────────────────────────────────────────────────────────────────────
-
-export enum LogLevel {
-  WARNING = "warning",
-  ERROR = "error",
-  ALERT = "alert",
-}
+// -----------------------------------------------------------------------------
 
 export const projectLogs = pgTable(
   "project_logs",

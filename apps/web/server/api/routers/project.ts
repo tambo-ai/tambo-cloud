@@ -239,7 +239,7 @@ export const projectRouter = createTRPCRouter({
           ? customLlmBaseURL.trim()
           : customLlmBaseURL;
 
-      // ─── Validate custom base-URL for OpenAI-compatible providers ───────────
+      // --- Validate custom base-URL for OpenAI-compatible providers ------------
       if (typeof sanitizedBaseURL === "string" && sanitizedBaseURL !== "") {
         // Basic URL syntax check
         let asURL: URL;
@@ -483,9 +483,9 @@ export const projectRouter = createTRPCRouter({
       };
     }),
 
-  // ──────────────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------------
   //  Project Logs
-  // ──────────────────────────────────────────────────────────────────────────
+  // -------------------------------------------------------------------------
 
   getProjectLogs: protectedProcedure
     .input(
