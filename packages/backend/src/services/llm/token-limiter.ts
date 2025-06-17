@@ -3,7 +3,7 @@ import { encode } from "gpt-tokenizer";
 
 export function limitTokens(
   messages: ChatCompletionMessageParam[],
-  tokenLimit: number,
+  tokenLimit = 120000,
 ): ChatCompletionMessageParam[] {
   const tokenEncoding = encode(JSON.stringify(messages));
 

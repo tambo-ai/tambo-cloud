@@ -70,7 +70,7 @@ export class TokenJSClient implements LLMClient {
 
     const providerConfig = llmProviderConfig[this.provider];
     const modelTokenLimit =
-      providerConfig.models?.[this.model]?.properties.inputTokenLimit ?? 120000;
+      providerConfig.models?.[this.model]?.properties.inputTokenLimit;
     messagesFormatted = limitTokens(messagesFormatted, modelTokenLimit);
 
     if (params.stream) {
