@@ -13,14 +13,14 @@ describe("SignupEmail template", () => {
 
 Thanks for signing up for Tambo!
 
-To help you get started, we recommend working through our quick-start guide:
+To help you get started, check out our quick-start guide:
 https://docs.tambo.co/quick-start
 
-If you have any questions, just reply to this email and our team will be happy to help.
+If you have any questions at all, just reply to this email—our team is always happy to help.
 
 — The Tambo Team
 
-(If you’d rather not receive onboarding emails, you can unsubscribe here: https://tambo.co/unsub?id=123)"
+(Prefer not to receive onboarding emails? Unsubscribe here: https://tambo.co/unsub?id=123)"
     `);
   });
 });
