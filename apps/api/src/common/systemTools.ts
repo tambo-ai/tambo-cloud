@@ -77,7 +77,7 @@ async function getMcpTools(
       await operations.addProjectLogEntry(
         db,
         projectId,
-        "warning",
+        schema.LogLevel.WARNING,
         `MCP server ${mcpServer.id} requires auth but no auth info found`,
         { mcpServerId: mcpServer.id },
       );
@@ -133,7 +133,7 @@ async function getMcpTools(
       await operations.addProjectLogEntry(
         db,
         projectId,
-        "error",
+        schema.LogLevel.ERROR,
         `Error processing MCP server ${mcpServer.id}: ${error instanceof Error ? error.message : String(error)}`,
         { mcpServerId: mcpServer.id },
       );
