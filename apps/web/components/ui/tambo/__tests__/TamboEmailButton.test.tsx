@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TamboEmailButton } from "../TamboEmailButton";
 
@@ -41,7 +41,15 @@ describe("TamboEmailButton", () => {
   it("triggers the same behavior for the ⌘/Ctrl + E keyboard shortcut", async () => {
     render(<TamboEmailButton />);
 
-    await userEvent.keyboard("{Meta>}{KeyE}{/Meta}");
+    // Simulate the key-down event with the correct modifier flag so the component
+    // receives an exact copy of the browser event.
+    // On macOS `metaKey` is used, on Windows/Linux `ctrlKey` is typically used.
+    fireEvent.keyDown(window, {
+      key: "e",
+      code: "KeyE",
+      metaKey: true,
+      ctrlKey: true,
+    });
 
     expect(mockSetValue).toHaveBeenCalledWith(
       "Help me send an email to the founders.",
