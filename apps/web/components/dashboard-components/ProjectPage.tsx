@@ -3,6 +3,7 @@
 import { APIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
 import { AvailableMcpServers } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import { AvailableTools } from "@/components/dashboard-components/project-details/available-tools";
+import { ProjectLogsSection } from "@/components/dashboard-components/project-details/project-logs-section";
 import { CustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
 import { DeleteAlertDialog } from "@/components/dashboard-components/project-details/delete-alert-dialog";
 import { ProjectInfo } from "@/components/dashboard-components/project-details/project-info";
@@ -149,6 +150,9 @@ export function ProjectPage({ projectId }: ProjectPageClientProps) {
           </motion.div>
           <motion.div variants={itemVariants}>
             {project.composioEnabled && <AvailableTools project={project} />}
+          </motion.div>
+          <motion.div variants={itemVariants}>
+            <ProjectLogsSection projectId={projectId} />
           </motion.div>
         </div>
         <motion.div className="pt-2" variants={itemVariants}>

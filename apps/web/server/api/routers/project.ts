@@ -482,4 +482,31 @@ export const projectRouter = createTRPCRouter({
         hasApiKey: usage.hasApiKey,
       };
     }),
+
+  // ──────────────────────────────────────────────────────────────────────────
+  //  Project Logs
+  // ──────────────────────────────────────────────────────────────────────────
+
+  getProjectLogs: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        limit: z.number().min(1).max(100).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { projectId, limit = 20 } = input;
+
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id,
+      );
+
+      return await operations.getRecentProjectLogEntries(
+        ctx.db,
+        projectId,
+        limit,
+      );
+    }),
 });
