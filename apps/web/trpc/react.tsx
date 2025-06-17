@@ -21,6 +21,7 @@ const getQueryClient = () => {
   return (clientQueryClientSingleton ??= createQueryClient());
 };
 
+// @ts-ignore TS2742 - avoid oversized inferred types referencing db schema
 export const api = createTRPCReact<AppRouter>();
 
 /**
