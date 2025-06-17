@@ -13,7 +13,6 @@ import { validateRouter } from "./routers/validate";
  *
  * All routers added in /api/routers should be manually added here.
  */
-// @ts-ignore TS2742 - avoid oversized inferred types referencing db schema
 export const appRouter = createTRPCRouter({
   user: userRouter,
   project: projectRouter,
@@ -23,7 +22,7 @@ export const appRouter = createTRPCRouter({
   demo: demoRouter,
   llm: llmRouter,
   validate: validateRouter,
-});
+}) as any;
 
 // export type definition of API for the client
 export type AppRouter = typeof appRouter;
