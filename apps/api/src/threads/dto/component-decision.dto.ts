@@ -18,6 +18,21 @@ export class ComponentDecisionV2Dto implements ComponentDecisionV2 {
   reasoning!: string;
   statusMessage?: string;
   completionStatusMessage?: string;
+  /** This is filled in whether the tool call is a server-side or client-side tool call. */
+  @ApiProperty({
+    description:
+      "The tool call request. This is filled in whether the tool call is a server-side or client-side tool call.",
+  })
+  toolCallRequest?: ToolCallRequestDto;
+  @ApiProperty({
+    example: {
+      parameters: [{ parameterName: "name", parameterValue: "John Doe" }],
+      toolName: "get_user_info",
+    } satisfies ToolCallRequestDto,
+    description:
+      "The unique id of the tool call. This is filled in whether the tool call is a server-side or client-side tool call.",
+  })
+  toolCallId?: string;
 }
 
 export class ToolParameter {
@@ -28,8 +43,17 @@ export class ToolParameter {
 @ApiSchema({ name: "ToolCallRequest" })
 export class ToolCallRequestDto implements Partial<ToolCallRequest> {
   /** @deprecated - The enclosing message's tool_call_id is used instead */
+  @ApiProperty({
+    deprecated: true,
+    description: "The unique id of the tool call, no longer used.",
+  })
   tool_call_id?: string;
-  tool?: string;
+  @ApiProperty({
+    description: "The parameters of the function to call.",
+  })
   parameters!: ToolParameter[];
+  @ApiProperty({
+    description: "The name of the function to call.",
+  })
   toolName!: string;
 }
