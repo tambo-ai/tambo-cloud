@@ -51,6 +51,19 @@ const config: JestConfigWithTsJest = {
   prettierPath: require.resolve("prettier"),
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testPathIgnorePatterns: ["/node_modules/", "/.next/", "/dist/"],
+
+  /**
+   * By default Jest does not transform anything inside node_modules.
+   * Many modern frontend libraries ship pure ESM which will break in the
+   * JSDOM environment unless they are transpiled.  This pattern keeps the
+   * default behaviour but **allows** ESM packages to be transformed.
+   *
+   *   - `^.+\\.mjs$`           → transform all .mjs files
+   *   - `/node_modules/(?!(.*\\.mjs$))` → keep ignoring non-ESM node deps
+   */
+  transformIgnorePatterns: [
+    "/node_modules/(?!(.*\\.mjs$))",
+  ],
 };
 
 export default config;
