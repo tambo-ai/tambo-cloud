@@ -506,3 +506,41 @@ export const mcpOauthClientRelations = relations(
   }),
 );
 export type DBMcpOauthClient = typeof mcpOauthClients.$inferSelect;
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Project-level warning / error / alert logs
+// ────────────────────────────────────────────────────────────────────────────────
+
+export enum LogLevel {
+  WARNING = "warning",
+  ERROR = "error",
+  ALERT = "alert",
+}
+
+export const projectLogs = pgTable(
+  "project_logs",
+  ({ text, timestamp }) => ({
+    id: text("id")
+      .primaryKey()
+      .notNull()
+      .unique()
+      .default(sql`generate_custom_id('pl_')`),
+    projectId: text("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    timestamp: timestamp("timestamp", { withTimezone: true })
+      .default(sql`clock_timestamp()`)
+      .notNull(),
+    level: text("level", {
+      enum: Object.values<string>(LogLevel) as [LogLevel],
+    }).notNull(),
+    message: text("message").notNull(),
+    metadata: customJsonb<Record<string, unknown>>("metadata"),
+  }),
+  (table) => [
+    index("project_logs_project_idx").on(table.projectId),
+    index("project_logs_timestamp_idx").on(table.timestamp),
+  ],
+);
+
+export type DBProjectLog = typeof projectLogs.$inferSelect;
