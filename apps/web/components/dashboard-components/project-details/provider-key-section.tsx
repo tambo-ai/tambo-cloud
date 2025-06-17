@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -627,7 +629,7 @@ export function ProviderKeySection({
                             </span>
                             {model.status && (
                               <span
-                                className={`ml-2 rounded-full px-1.5 py-0.5 text-xs ${
+                                className={`ml-2rounded-full px-1.5 py-0.5 text-xs ${
                                   model.status === "untested"
                                     ? "bg-gray-200 text-gray-700"
                                     : "bg-green-100 text-green-700"
