@@ -36,7 +36,9 @@ const config: JestConfigWithTsJest = {
   globals: {
     "ts-jest": {
       useESM: true,
-      tsconfig: "<rootDir>/tsconfig.json",
+      tsconfig: {
+        jsx: "react-jsx",
+      },
     },
   },
 
