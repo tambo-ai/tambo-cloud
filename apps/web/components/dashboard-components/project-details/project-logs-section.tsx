@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/trpc/react";
 import { Loader2 } from "lucide-react";
-import { format } from "date-fns";
 
 interface ProjectLogsSectionProps {
   projectId: string;
@@ -53,7 +52,7 @@ export function ProjectLogsSection({ projectId }: ProjectLogsSectionProps) {
                   {log.level}
                 </span>
                 <span className="text-muted-foreground">
-                  {format(new Date(log.timestamp), "yyyy-MM-dd HH:mm")}
+                  {new Date(log.timestamp).toLocaleString()}
                 </span>
               </div>
               <p className="text-sm">{log.message}</p>
