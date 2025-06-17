@@ -10,7 +10,7 @@ import "@testing-library/jest-dom";
 //   in a deterministic environment.
 // • Extend / adjust the keys below whenever new env-vars are introduced.
 // -----------------------------------------------------------------------------
-jest.mock("@/env", () => ({
+jest.mock("@/lib/env", () => ({
   env: {
     // Browser-exposed variables
     NEXT_PUBLIC_APP_URL: "http://localhost:3000",
