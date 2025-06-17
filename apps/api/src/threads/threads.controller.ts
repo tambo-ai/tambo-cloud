@@ -437,6 +437,7 @@ async function* throttleChunks<T>(
   // Start at 0 to make sure the first chunk is yielded immediately
   let lastUpdateTime = 0;
   for await (const chunk of stream) {
+    // Save in case we need to yield the last chunk
     lastChunk = chunk;
 
     // Make sure not to yield duplicate chunks, just a waste of bandwidth
@@ -454,11 +455,10 @@ async function* throttleChunks<T>(
     yield chunk;
   }
   // The last chunk may have been skipped due to throttling, so we yield it if
-  // it's different from the last yielded chunk
-  if (
-    lastChunk !== undefined &&
-    (lastChunk !== lastYieldedChunk || !isEqual(lastChunk, lastYieldedChunk))
-  ) {
+  // it's different from the last yielded chunk. Note that we do not need deep
+  // equality here because the only real reason to emit here is because of
+  // throttling so we're virtually guaranteed to have a different chunk.
+  if (lastChunk !== undefined && lastChunk !== lastYieldedChunk) {
     yield lastChunk;
   }
 }
