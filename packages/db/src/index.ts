@@ -8,7 +8,8 @@ import type { HydraDatabase } from "./types";
 let globalPool: Pool | null = null;
 const MAX_POOL_SIZE = 50;
 
-export const schema = { ...baseSchema, ...emailSchema } as const;
+// Merge core + email tables for Drizzle runtime usage
+export const combinedSchema = { ...baseSchema, ...emailSchema } as const;
 
 function getDb(databaseUrl: string): HydraDatabase {
   if (!globalPool) {
@@ -18,7 +19,7 @@ function getDb(databaseUrl: string): HydraDatabase {
       connectionTimeoutMillis: 10000,
     });
   }
-  const db = drizzle(globalPool, { schema });
+  const db = drizzle(globalPool, { schema: combinedSchema });
   return db as unknown as HydraDatabase;
 }
 
@@ -28,6 +29,9 @@ async function closeDb() {
     globalPool = null;
   }
 }
+
+// Re-export the original schema namespace so existing imports (`import { schema }`) keep working
+export * as schema from "./schema";
 
 export * from "./schema";
 export * from "./emailSchema";
