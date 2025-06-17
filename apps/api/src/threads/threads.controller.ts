@@ -47,6 +47,14 @@ import {
 import { ThreadInProjectGuard } from "./guards/thread-in-project-guard";
 import { ThreadsService } from "./threads.service";
 
+/**
+ * The interval at which to send updates to the client.
+ *
+ * This is to avoid sending too many updates to the client, which can cause
+ * performance issues.
+ */
+const STREAMING_UPDATE_INTERVAL_MS = 200;
+
 @ApiTags("threads")
 @ApiSecurity("apiKey")
 @UseGuards(ApiKeyGuard)
@@ -408,7 +416,7 @@ export class ThreadsController {
     }>,
   ) {
     try {
-      for await (const chunk of filterDuplicateChunks(stream)) {
+      for await (const chunk of throttleChunks(stream)) {
         response.write(`data: ${JSON.stringify(chunk)}\n\n`);
       }
     } catch (error: any) {
@@ -421,15 +429,31 @@ export class ThreadsController {
   }
 }
 
-async function* filterDuplicateChunks<T>(
+async function* throttleChunks<T>(
   stream: AsyncIterableIterator<T>,
 ): AsyncIterableIterator<T> {
-  let previousChunk: T | undefined = undefined;
+  let lastYieldedChunk: T | undefined = undefined;
+  let lastChunk: T | undefined = undefined;
+  let lastUpdateTime = 0;
   for await (const chunk of stream) {
-    if (previousChunk !== undefined && isEqual(chunk, previousChunk)) {
+    lastChunk = chunk;
+    if (lastYieldedChunk !== undefined && isEqual(chunk, lastYieldedChunk)) {
       continue;
     }
-    previousChunk = chunk;
+    const currentTime = Date.now();
+    if (currentTime - lastUpdateTime < STREAMING_UPDATE_INTERVAL_MS) {
+      continue;
+    }
+    lastUpdateTime = currentTime;
+    lastYieldedChunk = chunk;
     yield chunk;
+  }
+  // The last chunk may have been skipped due to throttling, so we yield it if
+  // it's different from the last yielded chunk
+  if (
+    lastChunk !== undefined &&
+    (lastChunk !== lastYieldedChunk || !isEqual(lastChunk, lastYieldedChunk))
+  ) {
+    yield lastChunk;
   }
 }
