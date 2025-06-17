@@ -169,7 +169,7 @@ function HeroCTAButton() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.9, duration: 0.6, ease: "easeOut" }}
     >
-      <Button asChild className="mt-4 hover:scale-105 transition-transform">
+      <Button asChild className="mt-4">
         <Link href="#code-examples" onClick={handleScrollToSection}>
           {heroContent.cta.buttonText}
         </Link>

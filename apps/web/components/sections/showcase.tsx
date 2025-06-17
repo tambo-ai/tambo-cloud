@@ -1,8 +1,7 @@
 "use client";
 
 import { Section } from "@/components/section";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { EyeIcon } from "lucide-react";
 import Image from "next/image";
@@ -87,21 +86,20 @@ export function Showcase() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2, ease }}
           >
-            <Link
-              href={showcaseContent.cta.primary.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(
-                buttonVariants({ variant: "default" }),
-                "text-base flex items-center gap-2 py-3 px-6 rounded-md justify-center hover:scale-105 transition-transform",
-              )}
+            <Button
+              asChild
+              size="lg"
+              Icon={EyeIcon}
+              className="text-base"
             >
-              {(() => {
-                const Icon = showcaseContent.cta.primary.icon;
-                return <Icon className="h-4 w-4" />;
-              })()}
-              {showcaseContent.cta.primary.text}
-            </Link>
+              <Link
+                href={showcaseContent.cta.primary.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {showcaseContent.cta.primary.text}
+              </Link>
+            </Button>
           </motion.div>
         </motion.div>
       </div>
