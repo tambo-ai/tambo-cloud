@@ -49,7 +49,8 @@ export async function fetchAllProjects() {
 export async function fetchProjectById(projectId: string) {
   const caller = await getCaller();
   const projects = await caller.project.getUserProjects();
-  const project = projects.find((p) => p.id === projectId);
+  // Narrow the parameter type to avoid an implicit-any error
+  const project = projects.find((p: { id: string }) => p.id === projectId);
   return project;
 }
 
