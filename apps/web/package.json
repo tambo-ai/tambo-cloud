@@ -14,7 +14,7 @@
     "clean": "rm -rf dist .next coverage"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.0.1",
+    "@hookform/resolvers": "^5.1.1",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -39,11 +39,11 @@
     "@supabase/supabase-js": "^2.49.9",
     "@t3-oss/env-nextjs": "^0.13.6",
     "@tambo-ai-cloud/db": "*",
-    "@tambo-ai/react": "^0.29.0",
+    "@tambo-ai/react": "^0.30.0",
     "@tanstack/react-query": "^5.80.6",
     "@theguild/remark-mermaid": "^0.3.0",
-    "@trpc/client": "^11.3.1",
-    "@trpc/react-query": "^11.3.1",
+    "@trpc/client": "^11.4.1",
+    "@trpc/react-query": "^11.4.1",
     "@trpc/server": "^11.0.2",
     "@types/react-speech-recognition": "^3.9.6",
     "@vercel/analytics": "^1.5.0",
@@ -84,7 +84,7 @@
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
-    "resend": "^4.5.2",
+    "resend": "^4.6.0",
     "shiki": "^2.5.0",
     "superjson": "^2.2.2",
     "tailwind-merge": "^2.4.0",
@@ -115,5 +115,6 @@
   },
   "volta": {
     "extends": "../../package.json"
-  }
+  },
+  "license": "Apache-2.0"
 }
