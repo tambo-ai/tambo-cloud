@@ -21,6 +21,7 @@ const getQueryClient = () => {
   return (clientQueryClientSingleton ??= createQueryClient());
 };
 
+// @ts-expect-error: Generated type for AppRouter is too large for TS to name across package boundaries
 export const api = createTRPCReact<AppRouter>();
 
 /**
