@@ -21,7 +21,8 @@
     "db:studio": "cd packages/db && npm run db:studio",
     "test:suggestions": "cd scripts && tsx test-suggestions.ts",
     "rename-to-tambo": "tsx scripts/update-content.ts && tsx scripts/rename-files.ts",
-    "rename-vnext": "tsx scripts/rename-vnext.ts"
+    "rename-vnext": "tsx scripts/rename-vnext.ts",
+    "emails:preview": "react-email dev"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",

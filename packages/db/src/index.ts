@@ -2,11 +2,14 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as operations from "./operations";
 import * as schema from "./schema";
+import * as emailSchema from "./emailSchema";
 import type { HydraDatabase } from "./types";
 
 let globalPool: Pool | null = null;
 
 const MAX_POOL_SIZE = 50;
+
+const combinedSchema = { ...schema, ...emailSchema } as const;
 
 function getDb(databaseUrl: string): HydraDatabase {
   // quick hack to get the db connection
@@ -16,28 +19,10 @@ function getDb(databaseUrl: string): HydraDatabase {
       max: MAX_POOL_SIZE,
       connectionTimeoutMillis: 10000,
     });
-
-    // Uncomment to debug connection pool issues
-    // pool.on("acquire", () => {
-    //   console.log(
-    //     `Connection acquired: now → ${pool.totalCount}/${pool.idleCount} (total/idle)`,
-    //   );
-    // });
-
-    // pool.on("release", () => {
-    //   console.log(
-    //     `Connection released: now → ${pool.totalCount}/${pool.idleCount} (total/idle) (released connection takes a few ms to be marked as idle)`,
-    //   );
-    // });
-
     globalPool = pool;
   }
-  console.log(
-    `Database status: ${globalPool.totalCount} connections (${globalPool.idleCount} idle)`,
-  );
-  const db = drizzle(globalPool, { schema });
-
-  return db;
+  const db = drizzle(globalPool, { schema: combinedSchema });
+  return db as unknown as HydraDatabase;
 }
 
 async function closeDb() {
@@ -49,4 +34,4 @@ async function closeDb() {
 
 export * from "./oauth/OAuthLocalProvider";
 export * from "./types";
-export { closeDb, getDb, operations, schema };
+export { closeDb, getDb, operations, combinedSchema as schema };
