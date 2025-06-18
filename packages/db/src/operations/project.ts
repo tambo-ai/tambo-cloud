@@ -140,7 +140,12 @@ export async function updateProject(
     updateData.customLlmModelName = customLlmModelName;
   if (customLlmBaseURL !== undefined)
     updateData.customLlmBaseURL = customLlmBaseURL;
-  if (maxInputTokens !== undefined) updateData.maxInputTokens = maxInputTokens;
+  if (maxInputTokens !== undefined) {
+    if (maxInputTokens < 0) {
+      throw new Error("Max input tokens must be greater than 0");
+    }
+    updateData.maxInputTokens = maxInputTokens;
+  }
 
   // Only perform update if there are fields to update
   if (Object.keys(updateData).length === 0) {
