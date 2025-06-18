@@ -1,6 +1,11 @@
 import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
+import { Logger } from "@nestjs/common";
 import { SystemTools } from "@tambo-ai-cloud/backend";
-import { MCPClient, strictifyJSONSchemaProperties } from "@tambo-ai-cloud/core";
+import {
+  LogLevel,
+  MCPClient,
+  strictifyJSONSchemaProperties,
+} from "@tambo-ai-cloud/core";
 import {
   HydraDatabase,
   HydraDb,
@@ -13,7 +18,6 @@ import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { env } from "process";
 import { getComposio } from "./composio";
-import { Logger } from "@nestjs/common";
 
 const logger = new Logger("systemTools");
 
@@ -77,7 +81,7 @@ async function getMcpTools(
       await operations.addProjectLogEntry(
         db,
         projectId,
-        schema.LogLevel.WARNING,
+        LogLevel.WARNING,
         `MCP server ${mcpServer.id} requires auth but no auth info found`,
         { mcpServerId: mcpServer.id },
       );
@@ -133,7 +137,7 @@ async function getMcpTools(
       await operations.addProjectLogEntry(
         db,
         projectId,
-        schema.LogLevel.ERROR,
+        LogLevel.ERROR,
         `Error processing MCP server ${mcpServer.id}: ${error instanceof Error ? error.message : String(error)}`,
         { mcpServerId: mcpServer.id },
       );
