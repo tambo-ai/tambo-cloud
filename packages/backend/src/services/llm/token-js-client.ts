@@ -69,10 +69,11 @@ export class TokenJSClient implements LLMClient {
         ? "openai-compatible"
         : this.provider;
 
-    const providerConfig = llmProviderConfig[this.provider];
     const modelTokenLimit =
-      providerConfig.models?.[this.model]?.properties.inputTokenLimit;
+      llmProviderConfig[this.provider].models?.[this.model]?.properties
+        .inputTokenLimit;
     const effectiveTokenLimit = this.maxInputTokens ?? modelTokenLimit;
+
     messagesFormatted = limitTokens(messagesFormatted, effectiveTokenLimit);
 
     if (params.stream) {
