@@ -475,6 +475,23 @@ export function ProviderKeySection({
           });
           return;
         }
+
+        // Check if tokens exceed the model's maximum
+        const modelConfig =
+          llmProviderConfigData?.[selectedProviderApiName]?.models?.[
+            selectedModelApiName
+          ];
+        const modelMaxTokens = modelConfig?.properties?.inputTokenLimit;
+
+        if (modelMaxTokens && tokens > modelMaxTokens) {
+          toast({
+            title: "Error",
+            description: `Input token limit (${tokens.toLocaleString()}) cannot exceed the model's maximum (${modelMaxTokens.toLocaleString()}).`,
+            variant: "destructive",
+          });
+          return;
+        }
+
         maxInputTokensToSave = tokens;
       } else {
         // Use model's default if no custom value provided
