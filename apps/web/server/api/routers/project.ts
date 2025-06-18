@@ -303,7 +303,6 @@ export const projectRouter = createTRPCRouter({
         "defaultLlmProviderName" in input
       ) {
         updateData.customLlmBaseURL = null;
-        updateData.maxInputTokens = null;
       }
 
       if (Object.keys(updateData).length === 0) {

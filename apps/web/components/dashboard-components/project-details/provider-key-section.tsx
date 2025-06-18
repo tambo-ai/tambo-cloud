@@ -465,7 +465,6 @@ export function ProviderKeySection({
       modelToSave = selectedModelApiName;
       customNameToSave = null;
 
-      // Validate maxInputTokens for all providers
       if (maxInputTokens.trim()) {
         const tokens = parseInt(maxInputTokens);
         if (isNaN(tokens) || tokens <= 0) {
@@ -504,7 +503,6 @@ export function ProviderKeySection({
       baseUrlToSave = baseUrl.trim() || null;
     }
 
-    // If we made it here, clear validation errors and save
     setShowValidationErrors(false);
     updateLlmSettings({
       projectId: project.id,
