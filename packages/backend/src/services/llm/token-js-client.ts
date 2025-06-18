@@ -23,6 +23,7 @@ export class TokenJSClient implements LLMClient {
     private provider: Provider,
     private chainId: string,
     baseURL?: string,
+    private maxInputTokens?: number | null,
   ) {
     const tokenJsOptions: ConstructorParameters<typeof TokenJS>[0] = {};
 
@@ -71,7 +72,8 @@ export class TokenJSClient implements LLMClient {
     const providerConfig = llmProviderConfig[this.provider];
     const modelTokenLimit =
       providerConfig.models?.[this.model]?.properties.inputTokenLimit;
-    messagesFormatted = limitTokens(messagesFormatted, modelTokenLimit);
+    const effectiveTokenLimit = this.maxInputTokens ?? modelTokenLimit;
+    messagesFormatted = limitTokens(messagesFormatted, effectiveTokenLimit);
 
     if (params.stream) {
       const stream = await this.client.chat.completions.create({
