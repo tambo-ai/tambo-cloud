@@ -1,8 +1,6 @@
 {
   "extends": "@tambo-ai-cloud/typescript-config/nextjs.json",
   "compilerOptions": {
-    "noImplicitAny": false,
-    "useUnknownInCatchVariables": false,
     "plugins": [
       {
         "name": "next"

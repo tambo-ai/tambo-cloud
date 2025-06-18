@@ -8,8 +8,7 @@ import { ComposioAuthMode, MCPTransport } from "@tambo-ai-cloud/core";
  * Creates a TRPC caller instance with the current context.
  * @returns A TRPC caller instance.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getCaller(): Promise<any> {
+export async function getCaller() {
   const ctx = await createTRPCContext({
     headers: new Headers(),
   });

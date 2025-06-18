@@ -22,7 +22,7 @@ export const appRouter = createTRPCRouter({
   demo: demoRouter,
   llm: llmRouter,
   validate: validateRouter,
-}) as any;
+});
 
 // export type definition of API for the client
 export type AppRouter = typeof appRouter;
@@ -34,4 +34,4 @@ export type AppRouter = typeof appRouter;
  * const res = await trpc.post.all();
  *       ^? Post[]
  */
-export const createCaller = createCallerFactory(appRouter as any);
+export const createCaller = createCallerFactory(appRouter);
