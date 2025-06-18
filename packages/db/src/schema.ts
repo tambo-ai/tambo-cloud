@@ -4,6 +4,7 @@ import {
   ComponentDecisionV2,
   ComposioAuthMode,
   GenerationStage,
+  LogLevel,
   MCPTransport,
   MessageRole,
   OAuthClientInformation,
@@ -506,16 +507,6 @@ export const mcpOauthClientRelations = relations(
   }),
 );
 export type DBMcpOauthClient = typeof mcpOauthClients.$inferSelect;
-
-// -----------------------------------------------------------------------------
-// Project-level warning / error / alert logs
-// -----------------------------------------------------------------------------
-
-export enum LogLevel {
-  WARNING = "warning",
-  ERROR = "error",
-  ALERT = "alert",
-}
 
 /* The rest of the file below this comment remains unchanged except where noted */
 

@@ -1,7 +1,7 @@
-import { HydraDb } from "../types";
+import { LogLevel } from "@tambo-ai-cloud/core";
 import * as schema from "../schema";
+import { HydraDb } from "../types";
 
-export type LogLevel = schema.LogLevel;
 export type ProjectLogEntry = typeof schema.projectLogs.$inferSelect;
 
 /**
