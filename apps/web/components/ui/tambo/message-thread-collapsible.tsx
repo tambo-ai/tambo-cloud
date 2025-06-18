@@ -1,7 +1,6 @@
 "use client";
 
 import type { messageVariants } from "@/components/ui/tambo/message";
-import { Message, MessageContent } from "@/components/ui/tambo/message";
 import {
   MessageInput,
   MessageInputError,
@@ -19,16 +18,11 @@ import {
   ThreadContent,
   ThreadContentMessages,
 } from "@/components/ui/tambo/thread-content";
-import { useSession } from "@/hooks/auth";
+import { ThreadDropdown } from "@/components/ui/tambo/thread-dropdown";
 import { cn } from "@/lib/utils";
-import {
-  useTambo,
-  type Suggestion,
-  type TamboThreadMessage,
-} from "@tambo-ai/react";
+import type { Suggestion } from "@tambo-ai/react";
 import { type VariantProps } from "class-variance-authority";
 import { XIcon } from "lucide-react";
-import Image from "next/image";
 import { Collapsible } from "radix-ui";
 import * as React from "react";
 
@@ -67,6 +61,30 @@ export interface MessageThreadCollapsibleProps
  */
 
 /**
+ * Custom hook for managing collapsible state with keyboard shortcuts
+ */
+const useCollapsibleState = (defaultOpen = false) => {
+  const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const isMac =
+    typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
+  const shortcutText = isMac ? "⌘K" : "Ctrl+K";
+
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+        event.preventDefault();
+        setIsOpen((prev) => !prev);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return { isOpen, setIsOpen, shortcutText };
+};
+
+/**
  * Props for the CollapsibleContainer component
  */
 interface CollapsibleContainerProps
@@ -88,11 +106,8 @@ const CollapsibleContainer = React.forwardRef<
     open={isOpen}
     onOpenChange={onOpenChange}
     className={cn(
-      "fixed bottom-4 right-4 shadow-lg bg-background border border-gray-200 z-50",
-      "transition-[width,height] duration-300 ease-in-out",
-      isOpen
-        ? "rounded-lg w-[384px] sm:w-[448px] md:w-[512px] h-auto"
-        : "rounded-full w-16 h-16 p-0 flex items-center justify-center",
+      "fixed bottom-4 right-4 w-full max-w-sm sm:max-w-md md:max-w-lg rounded-lg shadow-lg bg-background border border-gray-200",
+      "transition-all duration-300 ease-in-out",
       className,
     )}
     {...props}
@@ -107,12 +122,14 @@ CollapsibleContainer.displayName = "CollapsibleContainer";
  */
 interface CollapsibleTriggerProps {
   isOpen: boolean;
+  shortcutText: string;
   onClose: () => void;
   contextKey?: string;
   onThreadChange: () => void;
   config: {
     labels: {
       openState: string;
+      closedState: string;
     };
   };
 }
@@ -122,64 +139,63 @@ interface CollapsibleTriggerProps {
  */
 const CollapsibleTrigger = ({
   isOpen,
+  shortcutText,
   onClose,
+  contextKey,
+  onThreadChange,
   config,
-}: CollapsibleTriggerProps) => {
-  if (!isOpen) {
-    return (
-      <div className="relative flex items-center justify-center w-full h-full">
-        <Collapsible.Trigger asChild>
-          <button
-            className="w-full h-full flex items-center justify-center rounded-full focus:outline-none"
-            aria-expanded={isOpen}
-            aria-controls="message-thread-content"
-            tabIndex={0}
+}: CollapsibleTriggerProps) => (
+  <>
+    {!isOpen && (
+      <Collapsible.Trigger asChild>
+        <button
+          className={cn(
+            "flex items-center justify-between w-full p-4",
+            "hover:bg-muted/50 transition-colors",
+          )}
+          aria-expanded={isOpen}
+          aria-controls="message-thread-content"
+        >
+          <span>{config.labels.closedState}</span>
+          <span
+            className="text-xs text-muted-foreground pl-8"
+            suppressHydrationWarning
           >
-            <Image
-              src="/logo/icon/Octo-Icon.svg"
-              width={32}
-              height={32}
-              alt="Octo Icon"
-              className="w-8 h-8"
-            />
-          </button>
-        </Collapsible.Trigger>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-between w-full p-4 border-b border-gray-200 shadow-sm">
-        <div className="flex items-center space-x-2">
-          <Image
-            src="/logo/icon/Octo-Icon.svg"
-            width={24}
-            height={24}
-            alt="Octo Icon"
-            className="w-4 h-4"
-          />
+            {`(${shortcutText})`}
+          </span>
+        </button>
+      </Collapsible.Trigger>
+    )}
+    {isOpen && (
+      <div className="flex items-center justify-between w-full p-4">
+        <div className="flex items-center gap-2">
           <span>{config.labels.openState}</span>
+          <ThreadDropdown
+            contextKey={contextKey}
+            onThreadChange={onThreadChange}
+          />
         </div>
-        <div
-          role="button"
+        <button
           className="p-1 rounded-full hover:bg-muted/70 transition-colors cursor-pointer"
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
           aria-label="Close"
         >
           <XIcon className="h-4 w-4" />
-        </div>
+        </button>
       </div>
-    </div>
-  );
-};
+    )}
+  </>
+);
 CollapsibleTrigger.displayName = "CollapsibleTrigger";
 
 export const MessageThreadCollapsible = React.forwardRef<
   HTMLDivElement,
   MessageThreadCollapsibleProps
 >(({ className, contextKey, defaultOpen = false, variant, ...props }, ref) => {
-  const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const { isOpen, setIsOpen, shortcutText } = useCollapsibleState(defaultOpen);
 
   const handleThreadChange = React.useCallback(() => {
     setIsOpen(true);
@@ -190,47 +206,29 @@ export const MessageThreadCollapsible = React.forwardRef<
    */
   const THREAD_CONFIG = {
     labels: {
-      openState: "ask tambo",
+      openState: "Conversations",
+      closedState: "Start chatting with tambo",
     },
-  };
-
-  const { data: session } = useSession();
-  const isUserLoggedIn = !!session;
-  const { thread } = useTambo();
-
-  // Starter message for when the thread is empty
-  const starterMessage: TamboThreadMessage = {
-    id: "starter-login-prompt",
-    role: "assistant",
-    content: [
-      { type: "text", text: "Please log in to ask tambo about your projects." },
-    ],
-    createdAt: new Date().toISOString(),
-    actionType: undefined,
-    componentState: {},
-    threadId: "",
   };
 
   const defaultSuggestions: Suggestion[] = [
     {
       id: "suggestion-1",
-      title: "View Project Details",
-      detailedSuggestion: "How can I see the details of one of my projects?",
-      messageId: "view-project-details-query",
+      title: "Get started",
+      detailedSuggestion: "What can you help me with?",
+      messageId: "welcome-query",
     },
     {
       id: "suggestion-2",
-      title: "Generate API Key",
-      detailedSuggestion:
-        "How do I create a new API key for one of my projects?",
-      messageId: "generate-apikey-query",
+      title: "Learn more",
+      detailedSuggestion: "Tell me about your capabilities.",
+      messageId: "capabilities-query",
     },
     {
       id: "suggestion-3",
-      title: "Modify Project Config",
-      detailedSuggestion:
-        "How can I change the configuration or settings for one of my projects?",
-      messageId: "modify-project-config-query",
+      title: "Examples",
+      detailedSuggestion: "Show me some example queries I can try.",
+      messageId: "examples-query",
     },
   ];
 
@@ -244,6 +242,7 @@ export const MessageThreadCollapsible = React.forwardRef<
     >
       <CollapsibleTrigger
         isOpen={isOpen}
+        shortcutText={shortcutText}
         onClose={() => setIsOpen(false)}
         contextKey={contextKey}
         onThreadChange={handleThreadChange}
@@ -253,13 +252,6 @@ export const MessageThreadCollapsible = React.forwardRef<
         <div className="h-[700px] flex flex-col">
           {/* Message thread content */}
           <ScrollableMessageContainer className="p-4">
-            {/* Conditionally render the starter message */}
-            {!isUserLoggedIn && thread.messages.length === 0 && (
-              <Message role="assistant" message={starterMessage}>
-                <MessageContent />
-              </Message>
-            )}
-
             <ThreadContent variant={variant}>
               <ThreadContentMessages />
             </ThreadContent>
