@@ -768,9 +768,7 @@ export function ProviderKeySection({
 
                   {/* Max Input Tokens field for all models */}
                   <div className="space-y-2">
-                    <Label htmlFor="max-input-tokens">
-                      Maximum Input Tokens
-                    </Label>
+                    <Label htmlFor="max-input-tokens">Input Token Limit</Label>
                     <Input
                       id="max-input-tokens"
                       type="number"
@@ -790,11 +788,12 @@ export function ProviderKeySection({
                         </p>
                       )}
                     <p className="text-xs text-muted-foreground">
-                      The maximum number of input tokens your model can handle.
+                      Tambo will limit the number of tokens sent to the model to
+                      this value.
                       {currentModelConfig?.properties?.inputTokenLimit && (
                         <span>
                           {" "}
-                          Default:{" "}
+                          Maximum for this model:{" "}
                           {currentModelConfig.properties.inputTokenLimit.toLocaleString()}
                         </span>
                       )}
