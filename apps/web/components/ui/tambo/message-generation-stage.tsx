@@ -41,7 +41,7 @@ export function MessageGenerationStage({
   };
 
   const label =
-    stageLabels[stage] || (stage.charAt(0).toUpperCase() + stage.slice(1));
+    stageLabels[stage] || stage.charAt(0).toUpperCase() + stage.slice(1);
 
   return (
     <div

@@ -222,7 +222,7 @@ const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
 
     const toolCallRequest: TamboAI.ToolCallRequest | undefined =
       // Temporary until we have a better way to get the tool call request from a server-side tool call
-       
+
       message.toolCallRequest ?? (message.component as any)?.toolCallRequest;
     console.log(message.id, "looked for toolCallReqest in ", message);
     if (toolCallRequest) {
