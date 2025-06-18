@@ -1,7 +1,6 @@
 "use client";
 
 import { CopyButton } from "@/components/copy-button";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -11,17 +10,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type RouterOutputs } from "@/trpc/react";
-import {
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Trash2,
-} from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { z } from "zod";
-import { DeleteProjectsDialog } from "./delete-projects-dialog";
 
 export const ProjectTableSchema = z
   .object({
@@ -52,19 +44,17 @@ export const ProjectTableProps = z.object({
 interface ProjectTableProps {
   projects?: RouterOutputs["project"]["getUserProjects"];
   compact?: boolean;
-  onProjectsDeleted?: () => void;
+  selectedProjects: Set<string>;
+  onSelectedProjectsChange: (selected: Set<string>) => void;
 }
 
 export function ProjectTable({
   projects,
   compact = false,
-  onProjectsDeleted,
+  selectedProjects,
+  onSelectedProjectsChange,
 }: ProjectTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(
-    new Set(),
-  );
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const projectsPerPage = 4;
 
@@ -85,18 +75,6 @@ export function ProjectTable({
     if (!projects) return [];
     return projects.slice(startIndex, endIndex);
   }, [projects, startIndex, endIndex]);
-
-  // Get selected project details for the dialog
-  const selectedProjectDetails = useMemo(() => {
-    if (!projects) return { ids: [], names: [] };
-    const selectedProjectsData = projects.filter(
-      (p) => p.id && selectedProjects.has(p.id),
-    );
-    return {
-      ids: selectedProjectsData.map((p) => p.id).filter(Boolean),
-      names: selectedProjectsData.map((p) => p.name),
-    };
-  }, [projects, selectedProjects]);
 
   const formatDate = (dateValue: Date | string) => {
     try {
@@ -125,9 +103,9 @@ export function ProjectTable({
       const newSelected = new Set(
         currentProjects.map((p) => p.id).filter(Boolean),
       );
-      setSelectedProjects(newSelected);
+      onSelectedProjectsChange(newSelected);
     } else {
-      setSelectedProjects(new Set());
+      onSelectedProjectsChange(new Set());
     }
   };
 
@@ -138,31 +116,13 @@ export function ProjectTable({
     } else {
       newSelected.delete(projectId);
     }
-    setSelectedProjects(newSelected);
-  };
-
-  const handleProjectsDeleted = () => {
-    setSelectedProjects(new Set());
-    onProjectsDeleted?.();
+    onSelectedProjectsChange(newSelected);
   };
 
   return (
     <div className="rounded-md w-full overflow-hidden">
       {hasProjects && (
-        <div className="flex items-center justify-between gap-2 px-4 py-2">
-          <div className="flex items-center gap-2 h-9">
-            {selectedProjects.size > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="gap-2"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete Selected
-              </Button>
-            )}
-          </div>
+        <div className="flex items-center justify-end gap-2 px-4 py-2">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
               {startIndex + 1}-{Math.min(endIndex, totalProjects)} of{" "}
@@ -363,13 +323,6 @@ export function ProjectTable({
           </TableBody>
         </Table>
       </div>
-      <DeleteProjectsDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        selectedProjectIds={selectedProjectDetails.ids}
-        selectedProjectNames={selectedProjectDetails.names}
-        onProjectsDeleted={handleProjectsDeleted}
-      />
     </div>
   );
 }

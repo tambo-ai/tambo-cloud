@@ -3,15 +3,15 @@
 import { DashboardCard } from "@/components/dashboard-components/DashboardCard";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useSession } from "@/hooks/auth";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
-import { Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { CreateProjectDialog } from "../../../components/dashboard-components/create-project-dialog";
+import { DeleteConfirmationDialog } from "../../../components/dashboard-components/delete-confirmation-dialog";
 import { ProjectTable } from "../../../components/dashboard-components/project-table";
+import { SearchInput } from "@/components/ui/search-input";
 
 // Animation variants
 const containerVariants = {
@@ -39,6 +39,10 @@ export default function DashboardPage() {
   const [messagesPeriod, setMessagesPeriod] = useState("all time");
   const [usersPeriod, setUsersPeriod] = useState("all time");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(
+    new Set(),
+  );
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
   const { data: session, isLoading: isAuthLoading } = useSession();
 
@@ -130,6 +134,36 @@ export default function DashboardPage() {
     );
   }, [projects, searchTerm]);
 
+  // Get selected project details for the dialog
+  const selectedProjectDetails = useMemo(() => {
+    if (!projects) return { ids: [], names: [] };
+    const selectedProjectsData = projects.filter(
+      (p) => p.id && selectedProjects.has(p.id),
+    );
+    return {
+      ids: selectedProjectsData.map((p) => p.id).filter(Boolean),
+      names: selectedProjectsData.map((p) => p.name),
+    };
+  }, [projects, selectedProjects]);
+
+  const allProjectIds = useMemo(() => {
+    return new Set(projects?.map((p) => p.id) || []);
+  }, [projects]);
+
+  const allSelected = useMemo(() => {
+    return projects?.length === selectedProjects.size;
+  }, [projects?.length, selectedProjects.size]);
+
+  // Handler for select/deselect all
+  const handleToggleSelectAll = () => {
+    setSelectedProjects(allSelected ? new Set() : allProjectIds);
+  };
+
+  const handleProjectsDeleted = () => {
+    setSelectedProjects(new Set());
+    refetchProjects();
+  };
+
   const LoadingSpinner = () => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -177,35 +211,60 @@ export default function DashboardPage() {
         </motion.div>
         <motion.div variants={itemVariants} className="mb-6">
           <div className="relative flex items-center justify-between gap-2">
-            <div className="relative flex items-center flex-1 max-w-xl">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 rounded-full w-full"
-              />
+            <SearchInput
+              variant="rounded"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <div className="flex items-center gap-2">
+              {selectedProjects.size > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 bg-transparent border-none text-red-500 hover:text-red-500 hover:bg-transparent hover:border-none"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  Delete ({selectedProjects.size})
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 bg-transparent border-none hover:bg-transparent hover:border-none hover:text-muted-foreground"
+                onClick={handleToggleSelectAll}
+              >
+                {allSelected ? "Deselect All" : "Select All"}
+              </Button>
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="text-sm px-4 gap-2 rounded-xl"
+                variant="default"
+              >
+                Create Project
+              </Button>
             </div>
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              className="text-sm px-4 gap-2"
-              variant="default"
-            >
-              <Plus className="h-4 w-4" />
-              Create Project
-            </Button>
           </div>
         </motion.div>
         <motion.div variants={itemVariants}>
           <ProjectTable
             projects={filteredProjects || []}
-            onProjectsDeleted={refetchProjects}
+            selectedProjects={selectedProjects}
+            onSelectedProjectsChange={setSelectedProjects}
           />
         </motion.div>
         <CreateProjectDialog
           open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
           onSubmit={handleCreateProject}
+        />
+        <DeleteConfirmationDialog
+          mode="multiple"
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          selectedProjectIds={selectedProjectDetails.ids}
+          selectedProjectNames={selectedProjectDetails.names}
+          onProjectsDeleted={handleProjectsDeleted}
         />
       </>
     </motion.div>

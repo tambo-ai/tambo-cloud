@@ -1,8 +1,17 @@
 "use client";
 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { SlashIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, use } from "react";
@@ -30,6 +39,11 @@ export default function ProjectLayout({
   const { projectId } = use(params);
   const pathname = usePathname();
 
+  // Fetch project data to get the project name
+  const { data: project } = api.project.getUserProjects.useQuery(undefined, {
+    select: (projects) => projects.find((p) => p.id === projectId),
+  });
+
   // Determine active tab value
   const activeTab = pathname.includes("/observability")
     ? "observability"
@@ -38,7 +52,7 @@ export default function ProjectLayout({
   return (
     <div className="flex flex-col bg-background">
       {/* Sticky Navigation Section */}
-      <div className="sticky top-[var(--header-height)] z-40 bg-background border-b">
+      <div className="sticky top-[var(--header-height)] z-40 bg-background">
         <div className="container mx-auto px-4 md:px-6 pb-0">
           {/* Navigation Row */}
           <motion.div
@@ -47,17 +61,32 @@ export default function ProjectLayout({
             animate="visible"
             variants={fadeInVariants}
           >
-            {/* Navigation Bar with Back Button and Tabs */}
+            {/* Navigation Bar with Breadcrumb and Tabs */}
             <div className="flex items-center justify-between">
-              <Link
-                href="/dashboard"
-                className="flex items-center text-muted-foreground hover:text-foreground transition-colors group w-fit"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1 group-hover:-translate-x-0.5 transition-transform" />
-                <span className="font-sentient text-sm">
-                  Return to All Projects
-                </span>
-              </Link>
+              {/* Breadcrumb Navigation */}
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink asChild>
+                      <Link href="/dashboard" className="text-sm">
+                        All Projects
+                      </Link>
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>
+                    <SlashIcon
+                      className="h-3 w-3 text-muted-foreground -rotate-[30deg] -mx-2"
+                      size={16}
+                      strokeWidth={1.5}
+                    />
+                  </BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="text-sm">
+                      {project?.name || "Loading..."}
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
 
               {/* Project Navigation Tabs */}
               <Tabs defaultValue={activeTab} className="ml-auto">

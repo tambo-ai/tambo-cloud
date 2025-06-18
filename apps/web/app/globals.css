@@ -76,7 +76,7 @@ html {
 @layer base {
   :root {
     /* Main background and text colors */
-    --background: 0 0% 100%; /* #F2F8F6 */
+    --background: 150 30% 96%; /* #F2F8F6 */
     --foreground: 162 30% 8%; /* #0E1A17 */
 
     /* Card and popover styling */
@@ -128,8 +128,14 @@ html {
     --color-5: 186 94% 13%; /* #023A41 */
 
     --header-height: 3.5rem;
+    --dashboard-header-height: 3rem;
     font-family: Inter, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11", "salt";
+  }
+
+  html {
+    /* Force scrollbar to always be visible to prevent layout shift */
+    overflow-y: scroll;
   }
 }
 

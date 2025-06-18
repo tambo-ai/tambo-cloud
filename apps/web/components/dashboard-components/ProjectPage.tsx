@@ -1,10 +1,13 @@
 "use client";
 
+import {
+  DeleteConfirmationDialog,
+  type AlertState,
+} from "@/components/dashboard-components/delete-confirmation-dialog";
 import { APIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
 import { AvailableMcpServers } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import { AvailableTools } from "@/components/dashboard-components/project-details/available-tools";
 import { CustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
-import { DeleteAlertDialog } from "@/components/dashboard-components/project-details/delete-alert-dialog";
 import { ProjectInfo } from "@/components/dashboard-components/project-details/project-info";
 import { ProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
 import { Button } from "@/components/ui/button";
@@ -18,13 +21,6 @@ import { useCallback, useState } from "react";
 
 interface ProjectPageClientProps {
   projectId: string;
-}
-
-interface AlertState {
-  show: boolean;
-  title: string;
-  description: string;
-  data?: { id: string };
 }
 
 // Animation variants
@@ -185,7 +181,8 @@ export function ProjectPage({ projectId }: ProjectPageClientProps) {
         </motion.div>
       </div>
 
-      <DeleteAlertDialog
+      <DeleteConfirmationDialog
+        mode="single"
         alertState={alertState}
         setAlertState={setAlertState}
         onConfirm={handleDeleteProject}

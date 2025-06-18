@@ -8,9 +8,11 @@ import { Check, Copy, Plus, Trash2 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
+import {
+  DeleteConfirmationDialog,
+  type AlertState,
+} from "../delete-confirmation-dialog";
 import { APIKeyDialog } from "./api-key-dialog";
-import { DeleteAlertDialog } from "./delete-alert-dialog";
-import { AlertState } from "./project-details-dialog";
 
 export const APIKeySchema = z.object({
   id: z.string().describe("The unique identifier for the API key."),
@@ -500,7 +502,8 @@ export function APIKeyList({
           </div>
         </AnimatePresence>
 
-        <DeleteAlertDialog
+        <DeleteConfirmationDialog
+          mode="single"
           alertState={alertState}
           setAlertState={setAlertState}
           onConfirm={handleDeleteApiKey}
