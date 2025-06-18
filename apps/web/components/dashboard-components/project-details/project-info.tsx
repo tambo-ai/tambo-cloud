@@ -1,8 +1,11 @@
 import { CopyButton } from "@/components/copy-button";
 import { Card, CardContent } from "@/components/ui/card";
-import { type RouterOutputs } from "@/trpc/react";
+import { type RouterOutputs, api } from "@/trpc/react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { z } from "zod";
+
+export const FREE_MESSAGE_LIMIT = 500;
 
 export const ProjectInfoSchema = z.object({
   id: z.string().describe("The unique identifier for the project."),
@@ -48,6 +51,14 @@ const itemVariants = {
 };
 
 export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
+  // Fetch message usage data
+  const { data: messageUsage } = api.project.getProjectMessageUsage.useQuery(
+    { projectId: project?.id ?? "" },
+    {
+      enabled: !!project?.id,
+    },
+  );
+
   if (!project) {
     return (
       <Card className="border rounded-md overflow-hidden">
@@ -58,8 +69,26 @@ export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
     );
   }
 
+  // Calculate remaining messages
+  const messageCount = messageUsage?.messageCount ?? 0;
+  const remainingMessages = Math.max(0, FREE_MESSAGE_LIMIT - messageCount);
+  const isLowMessages = remainingMessages < 50;
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch (_error) {
+      return dateString;
+    }
+  };
+
   return (
-    <Card className="border rounded-md overflow-hidden">
+    <Card className="border rounded-3xl overflow-hidden p-4">
       <CardContent className="p-4 space-y-4">
         <motion.div
           className="flex items-center gap-2"
@@ -67,11 +96,11 @@ export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h4 className="text-xl font-semibold font-heading">{project.name}</h4>
+          <h4 className="text-6xl pb-4">{project.name}</h4>
         </motion.div>
 
         <motion.div
-          className="space-y-3"
+          className="space-y-3 flex flex-row justify-between grid grid-cols-2 md:grid-cols-4"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -88,21 +117,46 @@ export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
             </div>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
-            <h5 className="text-xs font-medium text-muted-foreground mb-1">
-              Owner
-            </h5>
-            <p className="text-sm">{project.userId}</p>
-          </motion.div>
-
           {createdAt && (
+            <div className="border-l border-muted-foreground/20 pl-4">
+              <motion.div variants={itemVariants}>
+                <h5 className="text-xs font-medium text-muted-foreground mb-1">
+                  Created
+                </h5>
+                <p className="text-sm">{formatDate(createdAt)}</p>
+              </motion.div>
+            </div>
+          )}
+
+          <div className="border-l border-muted-foreground/20 pl-4">
             <motion.div variants={itemVariants}>
               <h5 className="text-xs font-medium text-muted-foreground mb-1">
-                Created
+                Owner
               </h5>
-              <p className="text-sm">{createdAt}</p>
+              <p className="text-sm">{project.userId}</p>
             </motion.div>
-          )}
+          </div>
+
+          <div className="border-l border-muted-foreground/20 pl-4">
+            <motion.div variants={itemVariants}>
+              <h5 className="text-xs font-medium text-muted-foreground mb-1">
+                Remaining free messages
+              </h5>
+              <div className="flex items-center gap-4">
+                <p
+                  className={`text-sm ${isLowMessages ? "text-red-500 font-medium" : ""}`}
+                >
+                  {remainingMessages}
+                </p>
+                <Link
+                  href={`/dashboard/${project.id}/settings`}
+                  className="text-xs font-semibold underline"
+                >
+                  Add provider key
+                </Link>
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
       </CardContent>
     </Card>

@@ -8,6 +8,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
@@ -47,7 +48,9 @@ export default function ProjectLayout({
   // Determine active tab value
   const activeTab = pathname.includes("/observability")
     ? "observability"
-    : "details";
+    : pathname.includes("/settings")
+      ? "settings"
+      : "overview";
 
   return (
     <div className="flex flex-col bg-background">
@@ -56,61 +59,68 @@ export default function ProjectLayout({
         <div className="container mx-auto px-4 md:px-6 pb-0">
           {/* Navigation Row */}
           <motion.div
-            className="flex flex-col gap-4 pb-2"
+            className="flex flex-col gap-4"
             initial="hidden"
             animate="visible"
             variants={fadeInVariants}
           >
-            {/* Navigation Bar with Breadcrumb and Tabs */}
-            <div className="flex items-center justify-between">
-              {/* Breadcrumb Navigation */}
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink asChild>
-                      <Link href="/dashboard" className="text-sm">
-                        All Projects
-                      </Link>
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator>
-                    <SlashIcon
-                      className="h-3 w-3 text-muted-foreground -rotate-[30deg] -mx-2"
-                      size={16}
-                      strokeWidth={1.5}
-                    />
-                  </BreadcrumbSeparator>
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="text-sm">
-                      {project?.name || "Loading..."}
-                    </BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-
-              {/* Project Navigation Tabs */}
-              <Tabs defaultValue={activeTab} className="ml-auto">
-                <TabsList className="h-10 bg-transparent">
-                  <TabsTrigger
-                    value="details"
-                    className="font-sentient text-base rounded-none border-b-2 data-[state=active]:border-primary data-[state=inactive]:border-transparent"
-                    asChild
-                  >
-                    <Link href={`/dashboard/${projectId}`}>Details</Link>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="observability"
-                    className="font-sentient text-base rounded-none border-b-2 data-[state=active]:border-primary data-[state=inactive]:border-transparent"
-                    asChild
-                  >
-                    <Link href={`/dashboard/${projectId}/observability`}>
-                      Observability
+            {/* Breadcrumb Navigation */}
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/dashboard" className="text-sm">
+                      All Projects
                     </Link>
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator>
+                  <SlashIcon
+                    className="h-3 w-3 text-muted-foreground -rotate-[30deg] -mx-2"
+                    size={16}
+                    strokeWidth={1.5}
+                  />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="text-sm">
+                    {project?.name || "Loading..."}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+
+            {/* Project Navigation Tabs */}
+            <Tabs value={activeTab}>
+              <TabsList className="h-16 bg-transparent">
+                <TabsTrigger
+                  value="overview"
+                  className="rounded-full data-[state=active]:bg-accent/50 data-[state=inactive]:border-transparent"
+                  asChild
+                >
+                  <Link href={`/dashboard/${projectId}`}>Overview</Link>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="observability"
+                  className="rounded-full data-[state=active]:bg-accent/50 data-[state=inactive]:border-transparent"
+                  asChild
+                >
+                  <Link href={`/dashboard/${projectId}/observability`}>
+                    Observability
+                  </Link>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="settings"
+                  className="rounded-full data-[state=active]:bg-accent/50 data-[state=inactive]:border-transparent"
+                  asChild
+                >
+                  <Link href={`/dashboard/${projectId}/settings`}>
+                    Settings
+                  </Link>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </motion.div>
+          <Separator />
         </div>
       </div>
 
