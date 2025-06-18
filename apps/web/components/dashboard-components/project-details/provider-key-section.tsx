@@ -168,7 +168,21 @@ export function ProviderKeySection({
           setSelectedModelApiName(data.defaultLlmModelName ?? undefined);
         }
         setCustomModelName("");
-        setMaxInputTokens("");
+        // For non-custom providers, use the saved maxInputTokens or the model's default
+        if (data.maxInputTokens) {
+          setMaxInputTokens(data.maxInputTokens.toString());
+        } else {
+          // Get the model's default inputTokenLimit from config
+          const modelConfig =
+            data.defaultLlmModelName &&
+            data.defaultLlmProviderName &&
+            llmProviderConfigData?.[data.defaultLlmProviderName]?.models?.[
+              data.defaultLlmModelName
+            ];
+          setMaxInputTokens(
+            modelConfig?.properties?.inputTokenLimit?.toString() ?? "",
+          );
+        }
       }
       setBaseUrl(data.customLlmBaseURL ?? "");
       setHasUnsavedChanges(false);
@@ -299,7 +313,19 @@ export function ProviderKeySection({
           }
           setCustomModelName("");
           setBaseUrl("");
-          setMaxInputTokens("");
+          // Use saved maxInputTokens or model's default
+          if (projectLlmSettings.maxInputTokens) {
+            setMaxInputTokens(projectLlmSettings.maxInputTokens.toString());
+          } else {
+            const modelConfig =
+              projectLlmSettings.defaultLlmModelName &&
+              llmProviderConfigData?.[selectedProviderApiName]?.models?.[
+                projectLlmSettings.defaultLlmModelName
+              ];
+            setMaxInputTokens(
+              modelConfig?.properties?.inputTokenLimit?.toString() ?? "",
+            );
+          }
         }
       } else {
         // If switching to OpenAI and no model is selected, set DEFAULT_OPENAI_MODEL
@@ -322,7 +348,30 @@ export function ProviderKeySection({
         setMaxInputTokens("");
       }
     }
-  }, [selectedProviderApiName, projectLlmSettings]);
+  }, [selectedProviderApiName, projectLlmSettings, llmProviderConfigData]);
+
+  // Effect to update maxInputTokens when model changes
+  useEffect(() => {
+    if (
+      selectedModelApiName &&
+      selectedProviderApiName &&
+      llmProviderConfigData
+    ) {
+      const modelConfig =
+        llmProviderConfigData[selectedProviderApiName]?.models?.[
+          selectedModelApiName
+        ];
+      if (modelConfig?.properties?.inputTokenLimit && !maxInputTokens) {
+        setMaxInputTokens(modelConfig.properties.inputTokenLimit.toString());
+        setHasUnsavedChanges(true);
+      }
+    }
+  }, [
+    selectedModelApiName,
+    selectedProviderApiName,
+    llmProviderConfigData,
+    maxInputTokens,
+  ]);
 
   // --- Event Handlers (basic implementation for UI interaction) ---
   const handleProviderSelect = useCallback((apiName: string) => {
@@ -415,6 +464,27 @@ export function ProviderKeySection({
       }
       modelToSave = selectedModelApiName;
       customNameToSave = null;
+
+      // Validate maxInputTokens for all providers
+      if (maxInputTokens.trim()) {
+        const tokens = parseInt(maxInputTokens);
+        if (isNaN(tokens) || tokens <= 0) {
+          toast({
+            title: "Error",
+            description: "Please enter a valid maximum input tokens value.",
+            variant: "destructive",
+          });
+          return;
+        }
+        maxInputTokensToSave = tokens;
+      } else {
+        // Use model's default if no custom value provided
+        const modelConfig =
+          llmProviderConfigData?.[selectedProviderApiName]?.models?.[
+            selectedModelApiName
+          ];
+        maxInputTokensToSave = modelConfig?.properties?.inputTokenLimit ?? null;
+      }
     }
 
     let baseUrlToSave: string | null = null;
@@ -456,6 +526,7 @@ export function ProviderKeySection({
     toast,
     currentApiKeyRecord,
     setShowValidationErrors,
+    llmProviderConfigData,
   ]);
 
   const handleSaveApiKey = useCallback(async () => {
@@ -694,6 +765,41 @@ export function ProviderKeySection({
                       )}
                     </div>
                   )}
+
+                  {/* Max Input Tokens field for all models */}
+                  <div className="space-y-2">
+                    <Label htmlFor="max-input-tokens">
+                      Maximum Input Tokens
+                    </Label>
+                    <Input
+                      id="max-input-tokens"
+                      type="number"
+                      min="1"
+                      placeholder={`e.g., ${currentModelConfig?.properties?.inputTokenLimit ?? 4096}`}
+                      value={maxInputTokens}
+                      onChange={(e) => {
+                        setMaxInputTokens(e.target.value);
+                        setHasUnsavedChanges(true);
+                      }}
+                    />
+                    {showValidationErrors &&
+                      maxInputTokens &&
+                      (!maxInputTokens || parseInt(maxInputTokens) <= 0) && (
+                        <p className="text-sm text-destructive mt-1">
+                          Please enter a valid maximum input tokens value
+                        </p>
+                      )}
+                    <p className="text-xs text-muted-foreground">
+                      The maximum number of input tokens your model can handle.
+                      {currentModelConfig?.properties?.inputTokenLimit && (
+                        <span>
+                          {" "}
+                          Default:{" "}
+                          {currentModelConfig.properties.inputTokenLimit.toLocaleString()}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
