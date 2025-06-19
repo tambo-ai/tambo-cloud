@@ -12,13 +12,15 @@ export async function addProjectLogEntry(
   projectId: string,
   level: LogLevel,
   message: string,
-  metadata?: Record<string, unknown> | null,
+  metadata: Record<string, unknown> | null = null,
+  threadId?: string,
 ): Promise<void> {
   await db.insert(schema.projectLogs).values({
     projectId,
     level,
     message,
-    metadata: metadata ?? null,
+    metadata,
+    threadId: threadId ?? null,
   });
 }
 

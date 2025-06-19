@@ -3,12 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/trpc/react";
 import { Loader2 } from "lucide-react";
+import { LogLevel } from "@tambo-ai-cloud/core";
 
 interface ProjectLogsSectionProps {
   projectId: string;
 }
 
-const levelClasses: Record<string, string> = {
+const levelClasses: Record<LogLevel, string> = {
   warning: "text-yellow-500",
   error: "text-red-500",
   alert: "text-red-600",
@@ -56,6 +57,11 @@ export function ProjectLogsSection({ projectId }: ProjectLogsSectionProps) {
                 </span>
               </div>
               <p className="text-sm">{log.message}</p>
+              {log.threadId && (
+                <p className="text-xs text-muted-foreground">
+                  Thread:&nbsp;{log.threadId}
+                </p>
+              )}
               {log.metadata && (
                 <details className="rounded bg-muted/30 p-2 text-xs">
                   <summary className="cursor-pointer select-none">
