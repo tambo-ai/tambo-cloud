@@ -1,4 +1,3 @@
-const stub = "test-file-stub";
-
-export default stub;
-module.exports = stub;
+// Jest mock for static file imports (images, icons, etc.).
+// Always returns the same stub string.
+module.exports = "test-file-stub";
