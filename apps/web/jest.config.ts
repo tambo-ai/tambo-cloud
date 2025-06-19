@@ -20,8 +20,8 @@ const config: JestConfigWithTsJest = {
   moduleNameMapper: {
     // Mock static asset imports (images, icons, etc.) so they resolve during tests
     "\\.(svg|png|jpe?g|gif|webp|avif|ico)$": "<rootDir>/__mocks__/fileMock.js",
-    // Mock the ESM-only @t3-oss/env-nextjs package
-    "^@t3-oss/env-nextjs$": "<rootDir>/__mocks__/envNextjsMock.js",
+    // Mock the ESM-only @t3-oss/env-nextjs package (root and any sub-paths)
+    "^@t3-oss/env-nextjs(/.*)?$": "<rootDir>/__mocks__/envNextjsMock.js",
 
     "^@/(.*)$": "<rootDir>/$1",
     "^@tambo-ai-cloud/(.*)$": "<rootDir>/../../../packages/$1/src",
