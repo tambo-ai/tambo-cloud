@@ -1,5 +1,5 @@
 import { render } from "@react-email/render";
-import SignupEmail, { renderSignupEmailText } from "../emails/SignupEmail";
+import { SignupEmail, renderSignupEmailText } from "../emails/SignupEmail";
 import { EmailService } from "../common/services/email.service";
 
 export interface WelcomeEmailUser {
@@ -23,7 +23,7 @@ export async function sendWelcomeEmail(
     unsubscribeUrl,
   } as const;
 
-  // `render` can be sync or async depending on the template; handle both.
+  // `render` currently returns a Promise<string>
   const html = await render(<SignupEmail {...emailProps} />);
   const text = renderSignupEmailText(emailProps);
 

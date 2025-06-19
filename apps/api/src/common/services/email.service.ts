@@ -3,12 +3,18 @@ import { ConfigService } from "@nestjs/config";
 import { Resend } from "resend";
 import { FREE_MESSAGE_LIMIT } from "../../threads/types/errors";
 
-interface SendEmailOptions {
+export interface SendEmailOptions {
   to: string | string[];
   subject: string;
   html: string;
   text?: string;
   replyTo?: string;
+  /**
+   * When true, errors from the underlying email provider are *suppressed* after
+   * being logged. The default is `false`, meaning errors are re-thrown so the
+   * caller (or queue) can decide how to handle retries.
+   */
+  suppressErrors?: boolean;
 }
 
 @Injectable()
@@ -25,27 +31,29 @@ export class EmailService {
   }
 
   /**
-   * Generic helper that sends an email via Resend.
-   * Swallows any errors to avoid failing the caller during non-critical flows.
+   * Sends an email via Resend.
+   *
+   * By default *propagates* any provider errors so that upstream callers (for
+   * example, a PgBoss queue worker) can decide whether a retry is appropriate.
+   * For fire-and-forget flows you can pass `suppressErrors: true` to swallow
+   * the error after logging.
    */
   async sendEmail({
-    to,
-    subject,
-    html,
-    text,
-    replyTo,
+    suppressErrors = false,
+    ...msg
   }: SendEmailOptions): Promise<void> {
     try {
       await this.resend.emails.send({
         from: this.fromEmail,
-        to,
-        subject,
-        html,
-        text,
-        replyTo,
+        to: msg.to,
+        subject: msg.subject,
+        html: msg.html,
+        text: msg.text,
+        replyTo: msg.replyTo,
       });
     } catch (error) {
       console.error("Failed to send email:", error);
+      if (!suppressErrors) throw error;
     }
   }
 
@@ -129,6 +137,7 @@ export class EmailService {
       subject,
       html,
       replyTo: "support@tambo.co",
+      suppressErrors: true,
     });
   }
 }
