@@ -982,6 +982,8 @@ export function ProviderKeySection({
                       </div>
                     </div>
 
+                    {/* Validation feedback */}
+
                     {apiKeyInput && apiKeyValidation && (
                       <div className="space-y-1">
                         {!apiKeyValidation.isValid && (
