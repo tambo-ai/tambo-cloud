@@ -523,6 +523,7 @@ export const projectLogs = pgTable(
     projectId: text("project_id")
       .references(() => projects.id, { onDelete: "cascade" })
       .notNull(),
+    threadId: text("thread_id").references(() => threads.id), // nullable
     timestamp: timestamp("timestamp", { withTimezone: true })
       .default(sql`clock_timestamp()`)
       .notNull(),
