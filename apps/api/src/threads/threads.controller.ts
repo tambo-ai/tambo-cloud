@@ -142,6 +142,45 @@ export class ThreadsController {
     return await this.threadsService.remove(threadId);
   }
 
+  /**
+   * Sets a thread's generation stage to CANCELLED.
+   */
+  @UseGuards(ThreadInProjectGuard)
+  @Post(":id/cancel")
+  @ApiOperation({
+    summary: "Cancel thread advancement",
+    description: "Sets a thread's generation stage to CANCELLED",
+  })
+  @ApiParam({
+    name: "id",
+    description: "ID of the thread to cancel",
+    example: "thread_123456789",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Thread cancelled successfully",
+    type: Thread,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Thread is not in a cancellable state",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Thread not found",
+    type: ProblemDetailsDto,
+  })
+  async cancelThread(
+    @Param("id") threadId: string,
+    @Req() request: Request,
+  ): Promise<Thread> {
+    if (!request[ProjectId]) {
+      throw new BadRequestException("Project ID is required");
+    }
+    return await this.threadsService.cancelThread(threadId, request[ProjectId]);
+  }
+
   @UseGuards(ThreadInProjectGuard)
   @Post(":id/messages")
   async addMessage(

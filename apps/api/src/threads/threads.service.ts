@@ -266,6 +266,43 @@ export class ThreadsService {
     );
   }
 
+  /**
+   * Sets a thread's generation stage to CANCELLED.
+   * @param threadId - The thread ID to cancel
+   * @param projectId - The project ID for validation
+   * @returns The updated thread with CANCELLED generation stage
+   */
+  async cancelThread(threadId: string, projectId: string): Promise<Thread> {
+    const db = this.getDb();
+
+    // Get the current thread to check if it's in a cancellable state
+    const thread = await operations.getThreadForProjectId(
+      db,
+      threadId,
+      projectId,
+    );
+    if (!thread) {
+      throw new NotFoundException(`Thread with ID ${threadId} not found`);
+    }
+
+    const updatedThread = await operations.updateThread(db, threadId, {
+      generationStage: GenerationStage.CANCELLED,
+      statusMessage: "Thread advancement cancelled by user",
+    });
+
+    return {
+      id: updatedThread.id,
+      createdAt: updatedThread.createdAt,
+      updatedAt: updatedThread.updatedAt,
+      name: updatedThread.name ?? undefined,
+      contextKey: updatedThread.contextKey ?? undefined,
+      metadata: updatedThread.metadata ?? undefined,
+      generationStage: updatedThread.generationStage,
+      statusMessage: updatedThread.statusMessage ?? undefined,
+      projectId: updatedThread.projectId,
+    };
+  }
+
   async remove(id: string) {
     return await operations.deleteThread(this.getDb(), id);
   }
