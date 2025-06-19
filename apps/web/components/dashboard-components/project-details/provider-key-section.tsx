@@ -782,27 +782,6 @@ export function ProviderKeySection({
                       Model selection is required
                     </p>
                   )}
-                  {currentModelConfig && (
-                    <div className="space-y-0.5 pt-1 text-xs text-muted-foreground">
-                      {currentModelConfig.notes && (
-                        <p className="mb-2 flex items-start">
-                          <InfoIcon className="mr-1.5 mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-                          {currentModelConfig.notes}
-                        </p>
-                      )}
-                      {currentModelConfig.docLink && (
-                        <a
-                          href={currentModelConfig.docLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center text-link text-xs hover:underline"
-                        >
-                          <ExternalLinkIcon className="mr-1 h-3 w-3" />
-                          Model Documentation
-                        </a>
-                      )}
-                    </div>
-                  )}
 
                   <div className="space-y-2">
                     <Label htmlFor="max-input-tokens">Input Token Limit</Label>
@@ -819,8 +798,8 @@ export function ProviderKeySection({
                       }}
                     />
                     {showValidationErrors &&
-                      maxInputTokens &&
-                      (!maxInputTokens || parseInt(maxInputTokens) <= 0) && (
+                      (Number.isNaN(Number(maxInputTokens)) ||
+                        Number(maxInputTokens) <= 0) && (
                         <p className="text-sm text-destructive mt-1">
                           Please enter a valid maximum input tokens value
                         </p>
@@ -899,7 +878,8 @@ export function ProviderKeySection({
                         }}
                       />
                       {showValidationErrors &&
-                        (!maxInputTokens || parseInt(maxInputTokens) <= 0) && (
+                        (Number.isNaN(Number(maxInputTokens)) ||
+                          Number(maxInputTokens) <= 0) && (
                           <p className="text-sm text-destructive mt-1">
                             Please enter a valid maximum input tokens value
                           </p>
