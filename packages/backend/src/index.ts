@@ -19,4 +19,3 @@ export {
   attachEmailWorker,
   type EmailJobPayload,
 } from "./email/queue";
-export { startEmailWorker } from "./email/worker";
