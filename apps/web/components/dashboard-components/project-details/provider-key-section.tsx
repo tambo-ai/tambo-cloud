@@ -782,6 +782,7 @@ export function ProviderKeySection({
                       Model selection is required
                     </p>
                   )}
+
                   {currentModelConfig && (
                     <div className="space-y-0.5 pt-1 text-xs text-muted-foreground">
                       {currentModelConfig.notes && (
@@ -819,8 +820,8 @@ export function ProviderKeySection({
                       }}
                     />
                     {showValidationErrors &&
-                      maxInputTokens &&
-                      (!maxInputTokens || parseInt(maxInputTokens) <= 0) && (
+                      (Number.isNaN(Number(maxInputTokens)) ||
+                        Number(maxInputTokens) <= 0) && (
                         <p className="text-sm text-destructive mt-1">
                           Please enter a valid maximum input tokens value
                         </p>
@@ -899,7 +900,8 @@ export function ProviderKeySection({
                         }}
                       />
                       {showValidationErrors &&
-                        (!maxInputTokens || parseInt(maxInputTokens) <= 0) && (
+                        (Number.isNaN(Number(maxInputTokens)) ||
+                          Number(maxInputTokens) <= 0) && (
                           <p className="text-sm text-destructive mt-1">
                             Please enter a valid maximum input tokens value
                           </p>
@@ -981,6 +983,7 @@ export function ProviderKeySection({
                     </div>
 
                     {/* Validation feedback */}
+
                     {apiKeyInput && apiKeyValidation && (
                       <div className="space-y-1">
                         {!apiKeyValidation.isValid && (
