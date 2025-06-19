@@ -24,12 +24,12 @@ describe("TamboEmailButton", () => {
 
     // 2 — Focusing the textarea hides the chip.
     const textarea = screen.getByRole("textbox");
-    textarea.focus();
+    fireEvent.focusIn(textarea);
     expect(screen.queryByTestId("prefill-chip")).toBeNull();
 
     // 3 — Chip stays hidden on subsequent focus events.
-    textarea.blur();
-    textarea.focus();
+    fireEvent.blur(textarea);
+    fireEvent.focusIn(textarea);
     expect(screen.queryByTestId("prefill-chip")).toBeNull();
 
     // 4 — ⌘/Ctrl + E shortcut should NOT trigger setValue after chip is gone.
