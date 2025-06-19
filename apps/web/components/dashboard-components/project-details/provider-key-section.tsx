@@ -139,9 +139,8 @@ export function ProviderKeySection({
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
     if (projectLlmSettings) {
-      const data = projectLlmSettings;
       // If no provider is set, find and set OpenAI as default
-      if (!data.defaultLlmProviderName && llmProviderConfigData) {
+      if (!projectLlmSettings.defaultLlmProviderName && llmProviderConfigData) {
         const openaiProvider = Object.values(llmProviderConfigData).find(
           (provider) => provider.apiName === "openai",
         );
@@ -152,39 +151,40 @@ export function ProviderKeySection({
         }
       }
 
-      setSelectedProviderApiName(data.defaultLlmProviderName ?? undefined);
-      if (data.defaultLlmProviderName === "openai-compatible") {
-        setCustomModelName(data.customLlmModelName ?? "");
+      setSelectedProviderApiName(
+        projectLlmSettings.defaultLlmProviderName ?? undefined,
+      );
+      if (projectLlmSettings.defaultLlmProviderName === "openai-compatible") {
+        setCustomModelName(projectLlmSettings.customLlmModelName ?? "");
         setSelectedModelApiName(undefined);
-        setMaxInputTokens(data.maxInputTokens?.toString() ?? "");
+        setMaxInputTokens(projectLlmSettings.maxInputTokens?.toString() ?? "");
       } else {
         // If OpenAI is selected and no model is set, default to DEFAULT_OPENAI_MODEL
         if (
-          data.defaultLlmProviderName === "openai" &&
-          !data.defaultLlmModelName
+          projectLlmSettings.defaultLlmProviderName === "openai" &&
+          !projectLlmSettings.defaultLlmModelName
         ) {
           setSelectedModelApiName(DEFAULT_OPENAI_MODEL);
         } else {
-          setSelectedModelApiName(data.defaultLlmModelName ?? undefined);
+          setSelectedModelApiName(
+            projectLlmSettings.defaultLlmModelName ?? undefined,
+          );
         }
         setCustomModelName("");
         // For non-custom providers, use the saved maxInputTokens or the model's default
-        if (data.maxInputTokens) {
-          setMaxInputTokens(data.maxInputTokens.toString());
+        if (projectLlmSettings.maxInputTokens) {
+          setMaxInputTokens(projectLlmSettings.maxInputTokens.toString());
         } else {
           // Get the model's default inputTokenLimit from config
           const modelConfig =
-            data.defaultLlmModelName &&
-            data.defaultLlmProviderName &&
-            llmProviderConfigData?.[data.defaultLlmProviderName]?.models?.[
-              data.defaultLlmModelName
-            ];
+            llmProviderConfigData?.[projectLlmSettings.defaultLlmProviderName]
+              ?.models?.[projectLlmSettings.defaultLlmModelName];
           setMaxInputTokens(
             modelConfig?.properties?.inputTokenLimit?.toString() ?? "",
           );
         }
       }
-      setBaseUrl(data.customLlmBaseURL ?? "");
+      setBaseUrl(projectLlmSettings.customLlmBaseURL ?? "");
       setHasUnsavedChanges(false);
     }
   }, [projectLlmSettings, llmProviderConfigData]);
@@ -464,6 +464,11 @@ export function ProviderKeySection({
       }
       modelToSave = selectedModelApiName;
       customNameToSave = null;
+      const modelConfig =
+        llmProviderConfigData?.[selectedProviderApiName]?.models?.[
+          selectedModelApiName
+        ];
+      const modelMaxTokens = modelConfig?.properties?.inputTokenLimit;
 
       if (maxInputTokens.trim()) {
         const tokens = parseInt(maxInputTokens);
@@ -477,11 +482,6 @@ export function ProviderKeySection({
         }
 
         // Check if tokens exceed the model's maximum
-        const modelConfig =
-          llmProviderConfigData?.[selectedProviderApiName]?.models?.[
-            selectedModelApiName
-          ];
-        const modelMaxTokens = modelConfig?.properties?.inputTokenLimit;
 
         if (modelMaxTokens && tokens > modelMaxTokens) {
           toast({
@@ -495,11 +495,7 @@ export function ProviderKeySection({
         maxInputTokensToSave = tokens;
       } else {
         // Use model's default if no custom value provided
-        const modelConfig =
-          llmProviderConfigData?.[selectedProviderApiName]?.models?.[
-            selectedModelApiName
-          ];
-        maxInputTokensToSave = modelConfig?.properties?.inputTokenLimit ?? null;
+        maxInputTokensToSave = modelMaxTokens ?? null;
       }
     }
 
