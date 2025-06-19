@@ -100,4 +100,4 @@ NestJS controllers with Swagger documentation, transaction-wrapped operations, c
 - **E2E Tests**: `apps/api/test/app.e2e-spec.ts`
 - **Lint/Format**: ESLint + Prettier with pre-commit hooks via Husky
 
-Always run `npm run check-types` and `npm run lint` before committing changes.
+Always run `npm run format`, `npm run check-types` and `npm run lint` before committing changes.

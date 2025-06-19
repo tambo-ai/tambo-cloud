@@ -10,7 +10,7 @@
     "lint:fix": "turbo lint -- --fix",
     "test": "turbo test",
     "check-types": "turbo check-types",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format": "prettier --write .",
     "prettier-check": "prettier --check .",
     "hydra-api:start": "turbo run start --filter=hydra-api",
     "start:api": "turbo run start --filter=hydra-api",
