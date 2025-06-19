@@ -40,24 +40,18 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
         scheduledFor,
       }).returning();
 
-      // Add to pg-boss queue for future processing
-      await addEmailJob({
-        to: recipient,
-        from,
-        subject: subject || 'Email from tambo',
-        templateName,
-        templateProps: props,
-        scheduledEmailId: scheduledEmail.id,
-      }, { delay: Math.max(0, scheduledFor.getTime() - Date.now()) });
+      // Note: Scheduled emails will be processed by the pg_cron job (see cron.sql)
+      // which runs every minute to check for due emails and queue them
     }
     return;
   }
 
   // Send immediately
   for (const recipient of recipients) {
+    let emailEvent: any;
     try {
       // Create email event record
-      const [emailEvent] = await db.insert(emailEvents).values({
+      [emailEvent] = await db.insert(emailEvents).values({
         to: recipient,
         from,
         subject: subject || 'Email from tambo',
@@ -88,16 +82,18 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
         .where(eq(emailEvents.id, emailEvent.id));
 
     } catch (error) {
-      // Update email event with error
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      await db.update(emailEvents)
-        .set({
-          status: 'failed',
-          error: errorMessage,
-          updatedAt: new Date(),
-        })
-        .where(eq(emailEvents.id, emailEvent.id));
+      // Update email event with error (only if event was created successfully)
+      if (emailEvent) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        
+        await db.update(emailEvents)
+          .set({
+            status: 'failed',
+            error: errorMessage,
+            updatedAt: new Date(),
+          })
+          .where(eq(emailEvents.id, emailEvent.id));
+      }
 
       throw error;
     }
@@ -107,9 +103,10 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
 export async function sendEmailJob(job: EmailJobData): Promise<void> {
   const { to, from, subject, templateName, templateProps, scheduledEmailId } = job;
 
+  let emailEvent: any;
   try {
     // Create email event record
-    const [emailEvent] = await db.insert(emailEvents).values({
+    [emailEvent] = await db.insert(emailEvents).values({
       to,
       from,
       subject,
@@ -156,16 +153,18 @@ export async function sendEmailJob(job: EmailJobData): Promise<void> {
       .where(eq(emailEvents.id, emailEvent.id));
 
   } catch (error) {
-    // Update email event with error
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    await db.update(emailEvents)
-      .set({
-        status: 'failed',
-        error: errorMessage,
-        updatedAt: new Date(),
-      })
-      .where(eq(emailEvents.id, emailEvent.id));
+    // Update email event with error (only if event was created successfully)
+    if (emailEvent) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      await db.update(emailEvents)
+        .set({
+          status: 'failed',
+          error: errorMessage,
+          updatedAt: new Date(),
+        })
+        .where(eq(emailEvents.id, emailEvent.id));
+    }
 
     throw error;
   }

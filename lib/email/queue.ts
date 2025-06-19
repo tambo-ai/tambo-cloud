@@ -6,6 +6,10 @@ let boss: PgBoss | null = null;
 
 export async function initializeEmailQueue(): Promise<PgBoss> {
   if (!boss) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL environment variable is required to initialize pg-boss');
+    }
+    
     boss = new PgBoss({
       connectionString: process.env.DATABASE_URL,
       // Schema for pg-boss tables (optional, defaults to 'pgboss')
