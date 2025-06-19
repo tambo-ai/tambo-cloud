@@ -1,3 +1,4 @@
+/* eslint-disable -- Jest CommonJS mock deliberately uses module.exports in an ESM package */
 // Jest mock for `@t3-oss/env-nextjs` (and any sub-paths).
 // Provides minimal stubs so that `{ createEnv, vercel, env }` can be imported
 // in unit tests without the real library (which relies on the Next.js runtime).

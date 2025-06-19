@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 import { TamboEmailButton } from "../TamboEmailButton";
+import { useTamboThreadInput } from "@tambo-ai/react";
 
 // Mock the Tambo SDK hook so no network/SDK work occurs in tests.
 jest.mock("@tambo-ai/react", () => ({
@@ -9,7 +10,7 @@ jest.mock("@tambo-ai/react", () => ({
 
 describe("TamboEmailButton", () => {
   it("hides the chip after textarea focus and disables the shortcut", () => {
-    const { setValue } = require("@tambo-ai/react").useTamboThreadInput();
+    const { setValue } = useTamboThreadInput();
 
     render(
       <>
