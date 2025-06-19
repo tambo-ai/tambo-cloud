@@ -1,4 +1,4 @@
-import PgBoss from "pg-boss";
+import PgBoss, { type Job } from "pg-boss";
 
 export interface EmailJobPayload {
   to: string | string[];
@@ -30,11 +30,23 @@ export async function enqueueEmail(payload: EmailJobPayload) {
   await boss.publish(EMAIL_JOB_NAME, payload);
 }
 
+/**
+ * Register a pg-boss worker for the email queue.
+ * Pg-boss delivers jobs in batches (array), with a default batch size of 1.
+ * We therefore iterate over the received array and forward each payload to
+ * the provided handler.
+ */
 export function attachEmailWorker(
   handler: (payload: EmailJobPayload) => Promise<void>,
 ) {
   if (!boss) return;
-  boss.work<EmailJobPayload>(EMAIL_JOB_NAME, async (job: PgBoss.Job<EmailJobPayload>) => {
-    await handler(job.data);
-  });
+  boss.work<EmailJobPayload>(
+    EMAIL_JOB_NAME,
+    async (jobs: Job<EmailJobPayload>[]) => {
+      for (const job of jobs) {
+        // Forward only the payload to the supplied handler
+        await handler(job.data);
+      }
+    },
+  );
 }

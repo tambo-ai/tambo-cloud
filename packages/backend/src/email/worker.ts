@@ -12,7 +12,7 @@ async function loadEmailComponent(name: string) {
   if (!safeName || safeName !== name) {
     throw new Error(`Invalid component name: ${name}`);
   }
-  
+
   // Expecting email templates to live in `emails/<Name>.tsx` at repo root.
   const module = await import(`../../../../emails/${safeName}.tsx`);
   return module.default;
