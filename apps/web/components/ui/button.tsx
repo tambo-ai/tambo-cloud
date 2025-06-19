@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 // Convert a string to Title Case
 function toTitleCase(input: string): string {
-  return input.replace(/\w\S*/g, (txt) => txt[0].toUpperCase() + txt.slice(1));
+  return input.replace(/\w\S*/g, (txt) => txt[0].toUpperCase() + txt.slice(1).toLowerCase());
 }
 
 // Define the variant type explicitly
@@ -32,7 +32,7 @@ const buttonVariants = cva(
         outline:
           "border border-input bg-background hover:border-pink-500 hover:text-pink-500",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground hover:bg-blue-600 border-0 hover:border-0",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary-foreground underline-offset-4 hover:underline",
         orange:
@@ -87,6 +87,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild && React.isValidElement(children)) {
       return React.cloneElement(children as React.ReactElement, {
         ...props,
+        ref,
         className: cn(
           classes,
           (children.props as { className?: string }).className,

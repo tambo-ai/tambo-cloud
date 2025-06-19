@@ -4,6 +4,7 @@ import { Section } from "@/components/section";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { MessageCircleIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -257,7 +258,7 @@ export function Testimonials({ count = 3 }: TestimonialsProps) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Button variant="default" className="px-6">
+            <Button variant="default" className="px-6" Icon={MessageCircleIcon}>
               Join our Discord
             </Button>
           </Link>

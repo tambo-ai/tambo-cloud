@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
+import { PlayIcon } from "lucide-react";
 import { Button } from "../ui/button";
 
 const ease = [0.16, 1, 0.3, 1];
@@ -169,7 +170,7 @@ function HeroCTAButton() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.9, duration: 0.6, ease: "easeOut" }}
     >
-      <Button asChild className="mt-4">
+      <Button asChild className="mt-4" Icon={PlayIcon}>
         <Link href="#code-examples" onClick={handleScrollToSection}>
           {heroContent.cta.buttonText}
         </Link>

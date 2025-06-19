@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/drawer";
 import { siteConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
+import { BookOpenIcon, LayoutDashboardIcon, LogOutIcon } from "lucide-react";
 import Link from "next/link";
 import { IoMenuSharp } from "react-icons/io5";
 
@@ -50,9 +51,10 @@ export function MobileDrawer({
               href="/dashboard"
               className={cn(
                 buttonVariants({ variant: "ghost" }),
-                "justify-start text-base w-full",
+                "justify-start text-base w-full flex items-center gap-2",
               )}
             >
+              <LayoutDashboardIcon className="h-4 w-4" />
               Dashboard
             </Link>
           )}
@@ -60,9 +62,10 @@ export function MobileDrawer({
             <button
               className={cn(
                 buttonVariants({ variant: "ghost" }),
-                "justify-start text-base w-full",
+                "justify-start text-base w-full flex items-center gap-2",
               )}
             >
+              <LogOutIcon className="h-4 w-4" />
               Logout
             </button>
           )}
@@ -72,9 +75,10 @@ export function MobileDrawer({
             href="/docs"
             className={cn(
               buttonVariants({ variant: "default" }),
-              "text-white rounded-full group",
+              "text-white rounded-full group flex items-center justify-center gap-2",
             )}
           >
+            <BookOpenIcon className="h-4 w-4" />
             Docs
           </Link>
         </DrawerFooter>

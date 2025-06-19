@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, PlayIcon, CrownIcon, PhoneIcon } from "lucide-react";
 import { useState } from "react";
 
 interface TabsProps {
@@ -95,6 +95,7 @@ const pricingData = [
       "1 project",
     ],
     cta: "Get Started",
+    ctaIcon: PlayIcon,
     popular: false,
   },
   {
@@ -112,6 +113,7 @@ const pricingData = [
       "Custom branding",
     ],
     cta: "Start Free Trial",
+    ctaIcon: CrownIcon,
     popular: true,
   },
   {
@@ -130,6 +132,7 @@ const pricingData = [
       "SLA guarantees",
     ],
     cta: "Contact Sales",
+    ctaIcon: PhoneIcon,
     popular: false,
   },
 ];
@@ -203,6 +206,7 @@ function PricingTier({
 
         <Button
           size="lg"
+          Icon={tier.ctaIcon}
           className={cn(
             "w-full rounded-none shadow-none",
             tier.popular
