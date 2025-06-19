@@ -22,6 +22,15 @@ const config: JestConfigWithTsJest = {
     "^@tambo-ai-cloud/(.*)$": "<rootDir>/../../../packages/$1/src",
   },
 
+  // Ensure ts-jest transpiles JSX to JavaScript instead of leaving it intact.
+  globals: {
+    "ts-jest": {
+      tsconfig: {
+        jsx: "react-jsx",
+      },
+    },
+  },
+
   // Provided by the preset – no manual transform necessary
   testPathIgnorePatterns: ["/node_modules/", "/dist/", "/.next/"],
 };
