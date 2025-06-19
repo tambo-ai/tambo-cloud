@@ -255,9 +255,9 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
       </div>
 
       {/* Main Layout */}
-      <div className="flex gap-24">
+      <div className="flex gap-48 w-full">
         {/* Sidebar Navigation */}
-        <div className="py-6">
+        <div className="py-6 w-1/5">
           <div className="flex flex-col gap-1">
             <Button
               variant={activeSection === "api-keys" ? "default" : "ghost"}
@@ -301,7 +301,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
           ref={scrollContainerRef}
           className="h-[calc(100vh-200px)] w-full overflow-y-auto pt-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]"
         >
-          <div className="space-y-1">
+          <div className="space-y-4">
             <div ref={apiKeysRef} className="p-2">
               <APIKeyList project={project} />
             </div>

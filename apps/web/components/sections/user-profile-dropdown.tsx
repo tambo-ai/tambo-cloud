@@ -116,7 +116,7 @@ export function UserProfileDropdown({ user }: UserProfileDropdownProps) {
 
         <DropdownMenuItem
           onClick={handleLogout}
-          className="text-red-600 bg-red-500/10 focus:text-red-600 cursor-pointer"
+          className="text-red-600 hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-600 cursor-pointer"
         >
           <LogOut className="mr-2 h-4 w-4" />
           Sign Out
