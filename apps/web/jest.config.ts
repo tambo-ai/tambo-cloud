@@ -20,6 +20,9 @@ const config: JestConfigWithTsJest = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
     "^@tambo-ai-cloud/(.*)$": "<rootDir>/../../../packages/$1/src",
+
+    // Mock static asset imports (images, icons, etc.) so they resolve during tests
+    "\\.(svg|png|jpe?g|gif|webp|avif|ico)$": "<rootDir>/__mocks__/fileMock.js",
   },
 
   // Ensure ts-jest transpiles JSX to JavaScript instead of leaving it intact.
