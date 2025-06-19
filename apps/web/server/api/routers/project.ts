@@ -1,6 +1,7 @@
 import { env } from "@/lib/env";
 import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { llmProviderConfig } from "@tambo-ai-cloud/backend";
 import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
@@ -22,6 +23,7 @@ export const projectRouter = createTRPCRouter({
       defaultLlmModelName: project.defaultLlmModelName,
       customLlmModelName: project.customLlmModelName,
       customLlmBaseURL: project.customLlmBaseURL,
+      maxInputTokens: project.maxInputTokens,
     }));
   }),
 
@@ -122,6 +124,7 @@ export const projectRouter = createTRPCRouter({
           defaultLlmModelName: true,
           customLlmModelName: true,
           customLlmBaseURL: true,
+          maxInputTokens: true,
         },
       });
 
@@ -136,6 +139,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: project.defaultLlmModelName ?? null,
         customLlmModelName: project.customLlmModelName ?? null,
         customLlmBaseURL: project.customLlmBaseURL ?? null,
+        maxInputTokens: project.maxInputTokens ?? null,
       };
     }),
 
@@ -149,6 +153,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: z.string().nullable().optional(),
         customLlmModelName: z.string().nullable().optional(),
         customLlmBaseURL: z.string().nullable().optional(),
+        maxInputTokens: z.number().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -160,6 +165,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
+        maxInputTokens,
       } = input;
       await operations.ensureProjectAccess(
         ctx.db,
@@ -187,6 +193,8 @@ export const projectRouter = createTRPCRouter({
           customLlmBaseURL === null
             ? undefined
             : (customLlmBaseURL ?? undefined),
+        maxInputTokens:
+          maxInputTokens === null ? undefined : (maxInputTokens ?? undefined),
       });
 
       if (!updatedProject) {
@@ -203,6 +211,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: updatedProject.defaultLlmModelName,
         customLlmModelName: updatedProject.customLlmModelName,
         customLlmBaseURL: updatedProject.customLlmBaseURL,
+        maxInputTokens: updatedProject.maxInputTokens,
       };
     }),
 
@@ -214,6 +223,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: z.string().nullable().optional(),
         customLlmModelName: z.string().nullable().optional(),
         customLlmBaseURL: z.string().nullable().optional(),
+        maxInputTokens: z.number().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -223,6 +233,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
+        maxInputTokens,
       } = input;
 
       // Ensure the user has access to the project before performing any further
@@ -267,6 +278,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: string | null;
         customLlmModelName: string | null;
         customLlmBaseURL: string | null;
+        maxInputTokens: number | null;
       }> = {};
 
       if ("defaultLlmProviderName" in input) {
@@ -282,6 +294,28 @@ export const projectRouter = createTRPCRouter({
         // Store the trimmed value (or null if blank/undefined)
         updateData.customLlmBaseURL =
           sanitizedBaseURL && sanitizedBaseURL !== "" ? sanitizedBaseURL : null;
+      }
+      if ("maxInputTokens" in input) {
+        if (defaultLlmProviderName && defaultLlmModelName) {
+          const modelConfig =
+            llmProviderConfig[defaultLlmProviderName]?.models?.[
+              defaultLlmModelName
+            ];
+          if (modelConfig) {
+            if (
+              !input.maxInputTokens ||
+              input.maxInputTokens < 1 ||
+              input.maxInputTokens > modelConfig.properties.inputTokenLimit
+            ) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message:
+                  "Max input tokens must be greater than 0 and less than the model's max.",
+              });
+            }
+          }
+        }
+        updateData.maxInputTokens = input.maxInputTokens;
       }
 
       if (
@@ -305,6 +339,7 @@ export const projectRouter = createTRPCRouter({
           defaultLlmModelName: currentProject.defaultLlmModelName ?? null,
           customLlmModelName: currentProject.customLlmModelName ?? null,
           customLlmBaseURL: currentProject.customLlmBaseURL ?? null,
+          maxInputTokens: currentProject.maxInputTokens ?? null,
         };
       }
 
@@ -326,6 +361,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: updatedProject[0].defaultLlmModelName ?? null,
         customLlmModelName: updatedProject[0].customLlmModelName ?? null,
         customLlmBaseURL: updatedProject[0].customLlmBaseURL ?? null,
+        maxInputTokens: updatedProject[0].maxInputTokens ?? null,
       };
     }),
 

@@ -79,6 +79,33 @@ export function ProviderKeySection({
 }: ProviderKeySectionProps) {
   const { toast } = useToast();
 
+  const getModelConfig = useCallback(
+    (
+      providerName: string | undefined,
+      modelName: string | undefined,
+      configData: typeof llmProviderConfigData,
+    ) => {
+      if (!providerName || !modelName || !configData) {
+        return { modelConfig: undefined, inputTokenLimit: undefined };
+      }
+
+      const modelConfig = configData[providerName]?.models?.[modelName];
+
+      const isValidModelConfig =
+        modelConfig &&
+        typeof modelConfig === "object" &&
+        "properties" in modelConfig;
+
+      return {
+        modelConfig: isValidModelConfig ? modelConfig : undefined,
+        inputTokenLimit: isValidModelConfig
+          ? modelConfig.properties.inputTokenLimit
+          : undefined,
+      };
+    },
+    [],
+  );
+
   // --- TRPC API Calls ---
   const { data: llmProviderConfigData, isLoading: isLoadingLlmProviderConfig } =
     api.llm.getLlmProviderConfig.useQuery(undefined, {
@@ -129,6 +156,7 @@ export function ProviderKeySection({
   >();
   const [customModelName, setCustomModelName] = useState<string>("");
   const [baseUrl, setBaseUrl] = useState<string>("");
+  const [maxInputTokens, setMaxInputTokens] = useState<string>("");
 
   const [apiKeyInput, setApiKeyInput] = useState<string>("");
   const [isEditingApiKey, setIsEditingApiKey] = useState<boolean>(false);
@@ -138,9 +166,8 @@ export function ProviderKeySection({
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
     if (projectLlmSettings) {
-      const data = projectLlmSettings;
       // If no provider is set, find and set OpenAI as default
-      if (!data.defaultLlmProviderName && llmProviderConfigData) {
+      if (!projectLlmSettings.defaultLlmProviderName && llmProviderConfigData) {
         const openaiProvider = Object.values(llmProviderConfigData).find(
           (provider) => provider.apiName === "openai",
         );
@@ -151,23 +178,39 @@ export function ProviderKeySection({
         }
       }
 
-      setSelectedProviderApiName(data.defaultLlmProviderName ?? undefined);
-      if (data.defaultLlmProviderName === "openai-compatible") {
-        setCustomModelName(data.customLlmModelName ?? "");
+      setSelectedProviderApiName(
+        projectLlmSettings.defaultLlmProviderName ?? undefined,
+      );
+      if (projectLlmSettings.defaultLlmProviderName === "openai-compatible") {
+        setCustomModelName(projectLlmSettings.customLlmModelName ?? "");
         setSelectedModelApiName(undefined);
+        setMaxInputTokens(projectLlmSettings.maxInputTokens?.toString() ?? "");
       } else {
         // If OpenAI is selected and no model is set, default to DEFAULT_OPENAI_MODEL
         if (
-          data.defaultLlmProviderName === "openai" &&
-          !data.defaultLlmModelName
+          projectLlmSettings.defaultLlmProviderName === "openai" &&
+          !projectLlmSettings.defaultLlmModelName
         ) {
           setSelectedModelApiName(DEFAULT_OPENAI_MODEL);
         } else {
-          setSelectedModelApiName(data.defaultLlmModelName ?? undefined);
+          setSelectedModelApiName(
+            projectLlmSettings.defaultLlmModelName ?? undefined,
+          );
         }
         setCustomModelName("");
+        // For non-custom providers, use the saved maxInputTokens or the model's default
+        if (projectLlmSettings.maxInputTokens) {
+          setMaxInputTokens(projectLlmSettings.maxInputTokens.toString());
+        } else {
+          const { inputTokenLimit } = getModelConfig(
+            projectLlmSettings.defaultLlmProviderName ?? undefined,
+            projectLlmSettings.defaultLlmModelName ?? undefined,
+            llmProviderConfigData,
+          );
+          setMaxInputTokens(inputTokenLimit?.toString() ?? "");
+        }
       }
-      setBaseUrl(data.customLlmBaseURL ?? "");
+      setBaseUrl(projectLlmSettings.customLlmBaseURL ?? "");
       setHasUnsavedChanges(false);
     }
   }, [projectLlmSettings, llmProviderConfigData]);
@@ -279,6 +322,9 @@ export function ProviderKeySection({
           setCustomModelName(projectLlmSettings.customLlmModelName ?? "");
           setSelectedModelApiName(undefined);
           setBaseUrl(projectLlmSettings.customLlmBaseURL ?? "");
+          setMaxInputTokens(
+            projectLlmSettings.maxInputTokens?.toString() ?? "",
+          );
         } else {
           // If OpenAI is selected and no model is set, default to gpt-4o-mini
           if (
@@ -293,6 +339,17 @@ export function ProviderKeySection({
           }
           setCustomModelName("");
           setBaseUrl("");
+          // For non-custom providers, use the saved maxInputTokens or the model's default
+          if (projectLlmSettings.maxInputTokens) {
+            setMaxInputTokens(projectLlmSettings.maxInputTokens.toString());
+          } else {
+            const { inputTokenLimit } = getModelConfig(
+              projectLlmSettings.defaultLlmProviderName ?? undefined,
+              projectLlmSettings.defaultLlmModelName ?? undefined,
+              llmProviderConfigData,
+            );
+            setMaxInputTokens(inputTokenLimit?.toString() ?? "");
+          }
         }
       } else {
         // If switching to OpenAI and no model is selected, set DEFAULT_OPENAI_MODEL
@@ -303,6 +360,7 @@ export function ProviderKeySection({
         }
         setCustomModelName("");
         setBaseUrl("");
+        setMaxInputTokens("");
       }
     } else if (selectedProviderApiName) {
       if (selectedProviderApiName === "openai") {
@@ -311,9 +369,35 @@ export function ProviderKeySection({
         setCustomModelName("");
         setBaseUrl("");
         setSelectedModelApiName(undefined);
+        setMaxInputTokens("");
       }
     }
-  }, [selectedProviderApiName, projectLlmSettings]);
+  }, [selectedProviderApiName, projectLlmSettings, llmProviderConfigData]);
+
+  // Update maxInputTokens when model changes
+  useEffect(() => {
+    if (
+      selectedModelApiName &&
+      selectedProviderApiName &&
+      llmProviderConfigData
+    ) {
+      const { inputTokenLimit } = getModelConfig(
+        selectedProviderApiName,
+        selectedModelApiName,
+        llmProviderConfigData,
+      );
+      if (inputTokenLimit && !maxInputTokens) {
+        setMaxInputTokens(inputTokenLimit.toString());
+        setHasUnsavedChanges(true);
+      }
+    }
+  }, [
+    selectedModelApiName,
+    selectedProviderApiName,
+    llmProviderConfigData,
+    maxInputTokens,
+    getModelConfig,
+  ]);
 
   // --- Event Handlers (basic implementation for UI interaction) ---
   const handleProviderSelect = useCallback((apiName: string) => {
@@ -368,6 +452,7 @@ export function ProviderKeySection({
 
     let modelToSave: string | null = null;
     let customNameToSave: string | null = null;
+    let maxInputTokensToSave: number | null = null;
 
     if (currentProviderConfig?.isCustomProvider) {
       if (!customModelName.trim()) {
@@ -380,6 +465,20 @@ export function ProviderKeySection({
       }
       modelToSave = null;
       customNameToSave = customModelName.trim();
+
+      // Validate maxInputTokens for openai-compatible provider
+      if (selectedProviderApiName === "openai-compatible") {
+        const tokens = parseInt(maxInputTokens);
+        if (isNaN(tokens) || tokens <= 0) {
+          toast({
+            title: "Error",
+            description: "Please enter a valid maximum input tokens value.",
+            variant: "destructive",
+          });
+          return;
+        }
+        maxInputTokensToSave = tokens;
+      }
     } else {
       if (!selectedModelApiName) {
         toast({
@@ -391,6 +490,39 @@ export function ProviderKeySection({
       }
       modelToSave = selectedModelApiName;
       customNameToSave = null;
+      const { inputTokenLimit: modelMaxTokens } = getModelConfig(
+        selectedProviderApiName,
+        selectedModelApiName,
+        llmProviderConfigData,
+      );
+
+      if (maxInputTokens.trim()) {
+        const tokens = parseInt(maxInputTokens);
+        if (isNaN(tokens) || tokens <= 0) {
+          toast({
+            title: "Error",
+            description: "Please enter a valid maximum input tokens value.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check if tokens exceed the model's maximum
+
+        if (modelMaxTokens && tokens > modelMaxTokens) {
+          toast({
+            title: "Error",
+            description: `Input token limit (${tokens.toLocaleString()}) cannot exceed the model's maximum (${modelMaxTokens.toLocaleString()}).`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        maxInputTokensToSave = tokens;
+      } else {
+        // Use model's default if no custom value provided
+        maxInputTokensToSave = modelMaxTokens ?? null;
+      }
     }
 
     let baseUrlToSave: string | null = null;
@@ -410,7 +542,6 @@ export function ProviderKeySection({
       baseUrlToSave = baseUrl.trim() || null;
     }
 
-    // If we made it here, clear validation errors and save
     setShowValidationErrors(false);
     updateLlmSettings({
       projectId: project.id,
@@ -418,6 +549,7 @@ export function ProviderKeySection({
       defaultLlmModelName: modelToSave,
       customLlmModelName: customNameToSave,
       customLlmBaseURL: baseUrlToSave,
+      maxInputTokens: maxInputTokensToSave,
     });
   }, [
     selectedProviderApiName,
@@ -425,11 +557,14 @@ export function ProviderKeySection({
     customModelName,
     selectedModelApiName,
     baseUrl,
+    maxInputTokens,
     updateLlmSettings,
     project?.id,
     toast,
     currentApiKeyRecord,
     setShowValidationErrors,
+    llmProviderConfigData,
+    getModelConfig,
   ]);
 
   const handleSaveApiKey = useCallback(async () => {
@@ -647,6 +782,7 @@ export function ProviderKeySection({
                       Model selection is required
                     </p>
                   )}
+
                   {currentModelConfig && (
                     <div className="space-y-0.5 pt-1 text-xs text-muted-foreground">
                       {currentModelConfig.notes && (
@@ -668,6 +804,40 @@ export function ProviderKeySection({
                       )}
                     </div>
                   )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="max-input-tokens">Input Token Limit</Label>
+                    <Input
+                      id="max-input-tokens"
+                      type="number"
+                      min="1"
+                      max={currentModelConfig?.properties?.inputTokenLimit}
+                      placeholder={`e.g., ${currentModelConfig?.properties?.inputTokenLimit ?? 4096}`}
+                      value={maxInputTokens}
+                      onChange={(e) => {
+                        setMaxInputTokens(e.target.value);
+                        setHasUnsavedChanges(true);
+                      }}
+                    />
+                    {showValidationErrors &&
+                      (Number.isNaN(Number(maxInputTokens)) ||
+                        Number(maxInputTokens) <= 0) && (
+                        <p className="text-sm text-destructive mt-1">
+                          Please enter a valid maximum input tokens value
+                        </p>
+                      )}
+                    <p className="text-xs text-muted-foreground">
+                      Tambo will limit the number of tokens sent to the model to
+                      this value.
+                      {currentModelConfig?.properties?.inputTokenLimit && (
+                        <span>
+                          {" "}
+                          Maximum for this model:{" "}
+                          {currentModelConfig.properties.inputTokenLimit.toLocaleString()}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -710,6 +880,35 @@ export function ProviderKeySection({
                       />
                       <p className="text-xs text-muted-foreground">
                         The API endpoint URL for your compatible provider.
+                      </p>
+                    </div>
+                  )}
+                  {selectedProviderApiName === "openai-compatible" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="max-input-tokens">
+                        Maximum Input Tokens
+                      </Label>
+                      <Input
+                        id="max-input-tokens"
+                        type="number"
+                        min="1"
+                        placeholder="e.g., 4096"
+                        value={maxInputTokens}
+                        onChange={(e) => {
+                          setMaxInputTokens(e.target.value);
+                          setHasUnsavedChanges(true);
+                        }}
+                      />
+                      {showValidationErrors &&
+                        (Number.isNaN(Number(maxInputTokens)) ||
+                          Number(maxInputTokens) <= 0) && (
+                          <p className="text-sm text-destructive mt-1">
+                            Please enter a valid maximum input tokens value
+                          </p>
+                        )}
+                      <p className="text-xs text-muted-foreground">
+                        The maximum number of input tokens your model can
+                        handle.
                       </p>
                     </div>
                   )}
@@ -784,6 +983,7 @@ export function ProviderKeySection({
                     </div>
 
                     {/* Validation feedback */}
+
                     {apiKeyInput && apiKeyValidation && (
                       <div className="space-y-1">
                         {!apiKeyValidation.isValid && (
