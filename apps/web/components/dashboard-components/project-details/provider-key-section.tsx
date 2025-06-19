@@ -202,7 +202,6 @@ export function ProviderKeySection({
         if (projectLlmSettings.maxInputTokens) {
           setMaxInputTokens(projectLlmSettings.maxInputTokens.toString());
         } else {
-          // Get the model's default inputTokenLimit from config
           const { inputTokenLimit } = getModelConfig(
             projectLlmSettings.defaultLlmProviderName ?? undefined,
             projectLlmSettings.defaultLlmModelName ?? undefined,
@@ -344,7 +343,6 @@ export function ProviderKeySection({
           if (projectLlmSettings.maxInputTokens) {
             setMaxInputTokens(projectLlmSettings.maxInputTokens.toString());
           } else {
-            // Get the model's default inputTokenLimit from config
             const { inputTokenLimit } = getModelConfig(
               projectLlmSettings.defaultLlmProviderName ?? undefined,
               projectLlmSettings.defaultLlmModelName ?? undefined,
