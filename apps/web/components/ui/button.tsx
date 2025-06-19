@@ -66,15 +66,7 @@ export interface ButtonProps
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    {
-      className,
-      variant,
-      size,
-      asChild = false,
-      Icon,
-      children,
-      ...props
-    },
+    { className, variant, size, asChild = false, Icon, children, ...props },
     ref,
   ) => {
     const classes = cn(
@@ -86,14 +78,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     );
 
     const iconNode =
-      Icon != null ? <Icon className="mr-2 h-4 w-4" aria-hidden="true" /> : null;
+      Icon != null ? (
+        <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
+      ) : null;
 
     // If `asChild` is true, clone the provided element (e.g., Next.js `Link`)
     // so we can merge classes/props and inject the icon + formatted label.
     if (asChild && React.isValidElement(children)) {
       return React.cloneElement(children as React.ReactElement, {
         ...props,
-        className: cn(classes, (children.props as { className?: string }).className),
+        className: cn(
+          classes,
+          (children.props as { className?: string }).className,
+        ),
         children: (
           <>
             {iconNode}

@@ -86,12 +86,7 @@ export function Showcase() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2, ease }}
           >
-            <Button
-              asChild
-              size="lg"
-              Icon={EyeIcon}
-              className="text-base"
-            >
+            <Button asChild size="lg" Icon={EyeIcon} className="text-base">
               <Link
                 href={showcaseContent.cta.primary.href}
                 target="_blank"
