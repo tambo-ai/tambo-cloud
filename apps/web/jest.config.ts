@@ -3,23 +3,26 @@ import type { JestConfigWithTsJest } from "ts-jest";
 /**
  * Jest configuration for the Next.js web app.
  *
- * • Uses ts-jest with ESM so imports stay modern.
+ * • Uses the `default-esm` preset from ts-jest so TypeScript/TSX files are
+ *   transformed correctly in an ESM-aware way.
  * • jsdom provides a browser-like environment for React component tests.
  * • Path aliases (`@/…` and the monorepo packages) are mapped so that source
  *   files can be loaded without compiling the whole workspace.
  */
 const config: JestConfigWithTsJest = {
-  preset: "ts-jest",
+  // ESM-aware preset with TSX support
+  preset: "ts-jest/presets/default-esm",
+
   testEnvironment: "jsdom",
   extensionsToTreatAsEsm: [".ts", ".tsx"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
     "^@tambo-ai-cloud/(.*)$": "<rootDir>/../../../packages/$1/src",
   },
-  transform: {
-    "^.+\\.[tj]sx?$": ["ts-jest", { useESM: true }],
-  },
+
+  // Provided by the preset – no manual transform necessary
   testPathIgnorePatterns: ["/node_modules/", "/dist/", "/.next/"],
 };
 
