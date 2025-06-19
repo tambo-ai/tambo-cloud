@@ -272,23 +272,15 @@ export class ThreadsService {
    * @param projectId - The project ID for validation
    * @returns The updated thread with CANCELLED generation stage
    */
-  async cancelThread(threadId: string, projectId: string): Promise<Thread> {
-    const db = this.getDb();
-
-    // Get the current thread to check if it's in a cancellable state
-    const thread = await operations.getThreadForProjectId(
-      db,
+  async cancelThread(threadId: string): Promise<Thread> {
+    const updatedThread = await operations.updateThread(
+      this.getDb(),
       threadId,
-      projectId,
+      {
+        generationStage: GenerationStage.CANCELLED,
+        statusMessage: "Thread advancement cancelled by user",
+      },
     );
-    if (!thread) {
-      throw new NotFoundException(`Thread with ID ${threadId} not found`);
-    }
-
-    const updatedThread = await operations.updateThread(db, threadId, {
-      generationStage: GenerationStage.CANCELLED,
-      statusMessage: "Thread advancement cancelled by user",
-    });
 
     return {
       id: updatedThread.id,
@@ -678,6 +670,7 @@ export class ThreadsService {
       systemTools,
       customInstructions,
     );
+
     const {
       responseMessageDto,
       resultingGenerationStage,
@@ -929,6 +922,19 @@ export class ThreadsService {
       stream,
       inProgressMessage,
     )) {
+      const thread = await this.findOne(threadId, projectId);
+      if (thread.generationStage === GenerationStage.CANCELLED) {
+        yield {
+          responseMessageDto: {
+            ...threadMessage,
+            content: convertContentPartToDto(threadMessage.content),
+            componentState: threadMessage.componentState ?? {},
+          },
+          generationStage: GenerationStage.CANCELLED,
+          statusMessage: "Thread cancelled",
+        };
+        return;
+      }
       // Update db message on interval
       const currentTime = Date.now();
       if (currentTime - lastUpdateTime >= updateIntervalMs) {

@@ -171,14 +171,8 @@ export class ThreadsController {
     description: "Thread not found",
     type: ProblemDetailsDto,
   })
-  async cancelThread(
-    @Param("id") threadId: string,
-    @Req() request: Request,
-  ): Promise<Thread> {
-    if (!request[ProjectId]) {
-      throw new BadRequestException("Project ID is required");
-    }
-    return await this.threadsService.cancelThread(threadId, request[ProjectId]);
+  async cancelThread(@Param("id") threadId: string): Promise<Thread> {
+    return await this.threadsService.cancelThread(threadId);
   }
 
   @UseGuards(ThreadInProjectGuard)
