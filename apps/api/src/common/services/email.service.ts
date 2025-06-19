@@ -1,6 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Resend } from "resend";
+import React from "react";
+import { sendEmail } from "../../../../../lib/email";
+import { WelcomeEmail, NotificationEmail } from "../../../../../lib/email/templates";
 import { FREE_MESSAGE_LIMIT } from "../../threads/types/errors";
 
 @Injectable()
@@ -99,6 +102,69 @@ export class EmailService {
     } catch (error) {
       console.error("Failed to send message limit notification email:", error);
       // Don't throw the error as this is a non-critical operation
+    }
+  }
+
+  async sendWelcomeEmail(
+    userEmail: string,
+    firstName: string,
+    projectName?: string,
+  ) {
+    try {
+      await sendEmail({
+        to: userEmail,
+        component: WelcomeEmail({
+          firstName,
+          projectName,
+          loginUrl: 'https://tambo.co/login',
+        }),
+        subject: `Welcome to ${projectName || 'tambo'}!`,
+      });
+    } catch (error) {
+      console.error("Failed to send welcome email:", error);
+    }
+  }
+
+  async sendNotification(
+    userEmail: string,
+    title: string,
+    message: string,
+    actionUrl?: string,
+    actionText?: string,
+    userName?: string,
+  ) {
+    try {
+      await sendEmail({
+        to: userEmail,
+        component: NotificationEmail({
+          title,
+          message,
+          actionUrl,
+          actionText,
+          userName,
+        }),
+        subject: title,
+      });
+    } catch (error) {
+      console.error("Failed to send notification email:", error);
+    }
+  }
+
+  async scheduleEmail(
+    userEmail: string,
+    component: React.ReactElement,
+    subject: string,
+    scheduledFor: Date,
+  ) {
+    try {
+      await sendEmail({
+        to: userEmail,
+        component,
+        subject,
+        scheduledFor,
+      });
+    } catch (error) {
+      console.error("Failed to schedule email:", error);
     }
   }
 }

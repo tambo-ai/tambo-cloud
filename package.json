@@ -21,7 +21,14 @@
     "db:studio": "cd packages/db && npm run db:studio",
     "test:suggestions": "cd scripts && tsx test-suggestions.ts",
     "rename-to-tambo": "tsx scripts/update-content.ts && tsx scripts/rename-files.ts",
-    "rename-vnext": "tsx scripts/rename-vnext.ts"
+    "rename-vnext": "tsx scripts/rename-vnext.ts",
+    "emails:preview": "email dev --dir lib/email/templates --port 3001"
+  },
+  "dependencies": {
+    "@react-email/components": "^0.0.25",
+    "@react-email/render": "^1.0.1",
+    "pg-boss": "^10.2.1",
+    "react-email": "^3.0.2"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",

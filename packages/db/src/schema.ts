@@ -508,3 +508,55 @@ export const mcpOauthClientRelations = relations(
   }),
 );
 export type DBMcpOauthClient = typeof mcpOauthClients.$inferSelect;
+
+// Email tables for React-Email + Resend + pg-boss system
+export const emailEvents = pgTable("email_events", ({ text, timestamp, boolean }) => ({
+  id: text("id")
+    .primaryKey()
+    .notNull()
+    .unique()
+    .default(sql`generate_custom_id('eme_')`),
+  to: text("to").notNull(),
+  from: text("from").notNull(),
+  subject: text("subject").notNull(),
+  templateName: text("template_name"),
+  templateProps: customJsonb<Record<string, unknown>>("template_props"),
+  status: text("status", {
+    enum: ["pending", "sent", "failed", "delivered", "bounced", "complained"] as const,
+  }).notNull().default("pending"),
+  resendId: text("resend_id"),
+  error: text("error"),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+}));
+
+export const scheduledEmails = pgTable("scheduled_emails", ({ text, timestamp, boolean }) => ({
+  id: text("id")
+    .primaryKey()
+    .notNull()
+    .unique()
+    .default(sql`generate_custom_id('sch_')`),
+  to: text("to").notNull(),
+  from: text("from").notNull(),
+  subject: text("subject").notNull(),
+  templateName: text("template_name").notNull(),
+  templateProps: customJsonb<Record<string, unknown>>("template_props"),
+  scheduledFor: timestamp("scheduled_for", { withTimezone: true }).notNull(),
+  processed: boolean("processed").notNull().default(false),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+}));
+
+export type DBEmailEvent = typeof emailEvents.$inferSelect;
+export type DBScheduledEmail = typeof scheduledEmails.$inferSelect;

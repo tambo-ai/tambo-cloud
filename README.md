@@ -140,6 +140,10 @@ If you prefer to set things up manually, follow these steps:
 - `npm run db:check` - Checks migration status
 - `npm run db:studio` - Opens Drizzle Studio for database visualization
 
+#### Email Commands
+
+- `npm run emails:preview` - Starts the React-Email preview server for email templates
+
 #### Turborepo Commands
 
 You can also use Turborepo directly:
@@ -186,3 +190,109 @@ The landing page and dashboard are built with:
 - [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
 - [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
 - [Shadcn UI](https://ui.shadcn.com/) - Beautiful UI components
+
+## Email Marketing System
+
+The platform includes a comprehensive email marketing system built with React-Email, Resend, pg-boss, and pg_cron.
+
+### Features
+
+- **React-Email Templates**: Build beautiful, responsive email templates using React components
+- **Resend Integration**: Reliable email delivery with webhook support
+- **Queue System**: pg-boss for robust job processing and email queuing
+- **Email Scheduling**: Schedule emails for future delivery using pg_cron
+- **Event Tracking**: Complete email event logging and delivery tracking
+
+### Quick Start
+
+1. **Environment Setup**: Add your Resend API key to the environment files:
+   ```bash
+   # apps/api/.env
+   RESEND_API_KEY=your_resend_api_key
+   ```
+
+2. **Database Setup**: Run migrations to create email tables:
+   ```bash
+   npm run db:migrate
+   ```
+
+3. **Preview Email Templates**: Start the React-Email preview server:
+   ```bash
+   npm run emails:preview
+   ```
+   Visit `http://localhost:3001` to preview and test email templates.
+
+4. **Set up pg_cron**: Execute the cron setup SQL:
+   ```sql
+   -- Run the SQL from lib/email/cron.sql in your database
+   ```
+
+### Usage Examples
+
+#### Send Immediate Email
+```typescript
+import { sendEmail } from '../lib/email';
+import { WelcomeEmail } from '../lib/email/templates';
+
+await sendEmail({
+  to: 'user@example.com',
+  component: WelcomeEmail({
+    firstName: 'John',
+    projectName: 'My Project',
+  }),
+  subject: 'Welcome to My Project!',
+});
+```
+
+#### Schedule Email
+```typescript
+await sendEmail({
+  to: 'user@example.com',
+  component: NotificationEmail({
+    title: 'Reminder',
+    message: 'This is your scheduled reminder',
+  }),
+  subject: 'Scheduled Reminder',
+  scheduledFor: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
+});
+```
+
+#### Use Enhanced EmailService
+```typescript
+import { EmailService } from './apps/api/src/common/services/email.service';
+
+// Send welcome email
+await emailService.sendWelcomeEmail(
+  'user@example.com',
+  'John',
+  'My Project'
+);
+
+// Send notification
+await emailService.sendNotification(
+  'user@example.com',
+  'New Feature Available',
+  'Check out our latest feature!',
+  'https://tambo.co/features',
+  'View Feature'
+);
+```
+
+### Email Templates
+
+Templates are located in `lib/email/templates/` and built with React-Email components:
+
+- `WelcomeEmail` - Welcome new users to projects
+- `NotificationEmail` - General purpose notifications
+
+### Database Tables
+
+- `email_events` - Logs all email sends, deliveries, and status updates
+- `scheduled_emails` - Queue for emails scheduled for future delivery
+
+### Worker Process
+
+The email worker runs automatically and processes:
+- Immediate email sends via pg-boss
+- Scheduled email processing via pg_cron
+- Email event logging and status tracking
