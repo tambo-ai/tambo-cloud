@@ -79,6 +79,33 @@ export function ProviderKeySection({
 }: ProviderKeySectionProps) {
   const { toast } = useToast();
 
+  const getModelConfig = useCallback(
+    (
+      providerName: string | undefined,
+      modelName: string | undefined,
+      configData: typeof llmProviderConfigData,
+    ) => {
+      if (!providerName || !modelName || !configData) {
+        return { modelConfig: undefined, inputTokenLimit: undefined };
+      }
+
+      const modelConfig = configData[providerName]?.models?.[modelName];
+
+      const isValidModelConfig =
+        modelConfig &&
+        typeof modelConfig === "object" &&
+        "properties" in modelConfig;
+
+      return {
+        modelConfig: isValidModelConfig ? modelConfig : undefined,
+        inputTokenLimit: isValidModelConfig
+          ? modelConfig.properties.inputTokenLimit
+          : undefined,
+      };
+    },
+    [],
+  );
+
   // --- TRPC API Calls ---
   const { data: llmProviderConfigData, isLoading: isLoadingLlmProviderConfig } =
     api.llm.getLlmProviderConfig.useQuery(undefined, {
@@ -176,12 +203,12 @@ export function ProviderKeySection({
           setMaxInputTokens(projectLlmSettings.maxInputTokens.toString());
         } else {
           // Get the model's default inputTokenLimit from config
-          const modelConfig =
-            llmProviderConfigData?.[projectLlmSettings.defaultLlmProviderName]
-              ?.models?.[projectLlmSettings.defaultLlmModelName];
-          setMaxInputTokens(
-            modelConfig?.properties?.inputTokenLimit?.toString() ?? "",
+          const { inputTokenLimit } = getModelConfig(
+            projectLlmSettings.defaultLlmProviderName ?? undefined,
+            projectLlmSettings.defaultLlmModelName ?? undefined,
+            llmProviderConfigData,
           );
+          setMaxInputTokens(inputTokenLimit?.toString() ?? "");
         }
       }
       setBaseUrl(projectLlmSettings.customLlmBaseURL ?? "");
@@ -313,18 +340,17 @@ export function ProviderKeySection({
           }
           setCustomModelName("");
           setBaseUrl("");
-          // Use saved maxInputTokens or model's default
+          // For non-custom providers, use the saved maxInputTokens or the model's default
           if (projectLlmSettings.maxInputTokens) {
             setMaxInputTokens(projectLlmSettings.maxInputTokens.toString());
           } else {
-            const modelConfig =
-              projectLlmSettings.defaultLlmModelName &&
-              llmProviderConfigData?.[selectedProviderApiName]?.models?.[
-                projectLlmSettings.defaultLlmModelName
-              ];
-            setMaxInputTokens(
-              modelConfig?.properties?.inputTokenLimit?.toString() ?? "",
+            // Get the model's default inputTokenLimit from config
+            const { inputTokenLimit } = getModelConfig(
+              projectLlmSettings.defaultLlmProviderName ?? undefined,
+              projectLlmSettings.defaultLlmModelName ?? undefined,
+              llmProviderConfigData,
             );
+            setMaxInputTokens(inputTokenLimit?.toString() ?? "");
           }
         }
       } else {
@@ -357,12 +383,13 @@ export function ProviderKeySection({
       selectedProviderApiName &&
       llmProviderConfigData
     ) {
-      const modelConfig =
-        llmProviderConfigData[selectedProviderApiName]?.models?.[
-          selectedModelApiName
-        ];
-      if (modelConfig?.properties?.inputTokenLimit && !maxInputTokens) {
-        setMaxInputTokens(modelConfig.properties.inputTokenLimit.toString());
+      const { inputTokenLimit } = getModelConfig(
+        selectedProviderApiName,
+        selectedModelApiName,
+        llmProviderConfigData,
+      );
+      if (inputTokenLimit && !maxInputTokens) {
+        setMaxInputTokens(inputTokenLimit.toString());
         setHasUnsavedChanges(true);
       }
     }
@@ -371,6 +398,7 @@ export function ProviderKeySection({
     selectedProviderApiName,
     llmProviderConfigData,
     maxInputTokens,
+    getModelConfig,
   ]);
 
   // --- Event Handlers (basic implementation for UI interaction) ---
@@ -464,11 +492,11 @@ export function ProviderKeySection({
       }
       modelToSave = selectedModelApiName;
       customNameToSave = null;
-      const modelConfig =
-        llmProviderConfigData?.[selectedProviderApiName]?.models?.[
-          selectedModelApiName
-        ];
-      const modelMaxTokens = modelConfig?.properties?.inputTokenLimit;
+      const { inputTokenLimit: modelMaxTokens } = getModelConfig(
+        selectedProviderApiName,
+        selectedModelApiName,
+        llmProviderConfigData,
+      );
 
       if (maxInputTokens.trim()) {
         const tokens = parseInt(maxInputTokens);
@@ -538,6 +566,7 @@ export function ProviderKeySection({
     currentApiKeyRecord,
     setShowValidationErrors,
     llmProviderConfigData,
+    getModelConfig,
   ]);
 
   const handleSaveApiKey = useCallback(async () => {
