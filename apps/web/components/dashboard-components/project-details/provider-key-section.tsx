@@ -350,7 +350,7 @@ export function ProviderKeySection({
     }
   }, [selectedProviderApiName, projectLlmSettings, llmProviderConfigData]);
 
-  // Effect to update maxInputTokens when model changes
+  // Update maxInputTokens when model changes
   useEffect(() => {
     if (
       selectedModelApiName &&
@@ -777,13 +777,13 @@ export function ProviderKeySection({
                     </div>
                   )}
 
-                  {/* Max Input Tokens field for all models */}
                   <div className="space-y-2">
                     <Label htmlFor="max-input-tokens">Input Token Limit</Label>
                     <Input
                       id="max-input-tokens"
                       type="number"
                       min="1"
+                      max={currentModelConfig?.properties?.inputTokenLimit}
                       placeholder={`e.g., ${currentModelConfig?.properties?.inputTokenLimit ?? 4096}`}
                       value={maxInputTokens}
                       onChange={(e) => {
