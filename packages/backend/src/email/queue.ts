@@ -34,7 +34,7 @@ export function attachEmailWorker(
   handler: (payload: EmailJobPayload) => Promise<void>,
 ) {
   if (!boss) return;
-  boss.work<EmailJobPayload>(EMAIL_JOB_NAME, async (job) => {
+  boss.work<EmailJobPayload>(EMAIL_JOB_NAME, async (job: PgBoss.Job<EmailJobPayload>) => {
     await handler(job.data);
   });
 }

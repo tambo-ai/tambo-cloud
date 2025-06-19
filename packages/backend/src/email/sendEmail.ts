@@ -32,7 +32,7 @@ export async function sendEmail<P extends Record<string, unknown>>(
   const resend = new Resend(apiKey);
 
   // Use createElement to avoid JSX in .ts file
-  const html = render(React.createElement(Component, props));
+  const html: string = render(React.createElement(Component, props));
 
   const response = await resend.emails.send({
     from: from ?? process.env.RESEND_FROM_ADDR ?? "noreply@tambo.ai", // eslint-disable-line turbo/no-undeclared-env-vars
