@@ -7,8 +7,14 @@ import {
 import { sendEmail } from "./sendEmail";
 
 async function loadEmailComponent(name: string) {
+  // Sanitize component name to prevent path traversal attacks
+  const safeName = name.replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!safeName || safeName !== name) {
+    throw new Error(`Invalid component name: ${name}`);
+  }
+  
   // Expecting email templates to live in `emails/<Name>.tsx` at repo root.
-  const module = await import(`../../../../emails/${name}.tsx`);
+  const module = await import(`../../../../emails/${safeName}.tsx`);
   return module.default;
 }
 
