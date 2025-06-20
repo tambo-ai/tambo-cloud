@@ -28,13 +28,13 @@ Keep PRs focused, well-documented, and easy for reviewers to verify.
 
 Use the conventional-commits style in every commit message:
 
-- `feat:` for a new feature (may introduce breaking changes)
-- `fix:` for a bug fix (may introduce breaking changes)
-- `chore:` for changes that neither fix a bug nor add a feature (e.g. dependency bumps)
-- `refactor:` for internal code changes that neither fix bugs nor add features
-- `perf:` for performance improvements
-- `test:` for adding or updating tests
-- `docs:` for documentation-only changes
+- `feat:` for a new feature (may introduce breaking changes)
+- `fix:` for a bug fix (may introduce breaking changes)
+- `chore:` for changes that neither fix a bug nor add a feature (e.g. dependency bumps)
+- `refactor:` for internal code changes that neither fix bugs nor add features
+- `perf:` for performance improvements
+- `test:` for adding or updating tests
+- `docs:` for documentation-only changes
 
 ---
 
