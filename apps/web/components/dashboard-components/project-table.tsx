@@ -270,6 +270,11 @@ export function ProjectTable({
                         )}
                       </div>
                     </TableCell>
+                    <TableCell
+                      className={`${cellClass} text-muted-foreground ${compact ? "px-4 hidden md:table-cell text-primary" : "text-sm"}`}
+                    >
+                      {formatDate(project.createdAt)}
+                    </TableCell>
                     {!compact && (
                       <>
                         <TableCell
@@ -284,11 +289,6 @@ export function ProjectTable({
                         </TableCell>
                       </>
                     )}
-                    <TableCell
-                      className={`${cellClass} text-muted-foreground ${compact ? "px-4 hidden md:table-cell text-primary" : "text-sm"}`}
-                    >
-                      {formatDate(project.createdAt)}
-                    </TableCell>
                     {!compact && !isLoading && (
                       <TableCell className={cellClass}>
                         <div className="flex items-center">

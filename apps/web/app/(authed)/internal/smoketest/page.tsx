@@ -1,6 +1,6 @@
 "use client";
 
-import { ThreadList } from "@/components/thread/thread-list";
+import { ThreadList } from "./components/thread-list";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Message } from "@/components/ui/message";
