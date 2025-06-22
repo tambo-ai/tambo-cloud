@@ -35,14 +35,14 @@ ToolCallBadge.displayName = "ToolCallBadge";
 
 interface ToolCallCodeProps {
   toolName: string;
-  parameters: Array<{ parameterName: string; parameterValue: any }>;
+  parameters: Array<{ parameterName: string; parameterValue: string }>;
 }
 
 export const ToolCallCode = memo(
   ({ toolName, parameters }: ToolCallCodeProps) => {
     const [expanded, setExpanded] = useState(false);
 
-    const formatValue = (value: any) =>
+    const formatValue = (value: string) =>
       JSON.stringify(value, null, expanded ? 2 : 0);
 
     const paramString = parameters

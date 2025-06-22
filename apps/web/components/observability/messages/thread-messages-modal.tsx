@@ -11,9 +11,13 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { calculateThreadStats, createMessageItems } from "../utils";
 import { StatsHeader } from "./stats-header";
 import { ThreadMessages } from "./thread-messages";
+import { RouterOutputs } from "@/trpc/react";
+
+type ThreadType = RouterOutputs["thread"]["getThread"];
+type MessageType = ThreadType["messages"][0];
 
 interface ThreadMessagesModalProps {
-  thread: any;
+  thread: ThreadType;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -35,7 +39,7 @@ export function ThreadMessagesModal({
     let filtered = messages;
 
     if (searchQuery) {
-      filtered = filtered.filter((msg: any) =>
+      filtered = filtered.filter((msg: MessageType) =>
         msg.content
           ?.toString()
           .toLowerCase()

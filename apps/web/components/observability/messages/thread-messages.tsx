@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
 import { LegacyComponentDecision } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useMemo, useState } from "react";
+import { ReactNode, useCallback, useMemo, useState } from "react";
 import { MessageContent } from "./message-content";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
+type MessageType = ThreadType["messages"][0];
 
 interface ThreadMessagesProps {
   thread: ThreadType;
@@ -38,8 +39,8 @@ export function ThreadMessages({
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter((msg: any) => {
-        const safeContent = getSafeContent(msg.content);
+      filtered = filtered.filter((msg: MessageType) => {
+        const safeContent = getSafeContent(msg.content as ReactNode);
         const textContent = typeof safeContent === "string" ? safeContent : "";
         return textContent.toLowerCase().includes(query);
       });
