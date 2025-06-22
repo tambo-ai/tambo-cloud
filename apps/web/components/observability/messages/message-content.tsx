@@ -1,36 +1,13 @@
-import { Button } from "@/components/ui/button";
+import { createMarkdownComponents } from "@/components/ui/tambo/markdownComponents";
+import { getSafeContent } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import {
-  AlertCircle,
-  Bot,
-  Check,
-  Clock,
-  Copy,
-  Hash,
-  Settings,
-  User,
-} from "lucide-react";
-import { memo } from "react";
-import { formatDate, formatTime } from "../utils";
-import {
-  ActionBadge,
-  SuggestedActions,
-  ToolCallBadge,
-  ToolCallCode,
-} from "./message-badges";
 import { type RouterOutputs } from "@/trpc/react";
-
-const getRoleIcon = (role: string) => {
-  switch (role) {
-    case "user":
-      return <User className="h-3.5 w-3.5" />;
-    case "assistant":
-      return <Bot className="h-3.5 w-3.5" />;
-    default:
-      return <Settings className="h-3.5 w-3.5" />;
-  }
-};
+import { motion } from "framer-motion";
+import { AlertCircle, Check, Copy } from "lucide-react";
+import { isValidElement, memo, ReactNode } from "react";
+import ReactMarkdown from "react-markdown";
+import { formatTime } from "../utils";
+import { SuggestedActions, ToolCallCode } from "./message-badges";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
@@ -44,7 +21,6 @@ interface MessageContentProps {
 interface MessageContentComponentProps extends MessageContentProps {
   copiedId: string | null;
   onCopyId: (id: string) => void;
-  onToolCallHover: (id: string | null) => void;
 }
 
 export const MessageContent = memo(
@@ -54,10 +30,10 @@ export const MessageContent = memo(
     isHighlighted = false,
     copiedId,
     onCopyId,
-    onToolCallHover,
   }: MessageContentComponentProps) => {
     const isToolResponseError =
       message.actionType === "tool_response" && message.error;
+    const safeContent = getSafeContent(message.content as ReactNode);
 
     return (
       <>
@@ -71,46 +47,8 @@ export const MessageContent = memo(
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shadow-sm border",
-              "bg-muted/50 text-muted-foreground border-border",
-            )}
-          >
-            {getRoleIcon(message.role)}
-            <span className="capitalize font-semibold">{message.role}</span>
-            {message.actionType && <ActionBadge type={message.actionType} />}
-          </div>
-
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/50 rounded-md">
-              <Clock className="h-3 w-3" />
-              <span className="font-mono">{formatTime(message.createdAt)}</span>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs hover:bg-muted/80 transition-colors"
-              onClick={() => onCopyId(message.id)}
-            >
-              <Hash className="h-3 w-3 mr-1" />
-              <span className="font-mono">
-                {copiedId === message.id ? "Copied!" : message.id.slice(-8)}
-              </span>
-              {copiedId === message.id ? (
-                <Check className="h-3 w-3 ml-1 text-green-500" />
-              ) : (
-                <Copy className="h-3 w-3 ml-1 opacity-50" />
-              )}
-            </Button>
-
-            {message.toolCallId && (
-              <ToolCallBadge
-                id={message.toolCallId}
-                onHover={onToolCallHover}
-              />
-            )}
+            <span>{formatTime(message.createdAt)}</span>
           </div>
         </motion.div>
 
@@ -126,19 +64,17 @@ export const MessageContent = memo(
           <div
             className={cn(
               "rounded-2xl p-5 shadow-sm border backdrop-blur-sm",
-              "bg-transparent text-foreground border-border rounded-md",
+              "bg-transparent text-foreground text-sm border-border rounded-md",
               isHighlighted && "ring-2 ring-muted-foreground/50 ring-inset",
             )}
           >
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground/50">
+                {message.role}
+              </span>
               {/* Main content */}
-              <div
-                className={cn(
-                  "whitespace-pre-wrap text-sm leading-relaxed",
-                  "text-foreground",
-                )}
-              >
-                {typeof message.content === "object" ? (
+              <div className="text-foreground">
+                {message.actionType === "tool_response" ? (
                   <motion.pre
                     className={cn(
                       "max-h-[400px] max-w-full overflow-auto rounded-lg p-4 text-xs font-mono border",
@@ -150,8 +86,14 @@ export const MessageContent = memo(
                   >
                     {JSON.stringify(message.content, null, 2)}
                   </motion.pre>
+                ) : typeof safeContent === "string" && safeContent ? (
+                  <ReactMarkdown components={createMarkdownComponents()}>
+                    {safeContent}
+                  </ReactMarkdown>
+                ) : isValidElement(safeContent) ? (
+                  safeContent
                 ) : (
-                  <span>{message.content}</span>
+                  <span>No content</span>
                 )}
               </div>
 
@@ -229,25 +171,17 @@ export const MessageContent = memo(
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
         >
-          <span className="font-medium">{formatDate(message.createdAt)}</span>
-          <span className="w-1 h-1 bg-muted-foreground/50 rounded-full" />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-auto p-1 text-[11px] hover:bg-muted/50 rounded-md transition-colors font-mono"
+          <span
+            className="font-medium flex items-center gap-1 cursor-pointer bg-muted/50 rounded-md px-2 py-1"
             onClick={() => onCopyId(message.id)}
           >
+            {message.id}
             {copiedId === message.id ? (
-              <span className="text-green-600 flex items-center gap-1">
-                <Check className="h-3 w-3" />
-                Copied!
-              </span>
+              <Check className="h-3 w-3 ml-1 text-green-500" />
             ) : (
-              <span className="hover:text-foreground transition-colors">
-                ID: {message.id}
-              </span>
+              <Copy className="h-3 w-3 ml-1 opacity-50" />
             )}
-          </Button>
+          </span>
         </motion.div>
       </>
     );

@@ -1,7 +1,6 @@
 import { getSafeContent } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
-import { LegacyComponentDecision } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
 import { ReactNode, useCallback, useMemo, useState } from "react";
 import { MessageContent } from "./message-content";
@@ -22,9 +21,6 @@ export function ThreadMessages({
   messageRefs,
   highlightedMessageId,
 }: Readonly<ThreadMessagesProps>) {
-  const [highlightedToolCallId, setHighlightedToolCallId] = useState<
-    string | null
-  >(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleCopyId = useCallback((id: string) => {
@@ -53,12 +49,6 @@ export function ThreadMessages({
     <div className="space-y-6 pb-4 px-2">
       <AnimatePresence initial={false}>
         {filteredMessages.map((message) => {
-          const hasMatchingToolCallId =
-            message.toolCallId === highlightedToolCallId ||
-            message.toolCallRequest?.tool_call_id === highlightedToolCallId ||
-            (message.componentDecision as LegacyComponentDecision)
-              ?.toolCallId === highlightedToolCallId;
-
           const isUserMessage = message.role === "user";
           const isHighlighted = highlightedMessageId === message.id;
 
@@ -79,9 +69,7 @@ export function ThreadMessages({
               className={cn(
                 "group flex flex-col relative transition-all duration-300",
                 isUserMessage ? "items-end" : "items-start",
-                highlightedToolCallId &&
-                  !hasMatchingToolCallId &&
-                  "opacity-40 scale-[0.98]",
+                highlightedMessageId && "opacity-40 scale-[0.98]",
               )}
             >
               <MessageContent
@@ -90,7 +78,6 @@ export function ThreadMessages({
                 isHighlighted={isHighlighted}
                 copiedId={copiedId}
                 onCopyId={handleCopyId}
-                onToolCallHover={setHighlightedToolCallId}
               />
             </motion.div>
           );
