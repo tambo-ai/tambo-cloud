@@ -3,7 +3,9 @@ import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ReactNode, useCallback, useMemo, useState } from "react";
+import { ComponentMessage } from "./component-message";
 import { MessageContent } from "./message-content";
+import { ToolCallMessage } from "./tool-call-message";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
@@ -29,32 +31,85 @@ export function ThreadMessages({
     setTimeout(() => setCopiedId(null), 2000);
   }, []);
 
-  const filteredMessages = useMemo(() => {
+  // Group messages and extract tool calls with their responses
+  const messageGroups = useMemo(() => {
     const messages = thread.messages || [];
-    let filtered = messages;
+    const groups: Array<{
+      type: "message" | "tool_call" | "component";
+      message: MessageType;
+      toolResponse?: MessageType;
+    }> = [];
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter((msg: MessageType) => {
-        const safeContent = getSafeContent(msg.content as ReactNode);
-        const textContent = typeof safeContent === "string" ? safeContent : "";
-        return textContent.toLowerCase().includes(query);
+    for (let i = 0; i < messages.length; i++) {
+      const message = messages[i];
+
+      if (message.actionType === "tool_response") {
+        continue;
+      }
+
+      // Always add the message first (user or assistant)
+      groups.push({
+        type: "message",
+        message,
       });
+
+      // If this message has a tool call, add a separate tool call entry
+      if (message.toolCallRequest) {
+        // Look for the corresponding tool response
+        const toolResponse = messages.find(
+          (msg, idx) =>
+            idx > i &&
+            msg.actionType === "tool_response" &&
+            msg.toolCallId === message.toolCallId,
+        );
+
+        groups.push({
+          type: "tool_call",
+          message,
+          toolResponse,
+        });
+      }
+
+      // If this message has a component decision, add a separate component entry
+      if (message.componentDecision?.componentName) {
+        groups.push({
+          type: "component",
+          message,
+        });
+      }
     }
 
-    return filtered;
-  }, [thread.messages, searchQuery]);
+    return groups;
+  }, [thread.messages]);
+
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery) return messageGroups;
+
+    const query = searchQuery.toLowerCase().trim();
+    return messageGroups.filter((group) => {
+      const safeContent = getSafeContent(group.message.content as ReactNode);
+      const textContent = typeof safeContent === "string" ? safeContent : "";
+      return textContent.toLowerCase().includes(query);
+    });
+  }, [messageGroups, searchQuery]);
 
   return (
     <div className="space-y-6 pb-4 px-2">
       <AnimatePresence initial={false}>
-        {filteredMessages.map((message) => {
+        {filteredGroups.map((group) => {
+          const message = group.message;
           const isUserMessage = message.role === "user";
           const isHighlighted = highlightedMessageId === message.id;
+          const key =
+            group.type === "tool_call"
+              ? `tool-${message.id}`
+              : group.type === "component"
+                ? `component-${message.id}`
+                : `msg-${message.id}`;
 
           return (
             <motion.div
-              key={message.id}
+              key={key}
               ref={(el) => {
                 if (el && messageRefs) messageRefs.current[message.id] = el;
               }}
@@ -68,17 +123,38 @@ export function ThreadMessages({
               }}
               className={cn(
                 "group flex flex-col relative transition-all duration-300",
-                isUserMessage ? "items-end" : "items-start",
+                group.type === "tool_call" || group.type === "component"
+                  ? "items-start"
+                  : isUserMessage
+                    ? "items-end"
+                    : "items-start",
                 highlightedMessageId && "opacity-40 scale-[0.98]",
               )}
             >
-              <MessageContent
-                message={message}
-                isUserMessage={isUserMessage}
-                isHighlighted={isHighlighted}
-                copiedId={copiedId}
-                onCopyId={handleCopyId}
-              />
+              {group.type === "tool_call" ? (
+                <ToolCallMessage
+                  message={message}
+                  toolResponse={group.toolResponse}
+                  isHighlighted={isHighlighted}
+                  copiedId={copiedId}
+                  onCopyId={handleCopyId}
+                />
+              ) : group.type === "component" ? (
+                <ComponentMessage
+                  message={message}
+                  isHighlighted={isHighlighted}
+                  copiedId={copiedId}
+                  onCopyId={handleCopyId}
+                />
+              ) : (
+                <MessageContent
+                  message={message}
+                  isUserMessage={isUserMessage}
+                  isHighlighted={isHighlighted}
+                  copiedId={copiedId}
+                  onCopyId={handleCopyId}
+                />
+              )}
             </motion.div>
           );
         })}

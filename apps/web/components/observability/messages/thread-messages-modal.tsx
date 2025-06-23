@@ -82,8 +82,7 @@ export function ThreadMessagesModal({
         <SheetHeader className="flex flex-row items-center justify-between flex-shrink-0">
           <div className="flex flex-col gap-1">
             <SheetTitle className="text-left">
-              {thread.name && <span>{thread.name}</span>}
-              <span>Thread {thread.id.slice(0, 12)}</span>
+              <span>Thread {thread.id}</span>
             </SheetTitle>
           </div>
           <Button
