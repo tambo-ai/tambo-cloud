@@ -209,10 +209,6 @@ export function ProjectTable({
             ) : hasProjects ? (
               currentProjects.map((project, index) => {
                 const projectId = project.id || "";
-                const displayId =
-                  compact && projectId
-                    ? projectId.slice(0, 8) + "..."
-                    : projectId;
 
                 return (
                   <TableRow
@@ -254,9 +250,9 @@ export function ProjectTable({
                     >
                       <div className="flex items-center gap-1">
                         <code
-                          className={`${compact ? "text-xs" : "text-sm"} bg-info text-info px-1.5 py-0.5 rounded`}
+                          className={`${compact ? "text-xs" : "text-sm"} bg-info text-info px-1.5 py-0.5 rounded text-ellipsis overflow-hidden max-w-28`}
                         >
-                          {displayId || "N/A"}
+                          {projectId || "N/A"}
                         </code>
                         {projectId && (
                           <CopyButton
