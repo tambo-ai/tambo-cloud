@@ -45,7 +45,7 @@ export const ComponentMessage = memo(
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="flex items-center gap-3 text-xs text-primary">
+          <div className="flex items-center gap-3 text-xs text-foreground">
             <span>{formatTime(message.createdAt)}</span>
           </div>
         </motion.div>

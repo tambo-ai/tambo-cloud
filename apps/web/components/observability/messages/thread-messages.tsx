@@ -3,7 +3,9 @@ import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ReactNode, useCallback, useMemo, useState } from "react";
+import { isSameDay } from "../utils";
 import { ComponentMessage } from "./component-message";
+import { DateSeparator } from "./date-separator";
 import { MessageContent } from "./message-content";
 import { ToolCallMessage } from "./tool-call-message";
 
@@ -93,71 +95,101 @@ export function ThreadMessages({
     });
   }, [messageGroups, searchQuery]);
 
+  // Create elements with date separators
+  const elementsWithDateSeparators = useMemo(() => {
+    const elements: ReactNode[] = [];
+
+    filteredGroups.forEach((group, index) => {
+      const message = group.message;
+      const prevMessage = index > 0 ? filteredGroups[index - 1].message : null;
+
+      // Add date separator if this is the first message or if the date changed
+      if (
+        !prevMessage ||
+        !isSameDay(prevMessage.createdAt, message.createdAt)
+      ) {
+        elements.push(
+          <DateSeparator
+            key={`date-${message.createdAt}`}
+            date={message.createdAt}
+          />,
+        );
+      }
+
+      const isUserMessage = message.role === "user";
+      const isHighlighted = highlightedMessageId === message.id;
+      const key =
+        group.type === "tool_call"
+          ? `tool-${message.id}`
+          : group.type === "component"
+            ? `component-${message.id}`
+            : `msg-${message.id}`;
+
+      elements.push(
+        <motion.div
+          key={key}
+          ref={(el) => {
+            if (el && messageRefs) messageRefs.current[message.id] = el;
+          }}
+          initial={{ height: 0, opacity: 0, y: 20 }}
+          animate={{ height: "auto", opacity: 1, y: 0 }}
+          exit={{ height: 0, opacity: 0, y: -20 }}
+          transition={{
+            duration: 0.3,
+            ease: [0.4, 0.0, 0.2, 1],
+            layout: { duration: 0.2 },
+          }}
+          className={cn(
+            "group flex flex-col relative transition-all duration-300",
+            group.type === "tool_call" || group.type === "component"
+              ? "items-start"
+              : isUserMessage
+                ? "items-end"
+                : "items-start",
+            highlightedMessageId && "opacity-40 scale-[0.98]",
+          )}
+        >
+          {group.type === "tool_call" ? (
+            <ToolCallMessage
+              message={message}
+              toolResponse={group.toolResponse}
+              isHighlighted={isHighlighted}
+              copiedId={copiedId}
+              onCopyId={handleCopyId}
+            />
+          ) : group.type === "component" ? (
+            <ComponentMessage
+              message={message}
+              isHighlighted={isHighlighted}
+              copiedId={copiedId}
+              onCopyId={handleCopyId}
+            />
+          ) : (
+            <MessageContent
+              message={message}
+              isUserMessage={isUserMessage}
+              isHighlighted={isHighlighted}
+              copiedId={copiedId}
+              onCopyId={handleCopyId}
+            />
+          )}
+        </motion.div>,
+      );
+    });
+
+    return elements;
+  }, [
+    filteredGroups,
+    highlightedMessageId,
+    messageRefs,
+    copiedId,
+    handleCopyId,
+  ]);
+
   return (
     <div className="space-y-6 pb-4 px-2">
       <AnimatePresence initial={false}>
-        {filteredGroups.map((group) => {
-          const message = group.message;
-          const isUserMessage = message.role === "user";
-          const isHighlighted = highlightedMessageId === message.id;
-          const key =
-            group.type === "tool_call"
-              ? `tool-${message.id}`
-              : group.type === "component"
-                ? `component-${message.id}`
-                : `msg-${message.id}`;
-
-          return (
-            <motion.div
-              key={key}
-              ref={(el) => {
-                if (el && messageRefs) messageRefs.current[message.id] = el;
-              }}
-              initial={{ height: 0, opacity: 0, y: 20 }}
-              animate={{ height: "auto", opacity: 1, y: 0 }}
-              exit={{ height: 0, opacity: 0, y: -20 }}
-              transition={{
-                duration: 0.3,
-                ease: [0.4, 0.0, 0.2, 1],
-                layout: { duration: 0.2 },
-              }}
-              className={cn(
-                "group flex flex-col relative transition-all duration-300",
-                group.type === "tool_call" || group.type === "component"
-                  ? "items-start"
-                  : isUserMessage
-                    ? "items-end"
-                    : "items-start",
-                highlightedMessageId && "opacity-40 scale-[0.98]",
-              )}
-            >
-              {group.type === "tool_call" ? (
-                <ToolCallMessage
-                  message={message}
-                  toolResponse={group.toolResponse}
-                  isHighlighted={isHighlighted}
-                  copiedId={copiedId}
-                  onCopyId={handleCopyId}
-                />
-              ) : group.type === "component" ? (
-                <ComponentMessage
-                  message={message}
-                  isHighlighted={isHighlighted}
-                  copiedId={copiedId}
-                  onCopyId={handleCopyId}
-                />
-              ) : (
-                <MessageContent
-                  message={message}
-                  isUserMessage={isUserMessage}
-                  isHighlighted={isHighlighted}
-                  copiedId={copiedId}
-                  onCopyId={handleCopyId}
-                />
-              )}
-            </motion.div>
-          );
-        })}
+        {elementsWithDateSeparators}
       </AnimatePresence>
     </div>
   );

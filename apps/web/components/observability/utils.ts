@@ -1,7 +1,7 @@
+import { getSafeContent } from "@/lib/thread-hooks";
 import { type RouterOutputs } from "@/trpc/react";
 import { SortDirection, SortField } from "./hooks/useThreadList";
 import { MessageItem, ThreadStats } from "./messages/stats-header";
-import { getSafeContent } from "@/lib/thread-hooks";
 
 type MessageType = ThreadType["messages"][0];
 type ThreadType = RouterOutputs["thread"]["getThread"];
@@ -22,6 +22,40 @@ export const formatDate = (date: string | Date) => {
     hour: "2-digit",
     minute: "2-digit",
   });
+};
+
+// Date separator utils ------------------------------------------------------------------
+
+export const isSameDay = (date1: string | Date, date2: string | Date) => {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+};
+
+export const formatDateSeparator = (date: string | Date) => {
+  const messageDate = new Date(date);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (isSameDay(messageDate, today)) {
+    return "Today";
+  } else if (isSameDay(messageDate, yesterday)) {
+    return "Yesterday";
+  } else {
+    return messageDate.toLocaleDateString([], {
+      month: "long",
+      day: "numeric",
+      year:
+        messageDate.getFullYear() !== today.getFullYear()
+          ? "numeric"
+          : undefined,
+    });
+  }
 };
 
 // Role Utils ------------------------------------------------------------------
