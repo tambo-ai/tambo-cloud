@@ -100,8 +100,8 @@ export default function DashboardPage() {
 
   const periodOptions = [
     { value: "all time", label: "all time" },
-    { value: "per month", label: "per month" },
-    { value: "per week", label: "per week" },
+    { value: "per month", label: "last 30 days" },
+    { value: "per week", label: "last 7 days" },
   ];
 
   const LoadingSpinner = () => (
