@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.67.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.67.0...repo-v0.67.1) (2025-06-23)
+
+
+### Bug Fixes
+
+* try plural "prs" to get PR number in release-please slack announcement ([#1210](https://github.com/tambo-ai/tambo-cloud/issues/1210)) ([23c7fbc](https://github.com/tambo-ai/tambo-cloud/commit/23c7fbca61b7fc2d1c6bedae32cfab3a7c8e1ddf))
+
+## [0.67.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.66.0...repo-v0.67.0) (2025-06-23)
+
+
+### Features
+
+* **logs:** implement per-project logs table, API, dashboard alerts, and backend instrumentation ([#1164](https://github.com/tambo-ai/tambo-cloud/issues/1164)) ([1d8b6a6](https://github.com/tambo-ai/tambo-cloud/commit/1d8b6a6a697a9f2b03a4d4752e804110884af46e))
+* start returning mcpAccessToken in response to advance ([#1150](https://github.com/tambo-ai/tambo-cloud/issues/1150)) ([6511a30](https://github.com/tambo-ai/tambo-cloud/commit/6511a301a18421d732bc02f7a10ef56ee5d18f87))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump @next/eslint-plugin-next from 15.3.3 to 15.3.4 ([#1203](https://github.com/tambo-ai/tambo-cloud/issues/1203)) ([89cb03e](https://github.com/tambo-ai/tambo-cloud/commit/89cb03e5364c6dac32792e60f04fbc586be313fe))
+* **deps:** bump @supabase/supabase-js from 2.49.9 to 2.50.0 ([#1207](https://github.com/tambo-ai/tambo-cloud/issues/1207)) ([223fd29](https://github.com/tambo-ai/tambo-cloud/commit/223fd2917f2be4813440303705768a814c182d7e))
+* **deps:** bump @tambo-ai/react from 0.31.3 to 0.32.0 ([#1206](https://github.com/tambo-ai/tambo-cloud/issues/1206)) ([89bdfb7](https://github.com/tambo-ai/tambo-cloud/commit/89bdfb7e6978902be0b935acd6329f371b9f8865))
+* **deps:** bump @tanstack/react-query from 5.80.10 to 5.81.2 ([#1205](https://github.com/tambo-ai/tambo-cloud/issues/1205)) ([23a246f](https://github.com/tambo-ai/tambo-cloud/commit/23a246f24b39b8b8bcef9f943ee0913b91a805b3))
+* **deps:** bump framer-motion from 12.15.0 to 12.18.1 ([#1188](https://github.com/tambo-ai/tambo-cloud/issues/1188)) ([12d96f8](https://github.com/tambo-ai/tambo-cloud/commit/12d96f84ed5c6b7e2bd48ff463d2100d08b3e6fd))
+* **deps:** bump lucide-react from 0.513.0 to 0.522.0 ([#1200](https://github.com/tambo-ai/tambo-cloud/issues/1200)) ([e67787c](https://github.com/tambo-ai/tambo-cloud/commit/e67787c2fcb4868ad5667012228e5740e4f32b12))
+* **deps:** bump next from 15.3.3 to 15.3.4 ([#1208](https://github.com/tambo-ai/tambo-cloud/issues/1208)) ([8c1aafe](https://github.com/tambo-ai/tambo-cloud/commit/8c1aafe23900facb992865f8b16dc2b7736f3503))
+* **deps:** bump pg from 8.16.0 to 8.16.2 ([#1204](https://github.com/tambo-ai/tambo-cloud/issues/1204)) ([03ebc41](https://github.com/tambo-ai/tambo-cloud/commit/03ebc410f40140ac91611151250f9ffaf7b8ba74))
+* **deps:** bump posthog-js from 1.255.0 to 1.255.1 ([#1201](https://github.com/tambo-ai/tambo-cloud/issues/1201)) ([6c96b81](https://github.com/tambo-ai/tambo-cloud/commit/6c96b8189175bb93e5d04920dd0ec1cfea83011d))
+
+## [0.66.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.65.0...repo-v0.66.0) (2025-06-19)
+
+
+### Features
+
+* Allow max input token setting for all models ([#1190](https://github.com/tambo-ai/tambo-cloud/issues/1190)) ([8edc4ec](https://github.com/tambo-ai/tambo-cloud/commit/8edc4ec70917463be4f00551a6cfea831e52a193))
+
+
+### Bug Fixes
+
+* minor doc rewording, cut down noise from smoketest ([#1192](https://github.com/tambo-ai/tambo-cloud/issues/1192)) ([4e11d00](https://github.com/tambo-ai/tambo-cloud/commit/4e11d00e28c503559461a244306e27eb4465fe63))
+
+
+### Miscellaneous Chores
+
+* Add Claude Code GitHub Workflow ([#1191](https://github.com/tambo-ai/tambo-cloud/issues/1191)) ([6dd513e](https://github.com/tambo-ai/tambo-cloud/commit/6dd513e3ba81a8aecaa13cc6ef620441dfeaefe7))
+* **deps-dev:** bump @types/jsonwebtoken from 9.0.9 to 9.0.10 ([#1183](https://github.com/tambo-ai/tambo-cloud/issues/1183)) ([ed16341](https://github.com/tambo-ai/tambo-cloud/commit/ed1634140ef3ccc495b80853aa943d042a9ae255))
+* **deps-dev:** bump typescript-eslint from 8.34.0 to 8.34.1 in the eslint group ([#1182](https://github.com/tambo-ai/tambo-cloud/issues/1182)) ([445b756](https://github.com/tambo-ai/tambo-cloud/commit/445b7565f82d586a27eac60513640f14b3778bfe))
+* **deps:** bump @t3-oss/env-nextjs from 0.13.6 to 0.13.8 ([#1184](https://github.com/tambo-ai/tambo-cloud/issues/1184)) ([211cd0a](https://github.com/tambo-ai/tambo-cloud/commit/211cd0ac21adf9181abe3793f8fa7e707cb83105))
+* **deps:** bump @tanstack/react-query from 5.80.7 to 5.80.10 ([#1185](https://github.com/tambo-ai/tambo-cloud/issues/1185)) ([84ef9bc](https://github.com/tambo-ai/tambo-cloud/commit/84ef9bcd7699f946b41dcef956d078945b724814))
+* **deps:** bump posthog-js from 1.249.0 to 1.255.0 ([#1186](https://github.com/tambo-ai/tambo-cloud/issues/1186)) ([e07e5da](https://github.com/tambo-ai/tambo-cloud/commit/e07e5da44f7f199b8dc3e9892979f863d49dfebd))
+* **deps:** bump react-hook-form from 7.57.0 to 7.58.1 ([#1189](https://github.com/tambo-ai/tambo-cloud/issues/1189)) ([bcae3de](https://github.com/tambo-ai/tambo-cloud/commit/bcae3de5b931be43357da976f366a2f8da3ea317))
+* **deps:** bump slackapi/slack-github-action from 2.0.0 to 2.1.0 ([#1179](https://github.com/tambo-ai/tambo-cloud/issues/1179)) ([1969e02](https://github.com/tambo-ai/tambo-cloud/commit/1969e0273567eca0da0e735c66922a145b02d99c))
+* **deps:** bump the trpc group with 3 updates ([#1181](https://github.com/tambo-ai/tambo-cloud/issues/1181)) ([a0b43c4](https://github.com/tambo-ai/tambo-cloud/commit/a0b43c41fa005ac46e3052c1ba153ca23c313877))
+* **deps:** bump tldts from 7.0.8 to 7.0.9 ([#1187](https://github.com/tambo-ai/tambo-cloud/issues/1187)) ([a7268d6](https://github.com/tambo-ai/tambo-cloud/commit/a7268d60ec06b56c1af7ff7741bd80fb20452195))
+* **deps:** bump ytanikin/pr-conventional-commits from 1.4.0 to 1.4.1 ([#1180](https://github.com/tambo-ai/tambo-cloud/issues/1180)) ([11ff8b4](https://github.com/tambo-ai/tambo-cloud/commit/11ff8b440d0a2a86fd67fbefddc1a6c2eac41f61))
+* update to node 22 ([#1177](https://github.com/tambo-ai/tambo-cloud/issues/1177)) ([369f985](https://github.com/tambo-ai/tambo-cloud/commit/369f985306a1f9cff54b3bda97936c3eb2d8ba6c))
+
 ## [0.65.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.64.0...repo-v0.65.0) (2025-06-18)
 
 
