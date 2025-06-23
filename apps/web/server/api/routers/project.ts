@@ -444,9 +444,9 @@ export const projectRouter = createTRPCRouter({
       await ctx.db.transaction(async (tx) => {
         // 1. Ensure the user can access every project (in parallel for speed)
         await Promise.all(
-          projectIds.map((id) =>
-            operations.ensureProjectAccess(tx, id, userId),
-          ),
+          projectIds.map(async (id) => {
+            await operations.ensureProjectAccess(tx, id, userId);
+          }),
         );
 
         // 2. Batch-delete all projects in one statement
