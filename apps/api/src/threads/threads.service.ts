@@ -8,6 +8,7 @@ import {
   TamboBackend,
 } from "@tambo-ai-cloud/backend";
 import {
+  ActionType,
   ComponentDecisionV2,
   ContentPartType,
   decryptProviderKey,
@@ -269,20 +270,34 @@ export class ThreadsService {
   }
 
   /**
-   * Sets a thread's generation stage to CANCELLED.
+   * Sets a thread's generation stage to CANCELLED, and adds a blank tool response if a toolcall is in progress.
    * @param threadId - The thread ID to cancel
-   * @param projectId - The project ID for validation
    * @returns The updated thread with CANCELLED generation stage
    */
   async cancelThread(threadId: string): Promise<Thread> {
-    const updatedThread = await operations.updateThread(
-      this.getDb(),
-      threadId,
-      {
-        generationStage: GenerationStage.CANCELLED,
-        statusMessage: "Thread advancement cancelled by user",
-      },
-    );
+    const db = this.getDb();
+    const updatedThread = await operations.updateThread(db, threadId, {
+      generationStage: GenerationStage.CANCELLED,
+      statusMessage: "Thread advancement cancelled",
+    });
+
+    const messages = await operations.getMessages(db, threadId, true);
+    const latestMessage = messages[messages.length - 1];
+
+    if (latestMessage.toolCallRequest && latestMessage.toolCallId) {
+      await addMessage(db, threadId, {
+        role: MessageRole.Tool,
+        content: [
+          {
+            type: ContentPartType.Text,
+            text: "cancelled",
+          },
+        ],
+        actionType: ActionType.ToolResponse,
+        tool_call_id: latestMessage.toolCallId,
+        componentState: {},
+      });
+    }
 
     return {
       id: updatedThread.id,
