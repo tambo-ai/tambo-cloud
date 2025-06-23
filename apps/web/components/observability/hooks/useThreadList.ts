@@ -280,8 +280,6 @@ export function useThreadList({
   }, [selectedThreads, threads, toast]);
 
   const handleDeleteConfirm = useCallback(async () => {
-    if (!isMountedRef.current) return;
-
     const threadIds = Array.from(selectedThreads);
     setIsDeletingThreads(true);
 
