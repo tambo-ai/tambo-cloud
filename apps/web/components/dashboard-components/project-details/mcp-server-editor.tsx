@@ -231,7 +231,7 @@ export function McpServerEditor({
                 </div>
               ) : (
                 <>
-                  {server.mcpIsAuthed && (
+                  {(!server.mcpRequiresAuth || server.mcpIsAuthed) && (
                     <Button
                       variant="ghost"
                       size="icon"
