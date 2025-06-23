@@ -30,24 +30,6 @@ jest.mock("@tambo-ai-cloud/core", () => {
     },
   };
 });
-jest.mock("composio-core", () => ({
-  Composio: jest.fn().mockImplementation(() => ({
-    apps: {
-      list: jest.fn(),
-    },
-  })),
-
-  OpenAIToolSet: jest.fn().mockImplementation(() => ({
-    getTools: jest.fn(),
-  })),
-}));
-jest.mock("../composio", () => ({
-  getComposio: jest.fn().mockImplementation(() => ({
-    apps: {
-      list: jest.fn(),
-    },
-  })),
-}));
 
 const mockMcpTool: MCPToolSpec = {
   name: "mockMcpTool",
@@ -78,9 +60,7 @@ describe("getSystemTools", () => {
 
     const tools = await getSystemTools(mockDb, "project123");
     expect(tools).toEqual({
-      composioToolNames: [],
       mcpToolSources: {},
-      composioClient: undefined,
       tools: [],
     });
   });
@@ -134,8 +114,6 @@ describe("getSystemTools", () => {
     const tools = await getSystemTools(mockDb, "project123");
     expect(tools).toEqual(
       expect.objectContaining({
-        composioClient: undefined,
-        composioToolNames: [],
         mcpToolSources: {
           mockMcpTool: expect.any(Object),
         },
@@ -151,33 +129,6 @@ describe("getSystemTools", () => {
                   },
                 },
                 required: undefined,
-                type: "object",
-                additionalProperties: false,
-              },
-              strict: true,
-            },
-            type: "function",
-          },
-        ],
-      }),
-    );
-  });
-
-  it("should fetch and combine tools from Composio apps", async () => {
-    const mockDb = getDb("");
-
-    const tools = await getSystemTools(mockDb, "project123");
-    expect(tools).toEqual(
-      expect.objectContaining({
-        mcpToolSources: {},
-        tools: [
-          {
-            function: {
-              description: undefined,
-              name: "mockComposioTool",
-              parameters: {
-                properties: {},
-                required: [],
                 type: "object",
                 additionalProperties: false,
               },
