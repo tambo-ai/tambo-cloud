@@ -31,12 +31,46 @@ interface UseThreadListProps {
   threadsPerPage?: number;
 }
 
+export interface UseThreadListReturn {
+  // State
+  sortField: SortField;
+  sortDirection: SortDirection;
+  searchQuery: string;
+  selectedThreads: Set<string>;
+  currentPage: number;
+  alertState: AlertState;
+  isDeletingThreads: boolean;
+  deletingThreadIds: Set<string>;
+
+  // Computed values
+  filteredThreads: Thread[];
+  currentThreads: Thread[];
+  totalThreads: number;
+  totalPages: number;
+  startIndex: number;
+  endIndex: number;
+
+  // Actions
+  setSearchQuery: (query: string) => void;
+  setAlertState: (state: AlertState) => void;
+  handleSort: (field: SortField) => void;
+  handleSelectAll: (checked: boolean) => void;
+  handleSelectThread: (threadId: string, checked: boolean) => void;
+  handlePageChange: (page: number) => void;
+  handleDeleteClick: () => void;
+  handleDeleteConfirm: () => Promise<void>;
+  areAllCurrentThreadsSelected: () => boolean;
+
+  // Mutations
+  deleteThreadMutation: ReturnType<typeof api.thread.deleteThread.useMutation>;
+}
+
 export function useThreadList({
   threads,
   projectId,
   onThreadsDeleted,
   threadsPerPage = 5,
-}: UseThreadListProps) {
+}: UseThreadListProps): UseThreadListReturn {
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [searchQuery, setSearchQuery] = useState("");
