@@ -5,7 +5,7 @@ import { llmProviderConfig } from "@tambo-ai-cloud/backend";
 import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
-import { and, count, eq, gte, inArray, isNotNull } from "drizzle-orm";
+import { and, count, countDistinct, eq, gte, inArray, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 
 // Helper function to get date filter based on period
@@ -27,48 +27,64 @@ export const projectRouter = createTRPCRouter({
   getUserProjects: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
     const projects = await operations.getProjectsForUser(ctx.db, userId);
-    // Get message and user counts for all projects in parallel
-    const projectsWithCounts = await Promise.all(
-      projects.map(async (project) => {
-        // Get message count for this project
-        const messageCount = await ctx.db
-          .select({ count: count() })
-          .from(schema.messages)
-          .innerJoin(
-            schema.threads,
-            eq(schema.messages.threadId, schema.threads.id),
-          )
-          .where(eq(schema.threads.projectId, project.id));
 
-        // Get unique user count for this project
-        const uniqueUsers = await ctx.db
-          .selectDistinct({ contextKey: schema.threads.contextKey })
-          .from(schema.threads)
-          .where(
-            and(
-              eq(schema.threads.projectId, project.id),
-              isNotNull(schema.threads.contextKey),
-            ),
-          );
+    // ---------------------------------------------------------------------
+    // Batched aggregation for message & user counts (single query)
+    // ---------------------------------------------------------------------
+    const projectIds = projects.map((p) => p.id);
 
-        return {
-          id: project.id,
-          name: project.name,
-          userId: userId,
-          createdAt: project.createdAt,
-          composioEnabled: project.composioEnabled,
-          customInstructions: project.customInstructions,
-          defaultLlmProviderName: project.defaultLlmProviderName,
-          defaultLlmModelName: project.defaultLlmModelName,
-          customLlmModelName: project.customLlmModelName,
-          customLlmBaseURL: project.customLlmBaseURL,
-          messages: messageCount[0]?.count || 0,
-          users: uniqueUsers.length,
-        };
-      }),
-    );
+    let aggregatedCounts = new Map<
+      string,
+      { messages: number; users: number }
+    >();
 
-    return projectsWithCounts;
+    if (projectIds.length) {
+      const counts = await ctx.db
+        .select({
+          projectId: schema.threads.projectId,
+          messages: count(schema.messages.id),
+          users: countDistinct(schema.threads.contextKey),
+        })
+        .from(schema.threads)
+        .innerJoin(
+          schema.messages,
+          eq(schema.messages.threadId, schema.threads.id),
+        )
+        .where(inArray(schema.threads.projectId, projectIds))
+        .groupBy(schema.threads.projectId);
+
+      aggregatedCounts = new Map(
+        counts.map((c) => [
+          c.projectId,
+          {
+            messages: Number(c.messages ?? 0),
+            users: Number(c.users ?? 0),
+          },
+        ]),
+      );
+    }
+
+    // Shape final payload using O(1) look-ups
+    return projects.map((project) => {
+      const stats = aggregatedCounts.get(project.id) ?? {
+        messages: 0,
+        users: 0,
+      };
+      return {
+        id: project.id,
+        name: project.name,
+        userId,
+        createdAt: project.createdAt,
+        composioEnabled: project.composioEnabled,
+        customInstructions: project.customInstructions,
+        defaultLlmProviderName: project.defaultLlmProviderName,
+        defaultLlmModelName: project.defaultLlmModelName,
+        customLlmModelName: project.customLlmModelName,
+        customLlmBaseURL: project.customLlmBaseURL,
+        messages: stats.messages,
+        users: stats.users,
+      };
+    });
   }),
 
   createProject: protectedProcedure
