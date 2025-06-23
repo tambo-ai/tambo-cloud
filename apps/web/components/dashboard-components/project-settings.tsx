@@ -226,7 +226,14 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
               }
               disabled={isDeleting}
             >
-              Delete
+              {isDeleting ? (
+                <>
+                  <span className="loading loading-spinner loading-sm mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </Button>
             {isEditingName ? (
               <>

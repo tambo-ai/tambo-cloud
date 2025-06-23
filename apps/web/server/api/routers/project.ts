@@ -5,7 +5,15 @@ import { llmProviderConfig } from "@tambo-ai-cloud/backend";
 import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
-import { and, count, countDistinct, eq, gte, inArray, isNotNull } from "drizzle-orm";
+import {
+  and,
+  count,
+  countDistinct,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+} from "drizzle-orm";
 import { z } from "zod";
 
 // Helper function to get date filter based on period
@@ -441,19 +449,20 @@ export const projectRouter = createTRPCRouter({
     .mutation(async ({ ctx, input: projectIds }) => {
       const userId = ctx.session.user.id;
 
-      await ctx.db.transaction(async (tx) => {
-        // 1. Ensure the user can access every project (in parallel for speed)
-        await Promise.all(
-          projectIds.map(async (id) => {
-            await operations.ensureProjectAccess(tx, id, userId);
-          }),
-        );
+      // 1. Ensure the user can access every project (in parallel for speed)
+      await Promise.all(
+        projectIds.map(async (id) => {
+          await operations.ensureProjectAccess(ctx.db, id, userId);
+        }),
+      );
 
-        // 2. Batch-delete all projects in one statement
-        await tx.delete(schema.projects).where(
-          inArray(schema.projects.id, projectIds),
-        );
-      });
+      // 2. Delete each project properly using the existing deleteProject operation
+      // This ensures foreign key constraints and RLS policies are handled correctly
+      await Promise.all(
+        projectIds.map(async (id) => {
+          await operations.deleteProject(ctx.db, id);
+        }),
+      );
 
       return { deletedCount: projectIds.length };
     }),

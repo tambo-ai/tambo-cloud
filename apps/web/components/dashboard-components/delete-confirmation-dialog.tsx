@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
+import React from "react";
 
 // Generic alert state (for single project deletion)
 export interface AlertState {
@@ -27,6 +28,7 @@ interface MultipleProjectsProps {
   selectedProjectIds: string[];
   selectedProjectNames: string[];
   onProjectsDeleted?: () => void;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 // Props for single project deletion
@@ -63,6 +65,16 @@ export function DeleteConfirmationDialog(props: DeleteConfirmationDialogProps) {
       },
     },
   );
+
+  // Report loading state to parent
+  const isLoading =
+    props.mode === "multiple" ? deleteMultipleProjects.isPending : false;
+
+  React.useEffect(() => {
+    if (props.mode === "multiple" && props.onLoadingChange) {
+      props.onLoadingChange(isLoading);
+    }
+  }, [isLoading, props]);
 
   const handleConfirm = async () => {
     if (props.mode === "multiple") {
@@ -123,8 +135,6 @@ export function DeleteConfirmationDialog(props: DeleteConfirmationDialogProps) {
   };
 
   const content = getContent();
-  const isLoading =
-    props.mode === "multiple" ? deleteMultipleProjects.isPending : false;
   const buttonText =
     props.mode === "multiple"
       ? isLoading

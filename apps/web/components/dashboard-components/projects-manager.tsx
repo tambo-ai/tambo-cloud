@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { ProjectTable } from "./project-table";
+import { Loader2 } from "lucide-react";
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -34,6 +35,7 @@ export function ProjectsManager({
     new Set(),
   );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   // Filter projects based on search term
@@ -106,8 +108,16 @@ export function ProjectsManager({
                 size="sm"
                 className="gap-2 bg-transparent border-none text-red-500 hover:text-red-500 hover:bg-transparent hover:border-none"
                 onClick={() => setShowDeleteDialog(true)}
+                disabled={isDeleting}
               >
-                Delete ({selectedProjects.size})
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  `Delete (${selectedProjects.size})`
+                )}
               </Button>
             )}
             <Button
@@ -142,6 +152,7 @@ export function ProjectsManager({
         selectedProjectIds={selectedProjectDetails.ids}
         selectedProjectNames={selectedProjectDetails.names}
         onProjectsDeleted={handleProjectsDeleted}
+        onLoadingChange={setIsDeleting}
       />
     </>
   );
