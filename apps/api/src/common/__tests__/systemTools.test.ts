@@ -71,9 +71,8 @@ describe("getSystemTools", () => {
     jest.clearAllMocks();
 
     jest.mocked(operations.getProjectMcpServers).mockResolvedValue([]);
-    jest.mocked(operations.getComposioApps).mockResolvedValue([]);
   });
-  it("should return empty tools when no MCP servers or Composio apps exist", async () => {
+  it("should return empty tools when no MCP servers exist", async () => {
     // mockDb.query.toolProviders.findMany.mockResolvedValue([]);
     const mockDb = getDb("");
 
@@ -109,7 +108,7 @@ describe("getSystemTools", () => {
     jest.mocked(operations.getProjectMcpServers).mockResolvedValueOnce([
       {
         id: "mcp1",
-        composioAppId: "app123",
+        deprecatedComposioAppId: "app123",
         createdAt: new Date(),
         customHeaders: {},
         projectId: "project123",
@@ -166,22 +165,6 @@ describe("getSystemTools", () => {
 
   it("should fetch and combine tools from Composio apps", async () => {
     const mockDb = getDb("");
-
-    jest.mocked(operations.getComposioApps).mockResolvedValueOnce([
-      {
-        id: "composio1",
-        composioAppId: "app123",
-        createdAt: new Date(),
-        customHeaders: {},
-        contexts: [],
-        projectId: "project123",
-        type: ToolProviderType.COMPOSIO,
-        updatedAt: new Date(),
-        url: null,
-        mcpTransport: MCPTransport.HTTP,
-        mcpRequiresAuth: false,
-      },
-    ]);
 
     const tools = await getSystemTools(mockDb, "project123");
     expect(tools).toEqual(

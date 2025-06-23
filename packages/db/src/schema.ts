@@ -53,7 +53,10 @@ export const projects = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
     /** @deprecated - everyone has mcp now */
     deprecated_mcpEnabled: boolean("mcp_enabled").default(false).notNull(),
-    composioEnabled: boolean("composio_enabled").default(false).notNull(),
+    /** @deprecated - everyone has mcp now */
+    deprecatedComposioEnabled: boolean("composio_enabled")
+      .default(false)
+      .notNull(),
     /** Additional instructions that are injected into the system prompt */
     customInstructions: text("custom_instructions"),
     // New fields for default LLM configuration choices
