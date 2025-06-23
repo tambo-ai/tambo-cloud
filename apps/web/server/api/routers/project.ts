@@ -441,15 +441,19 @@ export const projectRouter = createTRPCRouter({
     .mutation(async ({ ctx, input: projectIds }) => {
       const userId = ctx.session.user.id;
 
-      // Ensure user has access to all projects before deleting any
-      for (const projectId of projectIds) {
-        await operations.ensureProjectAccess(ctx.db, projectId, userId);
-      }
+      await ctx.db.transaction(async (tx) => {
+        // 1. Ensure the user can access every project (in parallel for speed)
+        await Promise.all(
+          projectIds.map((id) =>
+            operations.ensureProjectAccess(tx, id, userId),
+          ),
+        );
 
-      // Delete all projects
-      for (const projectId of projectIds) {
-        await operations.deleteProject(ctx.db, projectId);
-      }
+        // 2. Batch-delete all projects in one statement
+        await tx.delete(schema.projects).where(
+          inArray(schema.projects.id, projectIds),
+        );
+      });
 
       return { deletedCount: projectIds.length };
     }),
