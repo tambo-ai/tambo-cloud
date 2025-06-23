@@ -1,4 +1,4 @@
-import { ProjectOverview } from "@/components/dashboard-components/ProjectOverview";
+import { ProjectOverview } from "@/components/dashboard-components/project-overview";
 import { env } from "@/lib/env";
 import { getDb, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";

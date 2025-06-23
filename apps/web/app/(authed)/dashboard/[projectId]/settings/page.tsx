@@ -1,6 +1,6 @@
 "use client";
 
-import { ProjectSettings } from "@/components/dashboard-components/ProjectSettings";
+import { ProjectSettings } from "@/components/dashboard-components/project-settings";
 import { useParams } from "next/navigation";
 
 export default function SettingsPage() {

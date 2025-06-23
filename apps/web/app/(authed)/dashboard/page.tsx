@@ -1,6 +1,6 @@
 "use client";
 
-import { DashboardCard } from "@/components/dashboard-components/DashboardCard";
+import { DashboardCard } from "@/components/dashboard-components/dashboard-card";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/auth";
