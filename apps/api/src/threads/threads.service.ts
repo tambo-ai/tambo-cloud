@@ -946,6 +946,7 @@ export class ThreadsService {
           },
           generationStage: GenerationStage.CANCELLED,
           statusMessage: "Thread cancelled",
+          mcpAccessToken,
         };
         return;
       }
