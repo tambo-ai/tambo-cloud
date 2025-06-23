@@ -4,8 +4,7 @@ import { type RouterOutputs, api } from "@/trpc/react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { z } from "zod";
-
-export const FREE_MESSAGE_LIMIT = 500;
+import { FREE_MESSAGE_LIMIT } from "./provider-key-section";
 
 export const ProjectInfoSchema = z.object({
   id: z.string().describe("The unique identifier for the project."),

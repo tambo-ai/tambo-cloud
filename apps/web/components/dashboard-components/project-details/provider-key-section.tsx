@@ -207,7 +207,7 @@ export function ProviderKeySection({
       setBaseUrl(projectLlmSettings.customLlmBaseURL ?? "");
       setHasUnsavedChanges(false);
     }
-  }, [projectLlmSettings, llmProviderConfigData]);
+  }, [projectLlmSettings, llmProviderConfigData, getModelConfig]);
 
   // API key validation
   const [debouncedApiKey] = useDebounce(apiKeyInput, 500);
@@ -366,7 +366,12 @@ export function ProviderKeySection({
         setMaxInputTokens("");
       }
     }
-  }, [selectedProviderApiName, projectLlmSettings, llmProviderConfigData]);
+  }, [
+    selectedProviderApiName,
+    projectLlmSettings,
+    llmProviderConfigData,
+    getModelConfig,
+  ]);
 
   // Update maxInputTokens when model changes
   useEffect(() => {
@@ -803,7 +808,7 @@ export function ProviderKeySection({
                           Please enter a valid maximum input tokens value
                         </p>
                       )}
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-foreground">
                       Tambo will limit the number of tokens sent to the model to
                       this value.
                       {currentModelConfig?.properties?.inputTokenLimit && (
