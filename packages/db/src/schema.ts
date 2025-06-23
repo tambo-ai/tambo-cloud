@@ -2,7 +2,7 @@ import {
   ActionType,
   ChatCompletionContentPart,
   ComponentDecisionV2,
-  ComposioAuthMode,
+  DeprecatedComposioAuthMode,
   GenerationStage,
   LogLevel,
   MCPTransport,
@@ -444,7 +444,9 @@ export const toolProviderUserContexts = pgTable(
     ),
     deprecatedComposioRedirectUrl: text("composio_redirect_url"),
     deprecatedComposioAuthSchemaMode: text("composio_auth_schema_mode", {
-      enum: Object.values(ComposioAuthMode) as [ComposioAuthMode],
+      enum: Object.values(DeprecatedComposioAuthMode) as [
+        DeprecatedComposioAuthMode,
+      ],
     }),
     deprecatedComposioAuthFields: customJsonb<Record<string, string>>(
       "composio_auth_fields",
