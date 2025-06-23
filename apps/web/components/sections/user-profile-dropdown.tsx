@@ -64,7 +64,7 @@ export function UserProfileDropdown({ user }: UserProfileDropdownProps) {
             <p className="text-sm font-medium leading-none">
               Hi, {displayName}
             </p>
-            <p className="text-xs leading-none text-muted-foreground">
+            <p className="text-xs leading-none font-normal text-muted-foreground">
               {user.email}
             </p>
           </div>

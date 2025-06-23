@@ -126,11 +126,11 @@ export const ToolCallMessage = memo(
                 {hasAnyError ? (
                   <XCircle className="h-4 w-4 text-red-500" />
                 ) : (
-                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  <Settings className="h-4 w-4" />
                 )}
                 <span
                   className={cn(
-                    "text-sm font-semibold",
+                    "text-sm font-semibold text-primary",
                     hasAnyError && "text-red-700",
                   )}
                 >
@@ -144,7 +144,9 @@ export const ToolCallMessage = memo(
                   onClick={() => setShowArguments(!showArguments)}
                   className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
                 >
-                  <span className="font-medium text-sm">View Arguments</span>
+                  <span className="font-medium text-sm text-primary">
+                    View Arguments
+                  </span>
                   <div className="flex items-center gap-2">
                     <span
                       onClick={(e) => {
@@ -156,12 +158,12 @@ export const ToolCallMessage = memo(
                       {copiedId === formatAllParameters() ? (
                         <Check className="h-3 w-3 text-green-500" />
                       ) : (
-                        <Copy className="h-3 w-3" />
+                        <Copy className="h-3 w-3 text-primary" />
                       )}
                     </span>
                     <ChevronDown
                       className={cn(
-                        "h-4 w-4 transition-transform duration-200",
+                        "h-4 w-4 transition-transform duration-200 text-primary",
                         showArguments && "rotate-180",
                       )}
                     />
@@ -178,7 +180,7 @@ export const ToolCallMessage = memo(
                   className="overflow-hidden"
                 >
                   <div className="p-4 bg-background">
-                    <pre className="text-xs font-mono text-muted-foreground overflow-auto">
+                    <pre className="text-xs font-mono text-primary overflow-auto">
                       <code>{formatAllParameters()}</code>
                     </pre>
                   </div>
@@ -196,7 +198,9 @@ export const ToolCallMessage = memo(
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">View Response</span>
+                      <span className="font-medium text-sm text-primary">
+                        View Response
+                      </span>
                       {hasToolResponseError && (
                         <AlertCircle className="h-3 w-3 text-red-500" />
                       )}
@@ -213,12 +217,12 @@ export const ToolCallMessage = memo(
                         formatResponseContent(toolResponse.content) ? (
                           <Check className="h-3 w-3 text-green-500" />
                         ) : (
-                          <Copy className="h-3 w-3" />
+                          <Copy className="h-3 w-3 text-primary" />
                         )}
                       </span>
                       <ChevronDown
                         className={cn(
-                          "h-4 w-4 transition-transform duration-200",
+                          "h-4 w-4 transition-transform duration-200 text-primary",
                           showResponse && "rotate-180",
                         )}
                       />
@@ -298,7 +302,7 @@ export const ToolCallMessage = memo(
                         </div>
                       )}
 
-                      <pre className="text-xs font-mono text-muted-foreground whitespace-pre-wrap break-words overflow-auto">
+                      <pre className="text-xs font-mono text-primary whitespace-pre-wrap break-words overflow-auto">
                         <code>
                           {formatResponseContent(toolResponse.content)}
                         </code>
@@ -313,7 +317,7 @@ export const ToolCallMessage = memo(
 
         {/* Bottom metadata */}
         <motion.div
-          className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground px-1"
+          className="flex items-center gap-2 mt-2 text-[11px] text-foreground px-1"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}

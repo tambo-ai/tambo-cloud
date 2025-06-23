@@ -44,7 +44,7 @@ export const MessageContent = memo(
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-foreground">
             <span>{formatTime(message.createdAt)}</span>
           </div>
         </motion.div>
@@ -66,24 +66,10 @@ export const MessageContent = memo(
             )}
           >
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground/50">
-                {message.role}
-              </span>
+              <span className="text-xs text-foreground/50">{message.role}</span>
               {/* Main content */}
-              <div className="text-foreground">
-                {message.actionType === "tool_response" ? (
-                  <motion.pre
-                    className={cn(
-                      "max-h-[400px] max-w-full overflow-auto rounded-lg p-4 text-xs font-mono border",
-                      "bg-muted/50 border-border text-muted-foreground",
-                    )}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    {JSON.stringify(message.content, null, 2)}
-                  </motion.pre>
-                ) : typeof safeContent === "string" && safeContent ? (
+              <div className="text-primary">
+                {typeof safeContent === "string" && safeContent ? (
                   <ReactMarkdown components={createMarkdownComponents()}>
                     {safeContent}
                   </ReactMarkdown>
@@ -100,7 +86,7 @@ export const MessageContent = memo(
         {/* Bottom metadata */}
         <motion.div
           className={cn(
-            "flex items-center gap-2 mt-2 text-[11px] text-muted-foreground px-1",
+            "flex items-center gap-2 mt-2 text-[11px] text-foreground px-1",
             isUserMessage ? "flex-row-reverse" : "flex-row",
           )}
           initial={{ opacity: 0 }}

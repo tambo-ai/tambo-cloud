@@ -71,7 +71,7 @@ export const isErrorMessage = (message: MessageType): boolean => {
   }
 
   // Check content for error keywords using getSafeContent
-  const safeContent = getSafeContent(message.content);
+  const safeContent = getSafeContent(message.content as any);
   if (
     typeof safeContent === "string" &&
     safeContent.toLowerCase().includes("error")

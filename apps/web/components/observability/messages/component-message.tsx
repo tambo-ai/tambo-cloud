@@ -45,7 +45,7 @@ export const ComponentMessage = memo(
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-primary">
             <span>{formatTime(message.createdAt)}</span>
           </div>
         </motion.div>
@@ -67,8 +67,8 @@ export const ComponentMessage = memo(
             <div className="flex flex-col gap-4">
               {/* Header */}
               <div className="flex items-center gap-2">
-                <Monitor className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-semibold">
+                <Monitor className="h-4 w-4" />
+                <span className="text-sm font-semibold text-primary">
                   UI Component: {componentName}
                 </span>
               </div>
@@ -77,21 +77,23 @@ export const ComponentMessage = memo(
               <div className="border border-border rounded-lg overflow-hidden">
                 <button
                   onClick={() => setShowProps(!showProps)}
-                  className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+                  className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors text-primary"
                 >
-                  <span className="font-medium text-sm">View Props</span>
+                  <span className="font-medium text-sm text-primary">
+                    View Props
+                  </span>
                   <div className="flex items-center gap-2">
                     <span
                       onClick={(e) => {
                         e.stopPropagation();
                         onCopyId(formatPropsValue(componentProps));
                       }}
-                      className="h-6 w-6 p-0 flex items-center justify-center cursor-pointer hover:bg-muted rounded-sm transition-colors"
+                      className="h-6 w-6 p-0 flex items-center justify-center cursor-pointer hover:bg-muted rounded-sm transition-colors text-primary"
                     >
                       {copiedId === formatPropsValue(componentProps) ? (
                         <Check className="h-3 w-3 text-green-500" />
                       ) : (
-                        <Copy className="h-3 w-3" />
+                        <Copy className="h-3 w-3 text-primary" />
                       )}
                     </span>
                     <ChevronDown
@@ -113,7 +115,7 @@ export const ComponentMessage = memo(
                   className="overflow-hidden"
                 >
                   <div className="p-4 bg-background">
-                    <pre className="text-xs font-mono text-muted-foreground overflow-auto max-h-96">
+                    <pre className="text-xs font-mono text-primary overflow-auto max-h-96">
                       <code>{formatPropsValue(componentProps)}</code>
                     </pre>
                   </div>
@@ -125,7 +127,7 @@ export const ComponentMessage = memo(
 
         {/* Bottom metadata */}
         <motion.div
-          className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground px-1"
+          className="flex items-center gap-2 mt-2 text-[11px] text-foreground px-1"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
