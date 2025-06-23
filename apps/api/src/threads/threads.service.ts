@@ -610,7 +610,32 @@ export class ThreadsService {
       advanceRequestDto.contextKey,
     );
 
+    // Check if we should ignore this tool response due to cancellation
+    const shouldIgnore = await this.shouldIgnoreCancelledToolResponse(
+      advanceRequestDto,
+      thread,
+    );
+    if (shouldIgnore) {
+      this.logger.log(
+        `Ignoring tool response due to cancellation for thread ${thread.id}`,
+      );
+      return {
+        responseMessageDto: {
+          id: "",
+          role: MessageRole.Assistant,
+          content: [],
+          threadId: thread.id,
+          componentState: {},
+          createdAt: new Date(),
+        },
+        generationStage: GenerationStage.COMPLETE,
+        statusMessage: "",
+        mcpAccessToken: "",
+      };
+    }
+
     // Ensure only one request per thread adds its user message and continues
+
     const userMessage = await addUserMessage(
       db,
       thread.id,
@@ -1251,5 +1276,26 @@ export class ThreadsService {
       // Update the message and return the result
       return await updateMessage(tx, messageId, updatedMessage);
     });
+  }
+
+  private async shouldIgnoreCancelledToolResponse(
+    advanceRequestDto: AdvanceThreadDto,
+    thread: Thread,
+  ): Promise<boolean> {
+    this.logger.log(
+      `Checking if we should ignore cancelled tool response for thread ${thread.id}`,
+    );
+    this.logger.log(
+      `Advance request action type: ${advanceRequestDto.messageToAppend.actionType}`,
+    );
+    this.logger.log(`Thread generation stage: ${thread.generationStage}`);
+    if (
+      advanceRequestDto.messageToAppend.actionType ===
+        ActionType.ToolResponse &&
+      thread.generationStage === GenerationStage.CANCELLED
+    ) {
+      return true;
+    }
+    return false;
   }
 }
