@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { api, type RouterOutputs } from "@/trpc/react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, Variants } from "framer-motion";
 import { Check, Copy, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
@@ -51,7 +51,7 @@ interface APIKeyListProps {
   onEdited?: () => void;
 }
 
-const listItemVariants = {
+const listItemVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95, y: 10 },
   visible: (index: number) => ({
     opacity: 1,
