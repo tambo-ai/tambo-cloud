@@ -4,11 +4,6 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-// Convert a string to Title Case
-function toTitleCase(input: string): string {
-  return input.replace(/\w\S*/g, (txt) => txt[0].toUpperCase() + txt.slice(1).toLowerCase());
-}
-
 // Define the variant type explicitly
 type ButtonVariantType =
   | "default"
@@ -83,7 +78,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       ) : null;
 
     // If `asChild` is true, clone the provided element (e.g., Next.js `Link`)
-    // so we can merge classes/props and inject the icon + formatted label.
+    // so we can merge classes/props and inject the icon + label.
     if (asChild && React.isValidElement(children)) {
       return React.cloneElement(children as React.ReactElement, {
         ...props,
@@ -95,9 +90,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         children: (
           <>
             {iconNode}
-            {typeof children.props.children === "string"
-              ? toTitleCase(children.props.children)
-              : children.props.children}
+            {children.props.children}
           </>
         ),
       });
@@ -108,7 +101,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp className={classes} ref={ref} {...props}>
         {iconNode}
-        {typeof children === "string" ? toTitleCase(children) : children}
+        {children}
       </Comp>
     );
   },
