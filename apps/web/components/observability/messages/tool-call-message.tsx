@@ -33,6 +33,7 @@ export const ToolCallMessage = memo(
   }: ToolCallMessageProps) => {
     const [showArguments, setShowArguments] = useState(false);
     const [showResponse, setShowResponse] = useState(false);
+    const [showError, setShowError] = useState(false);
 
     const toolName = message.toolCallRequest?.toolName || "Unknown Tool";
     const parameters = message.toolCallRequest?.parameters || [];
@@ -135,19 +136,6 @@ export const ToolCallMessage = memo(
                 >
                   Tool Call: {toolName}
                 </span>
-                <div className="flex items-center gap-2 ml-auto">
-                  <span
-                    className="text-xs text-muted-foreground font-mono bg-muted/50 rounded-md px-2 py-1 flex items-center gap-1 cursor-pointer"
-                    onClick={() => onCopyId(message.toolCallId || "")}
-                  >
-                    {message.toolCallId}
-                    {copiedId === message.toolCallId ? (
-                      <Check className="h-3 w-3 ml-1 text-green-500" />
-                    ) : (
-                      <Copy className="h-3 w-3 ml-1 opacity-50" />
-                    )}
-                  </span>
-                </div>
               </div>
 
               {/* View Arguments Dropdown */}
@@ -161,11 +149,11 @@ export const ToolCallMessage = memo(
                     <span
                       onClick={(e) => {
                         e.stopPropagation();
-                        onCopyId(`args-${message.id}`);
+                        onCopyId(formatAllParameters());
                       }}
                       className="h-6 w-6 p-0 flex items-center justify-center cursor-pointer hover:bg-muted rounded-sm transition-colors"
                     >
-                      {copiedId === `args-${message.id}` ? (
+                      {copiedId === formatAllParameters() ? (
                         <Check className="h-3 w-3 text-green-500" />
                       ) : (
                         <Copy className="h-3 w-3" />
@@ -217,11 +205,12 @@ export const ToolCallMessage = memo(
                       <span
                         onClick={(e) => {
                           e.stopPropagation();
-                          onCopyId(`response-${toolResponse.id}`);
+                          onCopyId(formatResponseContent(toolResponse.content));
                         }}
                         className="h-6 w-6 p-0 flex items-center justify-center cursor-pointer hover:bg-muted rounded-sm transition-colors"
                       >
-                        {copiedId === `response-${toolResponse.id}` ? (
+                        {copiedId ===
+                        formatResponseContent(toolResponse.content) ? (
                           <Check className="h-3 w-3 text-green-500" />
                         ) : (
                           <Copy className="h-3 w-3" />
@@ -248,21 +237,65 @@ export const ToolCallMessage = memo(
                     <div className="p-4 bg-background max-h-96 overflow-auto">
                       {/* Error Display for Tool Response */}
                       {hasToolResponseError && (
-                        <motion.div
-                          className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg"
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          <div className="flex items-center gap-2 text-red-700">
-                            <AlertCircle className="h-4 w-4" />
-                            <span className="font-medium">
-                              Tool Response Error
-                            </span>
-                          </div>
-                          <p className="text-red-600 text-sm mt-1">
-                            {toolResponse.error}
-                          </p>
-                        </motion.div>
+                        <div className="mb-3 border border-red-200 rounded-lg overflow-hidden">
+                          {/* Error Header */}
+                          <button
+                            onClick={() => setShowError(!showError)}
+                            className="w-full flex items-center justify-between p-3 bg-red-50 hover:bg-red-100 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 text-red-700">
+                              <AlertCircle className="h-4 w-4" />
+                              <span className="font-medium">
+                                Tool Response Error
+                              </span>
+                              <span
+                                className="text-xs font-mono rounded-md flex items-center gap-1 cursor-pointer hover:bg-red-200 px-2 py-1 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onCopyId(
+                                    formatResponseContent(
+                                      toolResponse.error || "",
+                                    ),
+                                  );
+                                }}
+                              >
+                                {copiedId ===
+                                formatResponseContent(
+                                  toolResponse.error || "",
+                                ) ? (
+                                  <Check className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <Copy className="h-3 w-3 opacity-50" />
+                                )}
+                              </span>
+                            </div>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 text-red-600 transition-transform duration-200",
+                                showError && "rotate-180",
+                              )}
+                            />
+                          </button>
+
+                          {/* Error Content Dropdown */}
+                          <motion.div
+                            initial={false}
+                            animate={{
+                              height: showError ? "auto" : 0,
+                              opacity: showError ? 1 : 0,
+                            }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="p-4 bg-red-50/30 border-t border-red-200">
+                              <pre className="text-red-700 text-xs font-mono overflow-auto whitespace-pre-wrap break-words">
+                                <code>
+                                  {formatResponseContent(toolResponse.error)}
+                                </code>
+                              </pre>
+                            </div>
+                          </motion.div>
+                        </div>
                       )}
 
                       <pre className="text-xs font-mono text-muted-foreground whitespace-pre-wrap break-words overflow-auto">

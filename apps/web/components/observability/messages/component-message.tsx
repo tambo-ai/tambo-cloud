@@ -84,11 +84,11 @@ export const ComponentMessage = memo(
                     <span
                       onClick={(e) => {
                         e.stopPropagation();
-                        onCopyId(`props-${message.id}`);
+                        onCopyId(formatPropsValue(componentProps));
                       }}
                       className="h-6 w-6 p-0 flex items-center justify-center cursor-pointer hover:bg-muted rounded-sm transition-colors"
                     >
-                      {copiedId === `props-${message.id}` ? (
+                      {copiedId === formatPropsValue(componentProps) ? (
                         <Check className="h-3 w-3 text-green-500" />
                       ) : (
                         <Copy className="h-3 w-3" />
