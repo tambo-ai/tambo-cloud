@@ -290,7 +290,7 @@ export class ThreadsService {
         content: [
           {
             type: ContentPartType.Text,
-            text: "cancelled",
+            text: "",
           },
         ],
         actionType: ActionType.ToolResponse,
