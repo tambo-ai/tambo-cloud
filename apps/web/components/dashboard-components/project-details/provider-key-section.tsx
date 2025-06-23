@@ -504,7 +504,7 @@ export function ProviderKeySection({
           <CardTitle className="text-lg font-semibold">LLM Providers</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">No project selected</p>
+          <p className="text-sm text-foreground">No project selected</p>
         </CardContent>
       </Card>
     );
@@ -522,7 +522,11 @@ export function ProviderKeySection({
               onClick={handleSaveDefaults}
               disabled={isSavingDefaults}
             >
-              {isSavingDefaults ? "Saving..." : "Save Settings"}
+              {isSavingDefaults ? (
+                <span className="text-primary">Saving...</span>
+              ) : (
+                <span className="text-primary">Save Settings</span>
+              )}
             </Button>
           )}
         </div>
@@ -566,7 +570,7 @@ export function ProviderKeySection({
               initial="initial"
               animate="animate"
               exit="exit"
-              className="space-y-4 overflow-hidden rounded-md max-w-xl"
+              className="space-y-4 rounded-md max-w-xl"
             >
               {!currentProviderConfig.isCustomProvider ? (
                 <div className="space-y-2">
@@ -621,7 +625,7 @@ export function ProviderKeySection({
                     </p>
                   )}
                   {currentModelConfig && (
-                    <div className="space-y-0.5 pt-1 text-xs text-muted-foreground">
+                    <div className="space-y-0.5 pt-1 text-xs text-foreground">
                       {currentModelConfig.notes && (
                         <p className="mb-2 flex items-start">
                           <InfoIcon className="mr-1.5 mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
@@ -708,7 +712,7 @@ export function ProviderKeySection({
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={shortTransition}
-                    className="space-y-2 overflow-hidden"
+                    className="space-y-2"
                   >
                     <div className="flex gap-2">
                       <div className="relative flex-1">
@@ -753,7 +757,11 @@ export function ProviderKeySection({
                           (!apiKeyValidation?.isValid && !!apiKeyInput.trim())
                         }
                       >
-                        {isUpdatingApiKey ? "Saving..." : <>Save Key</>}
+                        {isUpdatingApiKey ? (
+                          <span className="text-primary">Saving...</span>
+                        ) : (
+                          <span className="text-primary">Save Key</span>
+                        )}
                       </Button>
                       <Button
                         size="sm"
@@ -830,7 +838,7 @@ export function ProviderKeySection({
                   </motion.div>
                 )}
                 {currentProviderConfig.apiKeyLink && (
-                  <p className="pt-1 text-xs text-muted-foreground">
+                  <p className="pt-1 text-xs text-foreground">
                     Need an API key?{" "}
                     <a
                       href={currentProviderConfig.apiKeyLink}

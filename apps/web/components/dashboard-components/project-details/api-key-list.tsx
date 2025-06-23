@@ -5,7 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Copy, Trash2 } from "lucide-react";
-import { DateTime } from "luxon";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import {
@@ -274,7 +273,7 @@ export function APIKeyList({
         </div>
 
         <div className="flex flex-row items-center justify-between gap-2">
-          <p className="text-sm font-sans text-muted-foreground/80 max-w-sm">
+          <p className="text-sm font-sans text-foreground max-w-sm">
             Tambo offers 500 free messages. Once the limit is reached,
             you&apos;ll have to add your API key to your project.
           </p>
@@ -289,7 +288,7 @@ export function APIKeyList({
               >
                 <Button
                   size="sm"
-                  className="font-sans bg-transparent border hover:bg-accent"
+                  className="font-sans text-primary bg-transparent border hover:bg-accent"
                   onClick={() => setIsCreating(true)}
                   disabled={!!newGeneratedKey}
                 >
@@ -301,7 +300,7 @@ export function APIKeyList({
         </div>
 
         <div className="flex items-center gap-2 mt-2 mb-2">
-          <p className="text-xs font-sans text-green-900 max-w-xs bg-primary/50 rounded-full p-2">
+          <p className="text-xs font-sans text-success max-w-xs bg-success-background rounded-full p-2">
             {projectMessageUsage?.messageCount} out of 500 messages used
           </p>
         </div>
@@ -321,7 +320,7 @@ export function APIKeyList({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="text-sm font-medium"
+                className="text-sm font-medium text-primary"
               >
                 Create New API Key
               </motion.h5>
@@ -485,7 +484,7 @@ export function APIKeyList({
                       </div>
 
                       {/* API Key Value */}
-                      <code className="text-xs font-mono px-2 py-1 bg-muted rounded min-w-[120px]">
+                      <code className="text-xs text-foreground font-mono px-2 py-1 bg-accent rounded-full min-w-[120px]">
                         {key.partiallyHiddenKey?.slice(0, 15)}
                       </code>
 
@@ -493,7 +492,7 @@ export function APIKeyList({
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                        className="h-7 w-7 text-destructive bg-destructive/10 flex-shrink-0 rounded-full"
                         onClick={() =>
                           setAlertState({
                             show: true,
@@ -506,13 +505,6 @@ export function APIKeyList({
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-
-                      {/* Last used info - moved to the end */}
-                      <p className="text-xs font-sans text-muted-foreground/80 ml-auto">
-                        {key.lastUsedAt
-                          ? `Last used: ${DateTime.fromJSDate(key.lastUsedAt).toFormat("EEE MMM d 'at' h:mma")}`
-                          : "Never used"}
-                      </p>
                     </div>
                   </motion.div>
                 ))}

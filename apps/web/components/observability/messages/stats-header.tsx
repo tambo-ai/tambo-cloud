@@ -50,11 +50,11 @@ const StatCard = memo(({ count, label, items, onItemClick }: StatCardProps) => (
           <div className="flex items-center gap-3">
             <div className="text-left">
               <div className="text-2xl font-bold">{count}</div>
-              <div className="text-sm text-muted-foreground">{label}</div>
+              <div className="text-sm text-foreground">{label}</div>
             </div>
           </div>
           {count > 0 && (
-            <div className="text-muted-foreground">
+            <div className="text-foreground">
               <ChevronDown className="h-4 w-4" />
             </div>
           )}
@@ -74,7 +74,7 @@ const StatCard = memo(({ count, label, items, onItemClick }: StatCardProps) => (
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm truncate">{item.title}</div>
               {item.subtitle && (
-                <div className="text-xs text-muted-foreground truncate mt-1">
+                <div className="text-xs text-foreground truncate mt-1">
                   {item.subtitle}
                 </div>
               )}

@@ -141,13 +141,13 @@ export function ProjectDropdown({
                 filteredProjects.map((project) => (
                   <DropdownMenuItem
                     key={project.id}
-                    className="cursor-pointer hover:bg-accent/50"
+                    className="cursor-pointer hover:bg-theme-accent focus:bg-theme-accent"
                     onClick={() => handleProjectChange(project.id)}
                   >
                     <div className="flex w-full items-center justify-between">
                       <div className="flex flex-col items-start">
                         <span className="font-medium">{project.name}</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-foreground">
                           {project.messages} messages • {project.users} users
                         </span>
                       </div>
@@ -158,7 +158,7 @@ export function ProjectDropdown({
                   </DropdownMenuItem>
                 ))
               ) : (
-                <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                <div className="px-2 py-4 text-center text-sm text-foreground">
                   No projects found
                 </div>
               )}
@@ -170,7 +170,7 @@ export function ProjectDropdown({
           {/* Create new project button */}
           <Button
             variant="outline"
-            className="w-full justify-start border-none hover:bg-accent/50"
+            className="w-full justify-start border-none hover:bg-theme-accent"
             onClick={() => {
               setIsOpen(false);
               setIsCreateDialogOpen(true);

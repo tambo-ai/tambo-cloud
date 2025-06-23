@@ -60,10 +60,10 @@ export const ThreadRow = memo(
           </div>
         </TableCell>
 
-        <TableCell className="py-2 text-sm px-4 text-muted-foreground">
+        <TableCell className="py-2 text-sm px-4 text-primary">
           <div className="flex flex-col gap-1">
             <span>{formatDateThreadTable(thread.createdAt).date}</span>
-            <span className="text-xs text-muted-foreground/70">
+            <span className="text-xs text-foreground">
               {formatDateThreadTable(thread.createdAt).time}
             </span>
           </div>
@@ -71,7 +71,7 @@ export const ThreadRow = memo(
 
         <TableCell className="py-2 text-sm px-4 hidden sm:table-cell">
           <div className="flex items-center gap-1">
-            <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+            <code className="text-xs bg-info text-info px-1.5 py-0.5 rounded">
               {thread.id?.slice(0, 8) || "N/A"}...
             </code>
             <CopyButton clipboardValue={thread.id || ""} className="h-6 w-6" />
@@ -79,16 +79,14 @@ export const ThreadRow = memo(
         </TableCell>
 
         <TableCell className="py-2 text-sm px-4 font-medium">
-          {thread.name || (
-            <span className="text-muted-foreground italic">No name</span>
-          )}
+          {thread.name || <span className="text-primary italic">No name</span>}
         </TableCell>
 
         <TableCell className="py-2 text-sm px-4 font-medium">
           {thread.contextKey}
         </TableCell>
 
-        <TableCell className="py-2 text-sm px-4 hidden md:table-cell text-muted-foreground">
+        <TableCell className="py-2 text-sm text-primary px-4 hidden md:table-cell">
           {thread.messages}
         </TableCell>
 
@@ -96,7 +94,7 @@ export const ThreadRow = memo(
           <span
             className={cn(
               "font-medium",
-              thread.errors > 0 ? "text-red-600" : "text-muted-foreground",
+              thread.errors > 0 ? "text-red-600" : "text-primary",
             )}
           >
             {thread.errors}
@@ -107,7 +105,7 @@ export const ThreadRow = memo(
           <button
             onClick={handleViewMessages}
             disabled={isDeleting}
-            className="text-muted-foreground hover:bg-accent/50 rounded-md p-1 disabled:opacity-50"
+            className="text-primary hover:bg-accent rounded-md p-1 disabled:opacity-50"
             aria-label={`View messages for thread ${thread.id.slice(0, 8)}`}
           >
             View messages

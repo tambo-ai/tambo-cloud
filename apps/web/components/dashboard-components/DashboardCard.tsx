@@ -44,7 +44,7 @@ export function DashboardCard({
     >
       <CardContent className="p-6">
         <div className="space-y-4">
-          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+          <h3 className="text-sm font-medium text-foreground">{title}</h3>
           <div className="flex items-end space-x-2">
             <div className="text-6xl text-foreground">
               {typeof value === "number" ? value.toLocaleString() : value}
@@ -54,12 +54,16 @@ export function DashboardCard({
                 value={selectedPeriod}
                 onValueChange={(value) => handlePeriodChange(value)}
               >
-                <SelectTrigger className="w-auto h-8 px-3 text-sm border-0 bg-transparent hover:bg-muted focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="w-auto h-8 px-3 text-sm text-foreground border-0 bg-transparent hover:bg-muted focus:ring-0 focus:ring-offset-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {periodOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      className="cursor-pointer"
+                    >
                       {option.label}
                     </SelectItem>
                   ))}

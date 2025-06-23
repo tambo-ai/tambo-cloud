@@ -184,7 +184,7 @@ export const ThreadTable = memo(
           {hasThreads && (
             <div className="flex items-center justify-end gap-2 px-4 py-2">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-foreground">
                   {startIndex + 1}-{Math.min(endIndex, totalThreads)} of{" "}
                   {totalThreads}
                   {threads.length >= 10 && (

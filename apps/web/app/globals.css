@@ -132,11 +132,6 @@ html {
     font-family: Inter, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11", "salt";
   }
-
-  html {
-    /* Force scrollbar to always be visible to prevent layout shift */
-    overflow-y: scroll;
-  }
 }
 
 .shadow-light {

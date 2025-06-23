@@ -1,6 +1,7 @@
 import { type RouterOutputs } from "@/trpc/react";
 import { SortDirection, SortField } from "./hooks/useThreadList";
 import { MessageItem, ThreadStats } from "./messages/stats-header";
+import { getSafeContent } from "@/lib/thread-hooks";
 
 type MessageType = ThreadType["messages"][0];
 type ThreadType = RouterOutputs["thread"]["getThread"];
@@ -69,8 +70,12 @@ export const isErrorMessage = (message: MessageType): boolean => {
     return true;
   }
 
-  // Check content for error keywords
-  if (message.content?.toString().toLowerCase().includes("error")) {
+  // Check content for error keywords using getSafeContent
+  const safeContent = getSafeContent(message.content);
+  if (
+    typeof safeContent === "string" &&
+    safeContent.toLowerCase().includes("error")
+  ) {
     return true;
   }
 
@@ -105,12 +110,17 @@ export const createMessageItems = (
   messages.forEach((message: MessageType) => {
     // Add to messages list
     const messageTitle = `${message.role} message`;
+    const safeContent = getSafeContent(message.content as any);
+    const contentPreview =
+      typeof safeContent === "string"
+        ? safeContent.slice(0, 50)
+        : "Content with elements";
 
     messageItems.push({
       id: `msg-${message.id}`,
       type: "message",
       title: messageTitle,
-      subtitle: message.content?.toString().slice(0, 50) || "Object content",
+      subtitle: contentPreview || "Empty message",
       messageId: message.id,
     });
 

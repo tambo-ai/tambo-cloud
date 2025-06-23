@@ -88,7 +88,7 @@ export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
   };
 
   return (
-    <Card className="border rounded-3xl overflow-hidden p-4">
+    <Card className="border-card-background bg-card-background rounded-3xl overflow-hidden p-4">
       <CardContent className="p-4 space-y-4">
         <motion.div
           className="flex items-center gap-2"
@@ -106,13 +106,11 @@ export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
           animate="visible"
         >
           <motion.div variants={itemVariants}>
-            <h5 className="text-xs font-medium text-muted-foreground mb-1">
+            <h5 className="text-xs font-medium text-foreground mb-1">
               Project ID
             </h5>
-            <div className="flex items-center gap-2">
-              <code className="text-sm font-mono bg-muted px-2 py-1 rounded-md">
-                {project.id}
-              </code>
+            <div className="flex items-center gap-1">
+              <code className="text-sm font-mono">{project.id}</code>
               <CopyButton clipboardValue={project.id} />
             </div>
           </motion.div>
@@ -120,7 +118,7 @@ export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
           {createdAt && (
             <div className="border-l border-muted-foreground/20 pl-4">
               <motion.div variants={itemVariants}>
-                <h5 className="text-xs font-medium text-muted-foreground mb-1">
+                <h5 className="text-xs font-medium text-foreground mb-1">
                   Created
                 </h5>
                 <p className="text-sm">{formatDate(createdAt)}</p>
@@ -130,7 +128,7 @@ export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
 
           <div className="border-l border-muted-foreground/20 pl-4">
             <motion.div variants={itemVariants}>
-              <h5 className="text-xs font-medium text-muted-foreground mb-1">
+              <h5 className="text-xs font-medium text-foreground mb-1">
                 Owner
               </h5>
               <p className="text-sm">{project.userId}</p>
@@ -139,7 +137,7 @@ export function ProjectInfo({ project, createdAt }: ProjectInfoProps) {
 
           <div className="border-l border-muted-foreground/20 pl-4">
             <motion.div variants={itemVariants}>
-              <h5 className="text-xs font-medium text-muted-foreground mb-1">
+              <h5 className="text-xs font-medium text-foreground mb-1">
                 Remaining free messages
               </h5>
               <div className="flex items-center gap-4">

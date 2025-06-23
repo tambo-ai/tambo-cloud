@@ -69,7 +69,10 @@ export default function ProjectLayout({
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link href="/dashboard" className="text-sm">
+                    <Link
+                      href="/dashboard"
+                      className="text-sm text-muted-foreground"
+                    >
                       All Projects
                     </Link>
                   </BreadcrumbLink>
@@ -82,7 +85,7 @@ export default function ProjectLayout({
                   />
                 </BreadcrumbSeparator>
                 <BreadcrumbItem>
-                  <BreadcrumbPage className="text-sm">
+                  <BreadcrumbPage className="text-sm text-foreground">
                     {project?.name || "Loading..."}
                   </BreadcrumbPage>
                 </BreadcrumbItem>
@@ -94,14 +97,14 @@ export default function ProjectLayout({
               <TabsList className="h-16 bg-transparent">
                 <TabsTrigger
                   value="overview"
-                  className="rounded-full data-[state=active]:bg-accent/50 data-[state=inactive]:border-transparent"
+                  className="rounded-full data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-foreground"
                   asChild
                 >
                   <Link href={`/dashboard/${projectId}`}>Overview</Link>
                 </TabsTrigger>
                 <TabsTrigger
                   value="observability"
-                  className="rounded-full data-[state=active]:bg-accent/50 data-[state=inactive]:border-transparent"
+                  className="rounded-full data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-foreground"
                   asChild
                 >
                   <Link href={`/dashboard/${projectId}/observability`}>
@@ -110,7 +113,7 @@ export default function ProjectLayout({
                 </TabsTrigger>
                 <TabsTrigger
                   value="settings"
-                  className="rounded-full data-[state=active]:bg-accent/50 data-[state=inactive]:border-transparent"
+                  className="rounded-full data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-foreground"
                   asChild
                 >
                   <Link href={`/dashboard/${projectId}/settings`}>

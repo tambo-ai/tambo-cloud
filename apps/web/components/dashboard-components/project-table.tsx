@@ -124,21 +124,21 @@ export function ProjectTable({
       {hasProjects && (
         <div className="flex items-center justify-end gap-2 px-4 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-foreground">
               {startIndex + 1}-{Math.min(endIndex, totalProjects)} of{" "}
               {totalProjects}
             </span>
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage <= 1}
-              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+              className="p-1 text-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage >= totalPages}
-              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
+              className="p-1 text-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -163,37 +163,33 @@ export function ProjectTable({
                   className="rounded border-gray-300"
                 />
               </TableHead>
-              <TableHead
-                className={`${headerClass} ${compact ? "px-4 text-primary" : ""}`}
-              >
+              <TableHead className={`${headerClass} text-foreground`}>
                 Project
               </TableHead>
               <TableHead
-                className={`${headerClass} ${compact ? "px-4 hidden sm:table-cell text-primary" : ""}`}
+                className={`${headerClass} ${compact ? "px-4 hidden sm:table-cell" : ""} text-foreground`}
               >
                 ID
               </TableHead>
               <TableHead
-                className={`${headerClass} ${compact ? "px-4 hidden md:table-cell text-primary" : ""}`}
+                className={`${headerClass} ${compact ? "px-4 hidden md:table-cell" : ""} text-foreground`}
               >
                 Created
               </TableHead>
               {!compact && (
                 <>
-                  <TableHead
-                    className={`${headerClass} ${compact ? "px-4 hidden sm:table-cell text-primary" : ""}`}
-                  >
+                  <TableHead className={`${headerClass} text-foreground`}>
                     Messages
                   </TableHead>
-                  <TableHead
-                    className={`${headerClass} ${compact ? "px-4 hidden sm:table-cell text-primary" : ""}`}
-                  >
+                  <TableHead className={`${headerClass} text-foreground`}>
                     Users
                   </TableHead>
                 </>
               )}
               {!compact && (
-                <TableHead className={headerClass}>Actions</TableHead>
+                <TableHead className={`${headerClass} text-foreground`}>
+                  Actions
+                </TableHead>
               )}
             </TableRow>
           </TableHeader>
@@ -206,7 +202,7 @@ export function ProjectTable({
                 >
                   <div className="flex items-center justify-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-muted-foreground">Loading...</span>
+                    <span className="text-foreground">Loading...</span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -242,7 +238,7 @@ export function ProjectTable({
                       {compact && projectId ? (
                         <Link
                           href={`/dashboard/${projectId}`}
-                          className="inline-flex items-center gap-1 text-foreground hover:text-primary transition-colors duration-100 group"
+                          className="inline-flex items-center gap-1 transition-colors duration-100 group"
                         >
                           <span className="group-hover:underline underline-offset-4">
                             {project.name}
@@ -258,7 +254,7 @@ export function ProjectTable({
                     >
                       <div className="flex items-center gap-1">
                         <code
-                          className={`${compact ? "text-xs" : "text-sm"} bg-muted px-1.5 py-0.5 rounded`}
+                          className={`${compact ? "text-xs" : "text-sm"} bg-info text-info px-1.5 py-0.5 rounded`}
                         >
                           {displayId || "N/A"}
                         </code>
@@ -271,20 +267,16 @@ export function ProjectTable({
                       </div>
                     </TableCell>
                     <TableCell
-                      className={`${cellClass} text-muted-foreground ${compact ? "px-4 hidden md:table-cell text-primary" : "text-sm"}`}
+                      className={`${cellClass} ${compact ? "px-4 hidden md:table-cell" : "text-sm"}`}
                     >
                       {formatDate(project.createdAt)}
                     </TableCell>
                     {!compact && (
                       <>
-                        <TableCell
-                          className={`${cellClass} text-muted-foreground text-sm`}
-                        >
+                        <TableCell className={`${cellClass} text-sm`}>
                           {project.messages}
                         </TableCell>
-                        <TableCell
-                          className={`${cellClass} text-muted-foreground text-sm`}
-                        >
+                        <TableCell className={`${cellClass} text-sm`}>
                           {project.users}
                         </TableCell>
                       </>
@@ -295,14 +287,12 @@ export function ProjectTable({
                           {projectId ? (
                             <Link
                               href={`/dashboard/${projectId}`}
-                              className="text-muted-foreground hover:bg-accent/50 rounded-md p-1"
+                              className="hover:bg-accent rounded-md p-1"
                             >
                               View
                             </Link>
                           ) : (
-                            <span className="text-muted-foreground text-sm">
-                              No ID
-                            </span>
+                            <span className="text-sm">No ID</span>
                           )}
                         </div>
                       </TableCell>

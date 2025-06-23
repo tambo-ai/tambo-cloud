@@ -54,7 +54,7 @@ export function ThreadTableHeader({
               : "not sorted"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex text-foreground items-center gap-2">
             Date{" "}
             <SortIcon
               field="date"
@@ -82,7 +82,7 @@ export function ThreadTableHeader({
               : "not sorted"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex text-foreground items-center gap-2">
             Thread ID{" "}
             <SortIcon
               field="threadId"
@@ -110,7 +110,7 @@ export function ThreadTableHeader({
               : "not sorted"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex text-foreground items-center gap-2">
             Thread Name{" "}
             <SortIcon
               field="threadName"
@@ -138,7 +138,7 @@ export function ThreadTableHeader({
               : "not sorted"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex text-foreground items-center gap-2">
             Context Key{" "}
             <SortIcon
               field="contextKey"
@@ -166,7 +166,7 @@ export function ThreadTableHeader({
               : "not sorted"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex text-foreground items-center gap-2">
             Messages{" "}
             <SortIcon
               field="messages"
@@ -194,7 +194,7 @@ export function ThreadTableHeader({
               : "not sorted"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex text-foreground items-center gap-2">
             Errors{" "}
             <SortIcon
               field="errors"
@@ -203,7 +203,9 @@ export function ThreadTableHeader({
             />
           </div>
         </TableHead>
-        <TableHead className="text-sm font-medium">Actions</TableHead>
+        <TableHead className="text-sm font-medium text-foreground">
+          Actions
+        </TableHead>
       </TableRow>
     </TableHeader>
   );

@@ -6,12 +6,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { RouterOutputs } from "@/trpc/react";
 import { Search, X } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { calculateThreadStats, createMessageItems } from "../utils";
 import { StatsHeader } from "./stats-header";
 import { ThreadMessages } from "./thread-messages";
-import { RouterOutputs } from "@/trpc/react";
+import { getSafeContent } from "@/lib/thread-hooks";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
@@ -39,12 +40,11 @@ export function ThreadMessagesModal({
     let filtered = messages;
 
     if (searchQuery) {
-      filtered = filtered.filter((msg: MessageType) =>
-        msg.content
-          ?.toString()
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()),
-      );
+      filtered = filtered.filter((msg: MessageType) => {
+        const safeContent = getSafeContent(msg.content as any);
+        const textContent = typeof safeContent === "string" ? safeContent : "";
+        return textContent.toLowerCase().includes(searchQuery.toLowerCase());
+      });
     }
 
     return filtered;
@@ -81,7 +81,7 @@ export function ThreadMessagesModal({
       >
         <SheetHeader className="flex flex-row items-center justify-between flex-shrink-0">
           <div className="flex flex-col gap-1">
-            <SheetTitle className="text-left">
+            <SheetTitle className="text-left text-primary">
               <span>Thread {thread.id}</span>
             </SheetTitle>
           </div>
@@ -97,12 +97,12 @@ export function ThreadMessagesModal({
 
         <div className="space-y-4 mt-1 flex-shrink-0">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground" />
             <Input
               placeholder="Search chat log..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 text-primary"
             />
           </div>
         </div>

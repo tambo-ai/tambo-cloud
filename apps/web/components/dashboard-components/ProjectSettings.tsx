@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
-import { Key, MessageSquare, Server, Settings } from "lucide-react";
 import { useRef, useState } from "react";
 
 interface ProjectSettingsProps {
@@ -260,37 +259,45 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
         <div className="py-6 w-1/5">
           <div className="flex flex-col gap-1">
             <Button
-              variant={activeSection === "api-keys" ? "default" : "ghost"}
-              className="justify-start gap-2 rounded-full hover:bg-primary/50"
+              variant="ghost"
+              className={`justify-start gap-2 rounded-full ${
+                activeSection === "api-keys" ? "bg-accent" : "hover:bg-accent"
+              }`}
               onClick={() => scrollToSection("api-keys")}
             >
-              <Key className="h-4 w-4" />
               API keys
             </Button>
             <Button
-              variant={activeSection === "llm-providers" ? "default" : "ghost"}
-              className="justify-start gap-2 rounded-full hover:bg-primary/50"
+              variant="ghost"
+              className={`justify-start gap-2 rounded-full ${
+                activeSection === "llm-providers"
+                  ? "bg-accent"
+                  : "hover:bg-accent"
+              }`}
               onClick={() => scrollToSection("llm-providers")}
             >
-              <Settings className="h-4 w-4" />
               LLM providers
             </Button>
             <Button
-              variant={
-                activeSection === "custom-instructions" ? "default" : "ghost"
-              }
-              className="justify-start gap-2 rounded-full hover:bg-primary/50"
+              variant="ghost"
+              className={`justify-start gap-2 rounded-full ${
+                activeSection === "custom-instructions"
+                  ? "bg-accent"
+                  : "hover:bg-accent"
+              }`}
               onClick={() => scrollToSection("custom-instructions")}
             >
-              <MessageSquare className="h-4 w-4" />
               Custom instructions
             </Button>
             <Button
-              variant={activeSection === "mcp-servers" ? "default" : "ghost"}
-              className="justify-start gap-2 rounded-full hover:bg-primary/50"
+              variant="ghost"
+              className={`justify-start gap-2 rounded-full ${
+                activeSection === "mcp-servers"
+                  ? "bg-accent"
+                  : "hover:bg-accent"
+              }`}
               onClick={() => scrollToSection("mcp-servers")}
             >
-              <Server className="h-4 w-4" />
               MCP servers
             </Button>
           </div>

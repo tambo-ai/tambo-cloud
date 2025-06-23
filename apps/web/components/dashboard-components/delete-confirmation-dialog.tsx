@@ -137,7 +137,9 @@ export function DeleteConfirmationDialog(props: DeleteConfirmationDialogProps) {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{content.title}</AlertDialogTitle>
-          <AlertDialogDescription>{content.description}</AlertDialogDescription>
+          <AlertDialogDescription className="text-foreground">
+            {content.description}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>

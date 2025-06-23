@@ -130,7 +130,7 @@ export function CustomInstructionsEditor({
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="space-y-3"
               >
-                <CardDescription className="text-sm text-muted-foreground max-w-sm mb-4">
+                <CardDescription className="text-sm text-foreground max-w-sm mb-4">
                   These instructions are added to each conversation to guide
                   tambo&apos;s responses.
                 </CardDescription>
@@ -150,7 +150,7 @@ export function CustomInstructionsEditor({
                 >
                   <Button
                     size="sm"
-                    className="font-sans border bg-transparent hover:bg-accent"
+                    className="font-sans border text-primary bg-transparent hover:bg-accent"
                     onClick={handleSave}
                     disabled={updateProject.isPending}
                   >
@@ -160,7 +160,7 @@ export function CustomInstructionsEditor({
                         Saving...
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center text-primary gap-1">
                         Save Instructions
                       </span>
                     )}
@@ -190,7 +190,7 @@ export function CustomInstructionsEditor({
                     {project.customInstructions}
                   </motion.div>
                 ) : (
-                  <CardDescription className="text-sm text-muted-foreground max-w-sm">
+                  <CardDescription className="text-sm text-foreground max-w-sm">
                     These instructions are added to each conversation to guide
                     tambo&apos;s responses.
                   </CardDescription>
