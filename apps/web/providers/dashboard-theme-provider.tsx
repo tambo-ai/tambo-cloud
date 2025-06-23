@@ -11,11 +11,19 @@ export function DashboardThemeProvider({
   children,
   defaultTheme = "light",
 }: DashboardThemeProviderProps) {
-  // Apply theme class to body element
+  // Apply / clean-up theme classes on the <body> element
   React.useEffect(() => {
-    document.body.className = `dashboard-theme ${defaultTheme === "dark" ? "dark" : ""}`;
+    const { classList } = document.body;
+
+    classList.add("dashboard-theme");
+    if (defaultTheme === "dark") {
+      classList.add("dark");
+    } else {
+      classList.remove("dark");
+    }
+
     return () => {
-      document.body.classList.remove("dashboard-theme", "dark");
+      classList.remove("dashboard-theme", "dark");
     };
   }, [defaultTheme]);
 
