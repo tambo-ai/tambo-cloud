@@ -44,6 +44,30 @@ export const ToolCallMessage = memo(
       toolResponse?.actionType === "tool_response" && toolResponse?.error;
     const hasAnyError = hasToolCallError || hasToolResponseError;
 
+    const deepParseJson = (value: any): any => {
+      if (typeof value === "string") {
+        try {
+          const parsed = JSON.parse(value);
+          // If it's an object or array, recursively parse its contents
+          if (typeof parsed === "object" && parsed !== null) {
+            return deepParseJson(parsed);
+          }
+          return parsed;
+        } catch {
+          return value;
+        }
+      } else if (Array.isArray(value)) {
+        return value.map(deepParseJson);
+      } else if (typeof value === "object" && value !== null) {
+        const result: Record<string, any> = {};
+        for (const [key, val] of Object.entries(value)) {
+          result[key] = deepParseJson(val);
+        }
+        return result;
+      }
+      return value;
+    };
+
     const formatAllParameters = () => {
       if (parameters.length === 0) return "{}";
 
@@ -54,9 +78,9 @@ export const ToolCallMessage = memo(
             // Try to parse the parameter value if it's a string
             if (typeof param.parameterValue === "string") {
               try {
-                paramObj[param.parameterName] = JSON.parse(
-                  param.parameterValue,
-                );
+                const parsed = JSON.parse(param.parameterValue);
+                // Use deepParseJson to handle nested JSON strings
+                paramObj[param.parameterName] = deepParseJson(parsed);
               } catch {
                 paramObj[param.parameterName] = param.parameterValue;
               }
@@ -78,14 +102,16 @@ export const ToolCallMessage = memo(
         if (typeof content === "string") {
           try {
             const parsed = JSON.parse(content);
-            return JSON.stringify(parsed, null, 2);
+            const deepParsed = deepParseJson(parsed);
+            return JSON.stringify(deepParsed, null, 2);
           } catch {
             // If it's not valid JSON, return as is
             return content;
           }
         }
-        // If it's already an object, stringify it
-        return JSON.stringify(content, null, 2);
+        // If it's already an object, use deepParseJson and stringify
+        const deepParsed = deepParseJson(content);
+        return JSON.stringify(deepParsed, null, 2);
       } catch {
         return String(content);
       }
