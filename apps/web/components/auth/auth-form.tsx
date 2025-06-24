@@ -30,7 +30,8 @@ export function AuthForm({ routeOnSuccess = "/dashboard" }: AuthFormProps) {
         options: {
           redirectTo: `${window.location.origin}${routeOnSuccess}`,
           queryParams: {
-            workos_provider: "GoogleOAuth",
+            // workos_provider: "GoogleOAuth"
+            organization: "org_01JYEX2XE7EKRVPVDTYP19YA90",
           },
         },
       });
@@ -86,7 +87,7 @@ export function AuthForm({ routeOnSuccess = "/dashboard" }: AuthFormProps) {
               disabled={isLoading}
               className="w-full h-12 text-base font-medium transition-all hover:scale-[1.02] hover:bg-accent hover:text-accent-foreground"
             >
-              <Icons.google className="mr-3 h-5 w-5" />
+              <Icons.logo className="mr-3 h-5 w-5" />
               Continue with WorkOS
             </Button>
           </div>

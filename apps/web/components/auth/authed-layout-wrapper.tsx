@@ -2,6 +2,7 @@
 
 import { getSupabaseClient } from "@/app/utils/supabase";
 import { useSession } from "@/hooks/auth";
+import { UserInfo } from "@workos-inc/authkit-nextjs";
 import {
   redirect,
   usePathname,
@@ -13,19 +14,23 @@ import { useEffect, useState } from "react";
 export function AuthedLayoutWrapper({
   children,
   hasSession: initialHasSession,
+  workosUser,
 }: {
   children: React.ReactNode;
   hasSession: boolean;
+  workosUser: UserInfo["user"] | null;
 }) {
+  console.log("AuthedLayoutWrapper");
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const code = searchParams.get("code");
   const { data: session, isLoading: isSessionLoading } = useSession();
+  console.log("workosUser", workosUser);
 
   // Use client-side session info when available, fallback to server-provided status when loading
   const hasValidSession =
-    session !== null || (initialHasSession && isSessionLoading);
+    !!workosUser || session !== null || (initialHasSession && isSessionLoading);
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -48,6 +53,7 @@ export function AuthedLayoutWrapper({
 
       // If no session, redirect to login
       if (!hasValidSession) {
+        console.log("redirecting to login");
         redirect(`/login?returnUrl=${encodeURIComponent(pathname)}`);
       } else {
         // Auth check complete, we can render the content
@@ -62,13 +68,13 @@ export function AuthedLayoutWrapper({
       data: { subscription },
     } = getSupabaseClient().auth.onAuthStateChange((_event, session) => {
       // If user signs out, redirect to login
-      if (!session) {
+      if (!session || !workosUser) {
         router.replace(`/login?returnUrl=${encodeURIComponent(pathname)}`);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [hasValidSession, pathname, code, router, isSessionLoading]);
+  }, [hasValidSession, pathname, code, router, isSessionLoading, workosUser]);
 
   // Show loading state while checking authentication
   if (isCheckingAuth) {

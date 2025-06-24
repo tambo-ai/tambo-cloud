@@ -6,6 +6,7 @@ export default async function AuthedLayout({
 }: {
   children: React.ReactNode;
 }) {
+  console.log("AuthedLayout");
   // Check authentication on the server
   const _supabase = await getServerSupabaseclient();
   const {
@@ -14,6 +15,8 @@ export default async function AuthedLayout({
 
   console.log("workos user", user);
   return (
-    <AuthedLayoutWrapper hasSession={!!user}>{children}</AuthedLayoutWrapper>
+    <AuthedLayoutWrapper hasSession={!!user} workosUser={user}>
+      {children}
+    </AuthedLayoutWrapper>
   );
 }
