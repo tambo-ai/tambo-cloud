@@ -7,8 +7,8 @@ Keep PRs focused, well-documented, and easy for reviewers to verify.
 
 ## 1. Dependency, Lint, and Format Rules
 
-- **Do NOT** add, upgrade, or remove dependencies unless the task explicitly says so.  
-- **Do NOT** change the configuration of tools such as Prettier, ESLint, or TypeScript unless the task explicitly says so.  
+- **Do NOT** add, upgrade, or remove dependencies unless the task explicitly says so.
+- **Do NOT** change the configuration of tools such as Prettier, ESLint, or TypeScript unless the task explicitly says so.
 - Always run the Charlie quick-fix command before pushing:
 
   ```bash
