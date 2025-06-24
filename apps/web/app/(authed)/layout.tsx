@@ -12,6 +12,7 @@ export default async function AuthedLayout({
     data: { user },
   } = await _supabase.auth.getUser();
 
+  console.log("workos user", user);
   return (
     <AuthedLayoutWrapper hasSession={!!user}>{children}</AuthedLayoutWrapper>
   );
