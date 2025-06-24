@@ -116,6 +116,7 @@ export async function updateProject(
     defaultLlmModelName,
     customLlmModelName,
     customLlmBaseURL,
+    maxInputTokens,
   }: {
     name?: string;
     customInstructions?: string;
@@ -123,8 +124,13 @@ export async function updateProject(
     defaultLlmModelName?: string;
     customLlmModelName?: string;
     customLlmBaseURL?: string;
+    maxInputTokens?: number;
   },
 ) {
+  if (maxInputTokens !== undefined && (typeof maxInputTokens !== 'number' || maxInputTokens < 0)) {
+    throw new Error('maxInputTokens must be a non-negative number');
+  }
+
   // Create update object with only provided fields
   const updateData: Partial<typeof schema.projects.$inferInsert> = {};
   if (name !== undefined) updateData.name = name;
@@ -138,6 +144,7 @@ export async function updateProject(
     updateData.customLlmModelName = customLlmModelName;
   if (customLlmBaseURL !== undefined)
     updateData.customLlmBaseURL = customLlmBaseURL;
+  if (maxInputTokens !== undefined) updateData.maxInputTokens = maxInputTokens;
 
   // Only perform update if there are fields to update
   if (Object.keys(updateData).length === 0) {
