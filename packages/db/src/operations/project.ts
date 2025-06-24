@@ -5,6 +5,7 @@ import {
   hideApiKey,
   MCPTransport,
   ToolProviderType,
+  DeprecatedComposioAuthMode,
 } from "@tambo-ai-cloud/core";
 import { createHash, randomBytes } from "crypto";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
@@ -513,3 +514,154 @@ export async function getMcpServer(
     },
   });
 }
+
+/* ------------------------------------------------------------------------- */
+/*                           DEPRECATED COMPOSIO API                         */
+/* ------------------------------------------------------------------------- */
+/**
+ * NOTE: The Composio integration has been removed from the product.  
+ * These helpers are kept ONLY so that any legacy imports continue to compile.
+ * They will be removed in a future major release.
+ *
+ * Every function below purposefully returns a “safe” default rather than
+ * performing real work. All database interaction references the *deprecated*
+ * column names that still live in the schema for backward-compatibility.
+ */
+
+// ---------------------------------------------------------------------------
+// Legacy helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * @deprecated  Composio has been removed – always returns an empty array.
+ */
+export async function getComposioApps(db: HydraDb, projectId: string) {
+  try {
+    return await db
+      .select()
+      .from(schema.toolProviders)
+      .where(
+        and(
+          eq(schema.toolProviders.projectId, projectId),
+          isNotNull(schema.toolProviders.deprecatedComposioAppId),
+        ),
+      );
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * @deprecated  No-op. Kept only for compile-time compatibility.
+ */
+export async function enableComposioApp(
+  db: HydraDb,
+  projectId: string,
+  composioAppId: string,
+): Promise<void> {
+  try {
+    // If a row for this app already exists, update it – otherwise insert.
+    const existing = await getComposioAppProvider(
+      db,
+      projectId,
+      composioAppId,
+    );
+    if (existing) {
+      await db
+        .update(schema.toolProviders)
+        .set({ deprecatedComposioAppId: composioAppId })
+        .where(eq(schema.toolProviders.id, existing.id));
+    } else {
+      await db.insert(schema.toolProviders).values({
+        projectId,
+        type: ToolProviderType.MCP, // placeholder; original enum value no longer exists
+        deprecatedComposioAppId: composioAppId,
+        customHeaders: {},
+      });
+    }
+  } catch {
+    /* swallow – legacy feature */
+  }
+}
+
+/**
+ * @deprecated  No-op. Kept only for compile-time compatibility.
+ */
+export async function disableComposioApp(
+  db: HydraDb,
+  projectId: string,
+  composioAppId: string,
+): Promise<void> {
+  try {
+    await db
+      .update(schema.toolProviders)
+      .set({ deprecatedComposioAppId: null })
+      .where(
+        and(
+          eq(schema.toolProviders.projectId, projectId),
+          eq(schema.toolProviders.deprecatedComposioAppId, composioAppId),
+        ),
+      );
+  } catch {
+    /* swallow – legacy feature */
+  }
+}
+
+/**
+ * @deprecated  Returns the single provider row (or undefined) tied to a
+ *              Composio app id for legacy callers.
+ */
+export async function getComposioAppProvider(
+  db: HydraDb,
+  projectId: string,
+  composioAppId: string,
+) {
+  try {
+    return await db.query.toolProviders.findFirst({
+      where: and(
+        eq(schema.toolProviders.projectId, projectId),
+        eq(schema.toolProviders.deprecatedComposioAppId, composioAppId),
+      ),
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * @deprecated  Stores legacy auth details on the
+ *              tool_provider_user_contexts table.  Always succeeds silently.
+ */
+export async function upsertComposioAuth(
+  db: HydraDb,
+  providerUserContextId: string,
+  params: {
+    integrationId: string;
+    connectedAccountId: string;
+    connectedAccountStatus: string | null;
+    redirectUrl: string | null;
+    authSchemaMode: DeprecatedComposioAuthMode | null;
+    authFields: Record<string, string>;
+  },
+): Promise<void> {
+  try {
+    await db
+      .update(schema.toolProviderUserContexts)
+      .set({
+        deprecatedComposioIntegrationId: params.integrationId,
+        deprecatedComposioConnectedAccountId: params.connectedAccountId,
+        deprecatedComposioConnectedAccountStatus:
+          params.connectedAccountStatus,
+        deprecatedComposioRedirectUrl: params.redirectUrl,
+        deprecatedComposioAuthSchemaMode: params.authSchemaMode,
+        deprecatedComposioAuthFields: params.authFields,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.toolProviderUserContexts.id, providerUserContextId));
+  } catch {
+    /* swallow – legacy feature */
+  }
+}
+// ---------------------------------------------------------------------------
+// End of deprecated section
+// ---------------------------------------------------------------------------
