@@ -25,7 +25,7 @@
     "@libretto/token.js": "git+https://github.com/tambo-ai/token.js.git#main",
     "@tambo-ai-cloud/core": "*",
     "ajv": "^8.17.1",
-    "composio-core": "^0.5.39",
+    "gpt-tokenizer": "^3.0.1",
     "openai": "^5.3.0",
     "partial-json": "^0.1.7",
     "token.js": "^0.7.1",
@@ -41,7 +41,7 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=20",
+    "node": ">=22",
     "npm": ">=10"
   },
   "volta": {

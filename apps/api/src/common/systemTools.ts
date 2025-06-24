@@ -1,6 +1,7 @@
 import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
+import { Logger } from "@nestjs/common";
 import { SystemTools } from "@tambo-ai-cloud/backend";
-import { MCPClient, strictifyJSONSchemaProperties } from "@tambo-ai-cloud/core";
+import { LogLevel, MCPClient } from "@tambo-ai-cloud/core";
 import {
   HydraDatabase,
   HydraDb,
@@ -8,12 +9,9 @@ import {
   operations,
   schema,
 } from "@tambo-ai-cloud/db";
-import { OpenAIToolSet } from "composio-core";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { env } from "process";
-import { getComposio } from "./composio";
-import { Logger } from "@nestjs/common";
 
 const logger = new Logger("systemTools");
 
@@ -21,23 +19,14 @@ const logger = new Logger("systemTools");
 export async function getSystemTools(
   db: HydraDatabase,
   projectId: string,
-  contextKey: string | null,
 ): Promise<SystemTools> {
   const { mcpTools, mcpToolSources } = await getMcpTools(db, projectId);
 
-  const { composioTools, composioClient } = await getComposioTools(
-    db,
-    projectId,
-    contextKey,
-  );
-
   const mcpToolNames = mcpTools.map((tool) => tool.function.name);
-  const composioToolNames = composioTools.map((tool) => tool.function.name);
   // make sure there are no name conflicts
-  const toolNames = [...mcpToolNames, ...composioToolNames];
-  if (new Set(toolNames).size !== toolNames.length) {
-    const duplicateToolNames = toolNames.filter(
-      (toolName, index) => toolNames.indexOf(toolName) !== index,
+  if (new Set(mcpToolNames).size !== mcpToolNames.length) {
+    const duplicateToolNames = mcpToolNames.filter(
+      (toolName, index) => mcpToolNames.indexOf(toolName) !== index,
     );
     console.warn(
       `Tool names must be unique, found duplicates for project ${projectId}: ${duplicateToolNames.join(
@@ -46,10 +35,8 @@ export async function getSystemTools(
     );
   }
   return {
-    tools: [...mcpTools, ...composioTools],
+    tools: mcpTools,
     mcpToolSources,
-    composioClient,
-    composioToolNames,
   };
 }
 
@@ -72,6 +59,14 @@ async function getMcpTools(
     if (mcpServer.mcpRequiresAuth && !hasAuthInfo(mcpServer)) {
       console.warn(
         `MCP server ${mcpServer.id} in project ${projectId} requires auth, but no auth info found`,
+      );
+      // Record as a warning so the user can see it on the dashboard
+      await operations.addProjectLogEntry(
+        db,
+        projectId,
+        LogLevel.WARNING,
+        `MCP server ${mcpServer.id} requires auth but no auth info found`,
+        { mcpServerId: mcpServer.id },
       );
       continue;
     }
@@ -119,6 +114,15 @@ async function getMcpTools(
       // TODO: attach this error to the project
       logger.error(
         `Error processing MCP server ${mcpServer.id} in project ${projectId}: ${error}`,
+      );
+
+      // Store the error for visibility in the dashboard
+      await operations.addProjectLogEntry(
+        db,
+        projectId,
+        LogLevel.ERROR,
+        `Error processing MCP server ${mcpServer.id}: ${error instanceof Error ? error.message : String(error)}`,
+        { mcpServerId: mcpServer.id },
       );
       continue;
     }
@@ -184,55 +188,4 @@ async function getAuthProvider(
     sessionId: client.sessionId,
   });
   return authProvider;
-}
-
-async function getComposioTools(
-  db: HydraDatabase,
-  projectId: string,
-  contextKey: string | null,
-): Promise<{
-  composioTools: OpenAI.Chat.Completions.ChatCompletionTool[];
-  composioClient?: OpenAIToolSet;
-}> {
-  const composioApps = await operations.getComposioApps(
-    db,
-    projectId,
-    contextKey,
-  );
-  if (!composioApps.length) {
-    return { composioTools: [], composioClient: undefined };
-  }
-  const composioTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
-  const appIds = composioApps
-    .map((app) => app.composioAppId)
-    .filter((appId): appId is string => !!appId);
-  const composioClient = new OpenAIToolSet();
-  const composio = getComposio();
-  const apps = await composio.apps.list();
-  const activeApps = apps.filter(
-    (app) => app.appId && appIds.includes(app.appId),
-  );
-  const activeAppKeys = activeApps.map((app) => app.key);
-  const tools = await composioClient.getTools({ apps: activeAppKeys });
-
-  for (const tool of tools) {
-    composioTools.push({
-      type: "function",
-      function: {
-        name: tool.function.name,
-        description: tool.function.description,
-        parameters: {
-          type: "object",
-          properties: strictifyJSONSchemaProperties(
-            tool.function.parameters?.properties ?? ({} as any),
-            Object.keys(tool.function.parameters?.properties ?? {}),
-          ),
-          required: Object.keys(tool.function.parameters?.properties ?? {}),
-          additionalProperties: false,
-        },
-        strict: true,
-      },
-    });
-  }
-  return { composioTools, composioClient };
 }

@@ -31,11 +31,13 @@
     "@tambo-ai-cloud/backend": "*",
     "@tambo-ai-cloud/core": "*",
     "@tambo-ai-cloud/db": "*",
+    "@types/jsonwebtoken": "^9.0.9",
     "ajv": "^8.17.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
-    "composio-core": "^0.5.39",
     "drizzle-orm": "^0.44.2",
+    "json-schema": "^0.4.0",
+    "jsonwebtoken": "^9.0.2",
     "nest-supabase-guard": "^1.0.2",
     "openai": "^5.3.0",
     "react-fast-compare": "^3.2.2",
@@ -53,7 +55,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.2",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^20.19.0",
+    "@types/node": "^22.15.32",
     "@types/supertest": "^6.0.3",
     "jest": "^29.5.0",
     "prettier": "^3.5.3",
@@ -65,7 +67,7 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=20",
+    "node": ">=22",
     "npm": ">=10"
   },
   "volta": {

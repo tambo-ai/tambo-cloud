@@ -1,14 +1,14 @@
 "use client";
 
 import { Section } from "@/components/section";
-import { motion } from "framer-motion";
+import { Easing, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { PlayIcon } from "lucide-react";
 import { Button } from "../ui/button";
 
-const ease = [0.16, 1, 0.3, 1];
+const ease: Easing = [0.16, 1, 0.3, 1];
 
 // Hero content moved directly into this file
 const heroContent = {
@@ -94,7 +94,7 @@ function HeroIllustration() {
   const [videoError, setVideoError] = React.useState(false);
 
   React.useEffect(() => {
-    // Simple Safari detection
+    // Simple Safari detection - must run in browser, so must be in useEffect
     const isSafariBrowser =
       /^((?!chrome|android).)*safari/i.test(navigator.userAgent) ||
       /iPad|iPhone|iPod/.test(navigator.userAgent);
