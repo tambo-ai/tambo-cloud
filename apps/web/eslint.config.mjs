@@ -16,7 +16,8 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: [],
+          // Include JS mock files so they are parsed without requiring their own tsconfig.
+          allowDefaultProject: ["__mocks__/*.js"],
         },
       },
     },
