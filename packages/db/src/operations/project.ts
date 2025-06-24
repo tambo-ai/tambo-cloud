@@ -550,7 +550,7 @@ export async function enableComposioApp(
     return await db.insert(schema.toolProviders).values({
       projectId,
       type: ToolProviderType.COMPOSIO,
-      composioAppId: appId,
+      deprecatedComposioAppId: appId,
     });
   } catch (error) {
     console.log("Error enabling Composio app:", error);
@@ -569,7 +569,7 @@ export async function disableComposioApp(
       and(
         eq(schema.toolProviders.projectId, projectId),
         eq(schema.toolProviders.type, ToolProviderType.COMPOSIO),
-        eq(schema.toolProviders.composioAppId, appId),
+        eq(schema.toolProviders.deprecatedComposioAppId, appId),
       ),
     );
 }
@@ -583,7 +583,7 @@ export async function getComposioAppProvider(
     where: and(
       eq(schema.toolProviders.projectId, projectId),
       eq(schema.toolProviders.type, ToolProviderType.COMPOSIO),
-      eq(schema.toolProviders.composioAppId, appId),
+      eq(schema.toolProviders.deprecatedComposioAppId, appId),
     ),
   });
   return provider;
