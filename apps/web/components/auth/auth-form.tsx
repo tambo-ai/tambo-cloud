@@ -15,7 +15,7 @@ interface AuthFormProps {
   routeOnSuccess: string;
 }
 
-type AuthProvider = "github" | "google";
+type AuthProvider = "github" | "google" | "workos";
 
 export function AuthForm({ routeOnSuccess = "/dashboard" }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -76,6 +76,15 @@ export function AuthForm({ routeOnSuccess = "/dashboard" }: AuthFormProps) {
             >
               <Icons.google className="mr-3 h-5 w-5" />
               Continue with Google
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => await handleAuth("workos")}
+              disabled={isLoading}
+              className="w-full h-12 text-base font-medium transition-all hover:scale-[1.02] hover:bg-accent hover:text-accent-foreground"
+            >
+              <Icons.google className="mr-3 h-5 w-5" />
+              Continue with WorkOS
             </Button>
           </div>
         </CardContent>
