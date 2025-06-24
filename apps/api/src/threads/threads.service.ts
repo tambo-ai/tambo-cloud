@@ -281,7 +281,22 @@ export class ThreadsService {
       statusMessage: "Thread advancement cancelled",
     });
 
+    const updatedThreadResponse = {
+      id: updatedThread.id,
+      createdAt: updatedThread.createdAt,
+      updatedAt: updatedThread.updatedAt,
+      name: updatedThread.name ?? undefined,
+      contextKey: updatedThread.contextKey ?? undefined,
+      metadata: updatedThread.metadata ?? undefined,
+      generationStage: updatedThread.generationStage,
+      statusMessage: updatedThread.statusMessage ?? undefined,
+      projectId: updatedThread.projectId,
+    };
+
     const messages = await operations.getMessages(db, threadId, true);
+    if (messages.length === 0) {
+      return updatedThreadResponse;
+    }
     const latestMessage = messages[messages.length - 1];
 
     if (latestMessage.toolCallRequest && latestMessage.toolCallId) {
@@ -304,17 +319,7 @@ export class ThreadsService {
       });
     }
 
-    return {
-      id: updatedThread.id,
-      createdAt: updatedThread.createdAt,
-      updatedAt: updatedThread.updatedAt,
-      name: updatedThread.name ?? undefined,
-      contextKey: updatedThread.contextKey ?? undefined,
-      metadata: updatedThread.metadata ?? undefined,
-      generationStage: updatedThread.generationStage,
-      statusMessage: updatedThread.statusMessage ?? undefined,
-      projectId: updatedThread.projectId,
-    };
+    return updatedThreadResponse;
   }
 
   async remove(id: string) {
