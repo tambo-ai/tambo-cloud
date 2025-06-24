@@ -19,20 +19,19 @@
     "db:migrate": "cd packages/db && npm run db:migrate",
     "db:check": "cd packages/db && npm run db:check",
     "db:studio": "cd packages/db && npm run db:studio",
-    "test:suggestions": "cd scripts && tsx test-suggestions.ts",
     "rename-to-tambo": "tsx scripts/update-content.ts && tsx scripts/rename-files.ts",
     "rename-vnext": "tsx scripts/rename-vnext.ts"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",
     "@types/jest": "^29.5.14",
-    "eslint": "^9.28.0",
+    "eslint": "^9.29.0",
     "husky": "^9.1.7",
     "jest": "^30.0.0",
-    "lint-staged": "^16.1.0",
+    "lint-staged": "^16.1.2",
     "prettier": "^3.5.3",
     "ts-jest": "^29.4.0",
-    "tsx": "^4.19.4",
+    "tsx": "^4.20.3",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3"
   },
@@ -41,13 +40,13 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=20",
+    "node": ">=22",
     "npm": ">=10"
   },
   "volta": {
-    "node": "20.19.0",
+    "node": "22.16.0",
     "npm": "10.9.2"
   },
   "packageManager": "npm@10.9.2",
-  "version": "0.63.1"
+  "version": "0.69.0"
 }

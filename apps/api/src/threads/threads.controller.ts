@@ -23,7 +23,6 @@ import {
 } from "@nestjs/swagger";
 import { GenerationStage } from "@tambo-ai-cloud/core";
 import { Request } from "express";
-import isEqual from "react-fast-compare";
 import { ApiKeyGuard, ProjectId } from "../projects/guards/apikey.guard";
 import {
   ProjectAccessOwnGuard,
@@ -46,6 +45,7 @@ import {
 } from "./dto/thread.dto";
 import { ThreadInProjectGuard } from "./guards/thread-in-project-guard";
 import { ThreadsService } from "./threads.service";
+import { throttleChunks } from "./util/streaming";
 
 @ApiTags("threads")
 @ApiSecurity("apiKey")
@@ -140,6 +140,39 @@ export class ThreadsController {
   @Delete(":id")
   async remove(@Param("id") threadId: string) {
     return await this.threadsService.remove(threadId);
+  }
+
+  /**
+   * Sets a thread's generation stage to CANCELLED.
+   */
+  @UseGuards(ThreadInProjectGuard)
+  @Post(":id/cancel")
+  @ApiOperation({
+    summary: "Cancel thread advancement",
+    description: "Sets a thread's generation stage to CANCELLED",
+  })
+  @ApiParam({
+    name: "id",
+    description: "ID of the thread to cancel",
+    example: "thread_123456789",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Thread cancelled successfully",
+    type: Thread,
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Thread is not in a cancellable state",
+    type: ProblemDetailsDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Thread not found",
+    type: ProblemDetailsDto,
+  })
+  async cancelThread(@Param("id") threadId: string): Promise<Thread> {
+    return await this.threadsService.cancelThread(threadId);
   }
 
   @UseGuards(ThreadInProjectGuard)
@@ -408,7 +441,10 @@ export class ThreadsController {
     }>,
   ) {
     try {
-      for await (const chunk of filterDuplicateChunks(stream)) {
+      for await (const chunk of throttleChunks(
+        stream,
+        (m1, m2) => m1.responseMessageDto.id !== m2.responseMessageDto.id,
+      )) {
         response.write(`data: ${JSON.stringify(chunk)}\n\n`);
       }
     } catch (error: any) {
@@ -418,18 +454,5 @@ export class ThreadsController {
       response.write("data: DONE\n\n");
       response.end();
     }
-  }
-}
-
-async function* filterDuplicateChunks<T>(
-  stream: AsyncIterableIterator<T>,
-): AsyncIterableIterator<T> {
-  let previousChunk: T | undefined = undefined;
-  for await (const chunk of stream) {
-    if (previousChunk !== undefined && isEqual(chunk, previousChunk)) {
-      continue;
-    }
-    previousChunk = chunk;
-    yield chunk;
   }
 }

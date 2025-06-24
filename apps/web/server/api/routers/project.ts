@@ -1,28 +1,97 @@
 import { env } from "@/lib/env";
 import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { llmProviderConfig } from "@tambo-ai-cloud/backend";
 import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import {
+  and,
+  count,
+  countDistinct,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+} from "drizzle-orm";
 import { z } from "zod";
+
+// Helper function to get date filter based on period
+function getDateFilter(period: string): Date | null {
+  const now = new Date();
+
+  switch (period) {
+    case "per week":
+      return new Date(now.setDate(now.getDate() - 7));
+    case "per month":
+      return new Date(now.setMonth(now.getMonth() - 1));
+    case "all time":
+    default:
+      return null;
+  }
+}
 
 export const projectRouter = createTRPCRouter({
   getUserProjects: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
     const projects = await operations.getProjectsForUser(ctx.db, userId);
-    return projects.map((project) => ({
-      id: project.id,
-      name: project.name,
-      userId: userId,
-      createdAt: project.createdAt,
-      composioEnabled: project.composioEnabled,
-      customInstructions: project.customInstructions,
-      defaultLlmProviderName: project.defaultLlmProviderName,
-      defaultLlmModelName: project.defaultLlmModelName,
-      customLlmModelName: project.customLlmModelName,
-      customLlmBaseURL: project.customLlmBaseURL,
-    }));
+
+    // ---------------------------------------------------------------------
+    // Batched aggregation for message & user counts (single query)
+    // ---------------------------------------------------------------------
+    const projectIds = projects.map((p) => p.id);
+
+    let aggregatedCounts = new Map<
+      string,
+      { messages: number; users: number }
+    >();
+
+    if (projectIds.length) {
+      const counts = await ctx.db
+        .select({
+          projectId: schema.threads.projectId,
+          messages: count(schema.messages.id),
+          users: countDistinct(schema.threads.contextKey),
+        })
+        .from(schema.threads)
+        .innerJoin(
+          schema.messages,
+          eq(schema.messages.threadId, schema.threads.id),
+        )
+        .where(inArray(schema.threads.projectId, projectIds))
+        .groupBy(schema.threads.projectId);
+
+      aggregatedCounts = new Map(
+        counts.map((c) => [
+          c.projectId,
+          {
+            messages: Number(c.messages ?? 0),
+            users: Number(c.users ?? 0),
+          },
+        ]),
+      );
+    }
+
+    // Shape final payload using O(1) look-ups
+    return projects.map((project) => {
+      const stats = aggregatedCounts.get(project.id) ?? {
+        messages: 0,
+        users: 0,
+      };
+      return {
+        id: project.id,
+        name: project.name,
+        userId,
+        createdAt: project.createdAt,
+        customInstructions: project.customInstructions,
+        defaultLlmProviderName: project.defaultLlmProviderName,
+        defaultLlmModelName: project.defaultLlmModelName,
+        customLlmModelName: project.customLlmModelName,
+        customLlmBaseURL: project.customLlmBaseURL,
+        messages: stats.messages,
+        users: stats.users,
+      };
+    });
   }),
 
   createProject: protectedProcedure
@@ -122,6 +191,7 @@ export const projectRouter = createTRPCRouter({
           defaultLlmModelName: true,
           customLlmModelName: true,
           customLlmBaseURL: true,
+          maxInputTokens: true,
         },
       });
 
@@ -136,6 +206,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: project.defaultLlmModelName ?? null,
         customLlmModelName: project.customLlmModelName ?? null,
         customLlmBaseURL: project.customLlmBaseURL ?? null,
+        maxInputTokens: project.maxInputTokens ?? null,
       };
     }),
 
@@ -149,6 +220,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: z.string().nullable().optional(),
         customLlmModelName: z.string().nullable().optional(),
         customLlmBaseURL: z.string().nullable().optional(),
+        maxInputTokens: z.number().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -160,6 +232,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
+        maxInputTokens,
       } = input;
       await operations.ensureProjectAccess(
         ctx.db,
@@ -187,6 +260,8 @@ export const projectRouter = createTRPCRouter({
           customLlmBaseURL === null
             ? undefined
             : (customLlmBaseURL ?? undefined),
+        maxInputTokens:
+          maxInputTokens === null ? undefined : (maxInputTokens ?? undefined),
       });
 
       if (!updatedProject) {
@@ -198,11 +273,11 @@ export const projectRouter = createTRPCRouter({
         name: updatedProject.name,
         userId: ctx.session.user.id,
         customInstructions: updatedProject.customInstructions,
-        composioEnabled: updatedProject.composioEnabled,
         defaultLlmProviderName: updatedProject.defaultLlmProviderName,
         defaultLlmModelName: updatedProject.defaultLlmModelName,
         customLlmModelName: updatedProject.customLlmModelName,
         customLlmBaseURL: updatedProject.customLlmBaseURL,
+        maxInputTokens: updatedProject.maxInputTokens,
       };
     }),
 
@@ -214,6 +289,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: z.string().nullable().optional(),
         customLlmModelName: z.string().nullable().optional(),
         customLlmBaseURL: z.string().nullable().optional(),
+        maxInputTokens: z.number().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -223,6 +299,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
+        maxInputTokens,
       } = input;
 
       // Ensure the user has access to the project before performing any further
@@ -239,7 +316,7 @@ export const projectRouter = createTRPCRouter({
           ? customLlmBaseURL.trim()
           : customLlmBaseURL;
 
-      // ─── Validate custom base-URL for OpenAI-compatible providers ───────────
+      // --- Validate custom base-URL for OpenAI-compatible providers ------------
       if (typeof sanitizedBaseURL === "string" && sanitizedBaseURL !== "") {
         // Basic URL syntax check
         let asURL: URL;
@@ -267,6 +344,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: string | null;
         customLlmModelName: string | null;
         customLlmBaseURL: string | null;
+        maxInputTokens: number | null;
       }> = {};
 
       if ("defaultLlmProviderName" in input) {
@@ -282,6 +360,28 @@ export const projectRouter = createTRPCRouter({
         // Store the trimmed value (or null if blank/undefined)
         updateData.customLlmBaseURL =
           sanitizedBaseURL && sanitizedBaseURL !== "" ? sanitizedBaseURL : null;
+      }
+      if ("maxInputTokens" in input) {
+        if (defaultLlmProviderName && defaultLlmModelName) {
+          const modelConfig =
+            llmProviderConfig[defaultLlmProviderName]?.models?.[
+              defaultLlmModelName
+            ];
+          if (modelConfig) {
+            if (
+              !input.maxInputTokens ||
+              input.maxInputTokens < 1 ||
+              input.maxInputTokens > modelConfig.properties.inputTokenLimit
+            ) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message:
+                  "Max input tokens must be greater than 0 and less than the model's max.",
+              });
+            }
+          }
+        }
+        updateData.maxInputTokens = input.maxInputTokens;
       }
 
       if (
@@ -305,6 +405,7 @@ export const projectRouter = createTRPCRouter({
           defaultLlmModelName: currentProject.defaultLlmModelName ?? null,
           customLlmModelName: currentProject.customLlmModelName ?? null,
           customLlmBaseURL: currentProject.customLlmBaseURL ?? null,
+          maxInputTokens: currentProject.maxInputTokens ?? null,
         };
       }
 
@@ -326,6 +427,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName: updatedProject[0].defaultLlmModelName ?? null,
         customLlmModelName: updatedProject[0].customLlmModelName ?? null,
         customLlmBaseURL: updatedProject[0].customLlmBaseURL ?? null,
+        maxInputTokens: updatedProject[0].maxInputTokens ?? null,
       };
     }),
 
@@ -338,6 +440,29 @@ export const projectRouter = createTRPCRouter({
         ctx.session.user.id,
       );
       await operations.deleteProject(ctx.db, projectId);
+    }),
+
+  removeMultipleProjects: protectedProcedure
+    .input(z.array(z.string()).min(1, "At least one project ID is required"))
+    .mutation(async ({ ctx, input: projectIds }) => {
+      const userId = ctx.session.user.id;
+
+      // 1. Ensure the user can access every project (in parallel for speed)
+      await Promise.all(
+        projectIds.map(async (id) => {
+          await operations.ensureProjectAccess(ctx.db, id, userId);
+        }),
+      );
+
+      // 2. Delete each project properly using the existing deleteProject operation
+      // This ensures foreign key constraints and RLS policies are handled correctly
+      await Promise.all(
+        projectIds.map(async (id) => {
+          await operations.deleteProject(ctx.db, id);
+        }),
+      );
+
+      return { deletedCount: projectIds.length };
     }),
 
   addProviderKey: protectedProcedure
@@ -481,5 +606,97 @@ export const projectRouter = createTRPCRouter({
         messageCount: usage.messageCount,
         hasApiKey: usage.hasApiKey,
       };
+    }),
+
+  getTotalMessageUsage: protectedProcedure
+    .input(z.object({ period: z.string().optional().default("all time") }))
+    .query(async ({ ctx, input }) => {
+      const { period } = input;
+      const userId = ctx.session.user.id;
+      const projects = await operations.getProjectsForUser(ctx.db, userId);
+      const projectIds = projects.map((p) => p.id);
+
+      if (projectIds.length === 0) {
+        return { totalMessages: 0 };
+      }
+
+      const dateFilter = getDateFilter(period);
+
+      // count from messages table
+      const whereConditions = [inArray(schema.threads.projectId, projectIds)];
+
+      if (dateFilter) {
+        whereConditions.push(gte(schema.messages.createdAt, dateFilter));
+      }
+
+      const result = await ctx.db
+        .select({ count: count() })
+        .from(schema.messages)
+        .innerJoin(
+          schema.threads,
+          eq(schema.messages.threadId, schema.threads.id),
+        )
+        .where(and(...whereConditions));
+
+      return { totalMessages: result[0]?.count || 0 };
+    }),
+
+  getTotalUsers: protectedProcedure
+    .input(z.object({ period: z.string().optional().default("all time") }))
+    .query(async ({ ctx, input }) => {
+      const { period } = input;
+      const userId = ctx.session.user.id;
+      const projects = await operations.getProjectsForUser(ctx.db, userId);
+      const projectIds = projects.map((p) => p.id);
+
+      if (projectIds.length === 0) {
+        return { totalUsers: 0 };
+      }
+
+      const dateFilter = getDateFilter(period);
+
+      const whereConditions = [
+        inArray(schema.threads.projectId, projectIds),
+        isNotNull(schema.threads.contextKey),
+      ];
+
+      if (dateFilter) {
+        whereConditions.push(gte(schema.threads.createdAt, dateFilter));
+      }
+
+      // Get unique context keys (users) across all user's projects within period
+      const uniqueUsers = await ctx.db
+        .selectDistinct({ contextKey: schema.threads.contextKey })
+        .from(schema.threads)
+        .where(and(...whereConditions));
+
+      return { totalUsers: uniqueUsers.length };
+    }),
+
+  // -------------------------------------------------------------------------
+  //  Project Logs
+  // -------------------------------------------------------------------------
+
+  getProjectLogs: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        limit: z.number().min(1).max(100).optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { projectId, limit = 20 } = input;
+
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id,
+      );
+
+      return await operations.getRecentProjectLogEntries(
+        ctx.db,
+        projectId,
+        limit,
+      );
     }),
 });

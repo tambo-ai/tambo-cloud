@@ -1,9 +1,9 @@
-import { cn } from "@/lib/utils";
 import {
   useCanvasDetection,
-  usePositioning,
   useMergedRef,
+  usePositioning,
 } from "@/lib/thread-hooks";
+import { cn } from "@/lib/utils";
 import * as React from "react";
 import { useRef } from "react";
 
@@ -24,7 +24,7 @@ export const ThreadContainer = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { hasCanvasSpace, canvasIsOnLeft } = useCanvasDetection(containerRef);
-  const { isLeftPanel, historyPosition } = usePositioning(
+  const { isLeftPanel } = usePositioning(
     className,
     canvasIsOnLeft,
     hasCanvasSpace,
@@ -39,12 +39,21 @@ export const ThreadContainer = React.forwardRef<
         "flex flex-col bg-white overflow-hidden bg-background",
         "h-screen",
 
+        // Add smooth transitions for layout changes
+        "transition-all duration-200 ease-in-out",
+
+        // Width constraints based on canvas presence
+        hasCanvasSpace
+          ? "max-w-3xl"
+          : "w-[calc(100%-var(--sidebar-width,16rem))]",
+
         // Border styling when canvas is present
         hasCanvasSpace && (canvasIsOnLeft ? "border-l" : "border-r"),
         hasCanvasSpace && "border-border",
 
         // Right alignment when specified
         !isLeftPanel && "ml-auto",
+        "w-full",
 
         // Custom classes passed via props
         className,

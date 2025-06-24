@@ -44,7 +44,7 @@ jobs:
           git push origin deploy
       - name: Notify Slack of Deploy Start
         if: ${{ steps.release.outputs.release_created }}
-        uses: slackapi/slack-github-action@v2.0.0
+        uses: slackapi/slack-github-action@v2.1.0
         with:
           payload: |
             text: ":rocket: Production Deployment Started"
@@ -58,7 +58,7 @@ jobs:
                   - type: mrkdwn
                     text: "*Version*\n${{ steps.release.outputs.tag_name }}"
                   - type: mrkdwn
-                    text: "*Release PR*\nhttps://github.com/${{ github.repository }}/pull/${{ fromJson(steps.release.outputs.pr).number }}"
+                    text: "*Release PR*\nhttps://github.com/${{ github.repository }}/pull/${{ fromJson(steps.release.outputs.prs)[0].number }}"
               - type: section
                 fields:
                   - type: mrkdwn
