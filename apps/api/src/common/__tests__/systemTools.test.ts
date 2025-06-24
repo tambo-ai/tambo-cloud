@@ -32,17 +32,21 @@ jest.mock("@tambo-ai-cloud/core", () => {
     },
   };
 });
-jest.mock("composio-core", () => ({
-  Composio: jest.fn().mockImplementation(() => ({
-    apps: {
-      list: jest.fn(),
-    },
-  })),
+jest.mock(
+  "composio-core",
+  () => ({
+    Composio: jest.fn().mockImplementation(() => ({
+      apps: {
+        list: jest.fn(),
+      },
+    })),
 
-  OpenAIToolSet: jest.fn().mockImplementation(() => ({
-    getTools: jest.fn(),
-  })),
-}));
+    OpenAIToolSet: jest.fn().mockImplementation(() => ({
+      getTools: jest.fn(),
+    })),
+  }),
+  { virtual: true },
+);
 jest.mock("../composio", () => ({
   getComposio: jest.fn().mockImplementation(() => ({
     apps: {
