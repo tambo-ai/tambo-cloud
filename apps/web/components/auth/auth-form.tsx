@@ -29,6 +29,9 @@ export function AuthForm({ routeOnSuccess = "/dashboard" }: AuthFormProps) {
         provider,
         options: {
           redirectTo: `${window.location.origin}${routeOnSuccess}`,
+          queryParams: {
+            workos_provider: "GoogleOAuth",
+          },
         },
       });
       if (error) throw error;
