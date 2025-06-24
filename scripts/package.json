@@ -2,17 +2,14 @@
   "name": "@tambo-ai-cloud/scripts",
   "private": true,
   "scripts": {
-    "test:suggestions": "tsx test-suggestions.ts",
     "github:stars": "tsx get-github-stars.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",
-    "dotenv": "^16.4.2",
-    "node-fetch": "^2.7.0"
+    "dotenv": "^16.4.2"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
-    "@types/node-fetch": "^2.6.11",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3"
   }
