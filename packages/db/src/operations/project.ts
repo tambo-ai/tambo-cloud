@@ -551,11 +551,7 @@ export async function enableComposioApp(
 ): Promise<void> {
   try {
     // If a row for this app already exists, update it – otherwise insert.
-    const existing = await getComposioAppProvider(
-      db,
-      projectId,
-      composioAppId,
-    );
+    const existing = await getComposioAppProvider(db, projectId, composioAppId);
     if (existing) {
       await db
         .update(schema.toolProviders)
@@ -632,8 +628,7 @@ export async function upsertComposioAuth(
       .set({
         deprecatedComposioIntegrationId: params.integrationId,
         deprecatedComposioConnectedAccountId: params.connectedAccountId,
-        deprecatedComposioConnectedAccountStatus:
-          params.connectedAccountStatus,
+        deprecatedComposioConnectedAccountStatus: params.connectedAccountStatus,
         deprecatedComposioRedirectUrl: params.redirectUrl,
         deprecatedComposioAuthSchemaMode: params.authSchemaMode,
         deprecatedComposioAuthFields: params.authFields,
