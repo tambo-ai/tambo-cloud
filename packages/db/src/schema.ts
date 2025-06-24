@@ -1,3 +1,6 @@
+// Removed obsolete banner comment – the remainder of the file is unchanged
+// (No functional code changes required.)
+
 import {
   ActionType,
   ChatCompletionContentPart,

@@ -1,3 +1,8 @@
+// -------------------------------------------------------------------------
+// Update: replace banner comments with inline comments and remove invalid
+//          updatedAt assignment in the legacy Composio helper.
+// -------------------------------------------------------------------------
+
 import {
   encryptApiKey,
   encryptProviderKey,
@@ -515,26 +520,13 @@ export async function getMcpServer(
   });
 }
 
-/* ------------------------------------------------------------------------- */
-/*                           DEPRECATED COMPOSIO API                         */
-/* ------------------------------------------------------------------------- */
-/**
- * NOTE: The Composio integration has been removed from the product.  
- * These helpers are kept ONLY so that any legacy imports continue to compile.
- * They will be removed in a future major release.
- *
- * Every function below purposefully returns a “safe” default rather than
- * performing real work. All database interaction references the *deprecated*
- * column names that still live in the schema for backward-compatibility.
- */
+// DEPRECATED COMPOSIO API  – everything below is kept only for backwards-compatibility
+// (The integration was removed; helpers return safe defaults.)
 
-// ---------------------------------------------------------------------------
 // Legacy helpers
-// ---------------------------------------------------------------------------
+// ---------------
 
-/**
- * @deprecated  Composio has been removed – always returns an empty array.
- */
+// NOTE:  Composio has been removed – always returns an empty array.
 export async function getComposioApps(db: HydraDb, projectId: string) {
   try {
     return await db
@@ -551,9 +543,7 @@ export async function getComposioApps(db: HydraDb, projectId: string) {
   }
 }
 
-/**
- * @deprecated  No-op. Kept only for compile-time compatibility.
- */
+// NOTE:  No-op. Kept only for compile-time compatibility.
 export async function enableComposioApp(
   db: HydraDb,
   projectId: string,
@@ -584,9 +574,7 @@ export async function enableComposioApp(
   }
 }
 
-/**
- * @deprecated  No-op. Kept only for compile-time compatibility.
- */
+// NOTE:  No-op. Kept only for compile-time compatibility.
 export async function disableComposioApp(
   db: HydraDb,
   projectId: string,
@@ -607,10 +595,7 @@ export async function disableComposioApp(
   }
 }
 
-/**
- * @deprecated  Returns the single provider row (or undefined) tied to a
- *              Composio app id for legacy callers.
- */
+// NOTE:  Returns the single provider row (or undefined) tied to a legacy Composio app id.
 export async function getComposioAppProvider(
   db: HydraDb,
   projectId: string,
@@ -628,10 +613,7 @@ export async function getComposioAppProvider(
   }
 }
 
-/**
- * @deprecated  Stores legacy auth details on the
- *              tool_provider_user_contexts table.  Always succeeds silently.
- */
+// NOTE:  Stores legacy auth details on tool_provider_user_contexts. Always succeeds silently.
 export async function upsertComposioAuth(
   db: HydraDb,
   providerUserContextId: string,
@@ -655,13 +637,12 @@ export async function upsertComposioAuth(
         deprecatedComposioRedirectUrl: params.redirectUrl,
         deprecatedComposioAuthSchemaMode: params.authSchemaMode,
         deprecatedComposioAuthFields: params.authFields,
-        updatedAt: new Date(),
+        // removed: updatedAt (column does not exist on this table)
       })
       .where(eq(schema.toolProviderUserContexts.id, providerUserContextId));
   } catch {
     /* swallow – legacy feature */
   }
 }
-// ---------------------------------------------------------------------------
+
 // End of deprecated section
-// ---------------------------------------------------------------------------
