@@ -2,7 +2,12 @@ import { env } from "@/lib/env";
 import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { llmProviderConfig } from "@tambo-ai-cloud/backend";
-import { hashKey, MCPTransport, validateMcpServer } from "@tambo-ai-cloud/core";
+import {
+  hashKey,
+  MCPTransport,
+  validateMcpServer,
+  encodeApiKeyForUser,
+} from "@tambo-ai-cloud/core";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
 import {
@@ -551,9 +556,11 @@ export const projectRouter = createTRPCRouter({
         throw new Error("Failed to create API key");
       }
 
+      const userFacingKey = encodeApiKeyForUser(encryptedKey);
+
       return {
         ...newKey,
-        apiKey: encryptedKey,
+        apiKey: userFacingKey,
       };
     }),
 
