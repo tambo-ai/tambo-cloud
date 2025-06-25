@@ -124,3 +124,47 @@ export function hideApiKey(apiKey: string, visibleCharacters = 4): string {
   const hiddenPart = apiKey.substring(visibleCharacters).replace(/./g, "*");
   return apiKey.substring(0, visibleCharacters) + hiddenPart;
 }
+
+// --- New prefix constant ---
+export const TAMBO_PREFIX = "tambo_";
+
+/**
+ * Encode an encrypted API key into a user-facing format.
+ *
+ * The function base64-encodes the provided `encryptedKey` and prepends the
+ * fixed {@link TAMBO_PREFIX}. The resulting string can be shown to users and
+ * later decoded with {@link decodeApiKey}.
+ *
+ * @param encryptedKey - The raw encrypted key stored in the database.
+ * @returns The user-facing API key (`tambo_<base64>`).
+ */
+export function encodeApiKeyForUser(encryptedKey: string): string {
+  return `${TAMBO_PREFIX}${Buffer.from(encryptedKey, "utf-8").toString(
+    "base64",
+  )}`;
+}
+
+/**
+ * Decode a user-provided API key back to its raw encrypted form.
+ *
+ * If the key starts with the {@link TAMBO_PREFIX}, the prefix is removed and
+ * the remainder is base64-decoded. If the prefix is absent, the original key
+ * is returned unchanged to maintain backward compatibility.
+ *
+ * @param userProvidedKey - The key received from the user or client.
+ * @returns The decoded raw encrypted key.
+ */
+export function decodeApiKey(userProvidedKey: string): string {
+  if (!userProvidedKey.startsWith(TAMBO_PREFIX)) {
+    return userProvidedKey;
+  }
+
+  const base64Part = userProvidedKey.slice(TAMBO_PREFIX.length);
+
+  try {
+    return Buffer.from(base64Part, "base64").toString("utf-8");
+  } catch {
+    // In the unlikely event of invalid base64, fall back to the original input.
+    return userProvidedKey;
+  }
+}
