@@ -299,6 +299,10 @@ export class ThreadsService {
     }
     const latestMessage = messages[messages.length - 1];
 
+    await operations.updateMessage(db, latestMessage.id, {
+      isCancelled: true,
+    });
+
     if (latestMessage.toolCallRequest && latestMessage.toolCallId) {
       await addMessage(db, threadId, {
         role: MessageRole.Tool,
