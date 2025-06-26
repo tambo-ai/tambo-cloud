@@ -21,6 +21,29 @@ function getHashedKey(key: string): Buffer {
   return createHash("sha256").update(key).digest();
 }
 
+/**
+ * Encrypt an internal “stored string” and the raw, plaintext API key into a
+ * single tambo-prefixed value that can safely be returned to end-users.
+ *
+ * The resulting format is:
+ *   tambo_⟨base64( IV ⧺ cipherText )⟩
+ *
+ * 1.  A random 16-byte IV is generated (AES-256-CBC requirement).
+ * 2.  The `storedString` and `apiKey` are concatenated with “.” to keep them
+ *     easily separable after decryption.
+ * 3.  AES-256-CBC encryption is performed with a key derived from
+ *     `apiKeySecret` (SHA-256 hash → 32 bytes).
+ * 4.  IV and cipher text are concatenated, converted to Base64 and prefixed
+ *     with `tambo_` so the application can recognise the modern encoding.
+ *
+ * @param storedString – Arbitrary internal identifier that needs to be
+ *                       preserved alongside the API key.
+ * @param apiKey       – The plaintext API key provided by the user.
+ * @param apiKeySecret – Server-side secret used to derive the AES key; **must
+ *                       be  kept secure**.
+ *
+ * @returns Encoded string safe for storage or display (starts with `tambo_`).
+ */
 export function encryptApiKey(
   storedString: string,
   apiKey: string,

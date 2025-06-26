@@ -1,5 +1,4 @@
 import { jest } from "@jest/globals";
-import * as crypto from "crypto";
 import { decryptApiKey, encryptApiKey } from "./encrypt";
 
 /**
