@@ -110,7 +110,7 @@ export function ProjectTable({
   };
 
   const handleSelectProject = (projectId: string, checked: boolean) => {
-    const newSelected = new Set(selectedProjects);
+    const newSelected = new Set(selectedProjects || new Set<string>());
     if (checked) {
       newSelected.add(projectId);
     } else {
@@ -150,19 +150,21 @@ export function ProjectTable({
         <Table className="w-full">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className={headerClass}>
-                <input
-                  type="checkbox"
-                  checked={
-                    currentProjects.length > 0 &&
-                    currentProjects.every(
-                      (p) => p.id && selectedProjects.has(p.id),
-                    )
-                  }
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-              </TableHead>
+              {!compact && (
+                <TableHead className={headerClass}>
+                  <input
+                    type="checkbox"
+                    checked={
+                      currentProjects.length > 0 &&
+                      currentProjects.every(
+                        (p) => p.id && selectedProjects.has(p.id),
+                      )
+                    }
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                </TableHead>
+              )}
               <TableHead className={`${headerClass} text-foreground`}>
                 Project
               </TableHead>
@@ -197,7 +199,7 @@ export function ProjectTable({
             {isLoading ? (
               <TableRow key="loading">
                 <TableCell
-                  colSpan={compact ? 4 : 7}
+                  colSpan={compact ? 3 : 7}
                   className={`text-center ${cellClass}`}
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -219,19 +221,21 @@ export function ProjectTable({
                     key={projectId || `project-${index}`}
                     className="hover:bg-accent/5"
                   >
-                    <TableCell className={`${cellClass} w-4`}>
-                      <input
-                        type="checkbox"
-                        checked={
-                          projectId ? selectedProjects.has(projectId) : false
-                        }
-                        onChange={(e) =>
-                          projectId &&
-                          handleSelectProject(projectId, e.target.checked)
-                        }
-                        className="rounded border-gray-300"
-                      />
-                    </TableCell>
+                    {!compact && (
+                      <TableCell className={`${cellClass} w-4`}>
+                        <input
+                          type="checkbox"
+                          checked={
+                            projectId ? selectedProjects.has(projectId) : false
+                          }
+                          onChange={(e) =>
+                            projectId &&
+                            handleSelectProject(projectId, e.target.checked)
+                          }
+                          className="rounded border-gray-300"
+                        />
+                      </TableCell>
+                    )}
                     <TableCell
                       className={`${cellClass} font-medium ${compact ? "px-4" : ""}`}
                     >
@@ -303,7 +307,7 @@ export function ProjectTable({
             ) : (
               <TableRow key="no-projects">
                 <TableCell
-                  colSpan={compact ? 4 : 7}
+                  colSpan={compact ? 3 : 7}
                   className={`text-center ${cellClass}`}
                 >
                   No projects found.

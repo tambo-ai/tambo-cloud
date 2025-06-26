@@ -125,7 +125,7 @@ export default function DashboardPage() {
   return (
     <motion.div initial="hidden" animate="visible" variants={containerVariants}>
       <>
-        <div className="flex items-center gap-2 space-x-6 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-6 md:py-14">
           <DashboardCard
             title="Number of Projects"
             value={projects?.length || 0}
