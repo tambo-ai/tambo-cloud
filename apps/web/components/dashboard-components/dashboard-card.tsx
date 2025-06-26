@@ -18,6 +18,7 @@ interface DashboardCardProps {
   onPeriodChange?: (period: string) => void;
   defaultPeriod?: string;
   periodOptions?: { value: string; label: string }[];
+  isLoading?: boolean;
 }
 
 export function DashboardCard({
@@ -27,6 +28,7 @@ export function DashboardCard({
   onPeriodChange,
   defaultPeriod = "",
   periodOptions = [],
+  isLoading = false,
 }: DashboardCardProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<string>(defaultPeriod);
 
@@ -46,15 +48,22 @@ export function DashboardCard({
         <div className="space-y-4">
           <h3 className="text-sm font-medium text-foreground">{title}</h3>
           <div className="flex items-end space-x-2">
-            <div className="text-6xl text-foreground">
-              {typeof value === "number" ? value.toLocaleString() : value}
-            </div>
+            {isLoading ? (
+              <div className="text-6xl text-foreground">
+                <div className="h-16 w-24 bg-muted animate-pulse rounded" />
+              </div>
+            ) : (
+              <div className="text-6xl text-foreground">
+                {typeof value === "number" ? value.toLocaleString() : value}
+              </div>
+            )}
             {periodOptions.length > 0 && (
               <Select
                 value={selectedPeriod}
                 onValueChange={(value) => handlePeriodChange(value)}
+                disabled={isLoading}
               >
-                <SelectTrigger className="w-auto h-8 px-3 text-sm text-foreground border-0 bg-transparent hover:bg-muted focus:ring-0 focus:ring-offset-0">
+                <SelectTrigger className="w-auto h-8 px-3 text-sm text-foreground border-0 bg-transparent hover:bg-muted focus:ring-0 focus:ring-offset-0 disabled:opacity-50">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
