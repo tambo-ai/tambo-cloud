@@ -6,7 +6,6 @@ import {
   hashKey,
   MCPTransport,
   validateMcpServer,
-  encodeApiKeyForUser,
 } from "@tambo-ai-cloud/core";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { TRPCError } from "@trpc/server";
@@ -556,11 +555,9 @@ export const projectRouter = createTRPCRouter({
         throw new Error("Failed to create API key");
       }
 
-      const userFacingKey = encodeApiKeyForUser(encryptedKey);
-
       return {
         ...newKey,
-        apiKey: userFacingKey,
+        apiKey: encryptedKey, // already in user-facing format
       };
     }),
 

@@ -1,10 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import {
-  decryptApiKey,
-  hashKey,
-  decodeApiKey,
-} from "@tambo-ai-cloud/core";
+import { decryptApiKey, hashKey } from "@tambo-ai-cloud/core";
 import { Request } from "express";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 import { ProjectsService } from "../projects.service";
@@ -46,11 +42,7 @@ export class ApiKeyGuard implements CanActivate {
       return false;
     }
 
-    // -------------------------------------------------------------------
-    // Support new "tambo_<base64>" user-facing keys while remaining
-    // backward-compatible with the legacy raw encrypted format.
-    // -------------------------------------------------------------------
-    const normalizedKey = decodeApiKey(apiKey);
+    // Legacy normalization removed; pass `apiKey` directly below.
 
     try {
       const apiKeySecret = this.configService.get<string>("API_KEY_SECRET");
@@ -59,12 +51,12 @@ export class ApiKeyGuard implements CanActivate {
       }
 
       const { storedString: projectIdOrLegacyId } = decryptApiKey(
-        normalizedKey,
+        apiKey,
         apiKeySecret,
       );
 
       const projectId = await this.validateApiKeyWithProject(
-        normalizedKey,
+        apiKey,
         projectIdOrLegacyId,
       );
       if (!projectId) {

@@ -5,7 +5,6 @@ import {
   hideApiKey,
   MCPTransport,
   ToolProviderType,
-  decodeApiKey,
 } from "@tambo-ai-cloud/core";
 import { randomBytes } from "crypto";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
@@ -292,10 +291,7 @@ export async function validateApiKey(
   projectId: string,
   apiKey: string,
 ): Promise<boolean> {
-  // Decode new-style "tambo_<base64>" keys while remaining backward-compatible
-  const normalizedKey = decodeApiKey(apiKey);
-
-  const hashedKey = hashKey(normalizedKey);
+  const hashedKey = hashKey(apiKey);
 
   const keys = await db
     .select()

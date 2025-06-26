@@ -13,13 +13,25 @@ function splitFromEnd(str: string, delimiter: string): [string, string] {
 
 const algorithm = "aes-256-cbc";
 const IV_LENGTH = 16; // 16 bytes for AES
+/** Prefix for user-facing API keys – intentionally NOT exported. */
+const TAMBO_PREFIX = "tambo_";
 
 // Hashing to ensure 32-byte key length for AES-256
 function getHashedKey(key: string): Buffer {
   return createHash("sha256").update(key).digest();
 }
 
-/** Turn a raw api key into an encrypted string, signed */
+/**
+ * Encrypt an API-key for storage **and** return the user-facing value.
+ *
+ * Flow:
+ *   1.  Create the same `<iv>.<ciphertext>` string we have always stored.
+ *   2.  Base-64 it and prefix with `"tambo_"` so that callers never need to care
+ *       about our internal representation.
+ *
+ * The string returned from this function is the **only** value that should be
+ * surfaced to users or accepted back from them later.
+ */
 export function encryptApiKey(
   storedString: string,
   apiKey: string,
@@ -31,7 +43,12 @@ export function encryptApiKey(
   const data = `${storedString}.${apiKey}`;
   let encrypted = cipher.update(data, "utf-8", "hex");
   encrypted += cipher.final("hex");
-  return `${iv.toString("hex")}.${encrypted}`;
+  // Raw `<iv>.<cipher>`
+  const rawEncrypted = `${iv.toString("hex")}.${encrypted}`;
+  // Convert to user-facing format and return
+  return `${TAMBO_PREFIX}${Buffer.from(rawEncrypted, "utf-8").toString(
+    "base64",
+  )}`;
 }
 
 export function decryptApiKey(
@@ -41,9 +58,22 @@ export function decryptApiKey(
   storedString: string;
   apiKey: string;
 } {
+  // ------------------------------------------------------------------
+  // Accept either the new `"tambo_<base64>"` value or the old raw value.
+  // ------------------------------------------------------------------
+  let rawEncrypted = encryptedData;
+  if (rawEncrypted.startsWith(TAMBO_PREFIX)) {
+    const base64Part = rawEncrypted.slice(TAMBO_PREFIX.length);
+    try {
+      rawEncrypted = Buffer.from(base64Part, "base64").toString("utf-8");
+    } catch {
+      throw new Error("Invalid API key format");
+    }
+  }
+
   const secretKey = getHashedKey(apiKeySecret);
 
-  const [ivHex, encrypted] = splitFromEnd(encryptedData, ".");
+  const [ivHex, encrypted] = splitFromEnd(rawEncrypted, ".");
 
   if (!ivHex || !encrypted) {
     console.error("Invalid encrypted data format in apikey");
@@ -125,46 +155,5 @@ export function hideApiKey(apiKey: string, visibleCharacters = 4): string {
   return apiKey.substring(0, visibleCharacters) + hiddenPart;
 }
 
-// --- New prefix constant ---
-export const TAMBO_PREFIX = "tambo_";
-
-/**
- * Encode an encrypted API key into a user-facing format.
- *
- * The function base64-encodes the provided `encryptedKey` and prepends the
- * fixed {@link TAMBO_PREFIX}. The resulting string can be shown to users and
- * later decoded with {@link decodeApiKey}.
- *
- * @param encryptedKey - The raw encrypted key stored in the database.
- * @returns The user-facing API key (`tambo_<base64>`).
- */
-export function encodeApiKeyForUser(encryptedKey: string): string {
-  return `${TAMBO_PREFIX}${Buffer.from(encryptedKey, "utf-8").toString(
-    "base64",
-  )}`;
-}
-
-/**
- * Decode a user-provided API key back to its raw encrypted form.
- *
- * If the key starts with the {@link TAMBO_PREFIX}, the prefix is removed and
- * the remainder is base64-decoded. If the prefix is absent, the original key
- * is returned unchanged to maintain backward compatibility.
- *
- * @param userProvidedKey - The key received from the user or client.
- * @returns The decoded raw encrypted key.
- */
-export function decodeApiKey(userProvidedKey: string): string {
-  if (!userProvidedKey.startsWith(TAMBO_PREFIX)) {
-    return userProvidedKey;
-  }
-
-  const base64Part = userProvidedKey.slice(TAMBO_PREFIX.length);
-
-  try {
-    return Buffer.from(base64Part, "base64").toString("utf-8");
-  } catch {
-    // In the unlikely event of invalid base64, fall back to the original input.
-    return userProvidedKey;
-  }
-}
+// The standalone helpers and exported constant above have been removed
+// in favour of the integrated logic inside `encryptApiKey`/`decryptApiKey`.
