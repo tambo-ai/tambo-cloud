@@ -7,7 +7,7 @@ import {
   ToolProviderType,
   decodeApiKey,
 } from "@tambo-ai-cloud/core";
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
@@ -295,7 +295,7 @@ export async function validateApiKey(
   // Decode new-style "tambo_<base64>" keys while remaining backward-compatible
   const normalizedKey = decodeApiKey(apiKey);
 
-  const hashedKey = createHash("sha256").update(normalizedKey).digest("hex");
+  const hashedKey = hashKey(normalizedKey);
 
   const keys = await db
     .select()
