@@ -641,6 +641,137 @@ export const projectRouter = createTRPCRouter({
       return { totalMessages: result[0]?.count || 0 };
     }),
 
+  getProjectDailyMessages: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        days: z.number().min(1).max(90).default(30),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { projectId, days } = input;
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id,
+      );
+
+      // Get date range
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      // Fetch all messages within the date range
+      const messages = await ctx.db
+        .select({
+          createdAt: schema.messages.createdAt,
+        })
+        .from(schema.messages)
+        .innerJoin(
+          schema.threads,
+          eq(schema.messages.threadId, schema.threads.id),
+        )
+        .where(
+          and(
+            eq(schema.threads.projectId, projectId),
+            gte(schema.messages.createdAt, startDate),
+          ),
+        );
+
+      // Group messages by date
+      const dailyCount = new Map<string, number>();
+
+      // Initialize all dates with 0
+      for (let i = 0; i < days; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split("T")[0];
+        dailyCount.set(dateStr, 0);
+      }
+
+      // Count messages by date
+      messages.forEach((message) => {
+        const dateStr = message.createdAt.toISOString().split("T")[0];
+        const current = dailyCount.get(dateStr) || 0;
+        dailyCount.set(dateStr, current + 1);
+      });
+
+      // Convert to array format for chart
+      const chartData = Array.from(dailyCount.entries()).map(
+        ([date, count]) => ({
+          date,
+          messages: count,
+        }),
+      );
+
+      return chartData;
+    }),
+
+  getProjectDailyThreadErrors: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        days: z.number().min(1).max(90).default(30),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { projectId, days } = input;
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id,
+      );
+
+      // Get date range
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      // Fetch all messages with errors within the date range
+      const errorMessages = await ctx.db
+        .select({
+          createdAt: schema.messages.createdAt,
+        })
+        .from(schema.messages)
+        .innerJoin(
+          schema.threads,
+          eq(schema.messages.threadId, schema.threads.id),
+        )
+        .where(
+          and(
+            eq(schema.threads.projectId, projectId),
+            gte(schema.messages.createdAt, startDate),
+            isNotNull(schema.messages.error),
+          ),
+        );
+
+      // Group error messages by date
+      const dailyCount = new Map<string, number>();
+
+      // Initialize all dates with 0
+      for (let i = 0; i < days; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split("T")[0];
+        dailyCount.set(dateStr, 0);
+      }
+
+      // Count error messages by date
+      errorMessages.forEach((message) => {
+        const dateStr = message.createdAt.toISOString().split("T")[0];
+        const current = dailyCount.get(dateStr) || 0;
+        dailyCount.set(dateStr, current + 1);
+      });
+
+      // Convert to array format for chart
+      const chartData = Array.from(dailyCount.entries()).map(
+        ([date, count]) => ({
+          date,
+          errors: count,
+        }),
+      );
+
+      return chartData;
+    }),
+
   getTotalUsers: protectedProcedure
     .input(z.object({ period: z.string().optional().default("all time") }))
     .query(async ({ ctx, input }) => {

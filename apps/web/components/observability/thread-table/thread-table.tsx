@@ -100,13 +100,13 @@ export const ThreadTable = memo(
     return (
       <div className="space-y-4">
         {/* Search, Filters, and Actions */}
-        <div className="flex items-center justify-between gap-4 mt-2">
+        <div className="flex items-center justify-between gap-4 mt-2 p-2">
           <div className="w-1/4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
                   <SlidersHorizontal className="h-4 w-4" />
-                  <span>Filters</span>
+                  <span>Sort</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
