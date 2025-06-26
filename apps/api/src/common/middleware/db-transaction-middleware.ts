@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { REQUEST } from "@nestjs/core";
-import { decryptApiKey } from "@tambo-ai-cloud/core";
+import { decryptApiKey, decodeApiKey } from "@tambo-ai-cloud/core";
 import {
   getDb,
   HydraDatabase,
@@ -58,8 +58,16 @@ export class TransactionMiddleware implements NestMiddleware {
       throw new UnauthorizedException("API_KEY_SECRET is not configured");
     }
 
-    const projectId = apiKeyHeaderString
-      ? decryptApiKey(apiKeyHeaderString, apiKeySecret).storedString
+    // -------------------------------------------------------------------
+    // Support new "tambo_<base64>" user-facing keys while remaining
+    // backward-compatible with the legacy raw encrypted format.
+    // -------------------------------------------------------------------
+    const normalizedKey = apiKeyHeaderString
+      ? decodeApiKey(apiKeyHeaderString)
+      : null;
+
+    const projectId = normalizedKey
+      ? decryptApiKey(normalizedKey, apiKeySecret).storedString
       : null;
 
     if (!projectId) {
