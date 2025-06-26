@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Graph } from "@/components/ui/tambo/graph";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
+import { AlertCircleIcon } from "lucide-react";
 
 interface DailyThreadErrorsChartProps {
   projectId: string;
@@ -52,24 +53,9 @@ export function DailyThreadErrorsChart({
     );
   }
 
-  if (!dailyErrors?.length) {
-    return (
-      <Card className="border border-none bg-transparent overflow-hidden shadow-none">
-        <CardHeader>
-          <CardTitle className="text-lg">Thread Errors</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
-            No error data available
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   // Process chart data: generate 30-day timeline with error counts
   const errorsMap = new Map(
-    dailyErrors.map((item) => [item.date, item.errors]),
+    dailyErrors?.map((item) => [item.date, item.errors]) || [],
   );
 
   // Create labels and data arrays for the Graph component
@@ -99,6 +85,13 @@ export function DailyThreadErrorsChart({
     ],
   };
 
+  const emptyState = {
+    icon: <AlertCircleIcon className="w-6 h-6" />,
+    title: "No errors yet",
+    description:
+      "This is great! Thread error data will appear here if any issues occur.",
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -124,6 +117,7 @@ export function DailyThreadErrorsChart({
             size="default"
             showLegend={false}
             className="h-72"
+            emptyState={emptyState}
           />
         </CardContent>
       </Card>

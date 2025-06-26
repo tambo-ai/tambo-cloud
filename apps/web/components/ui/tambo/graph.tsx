@@ -64,6 +64,12 @@ export interface GraphProps
   variant?: "default" | "solid" | "bordered";
   /** Size of the graph */
   size?: "default" | "sm" | "lg";
+  /** Custom empty state configuration */
+  emptyState?: {
+    icon?: React.ReactNode;
+    title?: string;
+    description?: string;
+  };
 }
 
 const graphVariants = cva(
@@ -121,7 +127,16 @@ const defaultColors = [
  */
 export const Graph = React.forwardRef<HTMLDivElement, GraphProps>(
   (
-    { className, variant, size, data, title, showLegend = true, ...props },
+    {
+      className,
+      variant,
+      size,
+      data,
+      title,
+      showLegend = true,
+      emptyState,
+      ...props
+    },
     ref,
   ) => {
     // Get thread state
@@ -143,6 +158,15 @@ export const Graph = React.forwardRef<HTMLDivElement, GraphProps>(
       data.datasets &&
       Array.isArray(data.labels) &&
       Array.isArray(data.datasets);
+
+    // Check if data is empty (no data points)
+    const hasData =
+      dataIsValid &&
+      data.datasets.some(
+        (dataset) =>
+          Array.isArray(dataset.data) &&
+          dataset.data.some((value) => value > 0),
+      );
 
     // For non-latest messages, show the graph immediately if data is valid
     // For latest message, only show loading state while generating
@@ -168,6 +192,33 @@ export const Graph = React.forwardRef<HTMLDivElement, GraphProps>(
                     : "Awaiting data"}
               </span>
             </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Show empty state if no data
+    if (!hasData && emptyState) {
+      return (
+        <div
+          ref={ref}
+          className={cn(graphVariants({ variant, size }), className)}
+          {...props}
+        >
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
+            {emptyState.icon && (
+              <div className="items-center justify-center">
+                {emptyState.icon}
+              </div>
+            )}
+            {emptyState.title && (
+              <p className="font-medium">{emptyState.title}</p>
+            )}
+            {emptyState.description && (
+              <p className="text-sm text-center max-w-xs">
+                {emptyState.description}
+              </p>
+            )}
           </div>
         </div>
       );

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Graph } from "@/components/ui/tambo/graph";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
+import { MessageCircleIcon } from "lucide-react";
 
 interface DailyMessagesChartProps {
   projectId: string;
@@ -50,24 +51,9 @@ export function DailyMessagesChart({ projectId }: DailyMessagesChartProps) {
     );
   }
 
-  if (!dailyMessages?.length) {
-    return (
-      <Card className="border border-none bg-transparent overflow-hidden shadow-none">
-        <CardHeader>
-          <CardTitle className="text-lg">Daily Messages</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
-            No message data available
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   // Process chart data: generate 30-day timeline with message counts
   const messagesMap = new Map(
-    dailyMessages.map((item) => [item.date, item.messages]),
+    dailyMessages?.map((item) => [item.date, item.messages]) || [],
   );
 
   // Create labels and data arrays for the Graph component
@@ -97,6 +83,13 @@ export function DailyMessagesChart({ projectId }: DailyMessagesChartProps) {
     ],
   };
 
+  const emptyState = {
+    icon: <MessageCircleIcon className="w-6 h-6" />,
+    title: "No messages yet",
+    description:
+      "Message activity will appear here once your project starts receiving messages.",
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -122,6 +115,7 @@ export function DailyMessagesChart({ projectId }: DailyMessagesChartProps) {
             size="default"
             showLegend={false}
             className="h-72"
+            emptyState={emptyState}
           />
         </CardContent>
       </Card>
