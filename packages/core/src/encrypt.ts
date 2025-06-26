@@ -21,17 +21,6 @@ function getHashedKey(key: string): Buffer {
   return createHash("sha256").update(key).digest();
 }
 
-/**
- * Encrypt an API-key for storage **and** return the user-facing value.
- *
- * Flow:
- *   1.  Create the same `<iv>.<ciphertext>` string we have always stored.
- *   2.  Base-64 it and prefix with `"tambo_"` so that callers never need to care
- *       about our internal representation.
- *
- * The string returned from this function is the **only** value that should be
- * surfaced to users or accepted back from them later.
- */
 export function encryptApiKey(
   storedString: string,
   apiKey: string,
@@ -39,60 +28,73 @@ export function encryptApiKey(
 ): string {
   const secretKey = getHashedKey(apiKeySecret);
   const iv = randomBytes(IV_LENGTH);
+
   const cipher = createCipheriv(algorithm, secretKey, iv);
   const data = `${storedString}.${apiKey}`;
-  let encrypted = cipher.update(data, "utf-8", "hex");
-  encrypted += cipher.final("hex");
-  // Raw `<iv>.<cipher>`
-  const rawEncrypted = `${iv.toString("hex")}.${encrypted}`;
-  // Convert to user-facing format and return
-  return `${TAMBO_PREFIX}${Buffer.from(rawEncrypted, "utf-8").toString(
-    "base64",
-  )}`;
+
+  let encryptedHex = cipher.update(data, "utf8", "hex");
+  encryptedHex += cipher.final("hex");
+
+  // turn hex → raw bytes, concat IV + cipher-text, base64-encode
+  const encryptedBuf = Buffer.from(encryptedHex, "hex");
+  const combined = Buffer.concat([iv, encryptedBuf]);
+
+  return `${TAMBO_PREFIX}${combined.toString("base64")}`;
 }
 
 export function decryptApiKey(
   encryptedData: string,
   apiKeySecret: string,
-): {
-  storedString: string;
-  apiKey: string;
-} {
+): { storedString: string; apiKey: string } {
+  let rawEncrypted: string;
+
   // ------------------------------------------------------------------
-  // Accept either the new `"tambo_<base64>"` value or the old raw value.
+  // 1.  Handle new/old "tambo_<...>" values.
   // ------------------------------------------------------------------
-  let rawEncrypted = encryptedData;
-  if (rawEncrypted.startsWith(TAMBO_PREFIX)) {
-    const base64Part = rawEncrypted.slice(TAMBO_PREFIX.length);
+  if (encryptedData.startsWith(TAMBO_PREFIX)) {
+    const base64Part = encryptedData.slice(TAMBO_PREFIX.length);
+    let decoded: Buffer;
     try {
-      rawEncrypted = Buffer.from(base64Part, "base64").toString("utf-8");
+      decoded = Buffer.from(base64Part, "base64");
     } catch {
-      throw new Error("Invalid API key format");
+      throw new Error("Invalid Base64 in API key");
     }
+
+    // Heuristic: if decode looks like ascii "<iv>.<cipher>" treat as ascii-hex.
+    const asAscii = decoded.toString("utf8");
+    const looksAsciiHex = /^[0-9a-f]+\.[0-9a-f]+$/i.test(asAscii);
+    if (looksAsciiHex) {
+      rawEncrypted = asAscii;
+    } else {
+      if (decoded.length <= IV_LENGTH) {
+        throw new Error("Invalid API key – payload too short");
+      }
+      const ivBuf = decoded.subarray(0, IV_LENGTH);
+      const cipherBuf = decoded.subarray(IV_LENGTH);
+
+      rawEncrypted = `${ivBuf.toString("hex")}.${cipherBuf.toString("hex")}`;
+    }
+  } else {
+    // ----------------------------------------------------------------
+    // 2.  Raw legacy "<ivHex>.<cipherHex>" format.
+    // ----------------------------------------------------------------
+    rawEncrypted = encryptedData;
+  }
+
+  // ------------------------------------------------------------------
+  // Decrypt common "<ivHex>.<cipherHex>" form
+  // ------------------------------------------------------------------
+  const [ivHex, encryptedHex] = splitFromEnd(rawEncrypted, ".");
+  if (!ivHex || !encryptedHex) {
+    throw new Error("Invalid encrypted API key format");
   }
 
   const secretKey = getHashedKey(apiKeySecret);
-
-  const [ivHex, encrypted] = splitFromEnd(rawEncrypted, ".");
-
-  if (!ivHex || !encrypted) {
-    console.error("Invalid encrypted data format in apikey");
-    throw new Error("Invalid apikey format");
-  }
-
   const iv = Buffer.from(ivHex, "hex");
-  const decipher = createDecipheriv(algorithm, secretKey, iv);
 
-  let decrypted: string;
-  try {
-    decrypted = decipher.update(encrypted, "hex", "utf-8");
-    decrypted += decipher.final("utf-8");
-  } catch (error) {
-    console.error(error);
-    throw new Error("Failed to decrypt API key", {
-      cause: error,
-    });
-  }
+  const decipher = createDecipheriv(algorithm, secretKey, iv);
+  let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+  decrypted += decipher.final("utf8");
 
   const [storedString, apiKey] = splitFromEnd(decrypted, ".");
   return { storedString, apiKey };
