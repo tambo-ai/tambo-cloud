@@ -1,6 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { decryptApiKey, hashKey } from "@tambo-ai-cloud/core";
+import {
+  decryptApiKey,
+  hashKey,
+  decodeApiKey,
+} from "@tambo-ai-cloud/core";
 import { Request } from "express";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 import { ProjectsService } from "../projects.service";
@@ -42,6 +46,12 @@ export class ApiKeyGuard implements CanActivate {
       return false;
     }
 
+    // -------------------------------------------------------------------
+    // Support new "tambo_<base64>" user-facing keys while remaining
+    // backward-compatible with the legacy raw encrypted format.
+    // -------------------------------------------------------------------
+    const normalizedKey = decodeApiKey(apiKey);
+
     try {
       const apiKeySecret = this.configService.get<string>("API_KEY_SECRET");
       if (!apiKeySecret) {
@@ -49,12 +59,12 @@ export class ApiKeyGuard implements CanActivate {
       }
 
       const { storedString: projectIdOrLegacyId } = decryptApiKey(
-        apiKey,
+        normalizedKey,
         apiKeySecret,
       );
 
       const projectId = await this.validateApiKeyWithProject(
-        apiKey,
+        normalizedKey,
         projectIdOrLegacyId,
       );
       if (!projectId) {
@@ -75,18 +85,18 @@ export class ApiKeyGuard implements CanActivate {
   }
 
   private async validateApiKeyWithProject(
-    apiKey: string,
+    encryptedKey: string,
     projectIdOrLegacyId: string,
   ): Promise<string | null> {
     try {
       const project =
         await this.projectsService.findOneWithKeys(projectIdOrLegacyId);
       if (!project?.id) {
-        this.logger.error(`Project not found for API key ${apiKey}`);
+        this.logger.error(`Project not found for API key ${encryptedKey}`);
         return null;
       }
 
-      const hashedKey = hashKey(apiKey);
+      const hashedKey = hashKey(encryptedKey);
       const isValid = project
         .getApiKeys()
         .some((key) => key.hashedKey === hashedKey);
