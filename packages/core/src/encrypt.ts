@@ -72,7 +72,7 @@ export function decryptApiKey(
   let rawEncrypted: string;
 
   // ------------------------------------------------------------------
-  // 1.  Handle new/old "tambo_<...>" values.
+  // 1.  Decode modern  "tambo_<base64( IV ⧺ cipherText )>" wrapper.
   // ------------------------------------------------------------------
   if (encryptedData.startsWith(TAMBO_PREFIX)) {
     const base64Part = encryptedData.slice(TAMBO_PREFIX.length);
@@ -83,20 +83,14 @@ export function decryptApiKey(
       throw new Error("Invalid Base64 in API key");
     }
 
-    // Heuristic: if decode looks like ascii "<iv>.<cipher>" treat as ascii-hex.
-    const asAscii = decoded.toString("utf8");
-    const looksAsciiHex = /^[0-9a-f]+\.[0-9a-f]+$/i.test(asAscii);
-    if (looksAsciiHex) {
-      rawEncrypted = asAscii;
-    } else {
-      if (decoded.length <= IV_LENGTH) {
-        throw new Error("Invalid API key – payload too short");
-      }
-      const ivBuf = decoded.subarray(0, IV_LENGTH);
-      const cipherBuf = decoded.subarray(IV_LENGTH);
-
-      rawEncrypted = `${ivBuf.toString("hex")}.${cipherBuf.toString("hex")}`;
+    if (decoded.length <= IV_LENGTH) {
+      throw new Error("Invalid API key – payload too short");
     }
+
+    const ivBuf = decoded.subarray(0, IV_LENGTH);
+    const cipherBuf = decoded.subarray(IV_LENGTH);
+
+    rawEncrypted = `${ivBuf.toString("hex")}.${cipherBuf.toString("hex")}`;
   } else {
     // ----------------------------------------------------------------
     // 2.  Raw legacy "<ivHex>.<cipherHex>" format.
