@@ -13,7 +13,9 @@ import {
   gte,
   inArray,
   isNotNull,
+  sql,
 } from "drizzle-orm";
+import type { HydraDb } from "@tambo-ai-cloud/db";
 import { z } from "zod";
 
 // Helper function to get date filter based on period
@@ -29,6 +31,64 @@ function getDateFilter(period: string): Date | null {
     default:
       return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+//  Reusable helper to fetch per-day counts (messages or errors) directly
+//  from the database. Keeps network traffic low by letting Postgres aggregate.
+// ---------------------------------------------------------------------------
+async function getDailyCounts(
+  db: HydraDb,
+  projectId: string,
+  days: number,
+  { errorsOnly = false }: { errorsOnly?: boolean } = {},
+): Promise<Array<{ date: string; count: number }>> {
+  // Earliest date to include
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  // Build where-conditions
+  const conditions = [
+    eq(schema.threads.projectId, projectId),
+    gte(schema.messages.createdAt, startDate),
+  ];
+  if (errorsOnly) {
+    conditions.push(isNotNull(schema.messages.error));
+  }
+
+  // Postgres DATE(<timestamp>) expression
+  const dateExpr = sql<string>`date(${schema.messages.createdAt})`;
+
+  // Aggregate in a single query
+  const rows = await db
+    .select({
+      date: dateExpr.as("date"),
+      count: count(schema.messages.id).as("count"),
+    })
+    .from(schema.messages)
+    .innerJoin(
+      schema.threads,
+      eq(schema.messages.threadId, schema.threads.id),
+    )
+    .where(and(...conditions))
+    .groupBy(dateExpr)
+    .orderBy(dateExpr);
+
+  // Map results for O(1) look-ups
+  const daily = new Map<string, number>(
+    rows.map((r) => [r.date, Number(r.count ?? 0)]),
+  );
+
+  // Produce zero-filled series
+  const results: Array<{ date: string; count: number }> = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    const key = d.toISOString().split("T")[0];
+    results.push({ date: key, count: daily.get(key) ?? 0 });
+  }
+
+  return results;
 }
 
 export const projectRouter = createTRPCRouter({
@@ -639,137 +699,6 @@ export const projectRouter = createTRPCRouter({
         .where(and(...whereConditions));
 
       return { totalMessages: result[0]?.count || 0 };
-    }),
-
-  getProjectDailyMessages: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        days: z.number().min(1).max(90).default(30),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const { projectId, days } = input;
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
-
-      // Get date range
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-
-      // Fetch all messages within the date range
-      const messages = await ctx.db
-        .select({
-          createdAt: schema.messages.createdAt,
-        })
-        .from(schema.messages)
-        .innerJoin(
-          schema.threads,
-          eq(schema.messages.threadId, schema.threads.id),
-        )
-        .where(
-          and(
-            eq(schema.threads.projectId, projectId),
-            gte(schema.messages.createdAt, startDate),
-          ),
-        );
-
-      // Group messages by date
-      const dailyCount = new Map<string, number>();
-
-      // Initialize all dates with 0
-      for (let i = 0; i < days; i++) {
-        const date = new Date(startDate);
-        date.setDate(date.getDate() + i);
-        const dateStr = date.toISOString().split("T")[0];
-        dailyCount.set(dateStr, 0);
-      }
-
-      // Count messages by date
-      messages.forEach((message) => {
-        const dateStr = message.createdAt.toISOString().split("T")[0];
-        const current = dailyCount.get(dateStr) || 0;
-        dailyCount.set(dateStr, current + 1);
-      });
-
-      // Convert to array format for chart
-      const chartData = Array.from(dailyCount.entries()).map(
-        ([date, count]) => ({
-          date,
-          messages: count,
-        }),
-      );
-
-      return chartData;
-    }),
-
-  getProjectDailyThreadErrors: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        days: z.number().min(1).max(90).default(30),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const { projectId, days } = input;
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
-
-      // Get date range
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
-
-      // Fetch all messages with errors within the date range
-      const errorMessages = await ctx.db
-        .select({
-          createdAt: schema.messages.createdAt,
-        })
-        .from(schema.messages)
-        .innerJoin(
-          schema.threads,
-          eq(schema.messages.threadId, schema.threads.id),
-        )
-        .where(
-          and(
-            eq(schema.threads.projectId, projectId),
-            gte(schema.messages.createdAt, startDate),
-            isNotNull(schema.messages.error),
-          ),
-        );
-
-      // Group error messages by date
-      const dailyCount = new Map<string, number>();
-
-      // Initialize all dates with 0
-      for (let i = 0; i < days; i++) {
-        const date = new Date(startDate);
-        date.setDate(date.getDate() + i);
-        const dateStr = date.toISOString().split("T")[0];
-        dailyCount.set(dateStr, 0);
-      }
-
-      // Count error messages by date
-      errorMessages.forEach((message) => {
-        const dateStr = message.createdAt.toISOString().split("T")[0];
-        const current = dailyCount.get(dateStr) || 0;
-        dailyCount.set(dateStr, current + 1);
-      });
-
-      // Convert to array format for chart
-      const chartData = Array.from(dailyCount.entries()).map(
-        ([date, count]) => ({
-          date,
-          errors: count,
-        }),
-      );
-
-      return chartData;
     }),
 
   getTotalUsers: protectedProcedure
