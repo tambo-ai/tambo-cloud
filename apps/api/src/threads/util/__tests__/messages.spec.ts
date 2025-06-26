@@ -88,7 +88,7 @@ describe("messages utilities", () => {
         toolCallId: undefined,
         componentState: {},
         error: undefined,
-        isCancelled: undefined,
+        isCancelled: false,
       });
 
       expect(result).toEqual({
@@ -148,7 +148,6 @@ describe("messages utilities", () => {
         toolCallRequest: undefined,
         toolCallId: undefined,
         error: undefined,
-        isCancelled: undefined,
       });
 
       expect(result).toEqual({
@@ -166,7 +165,7 @@ describe("messages utilities", () => {
         metadata: undefined,
         actionType: undefined,
         componentDecision: null,
-        error: null,
+        error: undefined,
         isCancelled: false,
       });
     });
