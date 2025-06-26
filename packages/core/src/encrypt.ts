@@ -16,6 +16,10 @@ const IV_LENGTH = 16; // 16 bytes for AES
 /** Prefix for user-facing API keys – intentionally NOT exported. */
 const TAMBO_PREFIX = "tambo_";
 
+/** Strict Base64 check (standard “+/=” alphabet, length multiple of 4, no whitespace). */
+const BASE64_REGEX =
+  /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+
 // Hashing to ensure 32-byte key length for AES-256
 function getHashedKey(key: string): Buffer {
   return createHash("sha256").update(key).digest();
@@ -76,6 +80,10 @@ export function decryptApiKey(
   // ------------------------------------------------------------------
   if (encryptedData.startsWith(TAMBO_PREFIX)) {
     const base64Part = encryptedData.slice(TAMBO_PREFIX.length);
+    // Reject anything that is not valid, padding–correct Base64.
+    if (!BASE64_REGEX.test(base64Part)) {
+      throw new Error("Invalid Base64 in API key");
+    }
     let decoded: Buffer;
     try {
       decoded = Buffer.from(base64Part, "base64");
