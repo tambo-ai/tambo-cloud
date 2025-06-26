@@ -8,6 +8,7 @@ import { APIKeyList } from "@/components/dashboard-components/project-details/ap
 import { AvailableMcpServers } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import { CustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
 import { ProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
+import { SettingsPageSkeleton } from "@/components/skeletons/settings-skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -161,11 +162,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
   };
 
   if (isLoadingProject) {
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <Card className="h-32 animate-pulse mt-6" />
-      </motion.div>
-    );
+    return <SettingsPageSkeleton />;
   }
 
   if (!project) {

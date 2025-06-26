@@ -1,6 +1,7 @@
 "use client";
 
 import { DeleteConfirmationDialog } from "@/components/dashboard-components/delete-confirmation-dialog";
+import { ThreadTableSkeleton } from "@/components/skeletons/observability-skeletons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -88,11 +89,7 @@ export const ThreadTable = memo(
     );
 
     if (isLoading) {
-      return (
-        <div className="w-full h-32 flex items-center justify-center">
-          <div className="animate-pulse bg-muted rounded-lg w-full h-full" />
-        </div>
-      );
+      return <ThreadTableSkeleton />;
     }
 
     const hasThreads = threads && threads.length > 0;

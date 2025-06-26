@@ -1,8 +1,10 @@
+import { ThreadMessagesModalSkeleton } from "@/components/skeletons/observability-skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -21,12 +23,14 @@ interface ThreadMessagesModalProps {
   thread: ThreadType;
   isOpen: boolean;
   onClose: () => void;
+  isLoading?: boolean;
 }
 
 export function ThreadMessagesModal({
   thread,
   isOpen,
   onClose,
+  isLoading = false,
 }: Readonly<ThreadMessagesModalProps>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
@@ -79,55 +83,65 @@ export function ThreadMessagesModal({
         side="right"
         className="w-3/4 max-w-4xl sm:max-w-4xl p-6 [&>button]:hidden flex flex-col gap-4"
       >
-        <SheetHeader className="flex flex-row items-center justify-between flex-shrink-0">
-          <div className="flex flex-col gap-1">
-            <SheetTitle className="text-left text-primary">
-              <span>Thread {thread.id}</span>
-            </SheetTitle>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="hover:bg-transparent"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </SheetHeader>
+        {isLoading ? (
+          <ThreadMessagesModalSkeleton />
+        ) : (
+          <>
+            <SheetHeader className="flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <SheetTitle className="text-left text-primary">
+                  Thread {thread.id}
+                </SheetTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="hover:bg-transparent"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </Button>
+              </div>
+              <SheetDescription className="sr-only">
+                View messages and details for thread {thread.id}
+              </SheetDescription>
+            </SheetHeader>
 
-        <div className="space-y-4 mt-1 flex-shrink-0">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground" />
-            <Input
-              placeholder="Search chat log..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 text-primary"
-            />
-          </div>
-        </div>
+            <div className="space-y-4 mt-1 flex-shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground" />
+                <Input
+                  placeholder="Search chat log..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 text-primary"
+                />
+              </div>
+            </div>
 
-        <div className="flex-shrink-0">
-          <StatsHeader
-            stats={stats}
-            messageItems={messageItems}
-            componentItems={componentItems}
-            errorItems={errorItems}
-            toolItems={toolItems}
-            openSections={openSections}
-            onToggleSection={toggleSection}
-            onScrollToMessage={scrollToMessage}
-          />
-        </div>
+            <div className="flex-shrink-0">
+              <StatsHeader
+                stats={stats}
+                messageItems={messageItems}
+                componentItems={componentItems}
+                errorItems={errorItems}
+                toolItems={toolItems}
+                openSections={openSections}
+                onToggleSection={toggleSection}
+                onScrollToMessage={scrollToMessage}
+              />
+            </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar-track]:hidden [&::-webkit-scrollbar-thumb]:hidden">
-          <ThreadMessages
-            thread={thread}
-            searchQuery={searchQuery}
-            messageRefs={messageRefs}
-            highlightedMessageId={highlightedMessageId}
-          />
-        </div>
+            <div className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar-track]:hidden [&::-webkit-scrollbar-thumb]:hidden">
+              <ThreadMessages
+                thread={thread}
+                searchQuery={searchQuery}
+                messageRefs={messageRefs}
+                highlightedMessageId={highlightedMessageId}
+              />
+            </div>
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );
