@@ -1,7 +1,7 @@
 "use client";
 
 import { DailyMessagesChart } from "@/components/dashboard-components/project-details/daily-messages-chart";
-import { DailyThreadErrorsChart } from "@/components/dashboard-components/project-details/daily-thread-errors-chart";
+// import { DailyThreadErrorsChart } from "@/components/dashboard-components/project-details/daily-thread-errors-chart";
 import { ProjectInfo } from "@/components/dashboard-components/project-details/project-info";
 import { Card } from "@/components/ui/card";
 import { api } from "@/trpc/react";
@@ -51,7 +51,9 @@ export function ProjectOverview({ projectId }: ProjectOverviewProps) {
       />
       <div>
         <DailyMessagesChart projectId={projectId} />
-        <DailyThreadErrorsChart projectId={projectId} />
+
+        {/* TODO: Add back in when we have error tracking */}
+        {/* <DailyThreadErrorsChart projectId={projectId} /> */}
       </div>
     </motion.div>
   );

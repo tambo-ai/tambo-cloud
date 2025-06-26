@@ -66,10 +66,7 @@ async function getDailyCounts(
       count: count(schema.messages.id).as("count"),
     })
     .from(schema.messages)
-    .innerJoin(
-      schema.threads,
-      eq(schema.messages.threadId, schema.threads.id),
-    )
+    .innerJoin(schema.threads, eq(schema.messages.threadId, schema.threads.id))
     .where(and(...conditions))
     .groupBy(dateExpr)
     .orderBy(dateExpr);
