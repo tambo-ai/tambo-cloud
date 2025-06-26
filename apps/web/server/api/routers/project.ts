@@ -724,11 +724,11 @@ export const projectRouter = createTRPCRouter({
       // Re-use helper that does all SQL aggregation & zero-fill
       const data = await getDailyCounts(ctx.db, projectId, days);
 
-      return {
-        projectId,
-        days,
-        data,
-      };
+      // Shape expected by the client: [{ date, messages }]
+      return data.map(({ date, count }) => ({
+        date,
+        messages: count,
+      }));
     }),
 
   getProjectDailyThreadErrors: protectedProcedure
@@ -753,11 +753,11 @@ export const projectRouter = createTRPCRouter({
         errorsOnly: true,
       });
 
-      return {
-        projectId,
-        days,
-        data,
-      };
+      // Shape expected by the client: [{ date, errors }]
+      return data.map(({ date, count }) => ({
+        date,
+        errors: count,
+      }));
     }),
 
   getTotalUsers: protectedProcedure
