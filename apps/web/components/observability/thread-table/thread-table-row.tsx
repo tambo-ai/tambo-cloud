@@ -69,6 +69,15 @@ export const ThreadRow = memo(
           </div>
         </TableCell>
 
+        <TableCell className="py-2 text-sm px-4 text-primary">
+          <div className="flex flex-col gap-1">
+            <span>{formatDateThreadTable(thread.updatedAt).date}</span>
+            <span className="text-xs text-foreground">
+              {formatDateThreadTable(thread.updatedAt).time}
+            </span>
+          </div>
+        </TableCell>
+
         <TableCell className="py-2 text-sm px-4 hidden sm:table-cell">
           <div className="flex items-center gap-1">
             <code className="text-xs bg-info text-info px-1.5 py-0.5 rounded">

@@ -137,7 +137,8 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     return {
       id: thread.id,
       name: thread.name || null,
-      createdAt: thread.createdAt.toLocaleString(),
+      createdAt: thread.createdAt.toISOString(),
+      updatedAt: thread.updatedAt.toISOString(),
       contextKey: thread.contextKey || "user_context_key",
       messages: thread.messages?.length || 0,
       tools: stats.tools,

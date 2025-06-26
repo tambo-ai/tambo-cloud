@@ -238,7 +238,7 @@ export const ThreadTable = memo(
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center py-2 text-sm text-muted-foreground"
                     >
                       {searchQuery

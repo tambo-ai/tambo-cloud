@@ -1,30 +1,15 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { Graph } from "@/components/ui/tambo/graph";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
 
 interface DailyMessagesChartProps {
   projectId: string;
 }
 
-const chartConfig = {
-  messages: {
-    label: "Messages",
-    color: "hsl(var(--chart-6))",
-  },
-};
-
-const formatDate = (
-  dateString: string,
-  format: "chart" | "tooltip" | "header",
-): string => {
+const formatDate = (dateString: string, format: "chart" | "header"): string => {
   const date = new Date(dateString);
 
   switch (format) {
@@ -32,12 +17,6 @@ const formatDate = (
       return date.toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",
-      });
-    case "tooltip":
-      return date.toLocaleDateString(undefined, {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
       });
     case "header":
       return date.toLocaleDateString(undefined, {
@@ -90,25 +69,32 @@ export function DailyMessagesChart({ projectId }: DailyMessagesChartProps) {
   const messagesMap = new Map(
     dailyMessages.map((item) => [item.date, item.messages]),
   );
-  const chartData = Array.from({ length: 30 }, (_, i) => {
+
+  // Create labels and data arrays for the Graph component
+  const labels: string[] = [];
+  const data: number[] = [];
+
+  Array.from({ length: 30 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (29 - i));
     const dateString = date.toISOString().split("T")[0];
-    return {
-      date: dateString,
-      messages: messagesMap.get(dateString) || 0,
-      formattedDate: formatDate(dateString, "chart"),
-    };
+    const formattedDate = formatDate(dateString, "chart");
+
+    labels.push(formattedDate);
+    data.push(messagesMap.get(dateString) || 0);
   });
 
-  // Show only first and last dates on x-axis
-  const tickFormatter = (value: string, index: number) =>
-    index === 0 || index === chartData.length - 1 ? value : "";
-
-  // Format the label for the tooltip
-  const labelFormatter = (label: string) => {
-    const item = chartData.find((d) => d.formattedDate === label);
-    return item ? formatDate(item.date, "tooltip") : label;
+  // Transform data for the new Graph component
+  const graphData = {
+    type: "bar" as const,
+    labels,
+    datasets: [
+      {
+        label: "Messages",
+        data,
+        color: "hsl(var(--chart-6))",
+      },
+    ],
   };
 
   return (
@@ -130,35 +116,13 @@ export function DailyMessagesChart({ projectId }: DailyMessagesChartProps) {
           </p>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-64 w-full">
-            <BarChart data={chartData}>
-              <XAxis
-                dataKey="formattedDate"
-                tick={{ fontSize: 12 }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={tickFormatter}
-              />
-              <YAxis
-                tick={{ fontSize: 12, dx: -30 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value, _name) => [`${value} messages`]}
-                    labelFormatter={labelFormatter}
-                  />
-                }
-              />
-              <Bar
-                dataKey="messages"
-                fill={chartConfig.messages.color}
-                radius={[3, 3, 0, 0]}
-              />
-            </BarChart>
-          </ChartContainer>
+          <Graph
+            data={graphData}
+            variant="default"
+            size="default"
+            showLegend={false}
+            className="h-72"
+          />
         </CardContent>
       </Card>
     </motion.div>

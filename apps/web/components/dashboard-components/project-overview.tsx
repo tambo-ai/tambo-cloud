@@ -49,8 +49,10 @@ export function ProjectOverview({ projectId }: ProjectOverviewProps) {
         project={project}
         createdAt={new Date(project.createdAt).toLocaleDateString()}
       />
-      <DailyMessagesChart projectId={projectId} />
-      <DailyThreadErrorsChart projectId={projectId} />
+      <div>
+        <DailyMessagesChart projectId={projectId} />
+        <DailyThreadErrorsChart projectId={projectId} />
+      </div>
     </motion.div>
   );
 }

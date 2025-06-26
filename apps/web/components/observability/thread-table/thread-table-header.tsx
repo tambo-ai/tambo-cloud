@@ -37,17 +37,17 @@ export function ThreadTableHeader({
         </TableHead>
         <TableHead
           className="cursor-pointer text-sm font-medium px-4"
-          onClick={() => onSort("date")}
+          onClick={() => onSort("created")}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              onSort("date");
+              onSort("created");
             }
           }}
-          aria-label={`Sort by date, currently ${
-            currentField === "date"
+          aria-label={`Sort by created date, currently ${
+            currentField === "created"
               ? direction === "asc"
                 ? "ascending"
                 : "descending"
@@ -55,9 +55,37 @@ export function ThreadTableHeader({
           }`}
         >
           <div className="flex text-foreground items-center gap-2">
-            Date{" "}
+            Created{" "}
             <SortIcon
-              field="date"
+              field="created"
+              currentField={currentField}
+              direction={direction}
+            />
+          </div>
+        </TableHead>
+        <TableHead
+          className="cursor-pointer text-sm font-medium px-4"
+          onClick={() => onSort("updated")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSort("updated");
+            }
+          }}
+          aria-label={`Sort by updated date, currently ${
+            currentField === "updated"
+              ? direction === "asc"
+                ? "ascending"
+                : "descending"
+              : "not sorted"
+          }`}
+        >
+          <div className="flex text-foreground items-center gap-2">
+            Updated{" "}
+            <SortIcon
+              field="updated"
               currentField={currentField}
               direction={direction}
             />
