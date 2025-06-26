@@ -31,7 +31,7 @@ export function AuthForm({ routeOnSuccess = "/dashboard" }: AuthFormProps) {
           redirectTo: `${window.location.origin}${routeOnSuccess}`,
           queryParams: {
             // workos_provider: "GoogleOAuth"
-            organization: "org_01JYEX2XE7EKRVPVDTYP19YA90",
+            // organization: "org_01JYEX2XE7EKRVPVDTYP19YA90",
           },
         },
       });
