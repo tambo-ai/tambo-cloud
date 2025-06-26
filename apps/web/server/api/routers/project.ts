@@ -701,6 +701,65 @@ export const projectRouter = createTRPCRouter({
       return { totalMessages: result[0]?.count || 0 };
     }),
 
+  /* -------------------------------------------------------------------- */
+  /*  NEW: Per-day message & error counts                                  */
+  /* -------------------------------------------------------------------- */
+  getProjectDailyMessages: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        days: z.number().min(1).max(90).default(30),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { projectId, days } = input;
+
+      // Authorisation – ensure the caller may access this project
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id,
+      );
+
+      // Re-use helper that does all SQL aggregation & zero-fill
+      const data = await getDailyCounts(ctx.db, projectId, days);
+
+      return {
+        projectId,
+        days,
+        data,
+      };
+    }),
+
+  getProjectDailyThreadErrors: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        days: z.number().min(1).max(90).default(30),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { projectId, days } = input;
+
+      // Re-use the same authorisation check as above
+      await operations.ensureProjectAccess(
+        ctx.db,
+        projectId,
+        ctx.session.user.id,
+      );
+
+      // Same helper, but with errorsOnly = true so we only count errored messages
+      const data = await getDailyCounts(ctx.db, projectId, days, {
+        errorsOnly: true,
+      });
+
+      return {
+        projectId,
+        days,
+        data,
+      };
+    }),
+
   getTotalUsers: protectedProcedure
     .input(z.object({ period: z.string().optional().default("all time") }))
     .query(async ({ ctx, input }) => {
