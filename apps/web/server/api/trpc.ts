@@ -141,12 +141,12 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
      * the transaction.  If the incoming JWT’s `role` claim is not in this list
      * (or is absent), we fall back to the least-privileged `anon` role.
      */
-    const allowedRoles = new Set([
+    const allowedRoles = new Set<string>([
       "postgres",
       "anon",
       "authenticated",
       "service_role",
-    ] as const);
+    ]);
 
     const requestedRole = claims?.role ?? "anon";
     const safeRole = allowedRoles.has(requestedRole) ? requestedRole : "anon";
