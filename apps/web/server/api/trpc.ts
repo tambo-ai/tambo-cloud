@@ -136,7 +136,21 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
   return await ctx.db.transaction(async (tx) => {
     const claims = ctx.claims;
 
-    console.log("Transaction middleware claims", claims);
+    /**
+     * Whitelisted roles that a request is allowed to assume when running inside
+     * the transaction.  If the incoming JWT’s `role` claim is not in this list
+     * (or is absent), we fall back to the least-privileged `anon` role.
+     */
+    const allowedRoles = new Set([
+      "postgres",
+      "anon",
+      "authenticated",
+      "service_role",
+    ] as const);
+
+    const requestedRole = claims?.role ?? "anon";
+    const safeRole = allowedRoles.has(requestedRole) ? requestedRole : "anon";
+
     try {
       await tx.execute(sql`
         -- auth.jwt()
@@ -148,7 +162,7 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
           claims?.sub ?? "",
         )}', TRUE);												
         -- set local role
-        set local role ${sql.raw(claims?.role ?? "anon")};
+        set local role ${sql.raw(safeRole)};
       `);
       return await next({ ctx: { ...ctx, db: tx } });
     } catch (error) {
