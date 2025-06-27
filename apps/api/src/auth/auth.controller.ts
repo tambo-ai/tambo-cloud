@@ -157,7 +157,9 @@ export class AuthController {
         throw error;
       }
 
-      throw new UnauthorizedException("Invalid OAuth subject token");
+      throw new UnauthorizedException("Invalid OAuth subject token", {
+        cause: error,
+      });
     }
   }
 }
