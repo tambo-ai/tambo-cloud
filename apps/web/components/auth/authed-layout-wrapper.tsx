@@ -64,13 +64,13 @@ export function AuthedLayoutWrapper({
       data: { subscription },
     } = getSupabaseClient().auth.onAuthStateChange((_event, session) => {
       // If user signs out, redirect to login
-      if (!session || !workosUser) {
+      if (!session) {
         router.replace(`/login?returnUrl=${encodeURIComponent(pathname)}`);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [hasValidSession, pathname, code, router, isSessionLoading, workosUser]);
+  }, [hasValidSession, pathname, code, router, isSessionLoading]);
 
   // Show loading state while checking authentication
   if (isCheckingAuth) {
