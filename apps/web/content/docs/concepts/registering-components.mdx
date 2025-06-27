@@ -134,6 +134,8 @@ registerComponent({
 });
 ```
 
+Note that when using zod's `.optional()` on a field, tambo may not attempt to generate any value for the prop.
+
 You can also use `z.describe()` to provide extra guidance to the AI:
 
 ```tsx
