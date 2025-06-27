@@ -13,7 +13,9 @@ import {
   gte,
   inArray,
   isNotNull,
+  sql,
 } from "drizzle-orm";
+import type { HydraDb } from "@tambo-ai-cloud/db";
 import { z } from "zod";
 
 // Helper function to get date filter based on period
@@ -31,9 +33,64 @@ function getDateFilter(period: string): Date | null {
   }
 }
 
+// ---------------------------------------------------------------------------
+//  Reusable helper to fetch per-day counts (messages or errors) directly
+//  from the database. Keeps network traffic low by letting Postgres aggregate.
+// ---------------------------------------------------------------------------
+async function getDailyCounts(
+  db: HydraDb,
+  projectId: string,
+  days: number,
+  { errorsOnly = false }: { errorsOnly?: boolean } = {},
+): Promise<Array<{ date: string; count: number }>> {
+  // Earliest date to include
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - (days - 1));
+
+  // Build where-conditions
+  const conditions = [
+    eq(schema.threads.projectId, projectId),
+    gte(schema.messages.createdAt, startDate),
+  ];
+  if (errorsOnly) {
+    conditions.push(isNotNull(schema.messages.error));
+  }
+
+  // Postgres DATE(<timestamp>) expression
+  const dateExpr = sql<string>`date(${schema.messages.createdAt})`;
+
+  // Aggregate in a single query
+  const rows = await db
+    .select({
+      date: dateExpr.as("date"),
+      count: count(schema.messages.id).as("count"),
+    })
+    .from(schema.messages)
+    .innerJoin(schema.threads, eq(schema.messages.threadId, schema.threads.id))
+    .where(and(...conditions))
+    .groupBy(dateExpr)
+    .orderBy(dateExpr);
+
+  // Map results for O(1) look-ups
+  const daily = new Map<string, number>(
+    rows.map((r) => [r.date, Number(r.count ?? 0)]),
+  );
+
+  // Produce zero-filled series
+  const results: Array<{ date: string; count: number }> = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    const key = d.toISOString().split("T")[0];
+    results.push({ date: key, count: daily.get(key) ?? 0 });
+  }
+
+  return results;
+}
+
 export const projectRouter = createTRPCRouter({
   getUserProjects: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
+    const userId = ctx.user.id;
     const projects = await operations.getProjectsForUser(ctx.db, userId);
 
     // ---------------------------------------------------------------------
@@ -99,7 +156,7 @@ export const projectRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       return await operations.createProject(ctx.db, {
         name: input,
-        userId: ctx.session.user.id,
+        userId: ctx.user.id,
       });
     }),
   createProject2: protectedProcedure
@@ -126,7 +183,7 @@ export const projectRouter = createTRPCRouter({
       const project = await ctx.db.transaction(async (tx) => {
         const createdProject = await operations.createProject(tx, {
           name,
-          userId: ctx.session.user.id,
+          userId: ctx.user.id,
           customInstructions: customInstructions ?? undefined,
           defaultLlmProviderName: undefined,
           defaultLlmModelName: undefined,
@@ -178,11 +235,7 @@ export const projectRouter = createTRPCRouter({
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       const project = await ctx.db.query.projects.findFirst({
         where: eq(schema.projects.id, projectId),
@@ -234,11 +287,7 @@ export const projectRouter = createTRPCRouter({
         customLlmBaseURL,
         maxInputTokens,
       } = input;
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       const updatedProject = await operations.updateProject(ctx.db, projectId, {
         name,
@@ -271,7 +320,7 @@ export const projectRouter = createTRPCRouter({
       return {
         id: updatedProject.id,
         name: updatedProject.name,
-        userId: ctx.session.user.id,
+        userId: ctx.user.id,
         customInstructions: updatedProject.customInstructions,
         defaultLlmProviderName: updatedProject.defaultLlmProviderName,
         defaultLlmModelName: updatedProject.defaultLlmModelName,
@@ -304,11 +353,7 @@ export const projectRouter = createTRPCRouter({
 
       // Ensure the user has access to the project before performing any further
       // (potentially expensive) validation logic.
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       // Always work with one trimmed instance so we don't repeat `trim()` calls
       const sanitizedBaseURL =
@@ -434,18 +479,14 @@ export const projectRouter = createTRPCRouter({
   removeProject: protectedProcedure
     .input(z.string())
     .mutation(async ({ ctx, input: projectId }) => {
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
       await operations.deleteProject(ctx.db, projectId);
     }),
 
   removeMultipleProjects: protectedProcedure
     .input(z.array(z.string()).min(1, "At least one project ID is required"))
     .mutation(async ({ ctx, input: projectIds }) => {
-      const userId = ctx.session.user.id;
+      const userId = ctx.user.id;
 
       // 1. Ensure the user can access every project (in parallel for speed)
       await Promise.all(
@@ -475,11 +516,7 @@ export const projectRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { projectId, provider: providerName, providerKey } = input;
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       // First delete any existing key for this provider
       await ctx.db
@@ -500,7 +537,7 @@ export const projectRouter = createTRPCRouter({
             projectId,
             providerName,
             providerKey,
-            userId: ctx.session.user.id,
+            userId: ctx.user.id,
           },
         );
       }
@@ -511,11 +548,7 @@ export const projectRouter = createTRPCRouter({
   getProviderKeys: protectedProcedure
     .input(z.string())
     .query(async ({ ctx, input: projectId }) => {
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
       return await operations.getProviderKeys(ctx.db, projectId);
     }),
 
@@ -528,18 +561,14 @@ export const projectRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { projectId, name } = input;
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       const encryptedKey = await operations.createApiKey(
         ctx.db,
         env.API_KEY_SECRET,
         {
           projectId,
-          userId: ctx.session.user.id,
+          userId: ctx.user.id,
           name,
         },
       );
@@ -553,18 +582,14 @@ export const projectRouter = createTRPCRouter({
 
       return {
         ...newKey,
-        apiKey: encryptedKey,
+        apiKey: encryptedKey, // already in user-facing format
       };
     }),
 
   getApiKeys: protectedProcedure
     .input(z.string())
     .query(async ({ ctx, input: projectId }) => {
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
       return await operations.getApiKeys(ctx.db, projectId);
     }),
 
@@ -579,7 +604,7 @@ export const projectRouter = createTRPCRouter({
       await operations.ensureProjectAccess(
         ctx.db,
         input.projectId,
-        ctx.session.user.id,
+        ctx.user.id,
       );
       await operations.deleteApiKey(ctx.db, input.projectId, input.apiKeyId);
     }),
@@ -588,11 +613,7 @@ export const projectRouter = createTRPCRouter({
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       const usage = await operations.getProjectMessageUsage(ctx.db, projectId);
       if (!usage) {
@@ -612,7 +633,7 @@ export const projectRouter = createTRPCRouter({
     .input(z.object({ period: z.string().optional().default("all time") }))
     .query(async ({ ctx, input }) => {
       const { period } = input;
-      const userId = ctx.session.user.id;
+      const userId = ctx.user.id;
       const projects = await operations.getProjectsForUser(ctx.db, userId);
       const projectIds = projects.map((p) => p.id);
 
@@ -641,11 +662,62 @@ export const projectRouter = createTRPCRouter({
       return { totalMessages: result[0]?.count || 0 };
     }),
 
+  /* -------------------------------------------------------------------- */
+  /*  NEW: Per-day message & error counts                                  */
+  /* -------------------------------------------------------------------- */
+  getProjectDailyMessages: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        days: z.number().min(1).max(90).default(30),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { projectId, days } = input;
+
+      // Authorisation – ensure the caller may access this project
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
+
+      // Re-use helper that does all SQL aggregation & zero-fill
+      const data = await getDailyCounts(ctx.db, projectId, days);
+
+      // Shape expected by the client: [{ date, messages }]
+      return data.map(({ date, count }) => ({
+        date,
+        messages: count,
+      }));
+    }),
+
+  getProjectDailyThreadErrors: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        days: z.number().min(1).max(90).default(30),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { projectId, days } = input;
+
+      // Re-use the same authorisation check as above
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
+
+      // Same helper, but with errorsOnly = true so we only count errored messages
+      const data = await getDailyCounts(ctx.db, projectId, days, {
+        errorsOnly: true,
+      });
+
+      // Shape expected by the client: [{ date, errors }]
+      return data.map(({ date, count }) => ({
+        date,
+        errors: count,
+      }));
+    }),
+
   getTotalUsers: protectedProcedure
     .input(z.object({ period: z.string().optional().default("all time") }))
     .query(async ({ ctx, input }) => {
       const { period } = input;
-      const userId = ctx.session.user.id;
+      const userId = ctx.user.id;
       const projects = await operations.getProjectsForUser(ctx.db, userId);
       const projectIds = projects.map((p) => p.id);
 
@@ -687,11 +759,7 @@ export const projectRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { projectId, limit = 20 } = input;
 
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       return await operations.getRecentProjectLogEntries(
         ctx.db,
