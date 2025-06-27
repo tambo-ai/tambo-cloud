@@ -45,7 +45,7 @@ async function getDailyCounts(
 ): Promise<Array<{ date: string; count: number }>> {
   // Earliest date to include
   const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
+  startDate.setDate(startDate.getDate() - (days - 1));
 
   // Build where-conditions
   const conditions = [
