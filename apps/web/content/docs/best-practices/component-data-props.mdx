@@ -35,7 +35,7 @@ registerComponent({
         date: z.string(),
         location: z.string(),
         attendees: z.array(z.string()),
-      }),
+      })
     ),
   }),
 });
@@ -89,7 +89,6 @@ Tambo.registerComponent({
       endDate: z.string(),
     }),
   }),
-  associatedTools: [meetingsTool],
 });
 ```
 
