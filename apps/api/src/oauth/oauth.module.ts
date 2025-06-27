@@ -2,10 +2,10 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { LoggerModule } from "../common/logger.module";
 import { ProjectsModule } from "../projects/projects.module";
-import { AuthController } from "./auth.controller";
+import { OAuthController } from "./oauth.controller";
 
 @Module({
   imports: [ConfigModule, LoggerModule, ProjectsModule],
-  controllers: [AuthController],
+  controllers: [OAuthController],
 })
-export class AuthModule {}
+export class OAuthModule {}

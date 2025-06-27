@@ -1,6 +1,10 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
+@ApiSchema({
+  name: "OAuthTokenRequest",
+  description: "OAuth 2.0 Token Exchange Endpoint",
+})
 export class OAuthTokenRequestDto {
   @ApiProperty({
     description:

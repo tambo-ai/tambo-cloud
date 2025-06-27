@@ -23,14 +23,14 @@ import {
 import { CorrelationLoggerService } from "../common/services/logger.service";
 import { ApiKeyGuard, ProjectId } from "../projects/guards/apikey.guard";
 
-@ApiTags("Auth")
-@Controller("auth")
-export class AuthController {
+@ApiTags("OAuth")
+@Controller("oauth")
+export class OAuthController {
   constructor(private readonly logger: CorrelationLoggerService) {}
 
   @ApiSecurity("apiKey")
   @UseGuards(ApiKeyGuard)
-  @Post("oauth/token")
+  @Post("token")
   @ApiConsumes("application/x-www-form-urlencoded")
   @ApiOperation({
     summary: "OAuth 2.0 Token Exchange Endpoint",

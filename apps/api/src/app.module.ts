@@ -7,7 +7,6 @@ import {
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
-import { AuthModule } from "./auth/auth.module";
 import { LoggerModule } from "./common/logger.module";
 import {
   DATABASE,
@@ -20,6 +19,7 @@ import { AuthService } from "./common/services/auth.service";
 import { EmailService } from "./common/services/email.service";
 import { ConfigServiceSingleton } from "./config.service";
 import { ExtractorModule } from "./extractor/extractor.module";
+import { OAuthModule } from "./oauth/oauth.module";
 import { ProjectsModule } from "./projects/projects.module";
 import { RegistryModule } from "./registry/registry.module";
 import { ThreadsModule } from "./threads/threads.module";
@@ -35,7 +35,7 @@ export class GlobalModule {}
   imports: [
     ConfigModule.forRoot(),
     LoggerModule,
-    AuthModule,
+    OAuthModule,
     ProjectsModule,
     RegistryModule,
     ExtractorModule,
