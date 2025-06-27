@@ -676,11 +676,7 @@ export const projectRouter = createTRPCRouter({
       const { projectId, days } = input;
 
       // Authorisation – ensure the caller may access this project
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       // Re-use helper that does all SQL aggregation & zero-fill
       const data = await getDailyCounts(ctx.db, projectId, days);
@@ -703,11 +699,7 @@ export const projectRouter = createTRPCRouter({
       const { projectId, days } = input;
 
       // Re-use the same authorisation check as above
-      await operations.ensureProjectAccess(
-        ctx.db,
-        projectId,
-        ctx.session.user.id,
-      );
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       // Same helper, but with errorsOnly = true so we only count errored messages
       const data = await getDailyCounts(ctx.db, projectId, days, {
