@@ -22,7 +22,7 @@ export function ThreadTableHeader({
   return (
     <TableHeader>
       <TableRow className="hover:bg-transparent">
-        <TableHead className="text-sm font-medium">
+        <TableHead className="text-sm font-medium w-4">
           <input
             type="checkbox"
             checked={hasCurrentThreads && allSelected}
@@ -55,7 +55,8 @@ export function ThreadTableHeader({
           }`}
         >
           <div className="flex text-foreground items-center gap-2">
-            Created{" "}
+            <span className="hidden sm:inline">Created</span>
+            <span className="sm:hidden">Date</span>
             <SortIcon
               field="created"
               currentField={currentField}
@@ -64,7 +65,7 @@ export function ThreadTableHeader({
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer text-sm font-medium px-4"
+          className="cursor-pointer text-sm font-medium px-4 hidden lg:table-cell"
           onClick={() => onSort("updated")}
           role="button"
           tabIndex={0}
@@ -92,7 +93,7 @@ export function ThreadTableHeader({
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer text-sm font-medium px-4"
+          className="cursor-pointer text-sm font-medium px-4 hidden sm:table-cell"
           onClick={() => onSort("threadId")}
           role="button"
           tabIndex={0}
@@ -139,7 +140,8 @@ export function ThreadTableHeader({
           }`}
         >
           <div className="flex text-foreground items-center gap-2">
-            Thread Name{" "}
+            <span className="hidden sm:inline">Thread Name</span>
+            <span className="sm:hidden">Name</span>
             <SortIcon
               field="threadName"
               currentField={currentField}
@@ -148,7 +150,7 @@ export function ThreadTableHeader({
           </div>
         </TableHead>
         <TableHead
-          className="cursor-pointer text-sm font-medium px-4"
+          className="cursor-pointer text-sm font-medium px-4 hidden md:table-cell"
           onClick={() => onSort("contextKey")}
           role="button"
           tabIndex={0}
@@ -232,7 +234,8 @@ export function ThreadTableHeader({
           </div>
         </TableHead>
         <TableHead className="text-sm font-medium text-foreground">
-          Actions
+          <span className="hidden sm:inline">Actions</span>
+          <span className="sm:hidden"></span>
         </TableHead>
       </TableRow>
     </TableHeader>

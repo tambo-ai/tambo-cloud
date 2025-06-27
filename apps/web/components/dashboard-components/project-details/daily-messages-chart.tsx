@@ -97,26 +97,33 @@ export function DailyMessagesChart({ projectId }: DailyMessagesChartProps) {
       transition={{ duration: 0.3 }}
     >
       <Card className="border border-none bg-transparent overflow-hidden shadow-none">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-4 sm:p-6">
           <div>
-            <CardTitle className="text-lg">Daily Messages</CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <CardTitle className="text-base sm:text-lg">
+              Daily Messages
+            </CardTitle>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Message activity over the last 30 days
             </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Dates as of {formatDate(new Date().toISOString(), "header")}
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            <span className="hidden sm:inline">Dates as of </span>
+            {formatDate(new Date().toISOString(), "header")}
           </p>
         </CardHeader>
-        <CardContent>
-          <Graph
-            data={graphData}
-            variant="default"
-            size="default"
-            showLegend={false}
-            className="h-72"
-            emptyState={emptyState}
-          />
+        <CardContent className="p-4 sm:p-6">
+          <div className="w-full overflow-x-auto">
+            <div className="min-w-[400px]">
+              <Graph
+                data={graphData}
+                variant="default"
+                size="default"
+                showLegend={false}
+                className="h-48 sm:h-64 md:h-72"
+                emptyState={emptyState}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
     </motion.div>

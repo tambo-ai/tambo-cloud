@@ -8,13 +8,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { getSafeContent } from "@/lib/thread-hooks";
 import { RouterOutputs } from "@/trpc/react";
 import { Search, X } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { calculateThreadStats, createMessageItems } from "../utils";
 import { StatsHeader } from "./stats-header";
 import { ThreadMessages } from "./thread-messages";
-import { getSafeContent } from "@/lib/thread-hooks";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
@@ -81,7 +81,7 @@ export function ThreadMessagesModal({
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="right"
-        className="w-3/4 max-w-4xl sm:max-w-4xl p-6 [&>button]:hidden flex flex-col gap-4"
+        className="w-full sm:w-3/4 max-w-full sm:max-w-4xl p-4 sm:p-6 [&>button]:hidden flex flex-col gap-4"
       >
         {isLoading ? (
           <ThreadMessagesModalSkeleton />
@@ -89,14 +89,14 @@ export function ThreadMessagesModal({
           <>
             <SheetHeader className="flex-shrink-0">
               <div className="flex items-center justify-between">
-                <SheetTitle className="text-left text-primary">
+                <SheetTitle className="text-left text-primary text-base sm:text-lg truncate">
                   Thread {thread.id}
                 </SheetTitle>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  className="hover:bg-transparent"
+                  className="hover:bg-transparent flex-shrink-0"
                 >
                   <X className="h-4 w-4" />
                   <span className="sr-only">Close</span>
@@ -114,7 +114,7 @@ export function ThreadMessagesModal({
                   placeholder="Search chat log..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 text-primary"
+                  className="pl-9 text-primary text-sm sm:text-base"
                 />
               </div>
             </div>

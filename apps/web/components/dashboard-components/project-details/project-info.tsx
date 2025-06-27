@@ -154,19 +154,21 @@ export function ProjectInfo({
 
   // Full version
   return (
-    <Card className="border-card-background bg-card-background rounded-3xl overflow-hidden p-4">
-      <CardContent className="p-4 space-y-4">
+    <Card className="border-card-background bg-card-background rounded-3xl overflow-hidden p-2 sm:p-4">
+      <CardContent className="p-2 sm:p-4 space-y-4">
         <motion.div
           className="flex items-center gap-2"
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h4 className="text-6xl pb-4">{project.name}</h4>
+          <h4 className="text-3xl sm:text-4xl md:text-6xl pb-4 sm:pb-4">
+            {project.name}
+          </h4>
         </motion.div>
 
         <motion.div
-          className="space-y-3 flex flex-row justify-between grid grid-cols-2 md:grid-cols-4"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -176,32 +178,37 @@ export function ProjectInfo({
               Project ID
             </h5>
             <div className="flex items-center gap-1">
-              <code className="text-sm font-mono">{project.id}</code>
-              <CopyButton clipboardValue={project.id} />
+              <code className="text-xs sm:text-sm font-mono truncate max-w-[150px] sm:max-w-none">
+                {project.id}
+              </code>
+              <CopyButton
+                clipboardValue={project.id}
+                className="h-4 w-4 sm:h-5 sm:w-5"
+              />
             </div>
           </motion.div>
 
           {createdAt && (
-            <div className="border-l border-muted-foreground/20 pl-4">
+            <div className="sm:border-l border-muted-foreground/20 sm:pl-4">
               <motion.div variants={itemVariants}>
                 <h5 className="text-xs font-medium text-foreground mb-1">
                   Created
                 </h5>
-                <p className="text-sm">{formatDate(createdAt)}</p>
+                <p className="text-xs sm:text-sm">{formatDate(createdAt)}</p>
               </motion.div>
             </div>
           )}
 
-          <div className="border-l border-muted-foreground/20 pl-4">
+          <div className="sm:border-l border-muted-foreground/20 sm:pl-4">
             <motion.div variants={itemVariants}>
               <h5 className="text-xs font-medium text-foreground mb-1">
                 Owner
               </h5>
-              <p className="text-sm">{project.userId}</p>
+              <p className="text-xs sm:text-sm truncate">{project.userId}</p>
             </motion.div>
           </div>
 
-          <div className="border-l border-muted-foreground/20 pl-4">
+          <div className="sm:border-l border-muted-foreground/20 sm:pl-4">
             <motion.div variants={itemVariants}>
               <h5 className="text-xs font-medium text-foreground mb-1">
                 Remaining free messages

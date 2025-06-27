@@ -173,10 +173,8 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       variants={containerVariants}
     >
       {/* Header with refresh button */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-4xl font-semibold min-h-[3.5rem] flex items-center">
-          Threads
-        </h1>
+      <div className="flex items-center justify-between mb-4 gap-2">
+        <h1 className="text-2xl sm:text-4xl font-semibold">Threads</h1>
         <Button
           onClick={handleRefresh}
           disabled={isFetchingThreads}
