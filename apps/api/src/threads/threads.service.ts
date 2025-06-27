@@ -8,6 +8,7 @@ import {
   TamboBackend,
 } from "@tambo-ai-cloud/backend";
 import {
+  ActionType,
   ComponentDecisionV2,
   ContentPartType,
   decryptProviderKey,
@@ -240,6 +241,7 @@ export class ThreadsService {
         actionType: message.actionType ?? undefined,
         tool_call_id: message.toolCallId ?? undefined,
         error: message.error ?? undefined,
+        isCancelled: message.isCancelled,
       })),
     };
   }
@@ -266,6 +268,59 @@ export class ThreadsService {
       generationStage,
       statusMessage,
     );
+  }
+
+  /**
+   * Sets a thread's generation stage to CANCELLED, and adds a blank response to the thread depending on the last message type.
+   * @param threadId - The thread ID to cancel
+   * @returns The updated thread with CANCELLED generation stage
+   */
+  async cancelThread(threadId: string): Promise<Thread> {
+    const db = this.getDb();
+    const updatedThread = await operations.updateThread(db, threadId, {
+      generationStage: GenerationStage.CANCELLED,
+      statusMessage: "Thread advancement cancelled",
+    });
+
+    const updatedThreadResponse = {
+      id: updatedThread.id,
+      createdAt: updatedThread.createdAt,
+      updatedAt: updatedThread.updatedAt,
+      name: updatedThread.name ?? undefined,
+      contextKey: updatedThread.contextKey ?? undefined,
+      metadata: updatedThread.metadata ?? undefined,
+      generationStage: updatedThread.generationStage,
+      statusMessage: updatedThread.statusMessage ?? undefined,
+      projectId: updatedThread.projectId,
+    };
+
+    const latestMessage = await operations.getLatestMessage(db, threadId);
+
+    await operations.updateMessage(db, latestMessage.id, {
+      isCancelled: true,
+    });
+
+    if (latestMessage.toolCallRequest && latestMessage.toolCallId) {
+      await addMessage(db, threadId, {
+        role: MessageRole.Tool,
+        content: [
+          {
+            type: ContentPartType.Text,
+            text: "",
+          },
+        ],
+        actionType: ActionType.ToolResponse,
+        tool_call_id: latestMessage.toolCallId,
+        componentState: {},
+      });
+    } else if (latestMessage.role == MessageRole.User) {
+      await addMessage(db, threadId, {
+        role: MessageRole.Assistant,
+        content: [{ type: ContentPartType.Text, text: "" }],
+      });
+    }
+
+    return updatedThreadResponse;
   }
 
   async remove(id: string) {
@@ -356,6 +411,7 @@ export class ThreadsService {
       componentState: message.componentState ?? {},
       component: message.componentDecision as ComponentDecisionV2 | undefined,
       error: message.error ?? undefined,
+      isCancelled: message.isCancelled,
     }));
   }
 
@@ -566,6 +622,30 @@ export class ThreadsService {
       advanceRequestDto.contextKey,
     );
 
+    // Check if we should ignore this request due to cancellation
+    const shouldIgnore = await this.shouldIgnoreCancelledToolResponse(
+      advanceRequestDto,
+      thread,
+    );
+    if (shouldIgnore) {
+      this.logger.log(
+        `Ignoring tool response due to cancellation for thread ${thread.id}`,
+      );
+      return {
+        responseMessageDto: {
+          id: "",
+          role: MessageRole.Assistant,
+          content: [],
+          threadId: thread.id,
+          componentState: {},
+          createdAt: new Date(),
+        },
+        generationStage: GenerationStage.COMPLETE,
+        statusMessage: "",
+        mcpAccessToken: "",
+      };
+    }
+
     // Ensure only one request per thread adds its user message and continues
     const userMessage = await addUserMessage(
       db,
@@ -644,6 +724,7 @@ export class ThreadsService {
       systemTools,
       customInstructions,
     );
+
     const {
       responseMessageDto,
       resultingGenerationStage,
@@ -878,6 +959,24 @@ export class ThreadsService {
     const db = this.getDb();
     const logger = this.logger;
 
+    const thread = await this.findOne(threadId, projectId);
+    if (thread.generationStage === GenerationStage.CANCELLED) {
+      yield {
+        responseMessageDto: {
+          id: "",
+          role: MessageRole.Assistant,
+          content: [{ type: ContentPartType.Text, text: "" }],
+          componentState: {},
+          threadId: threadId,
+          createdAt: new Date(),
+        },
+        generationStage: GenerationStage.CANCELLED,
+        statusMessage: "Thread cancelled",
+        mcpAccessToken,
+      };
+      return;
+    }
+
     await updateGenerationStage(
       db,
       threadId,
@@ -901,6 +1000,20 @@ export class ThreadsService {
       stream,
       inProgressMessage,
     )) {
+      const thread = await this.findOne(threadId, projectId);
+      if (thread.generationStage === GenerationStage.CANCELLED) {
+        yield {
+          responseMessageDto: {
+            ...threadMessage,
+            content: convertContentPartToDto(threadMessage.content),
+            componentState: threadMessage.componentState ?? {},
+          },
+          generationStage: GenerationStage.CANCELLED,
+          statusMessage: "cancelled",
+          mcpAccessToken,
+        };
+        return;
+      }
       // Update db message on interval
       const currentTime = Date.now();
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
@@ -1187,5 +1300,19 @@ export class ThreadsService {
       // Update the message and return the result
       return await updateMessage(tx, messageId, updatedMessage);
     });
+  }
+
+  private async shouldIgnoreCancelledToolResponse(
+    advanceRequestDto: AdvanceThreadDto,
+    thread: Thread,
+  ): Promise<boolean> {
+    if (
+      advanceRequestDto.messageToAppend.actionType ===
+        ActionType.ToolResponse &&
+      thread.generationStage === GenerationStage.CANCELLED
+    ) {
+      return true;
+    }
+    return false;
   }
 }

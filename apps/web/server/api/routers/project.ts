@@ -610,7 +610,7 @@ export const projectRouter = createTRPCRouter({
 
       return {
         ...newKey,
-        apiKey: encryptedKey,
+        apiKey: encryptedKey, // already in user-facing format
       };
     }),
 
