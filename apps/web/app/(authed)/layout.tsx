@@ -15,8 +15,6 @@ export default async function AuthedLayout({
 
   console.log("workos user", user);
   return (
-    <AuthedLayoutWrapper hasSession={!!user} workosUser={user}>
-      {children}
-    </AuthedLayoutWrapper>
+    <AuthedLayoutWrapper hasSession={!!user}>{children}</AuthedLayoutWrapper>
   );
 }

@@ -2,7 +2,6 @@
 
 import { getSupabaseClient } from "@/app/utils/supabase";
 import { useSession } from "@/hooks/auth";
-import { UserInfo } from "@workos-inc/authkit-nextjs";
 import {
   redirect,
   usePathname,
@@ -14,11 +13,9 @@ import { useEffect, useState } from "react";
 export function AuthedLayoutWrapper({
   children,
   hasSession: initialHasSession,
-  workosUser,
 }: {
   children: React.ReactNode;
   hasSession: boolean;
-  workosUser: UserInfo["user"] | null;
 }) {
   console.log("AuthedLayoutWrapper");
   const pathname = usePathname();
@@ -26,11 +23,10 @@ export function AuthedLayoutWrapper({
   const router = useRouter();
   const code = searchParams.get("code");
   const { data: session, isLoading: isSessionLoading } = useSession();
-  console.log("workosUser", workosUser);
 
   // Use client-side session info when available, fallback to server-provided status when loading
   const hasValidSession =
-    !!workosUser || session !== null || (initialHasSession && isSessionLoading);
+    session !== null || (initialHasSession && isSessionLoading);
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
