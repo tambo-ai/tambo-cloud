@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import {
+  ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiSecurity,
@@ -30,26 +31,27 @@ export class AuthController {
   @ApiSecurity("apiKey")
   @UseGuards(ApiKeyGuard)
   @Post("oauth/token")
+  @ApiConsumes("application/x-www-form-urlencoded")
   @ApiOperation({
-    summary: "Exchange OAuth subject token for Tambo access token",
+    summary: "OAuth 2.0 Token Exchange Endpoint",
     description:
-      "Validates an OAuth subject token from providers like Google or Microsoft and returns a signed Tambo access token with the project ID as issuer.",
+      "Exchanges an OAuth subject token for a Tambo access token following RFC 6749 and RFC 8693 specifications. Accepts form-encoded data and validates the subject token against the issuer's JWKS.",
   })
   @ApiResponse({
-    status: 201,
-    description: "Access token created successfully",
+    status: 200,
+    description: "Token exchange successful",
     type: OAuthTokenResponseDto,
   })
   @ApiResponse({
     status: 400,
-    description: "Bad request - missing or invalid subject token",
+    description: "Bad request - invalid grant type or missing parameters",
   })
   @ApiResponse({
     status: 401,
     description: "Unauthorized - invalid OAuth token",
   })
   async exchangeOAuthToken(
-    @Body() oauthTokenRequest: OAuthTokenRequestDto,
+    @Body() tokenRequest: OAuthTokenRequestDto,
     @Req() request: Request,
   ): Promise<OAuthTokenResponseDto> {
     if (!request[ProjectId]) {
@@ -57,11 +59,29 @@ export class AuthController {
     }
 
     const projectId = request[ProjectId];
-    const { subjectToken } = oauthTokenRequest;
+    const { grant_type, subject_token, subject_token_type } = tokenRequest;
+
+    // Validate grant type per RFC 8693
+    if (grant_type !== "urn:ietf:params:oauth:grant-type:token-exchange") {
+      throw new BadRequestException(
+        "Invalid grant_type. Must be 'urn:ietf:params:oauth:grant-type:token-exchange'",
+      );
+    }
+
+    // Validate subject token type
+    const validTokenTypes = [
+      "urn:ietf:params:oauth:token-type:access_token",
+      "urn:ietf:params:oauth:token-type:id_token",
+    ];
+    if (!validTokenTypes.includes(subject_token_type)) {
+      throw new BadRequestException(
+        `Invalid subject_token_type. Must be one of: ${validTokenTypes.join(", ")}`,
+      );
+    }
 
     try {
       // Decode the token without verification to get the issuer
-      const [_headerB64, payloadB64] = subjectToken.split(".");
+      const [_headerB64, payloadB64] = subject_token.split(".");
       const payload = JSON.parse(
         Buffer.from(payloadB64, "base64url").toString(),
       );
@@ -91,7 +111,7 @@ export class AuthController {
       // Create JWKS and verify the token
       const JWKS = createRemoteJWKSet(new URL(openidConfig.jwks_uri));
 
-      const { payload: verifiedPayload } = await jwtVerify(subjectToken, JWKS);
+      const { payload: verifiedPayload } = await jwtVerify(subject_token, JWKS);
 
       if (!verifiedPayload.sub) {
         throw new UnauthorizedException("Subject token missing subject (sub)");
@@ -101,12 +121,15 @@ export class AuthController {
       // TODO: Fetch signing key from database instead of using dummy value
       const signingKey = new TextEncoder().encode(`token-for-${projectId}`);
 
+      const expiresIn = 3600; // 1 hour
+      const currentTime = Math.floor(Date.now() / 1000);
+
       const accessToken = await new SignJWT({
         sub: verifiedPayload.sub,
         iss: projectId,
         aud: projectId,
-        iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
+        iat: currentTime,
+        exp: currentTime + expiresIn,
       })
         .setProtectedHeader({ alg: "HS256" })
         .sign(signingKey);
@@ -116,7 +139,10 @@ export class AuthController {
       );
 
       return {
-        accessToken,
+        access_token: accessToken,
+        token_type: "Bearer",
+        expires_in: expiresIn,
+        issued_token_type: "urn:ietf:params:oauth:token-type:access_token",
       };
     } catch (error: any) {
       this.logger.error(
