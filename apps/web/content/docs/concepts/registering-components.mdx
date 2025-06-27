@@ -56,10 +56,6 @@ const components = [
 </TamboProvider>;
 ```
 
-When creating the list of components, you may not yet have access to the tools callbacks that you need, because they may need additional context or authentication.
-
-You can still register the component without the tools using this approach, and then register the tools later with `addToolAssociation`. See the [Tools](/docs/concepts/tools) documentation for more information.
-
 #### 2. Dynamic Registration
 
 For runtime registration, use the `registerComponent` function from the `useTamboRegistry()` hook:
@@ -98,7 +94,6 @@ export default function Page() {
       description: "A display of the weather in a city",
       component: WeatherDisplay,
       propsSchema: WeatherDisplayProps, // Using Zod schema
-      associatedTools: [tools.forecast, tools.history],
     });
   }, [registerComponent]);
 
@@ -160,7 +155,7 @@ export const DataChartProps = z
     type: z
       .enum(["bar", "line", "pie"])
       .describe(
-        "Use a chart type that is appropriate for the data. Only use pie charts when less than 5 values.",
+        "Use a chart type that is appropriate for the data. Only use pie charts when less than 5 values."
       ),
   })
   .describe("A component for displaying data in various chart formats");
