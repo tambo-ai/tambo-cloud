@@ -108,10 +108,14 @@ export class OAuthController {
       // Create JWKS and verify the token
       const JWKS = createRemoteJWKSet(new URL(openidConfig.jwks_uri));
 
-      const { payload: verifiedPayload } = await jwtVerify(subject_token, JWKS, {
-        issuer: payload.iss,
-        audience: "tambo",
-      });
+      const { payload: verifiedPayload } = await jwtVerify(
+        subject_token,
+        JWKS,
+        {
+          issuer: payload.iss,
+          audience: "tambo",
+        },
+      );
 
       if (!verifiedPayload.sub) {
         throw new UnauthorizedException("Subject token missing subject (sub)");
