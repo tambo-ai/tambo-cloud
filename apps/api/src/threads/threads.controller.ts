@@ -60,8 +60,15 @@ export class ThreadsController {
   @ProjectIdParameterKey("projectId")
   @UseGuards(ProjectAccessOwnGuard)
   @Post()
-  async create(@Body() createThreadDto: ThreadRequest): Promise<Thread> {
-    return await this.threadsService.createThread(createThreadDto);
+  async create(
+    @Body() createThreadDto: ThreadRequest,
+    @Req() request: Request,
+  ): Promise<Thread> {
+    const { contextKey } = extractContextInfo(
+      request,
+      createThreadDto.contextKey,
+    );
+    return await this.threadsService.createThread(createThreadDto, contextKey);
   }
 
   @ProjectIdParameterKey("projectId")
@@ -72,12 +79,12 @@ export class ThreadsController {
   @ApiQuery({ name: "limit", required: false, type: Number, default: 10 })
   async findAllForProject(
     @Req() request: Request,
-    @Param("projectId") projectId: string,
+    @Param("projectId") _projectId: string,
     @Query("contextKey") apiContextKey?: string,
     @Query("offset") offset: number = 0,
     @Query("limit") limit: number = 10,
   ): Promise<ThreadListDto> {
-    const { projectId: _projectId, contextKey } = extractContextInfo(
+    const { projectId: projectId, contextKey } = extractContextInfo(
       request,
       apiContextKey,
     );
@@ -115,8 +122,8 @@ export class ThreadsController {
     @Param("id") threadId: string,
     @Req() request: Request,
   ): Promise<ThreadWithMessagesDto> {
-    const { projectId } = extractContextInfo(request);
-    return await this.threadsService.findOne(threadId, projectId);
+    const { projectId, contextKey } = extractContextInfo(request);
+    return await this.threadsService.findOne(threadId, projectId, contextKey);
   }
 
   @UseGuards(ThreadInProjectGuard)
@@ -315,13 +322,21 @@ export class ThreadsController {
     @Req() request: Request,
     @Body() advanceRequestDto: AdvanceThreadDto,
   ): Promise<AdvanceThreadResponseDto> {
-    const { projectId } = extractContextInfo(request);
-    return await this.threadsService.advanceThread(
+    const { projectId, contextKey } = extractContextInfo(
+      request,
+      advanceRequestDto.contextKey,
+    );
+    const result = await this.threadsService.advanceThread(
       projectId,
       advanceRequestDto,
       threadId,
       false,
+      {},
+      undefined,
+      contextKey,
     );
+    // Since stream=false, result will be AdvanceThreadResponseDto
+    return result as AdvanceThreadResponseDto;
   }
 
   @UseGuards(ThreadInProjectGuard)
@@ -335,13 +350,19 @@ export class ThreadsController {
     response.setHeader("Content-Type", "text/event-stream");
     response.setHeader("Cache-Control", "no-cache");
     response.setHeader("Connection", "keep-alive");
-    const { projectId } = extractContextInfo(request);
+    const { projectId, contextKey } = extractContextInfo(
+      request,
+      advanceRequestDto.contextKey,
+    );
     try {
       const stream = await this.threadsService.advanceThread(
         projectId,
         advanceRequestDto,
         threadId,
         true,
+        {},
+        undefined,
+        contextKey,
       );
 
       await this.handleAdvanceStream(response, stream);
@@ -359,13 +380,21 @@ export class ThreadsController {
     @Req() request: Request,
     @Body() advanceRequestDto: AdvanceThreadDto,
   ): Promise<AdvanceThreadResponseDto> {
-    const { projectId } = extractContextInfo(request);
-    return await this.threadsService.advanceThread(
+    const { projectId, contextKey } = extractContextInfo(
+      request,
+      advanceRequestDto.contextKey,
+    );
+    const result = await this.threadsService.advanceThread(
       projectId,
       advanceRequestDto,
       undefined,
       false,
+      {},
+      undefined,
+      contextKey,
     );
+    // Since stream=false, result will be AdvanceThreadResponseDto
+    return result as AdvanceThreadResponseDto;
   }
 
   @Post("advancestream")
@@ -377,13 +406,19 @@ export class ThreadsController {
     response.setHeader("Content-Type", "text/event-stream");
     response.setHeader("Cache-Control", "no-cache");
     response.setHeader("Connection", "keep-alive");
-    const { projectId } = extractContextInfo(request);
+    const { projectId, contextKey } = extractContextInfo(
+      request,
+      advanceRequestDto.contextKey,
+    );
     try {
       const stream = await this.threadsService.advanceThread(
         projectId,
         advanceRequestDto,
         undefined,
         true,
+        {},
+        undefined,
+        contextKey,
       );
       await this.handleAdvanceStream(response, stream);
     } catch (error: any) {
@@ -417,9 +452,14 @@ export class ThreadsController {
   async generateName(
     @Param("id") threadId: string,
     @Req() request: Request,
+    @Param("contextKey") contextKey?: string,
   ): Promise<Thread> {
-    const { projectId } = extractContextInfo(request);
-    return await this.threadsService.generateThreadName(threadId, projectId);
+    const { projectId } = extractContextInfo(request, contextKey);
+    return await this.threadsService.generateThreadName(
+      threadId,
+      projectId,
+      contextKey,
+    );
   }
 
   private async handleAdvanceStream(
