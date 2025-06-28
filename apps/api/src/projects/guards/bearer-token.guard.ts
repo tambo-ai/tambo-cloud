@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { Request } from "express";
 import { decodeJwt, jwtVerify } from "jose";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
@@ -40,7 +45,7 @@ export class BearerTokenGuard implements CanActivate {
     const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
     if (!bearerMatch) {
       this.logger.error("Invalid Authorization header format");
-      return false;
+      throw new UnauthorizedException("Invalid Authorization header format");
     }
 
     const token = bearerMatch[1];
@@ -51,7 +56,9 @@ export class BearerTokenGuard implements CanActivate {
 
       if (!payload.iss || !payload.sub) {
         this.logger.error("Bearer token missing required claims (iss or sub)");
-        return false;
+        throw new UnauthorizedException(
+          "Bearer token missing required claims (iss or sub)",
+        );
       }
 
       const projectId = payload.iss;
@@ -63,7 +70,7 @@ export class BearerTokenGuard implements CanActivate {
 
       if (!verifiedPayload.sub || !verifiedPayload.iss) {
         this.logger.error("Verified token missing required claims");
-        return false;
+        throw new UnauthorizedException("Verified token missing required claims");
       }
 
       // Set the projectId and contextKey on the request
@@ -80,7 +87,7 @@ export class BearerTokenGuard implements CanActivate {
         `Error validating OAuth bearer token: ${error.message}`,
         error.stack,
       );
-      return false;
+      throw new UnauthorizedException("Invalid bearer token");
     }
   }
 }
