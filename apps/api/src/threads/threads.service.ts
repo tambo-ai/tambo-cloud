@@ -613,7 +613,7 @@ export class ThreadsService {
    */
   async advanceThread(
     projectId: string,
-    advanceRequestDto: AdvanceThreadDto,
+    advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
     unresolvedThreadId?: string,
     stream?: true,
     toolCallCounts?: Record<string, number>,
@@ -622,7 +622,7 @@ export class ThreadsService {
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   async advanceThread(
     projectId: string,
-    advanceRequestDto: AdvanceThreadDto,
+    advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
     unresolvedThreadId?: string,
     stream?: false,
     toolCallCounts?: Record<string, number>,
@@ -630,7 +630,7 @@ export class ThreadsService {
   ): Promise<AdvanceThreadResponseDto>;
   async advanceThread(
     projectId: string,
-    advanceRequestDto: AdvanceThreadDto,
+    advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
     unresolvedThreadId?: string,
     stream?: boolean,
     toolCallCounts?: Record<string, number>,
@@ -641,7 +641,7 @@ export class ThreadsService {
   >;
   async advanceThread(
     projectId: string,
-    advanceRequestDto: AdvanceThreadDto,
+    advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
     unresolvedThreadId?: string,
     stream?: boolean,
     toolCallCounts: Record<string, number> = {},

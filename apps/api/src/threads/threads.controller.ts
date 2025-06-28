@@ -121,9 +121,12 @@ export class ThreadsController {
   async findOne(
     @Param("id") threadId: string,
     @Req() request: Request,
-    @Query("contextKey") contextKey?: string,
+    @Query("contextKey") apiContextKey?: string,
   ): Promise<ThreadWithMessagesDto> {
-    const { projectId } = extractContextInfo(request, contextKey);
+    const { projectId, contextKey } = extractContextInfo(
+      request,
+      apiContextKey,
+    );
     return await this.threadsService.findOne(threadId, projectId, contextKey);
   }
 
