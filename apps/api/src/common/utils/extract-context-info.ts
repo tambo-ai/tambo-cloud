@@ -29,7 +29,7 @@ export interface ContextInfo {
  */
 export function extractContextInfo(
   request: Request,
-  apiContextKey?: string,
+  apiContextKey: string | undefined,
 ): ContextInfo {
   const projectId = request[ProjectId];
   if (!projectId) {

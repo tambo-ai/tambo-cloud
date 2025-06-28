@@ -157,7 +157,7 @@ export class ThreadsService {
   }
 
   async createThread(
-    createThreadDto: ThreadRequest,
+    createThreadDto: Omit<ThreadRequest, "contextKey">,
     contextKey?: string,
   ): Promise<Thread> {
     const thread = await operations.createThread(this.getDb(), {

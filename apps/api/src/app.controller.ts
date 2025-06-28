@@ -55,13 +55,17 @@ export class AppController {
     @Body() createMcpAccessTokenDto: CreateMcpAccessTokenDto,
     @Req() request: Request,
   ): Promise<McpAccessTokenResponseDto> {
-    const { projectId } = extractContextInfo(request);
+    const { projectId, contextKey } = extractContextInfo(
+      request,
+      createMcpAccessTokenDto.contextKey,
+    );
 
     const { threadId } = createMcpAccessTokenDto;
 
     const mcpAccessToken = await this.authService.generateMcpAccessToken(
       projectId,
       threadId,
+      contextKey,
     );
 
     return {

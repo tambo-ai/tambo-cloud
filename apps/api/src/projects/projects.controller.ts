@@ -28,7 +28,7 @@ export class ProjectsController {
 
   @Get()
   async getCurrentProject(@Req() request: Request) {
-    const { projectId } = extractContextInfo(request);
+    const { projectId } = extractContextInfo(request, undefined);
     const result = await this.projectsService.findOne(projectId);
     return result;
   }
