@@ -83,13 +83,10 @@ export class OAuthController {
       // Decode the token without verification to get the issuer
       const payload = decodeJwt(subject_token);
 
-      // ------------------------------------------------------------------
       // Determine the expected audience for the subject token validation.
       // Prefer the value supplied in the request; fall back to the
       // SUBJECT_TOKEN_EXPECTED_AUDIENCE env var (TODO: move to config).
-      // ------------------------------------------------------------------
-      const expectedAudience =
-        tokenRequest.audience ?? process.env.SUBJECT_TOKEN_EXPECTED_AUDIENCE;
+      const expectedAudience = tokenRequest.audience ?? process.env.SUBJECT_TOKEN_EXPECTED_AUDIENCE;
       if (!expectedAudience) {
         throw new BadRequestException(
           "Audience is required for subject token validation",
