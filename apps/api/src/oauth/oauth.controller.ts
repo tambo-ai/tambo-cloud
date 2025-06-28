@@ -15,7 +15,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { Request } from "express";
-import { createRemoteJWKSet, jwtVerify, SignJWT } from "jose";
+import { createRemoteJWKSet, jwtVerify, SignJWT, decodeJwt } from "jose";
 import {
   OAuthTokenRequestDto,
   OAuthTokenResponseDto,
@@ -81,10 +81,7 @@ export class OAuthController {
 
     try {
       // Decode the token without verification to get the issuer
-      const [_headerB64, payloadB64] = subject_token.split(".");
-      const payload = JSON.parse(
-        Buffer.from(payloadB64, "base64url").toString(),
-      );
+      const payload = decodeJwt(subject_token);
 
       if (!payload.iss) {
         throw new BadRequestException("Subject token missing issuer (iss)");
