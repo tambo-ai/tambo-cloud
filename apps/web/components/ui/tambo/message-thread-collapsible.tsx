@@ -278,22 +278,20 @@ export const MessageThreadCollapsible = React.forwardRef<
           </MessageSuggestions>
 
           {/* Message input */}
-          <div className="absolute bottom-0 left-0 right-0 gap-2 flex flex-col">
-            <div className="p-2 sm:p-3 md:p-4">
-              <MessageInput contextKey={contextKey}>
-                <MessageInputTextarea />
-                <MessageInputToolbar>
-                  <MessageInputSubmitButton />
-                </MessageInputToolbar>
-                <MessageInputError />
-              </MessageInput>
-            </div>
-
-            {/* Message suggestions */}
-            <MessageSuggestions initialSuggestions={defaultSuggestions}>
-              <MessageSuggestionsList />
-            </MessageSuggestions>
+          <div className="p-2 sm:p-3 md:p-4">
+            <MessageInput contextKey={contextKey}>
+              <MessageInputTextarea />
+              <MessageInputToolbar>
+                <MessageInputSubmitButton />
+              </MessageInputToolbar>
+              <MessageInputError />
+            </MessageInput>
           </div>
+
+          {/* Message suggestions */}
+          <MessageSuggestions initialSuggestions={defaultSuggestions}>
+            <MessageSuggestionsList />
+          </MessageSuggestions>
         </div>
       </Collapsible.Content>
     </CollapsibleContainer>

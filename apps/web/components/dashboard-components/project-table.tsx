@@ -161,7 +161,7 @@ export function ProjectTable({
                   checked={
                     currentProjects.length > 0 &&
                     currentProjects.every(
-                      (p) => p.id && selectedProjects.has(p.id),
+                      (p) => p.id && (selectedProjects?.has(p.id) ?? false),
                     )
                   }
                   onChange={(e) => handleSelectAll(e.target.checked)}
@@ -228,7 +228,9 @@ export function ProjectTable({
                       <input
                         type="checkbox"
                         checked={
-                          projectId ? selectedProjects.has(projectId) : false
+                          projectId
+                            ? (selectedProjects?.has(projectId) ?? false)
+                            : false
                         }
                         onChange={(e) =>
                           projectId &&
