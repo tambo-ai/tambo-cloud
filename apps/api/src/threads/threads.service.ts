@@ -534,9 +534,7 @@ export class ThreadsService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
   // generateThreadName overloads
-  // ─────────────────────────────────────────────────────────────────────────────
   async generateThreadName(
     threadId: string,
     projectId: string,
@@ -544,7 +542,7 @@ export class ThreadsService {
   async generateThreadName(
     threadId: string,
     projectId: string,
-    contextKey: string,
+    contextKey?: string,
   ): Promise<Thread>;
 
   async generateThreadName(
