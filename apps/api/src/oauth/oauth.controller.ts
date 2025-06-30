@@ -15,7 +15,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { Request } from "express";
-import { createRemoteJWKSet, jwtVerify, SignJWT, decodeJwt } from "jose";
+import { createRemoteJWKSet, decodeJwt, jwtVerify, SignJWT } from "jose";
 import {
   OAuthTokenRequestDto,
   OAuthTokenResponseDto,
@@ -113,7 +113,6 @@ export class OAuthController {
         JWKS,
         {
           issuer: payload.iss,
-          audience: "tambo",
         },
       );
 
