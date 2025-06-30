@@ -88,11 +88,18 @@ const CollapsibleContainer = React.forwardRef<
     open={isOpen}
     onOpenChange={onOpenChange}
     className={cn(
-      "fixed bottom-4 right-4 shadow-lg bg-background border border-gray-200 z-50",
+      "fixed shadow-lg bg-background border border-gray-200 z-50",
       "transition-[width,height] duration-300 ease-in-out",
       isOpen
-        ? "rounded-lg w-[384px] sm:w-[448px] md:w-[512px] h-auto"
-        : "rounded-full w-16 h-16 p-0 flex items-center justify-center",
+        ? cn(
+            // Mobile: Full screen
+            "inset-0 w-full h-full rounded-none",
+            // Tablet and up: Floating panel
+            "sm:inset-auto sm:bottom-4 sm:right-4 sm:rounded-lg",
+            "sm:w-[448px] md:w-[512px] lg:w-[640px] xl:w-[768px] 2xl:w-[896px]",
+            "sm:h-auto sm:max-w-[90vw]",
+          )
+        : "bottom-4 right-4 rounded-full w-16 h-16 p-0 flex items-center justify-center",
       className,
     )}
     {...props}
@@ -250,9 +257,9 @@ export const MessageThreadCollapsible = React.forwardRef<
         config={THREAD_CONFIG}
       />
       <Collapsible.Content>
-        <div className="h-[700px] flex flex-col">
+        <div className="h-[70vh] sm:h-[600px] md:h-[650px] lg:h-[700px] xl:h-[750px] 2xl:h-[800px] max-h-[90vh] flex flex-col">
           {/* Message thread content */}
-          <ScrollableMessageContainer className="p-4">
+          <ScrollableMessageContainer className="p-2 sm:p-3 md:p-4">
             {/* Conditionally render the starter message */}
             {!isUserLoggedIn && thread.messages.length === 0 && (
               <Message role="assistant" message={starterMessage}>
@@ -271,20 +278,22 @@ export const MessageThreadCollapsible = React.forwardRef<
           </MessageSuggestions>
 
           {/* Message input */}
-          <div className="p-4">
-            <MessageInput contextKey={contextKey}>
-              <MessageInputTextarea />
-              <MessageInputToolbar>
-                <MessageInputSubmitButton />
-              </MessageInputToolbar>
-              <MessageInputError />
-            </MessageInput>
-          </div>
+          <div className="absolute bottom-0 left-0 right-0 gap-2 flex flex-col">
+            <div className="p-2 sm:p-3 md:p-4">
+              <MessageInput contextKey={contextKey}>
+                <MessageInputTextarea />
+                <MessageInputToolbar>
+                  <MessageInputSubmitButton />
+                </MessageInputToolbar>
+                <MessageInputError />
+              </MessageInput>
+            </div>
 
-          {/* Message suggestions */}
-          <MessageSuggestions initialSuggestions={defaultSuggestions}>
-            <MessageSuggestionsList />
-          </MessageSuggestions>
+            {/* Message suggestions */}
+            <MessageSuggestions initialSuggestions={defaultSuggestions}>
+              <MessageSuggestionsList />
+            </MessageSuggestions>
+          </div>
         </div>
       </Collapsible.Content>
     </CollapsibleContainer>
