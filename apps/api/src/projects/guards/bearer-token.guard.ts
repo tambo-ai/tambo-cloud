@@ -66,7 +66,11 @@ export class BearerTokenGuard implements CanActivate {
       // Verify the token using the same dummy signing key pattern from oauth.controller.ts
       const signingKey = new TextEncoder().encode(`token-for-${projectId}`);
 
-      const { payload: verifiedPayload } = await jwtVerify(token, signingKey);
+      // Validate both issuer and audience claims during verification
+      const { payload: verifiedPayload } = await jwtVerify(token, signingKey, {
+        issuer: projectId,
+        audience: "tambo",
+      });
 
       if (!verifiedPayload.sub || !verifiedPayload.iss) {
         this.logger.error("Verified token missing required claims");
