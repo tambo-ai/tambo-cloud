@@ -70,7 +70,9 @@ export class BearerTokenGuard implements CanActivate {
 
       if (!verifiedPayload.sub || !verifiedPayload.iss) {
         this.logger.error("Verified token missing required claims");
-        throw new UnauthorizedException("Verified token missing required claims");
+        throw new UnauthorizedException(
+          "Verified token missing required claims",
+        );
       }
 
       // Set the projectId and contextKey on the request
