@@ -5,10 +5,15 @@ import { Graph } from "@/components/ui/tambo/graph";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
 import { MessageCircleIcon } from "lucide-react";
+import { z } from "zod";
 
-interface DailyMessagesChartProps {
-  projectId: string;
-}
+export const DailyMessagesChartSchema = z.object({
+  projectId: z
+    .string()
+    .describe("The ID of the project to fetch daily messages for."),
+});
+
+export type DailyMessagesChartProps = z.infer<typeof DailyMessagesChartSchema>;
 
 const formatDate = (dateString: string, format: "chart" | "header"): string => {
   const date = new Date(dateString);

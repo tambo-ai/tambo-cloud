@@ -33,6 +33,10 @@ import {
   CustomInstructionsEditorProps,
 } from "@/components/dashboard-components/project-details/custom-instructions-editor";
 import {
+  DailyMessagesChart,
+  DailyMessagesChartSchema,
+} from "@/components/dashboard-components/project-details/daily-messages-chart";
+import {
   ProjectInfo,
   ProjectInfoProps,
 } from "@/components/dashboard-components/project-details/project-info";
@@ -44,6 +48,10 @@ import {
   ProjectTable,
   ProjectTableProps,
 } from "@/components/dashboard-components/project-table";
+import {
+  ThreadTableContainer,
+  ThreadTableContainerSchema,
+} from "@/components/observability/thread-table/thread-table-container";
 import { TamboTool } from "@tambo-ai/react";
 import { z } from "zod";
 import {
@@ -115,6 +123,20 @@ export const tamboRegisteredComponents = [
       "A form that allows users to authenticate with GitHub or Google. Use when users are not authenticated and need to log in to access features or when the fetchCurrentUser tool indicates the user is not logged in.",
     component: AuthForm,
     propsSchema: z.object({}),
+  },
+  {
+    name: "DailyMessagesChart",
+    description:
+      "Displays a bar chart showing daily message activity for a project over the last 30 days. Features responsive design with smooth animations, loading states, and empty state handling. Shows date-formatted labels and message counts with visual indicators. Use when users want to view message activity trends and usage patterns for their project analytics.",
+    component: DailyMessagesChart,
+    propsSchema: DailyMessagesChartSchema,
+  },
+  {
+    name: "ThreadTable",
+    description:
+      "Displays a comprehensive table of all threads for a specific project with full functionality including search, sorting, deletion, and message viewing. Features responsive design with smooth animations, loading states, and empty state handling. Shows thread ID, creation date, message count, tools, components, and errors. Supports compact mode which hides Updated, Context Key, and Thread Name columns for a cleaner view. IMPORTANT: This component requires a valid project ID (not project name). Always set compact=true for a cleaner interface. Use when users want to view and manage all threads for a specific project.",
+    component: ThreadTableContainer,
+    propsSchema: ThreadTableContainerSchema,
   },
 ];
 
