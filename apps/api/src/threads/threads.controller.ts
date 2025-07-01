@@ -443,6 +443,13 @@ export class ThreadsController {
     description: "ID of the thread to generate name for",
     example: "thread_123456789",
   })
+  @ApiParam({
+    name: "contextKey",
+    description: "Context key to use for the thread",
+    example: "user_1234",
+    type: "string",
+    required: false,
+  })
   @ApiResponse({
     status: 201,
     description: "Thread name generated successfully",
