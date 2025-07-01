@@ -1,6 +1,5 @@
 "use client";
 
-import { ThreadList } from "./components/thread-list";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -35,6 +34,7 @@ import { LinearIssueList } from "./components/linear-issue-list";
 import { LinearProjectList } from "./components/linear-project-list";
 import { LocalFileContents, LocalFileList } from "./components/local-file-list";
 import { MessageSuggestions } from "./components/message-suggestions";
+import { ThreadList } from "./components/thread-list";
 import { ThreadMessageInput } from "./components/thread-message-input";
 import { WeatherDay } from "./components/weather-day";
 import { wrapApiCall } from "./utils/apiWrapper";
@@ -51,7 +51,39 @@ export default function SmokePage() {
     thread,
     switchCurrentThread,
     startNewThread,
+    client,
   } = useTambo();
+  const smoketestToken = session?.access_token;
+  useEffect(() => {
+    const abortController = new AbortController();
+    async function getToken(token: string) {
+      if (abortController.signal.aborted) {
+        console.log("skipping getToken");
+        return;
+      }
+      const tokenRequest = {
+        grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
+        subject_token: token ?? "",
+        subject_token_type: "urn:ietf:params:oauth:token-type:access_token",
+      };
+      const tokenRequestFormEncoded = new URLSearchParams(
+        tokenRequest,
+      ).toString();
+      const tokenAsArrayBuffer = new TextEncoder().encode(
+        tokenRequestFormEncoded,
+      );
+      const data = await client.beta.auth.getToken(tokenAsArrayBuffer as any);
+      console.log("got tambo token: ", data);
+    }
+    if (smoketestToken) {
+      getToken(smoketestToken);
+    } else {
+      console.log("no token");
+    }
+    return () => {
+      abortController.abort();
+    };
+  }, [client, smoketestToken]);
   const messages = thread.messages;
   const isStreaming =
     generationStage === GenerationStage.STREAMING_RESPONSE ||

@@ -9,6 +9,7 @@ import {
   MessageRole,
   OAuthClientInformation,
   OAuthTokens,
+  OAuthValidationMode,
   SessionClientInformation,
   ToolCallRequest,
   ToolProviderType,
@@ -67,8 +68,8 @@ export const projects = pgTable(
     maxInputTokens: integer("max_input_tokens"), // Maximum number of input tokens to send to the model
     // OAuth token validation settings
     oauthValidationMode: text("oauth_validation_mode", {
-      enum: ["none", "symmetric", "asymmetric_auto", "asymmetric_manual"],
-    }).default("none"), // Default to no validation
+      enum: Object.values(OAuthValidationMode) as [OAuthValidationMode],
+    }).default(OAuthValidationMode.ASYMMETRIC_AUTO), // Default to no validation
     oauthSecretKeyEncrypted: text("oauth_secret_key_encrypted"), // Encrypted secret key for symmetric validation
     oauthPublicKey: text("oauth_public_key"), // Public key for manual asymmetric validation
   }),
