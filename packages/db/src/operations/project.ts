@@ -1,9 +1,11 @@
 import {
+  decryptProviderKey,
   encryptApiKey,
   encryptProviderKey,
   hashKey,
   hideApiKey,
   MCPTransport,
+  OAuthValidationMode,
   ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { randomBytes } from "crypto";
@@ -512,4 +514,85 @@ export async function getMcpServer(
       },
     },
   });
+}
+
+/**
+ * Get OAuth validation settings for a project
+ */
+export async function getOAuthValidationSettings(
+  db: HydraDb,
+  projectId: string,
+) {
+  const project = await db.query.projects.findFirst({
+    where: eq(schema.projects.id, projectId),
+    columns: {
+      oauthValidationMode: true,
+      oauthSecretKeyEncrypted: true,
+      oauthPublicKey: true,
+    },
+  });
+
+  if (!project) {
+    return null;
+  }
+
+  return {
+    mode: project.oauthValidationMode as OAuthValidationMode,
+    secretKeyEncrypted: project.oauthSecretKeyEncrypted,
+    publicKey: project.oauthPublicKey,
+  };
+}
+
+/**
+ * Update OAuth validation settings for a project
+ */
+export async function updateOAuthValidationSettings(
+  db: HydraDb,
+  projectId: string,
+  settings: {
+    mode: OAuthValidationMode;
+    secretKeyEncrypted?: string | null;
+    publicKey?: string | null;
+  },
+) {
+  return await db
+    .update(schema.projects)
+    .set({
+      oauthValidationMode: settings.mode,
+      oauthSecretKeyEncrypted: settings.secretKeyEncrypted,
+      oauthPublicKey: settings.publicKey,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.projects.id, projectId))
+    .returning();
+}
+
+/**
+ * Encrypt OAuth secret key using the same encryption as provider keys
+ */
+export function encryptOAuthSecretKey(
+  secretKey: string,
+  apiKeySecret: string,
+): string {
+  return encryptProviderKey("oauth", secretKey, apiKeySecret);
+}
+
+/**
+ * Decrypt OAuth secret key using the same decryption as provider keys
+ */
+export function decryptOAuthSecretKey(
+  encryptedSecretKey: string,
+  apiKeySecret: string,
+): string {
+  const { providerName, providerKey } = decryptProviderKey(
+    encryptedSecretKey,
+    apiKeySecret,
+  );
+
+  // Verify that this was encrypted as an OAuth secret key
+  if (providerName !== "oauth") {
+    throw new Error("Invalid OAuth secret key - wrong provider name");
+  }
+
+  return providerKey;
 }
