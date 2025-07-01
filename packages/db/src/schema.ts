@@ -69,7 +69,9 @@ export const projects = pgTable(
     // OAuth token validation settings
     oauthValidationMode: text("oauth_validation_mode", {
       enum: Object.values(OAuthValidationMode) as [OAuthValidationMode],
-    }).default(OAuthValidationMode.ASYMMETRIC_AUTO), // Default to no validation
+    })
+      .notNull()
+      .default(OAuthValidationMode.ASYMMETRIC_AUTO), // Default to no validation
     oauthSecretKeyEncrypted: text("oauth_secret_key_encrypted"), // Encrypted secret key for symmetric validation
     oauthPublicKey: text("oauth_public_key"), // Public key for manual asymmetric validation
   }),
