@@ -71,16 +71,6 @@ const useMessageContext = () => {
   return context;
 };
 
-/**
- * Strips page context from message content
- * Page context is in the format: [[__TAMBO_PAGE_CONTEXT__: ...]]
- * Also strips other context types like [[__TAMBO_TAB_CONTEXT__: ...]] and [[__TAMBO_ERROR_STATE__: ...]]
- */
-function stripPageContext(content: string): string {
-  // Remove all occurrences of [[__TAMBO_*__: ...]] from the content
-  return content.replace(/\n*\[\[__TAMBO_[A-Z_]+__:[^\]]+\]\]\n*/g, "").trim();
-}
-
 // --- Sub-Components ---
 
 /**
@@ -217,17 +207,10 @@ const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
     const contentToRender = children ?? contentProp ?? message.content;
     const toolDetailsId = React.useId();
 
-    const safeContent = React.useMemo(() => {
-      const rawContent = getSafeContent(
-        contentToRender as TamboThreadMessage["content"],
-      );
-      // Strip page context from the content if it's a string
-      if (typeof rawContent === "string") {
-        return stripPageContext(rawContent);
-      }
-      return rawContent;
-    }, [contentToRender]);
-
+    const safeContent = React.useMemo(
+      () => getSafeContent(contentToRender as TamboThreadMessage["content"]),
+      [contentToRender],
+    );
     const hasContent = React.useMemo(
       () => checkHasContent(contentToRender as TamboThreadMessage["content"]),
       [contentToRender],
