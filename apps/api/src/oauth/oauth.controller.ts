@@ -92,34 +92,41 @@ export class OAuthController {
       this.logger.log(`Fetching OpenID configuration from: ${openidConfigUrl}`);
 
       const configResponse = await fetch(openidConfigUrl);
+      let resultPayload;
       if (!configResponse.ok) {
-        throw new UnauthorizedException(
+        this.logger.error(
           `Failed to fetch OpenID configuration: ${configResponse.statusText}`,
         );
-      }
+        // throw new UnauthorizedException(
+        //   `Failed to fetch OpenID configuration: ${configResponse.statusText}`,
+        // );
+        resultPayload = payload;
+      } else {
+        const openidConfig = await configResponse.json();
+        if (!openidConfig.jwks_uri) {
+          throw new UnauthorizedException(
+            "OpenID configuration missing jwks_uri",
+          );
+        }
 
-      const openidConfig = await configResponse.json();
-      if (!openidConfig.jwks_uri) {
-        throw new UnauthorizedException(
-          "OpenID configuration missing jwks_uri",
+        // Create JWKS and verify the token
+        const JWKS = createRemoteJWKSet(new URL(openidConfig.jwks_uri));
+
+        const { payload: verifiedPayload } = await jwtVerify(
+          subject_token,
+          JWKS,
+          {
+            issuer: payload.iss,
+          },
         );
+
+        if (!verifiedPayload.sub) {
+          throw new UnauthorizedException(
+            "Subject token missing subject (sub)",
+          );
+        }
+        resultPayload = verifiedPayload;
       }
-
-      // Create JWKS and verify the token
-      const JWKS = createRemoteJWKSet(new URL(openidConfig.jwks_uri));
-
-      const { payload: verifiedPayload } = await jwtVerify(
-        subject_token,
-        JWKS,
-        {
-          issuer: payload.iss,
-        },
-      );
-
-      if (!verifiedPayload.sub) {
-        throw new UnauthorizedException("Subject token missing subject (sub)");
-      }
-
       // Create new token with projectId as issuer and same sub
       // TODO: Fetch signing key from database instead of using dummy value
       const signingKey = new TextEncoder().encode(`token-for-${projectId}`);
@@ -128,7 +135,7 @@ export class OAuthController {
       const currentTime = Math.floor(Date.now() / 1000);
 
       const accessToken = await new SignJWT({
-        sub: verifiedPayload.sub,
+        sub: resultPayload.sub,
         iss: projectId,
         aud: "tambo",
         iat: currentTime,
