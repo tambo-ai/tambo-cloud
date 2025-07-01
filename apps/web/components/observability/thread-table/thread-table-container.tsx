@@ -8,6 +8,16 @@ import { ThreadMessagesModal } from "../messages/thread-messages-modal";
 import { calculateThreadStats } from "../utils";
 import { ThreadTable } from "./index";
 
+/**
+ * Self-contained wrapper for ThreadTable that handles TRPC data fetching and state management.
+ *
+ * Created to make ThreadTable compatible with Tambo's component system, which requires simple props.
+ * The original ThreadTable needed complex props (threads, handlers, loading state) that come from
+ * TRPC calls and local state, making it difficult for AI to use directly.
+ *
+ * This wrapper encapsulates all that complexity and only exposes `projectId` and `compact` props.
+ */
+
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
 
