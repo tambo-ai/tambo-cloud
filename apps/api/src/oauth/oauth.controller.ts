@@ -14,14 +14,119 @@ import {
   ApiSecurity,
   ApiTags,
 } from "@nestjs/swagger";
+import { OAuthValidationMode } from "@tambo-ai-cloud/core";
+import { getDb, operations } from "@tambo-ai-cloud/db";
 import { Request } from "express";
-import { createRemoteJWKSet, decodeJwt, jwtVerify, SignJWT } from "jose";
+import {
+  createRemoteJWKSet,
+  decodeJwt,
+  importJWK,
+  JWTPayload,
+  jwtVerify,
+  SignJWT,
+} from "jose";
 import {
   OAuthTokenRequestDto,
   OAuthTokenResponseDto,
 } from "../common/dto/oauth-token.dto";
 import { CorrelationLoggerService } from "../common/services/logger.service";
 import { ApiKeyGuard, ProjectId } from "../projects/guards/apikey.guard";
+
+/**
+ * Validates and verifies an OAuth subject token based on the configured validation mode
+ */
+async function validateSubjectToken(
+  subjectToken: string,
+  validationMode: OAuthValidationMode,
+  oauthSettings: {
+    secretKeyEncrypted?: string | null;
+    publicKey?: string | null;
+  } | null,
+  logger: CorrelationLoggerService,
+): Promise<JWTPayload> {
+  switch (validationMode) {
+    case OAuthValidationMode.NONE:
+      return await decodeJwt(subjectToken);
+
+    case OAuthValidationMode.SYMMETRIC: {
+      if (!oauthSettings?.secretKeyEncrypted) {
+        throw new UnauthorizedException(
+          "OAuth symmetric validation configured but no secret key found",
+        );
+      }
+
+      const secretKey = operations.decryptOAuthSecretKey(
+        oauthSettings.secretKeyEncrypted,
+        process.env.API_KEY_SECRET!,
+      );
+
+      const symmetricKey = new TextEncoder().encode(secretKey);
+      const { payload } = await jwtVerify(subjectToken, symmetricKey);
+      return payload;
+    }
+
+    case OAuthValidationMode.ASYMMETRIC_MANUAL: {
+      if (!oauthSettings?.publicKey) {
+        throw new UnauthorizedException(
+          "OAuth asymmetric manual validation configured but no public key found",
+        );
+      }
+
+      try {
+        // Parse the public key (assuming it's in JWK format)
+        const publicKeyJWK = JSON.parse(oauthSettings.publicKey);
+        const publicKey = await importJWK(publicKeyJWK);
+        const { payload } = await jwtVerify(subjectToken, publicKey);
+        return payload;
+      } catch (error) {
+        logger.error(`Error parsing or using manual public key: ${error}`);
+        throw new UnauthorizedException("Invalid public key configuration");
+      }
+    }
+
+    case OAuthValidationMode.ASYMMETRIC_AUTO: {
+      const payload = decodeJwt(subjectToken);
+
+      if (!payload.iss) {
+        throw new BadRequestException("Subject token missing issuer (iss)");
+      }
+
+      // Fetch OpenID configuration
+      const openidConfigUrl = `${payload.iss}/.well-known/openid-configuration`;
+      logger.log(`Fetching OpenID configuration from: ${openidConfigUrl}`);
+
+      const configResponse = await fetch(openidConfigUrl);
+      if (!configResponse.ok) {
+        logger.error(
+          `Failed to fetch OpenID configuration: ${configResponse.statusText}`,
+        );
+        throw new UnauthorizedException(
+          `Failed to fetch OpenID configuration: ${configResponse.statusText}`,
+        );
+      }
+
+      const openidConfig = await configResponse.json();
+      if (!openidConfig.jwks_uri) {
+        throw new UnauthorizedException(
+          "OpenID configuration missing jwks_uri",
+        );
+      }
+
+      // Create JWKS and verify the token
+      const JWKS = createRemoteJWKSet(new URL(openidConfig.jwks_uri));
+      const { payload: verifiedPayload } = await jwtVerify(subjectToken, JWKS, {
+        issuer: payload.iss,
+      });
+
+      return verifiedPayload;
+    }
+
+    default:
+      throw new UnauthorizedException(
+        `Unsupported OAuth validation mode: ${validationMode}`,
+      );
+  }
+}
 
 @ApiTags("OAuth")
 @Controller("oauth")
@@ -35,7 +140,7 @@ export class OAuthController {
   @ApiOperation({
     summary: "OAuth 2.0 Token Exchange Endpoint",
     description:
-      "Exchanges an OAuth subject token for a Tambo access token following RFC 6749 and RFC 8693 specifications. Accepts form-encoded data and validates the subject token against the issuer's JWKS.",
+      "Exchanges an OAuth subject token for a Tambo access token following RFC 6749 and RFC 8693 specifications. Accepts form-encoded data and validates the subject token based on project OAuth validation settings.",
   })
   @ApiResponse({
     status: 200,
@@ -80,62 +185,42 @@ export class OAuthController {
     }
 
     try {
-      // Decode the token without verification to get the issuer
-      const payload = decodeJwt(subject_token);
+      // Get OAuth validation settings for this project
+      const db = getDb(process.env.DATABASE_URL!);
+      const oauthSettings = await operations.getOAuthValidationSettings(
+        db,
+        projectId,
+      );
 
-      if (!payload.iss) {
-        throw new BadRequestException("Subject token missing issuer (iss)");
+      if (!oauthSettings) {
+        this.logger.log(
+          `No OAuth settings found for project ${projectId}, using default (none)`,
+        );
       }
 
-      // Fetch OpenID configuration
-      const openidConfigUrl = `${payload.iss}/.well-known/openid-configuration`;
-      this.logger.log(`Fetching OpenID configuration from: ${openidConfigUrl}`);
+      const validationMode = oauthSettings?.mode || OAuthValidationMode.NONE;
 
-      const configResponse = await fetch(openidConfigUrl);
-      let resultPayload;
-      if (!configResponse.ok) {
-        this.logger.error(
-          `Failed to fetch OpenID configuration: ${configResponse.statusText}`,
-        );
-        // throw new UnauthorizedException(
-        //   `Failed to fetch OpenID configuration: ${configResponse.statusText}`,
-        // );
-        resultPayload = payload;
-      } else {
-        const openidConfig = await configResponse.json();
-        if (!openidConfig.jwks_uri) {
-          throw new UnauthorizedException(
-            "OpenID configuration missing jwks_uri",
-          );
-        }
+      // Validate the subject token based on the configured mode
+      const verifiedPayload = await validateSubjectToken(
+        subject_token,
+        validationMode,
+        oauthSettings,
+        this.logger,
+      );
 
-        // Create JWKS and verify the token
-        const JWKS = createRemoteJWKSet(new URL(openidConfig.jwks_uri));
-
-        const { payload: verifiedPayload } = await jwtVerify(
-          subject_token,
-          JWKS,
-          {
-            issuer: payload.iss,
-          },
-        );
-
-        if (!verifiedPayload.sub) {
-          throw new UnauthorizedException(
-            "Subject token missing subject (sub)",
-          );
-        }
-        resultPayload = verifiedPayload;
+      if (!verifiedPayload.sub) {
+        throw new UnauthorizedException("Subject token missing subject (sub)");
       }
+
       // Create new token with projectId as issuer and same sub
-      // TODO: Fetch signing key from database instead of using dummy value
+      // TODO: Use project-specific signing key from database
       const signingKey = new TextEncoder().encode(`token-for-${projectId}`);
 
       const expiresIn = 3600; // 1 hour
       const currentTime = Math.floor(Date.now() / 1000);
 
       const accessToken = await new SignJWT({
-        sub: resultPayload.sub,
+        sub: verifiedPayload.sub,
         iss: projectId,
         aud: "tambo",
         iat: currentTime,
@@ -143,10 +228,6 @@ export class OAuthController {
       })
         .setProtectedHeader({ alg: "HS256" })
         .sign(signingKey);
-
-      this.logger.log(
-        `OAuth token exchanged successfully for project ${projectId}`,
-      );
 
       return {
         access_token: accessToken,
