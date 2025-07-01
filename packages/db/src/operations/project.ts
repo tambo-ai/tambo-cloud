@@ -1,5 +1,4 @@
 import {
-  decryptProviderKey,
   encryptApiKey,
   encryptProviderKey,
   hashKey,
@@ -567,32 +566,8 @@ export async function updateOAuthValidationSettings(
     .returning();
 }
 
-/**
- * Encrypt OAuth secret key using the same encryption as provider keys
- */
-export function encryptOAuthSecretKey(
-  secretKey: string,
-  apiKeySecret: string,
-): string {
-  return encryptProviderKey("oauth", secretKey, apiKeySecret);
-}
-
-/**
- * Decrypt OAuth secret key using the same decryption as provider keys
- */
-export function decryptOAuthSecretKey(
-  encryptedSecretKey: string,
-  apiKeySecret: string,
-): string {
-  const { providerName, providerKey } = decryptProviderKey(
-    encryptedSecretKey,
-    apiKeySecret,
-  );
-
-  // Verify that this was encrypted as an OAuth secret key
-  if (providerName !== "oauth") {
-    throw new Error("Invalid OAuth secret key - wrong provider name");
-  }
-
-  return providerKey;
-}
+// Re-export OAuth encryption functions from core for backward compatibility
+export {
+  decryptOAuthSecretKey,
+  encryptOAuthSecretKey,
+} from "@tambo-ai-cloud/core";
