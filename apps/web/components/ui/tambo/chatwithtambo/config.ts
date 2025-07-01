@@ -88,7 +88,7 @@ export const tamboRegisteredComponents = [
   {
     name: "DailyMessagesChart",
     description:
-      "Displays a bar chart showing daily message activity for a project over the last 30 days. Features responsive design with smooth animations, loading states, and empty state handling. Shows date-formatted labels and message counts with visual indicators. Use when users want to view message activity trends and usage patterns for their project analytics.",
+      "Displays a bar chart showing daily message activity for one or more projects over a configurable time period (1-90 days, default 30). Accepts either a single project ID or an array of project IDs to show combined activity across multiple projects. Features responsive design with smooth animations, loading states, and empty state handling. Shows date-formatted labels and message counts with visual indicators. Use when users want to view message activity trends and usage patterns for their project analytics or across all their projects.",
     component: DailyMessagesChart,
     propsSchema: DailyMessagesChartSchema,
   },
