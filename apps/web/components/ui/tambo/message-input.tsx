@@ -1,5 +1,6 @@
 "use client";
 
+import { appendPageContext } from "@/lib/page-context";
 import { cn } from "@/lib/utils";
 import { useTamboThread, useTamboThreadInput } from "@tambo-ai/react";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -116,13 +117,16 @@ const MessageInput = React.forwardRef<HTMLFormElement, MessageInputProps>(
     const [displayValue, setDisplayValue] = React.useState("");
     const [submitError, setSubmitError] = React.useState<string | null>(null);
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     React.useEffect(() => {
-      setDisplayValue(value);
-      if (value && textareaRef.current) {
-        textareaRef.current.focus();
+      if (!isSubmitting) {
+        setDisplayValue(value);
+        if (value && textareaRef.current) {
+          textareaRef.current.focus();
+        }
       }
-    }, [value]);
+    }, [value, isSubmitting]);
 
     const handleSubmit = React.useCallback(
       async (e: React.FormEvent) => {
@@ -130,19 +134,43 @@ const MessageInput = React.forwardRef<HTMLFormElement, MessageInputProps>(
         if (!value.trim()) return;
 
         setSubmitError(null);
+        setIsSubmitting(true);
+
+        // Store the original value
+        const originalValue = value;
+
+        // Clear display immediately
         setDisplayValue("");
+
         try {
+          // Append page context to the message before submitting
+          const messageWithContext = appendPageContext(originalValue.trim());
+
+          // Set the value with context (this is what will be submitted)
+          setValue(messageWithContext);
+
           await submit({
             contextKey,
             streamResponse: true,
           });
+
+          // Clear the value after successful submission
           setValue("");
+
+          // Reset submission state
+          setIsSubmitting(false);
+
           setTimeout(() => {
             textareaRef.current?.focus();
           }, 0);
         } catch (error) {
           console.error("Failed to submit message:", error);
-          setDisplayValue(value);
+
+          // Restore the original value on error
+          setIsSubmitting(false);
+          setValue(originalValue);
+          setDisplayValue(originalValue);
+
           setSubmitError(
             error instanceof Error
               ? error.message
@@ -150,7 +178,7 @@ const MessageInput = React.forwardRef<HTMLFormElement, MessageInputProps>(
           );
         }
       },
-      [value, submit, contextKey, setValue, setDisplayValue, setSubmitError],
+      [value, submit, contextKey, setValue],
     );
 
     const contextValue = React.useMemo(
