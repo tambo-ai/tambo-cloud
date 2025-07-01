@@ -536,7 +536,7 @@ export async function getOAuthValidationSettings(
   }
 
   return {
-    mode: project.oauthValidationMode as OAuthValidationMode,
+    mode: project.oauthValidationMode,
     secretKeyEncrypted: project.oauthSecretKeyEncrypted,
     publicKey: project.oauthPublicKey,
   };
