@@ -1,17 +1,12 @@
 import { jest } from "@jest/globals";
 import { BadRequestException, UnauthorizedException } from "@nestjs/common";
-import { OAuthValidationMode } from "@tambo-ai-cloud/core";
-import { operations } from "@tambo-ai-cloud/db";
+import {
+  OAuthValidationMode,
+  encryptOAuthSecretKey,
+} from "@tambo-ai-cloud/core";
 import { SignJWT, exportJWK, generateKeyPair } from "jose";
 import { CorrelationLoggerService } from "../../services/logger.service";
 import { validateSubjectToken } from "../oauth";
-
-// Mock only the database operations
-jest.mock("@tambo-ai-cloud/db", () => ({
-  operations: {
-    decryptOAuthSecretKey: jest.fn(),
-  },
-}));
 
 // Mock global fetch for OpenID discovery tests
 global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
@@ -19,6 +14,7 @@ global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 describe("validateSubjectToken", () => {
   let mockLogger: jest.Mocked<CorrelationLoggerService>;
   const symmetricSecret = "my-test-secret-key-that-is-long-enough";
+  const apiKeySecret = "test-api-key-secret";
   const testPayload = {
     sub: "user123",
     iss: "https://example.com",
@@ -29,7 +25,7 @@ describe("validateSubjectToken", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.API_KEY_SECRET = "test-secret";
+    process.env.API_KEY_SECRET = apiKeySecret;
 
     mockLogger = {
       log: jest.fn(),
@@ -60,16 +56,17 @@ describe("validateSubjectToken", () => {
   });
 
   describe("SYMMETRIC validation mode", () => {
-    const mockSettings = {
-      secretKeyEncrypted: "encrypted-secret-key",
-      publicKey: null,
-    };
-
     it("should verify JWT with symmetric key", async () => {
-      // Mock the decryption to return our test secret
-      jest
-        .mocked(operations.decryptOAuthSecretKey)
-        .mockReturnValue(symmetricSecret);
+      // Pre-encrypt the secret key using the real encryption function
+      const encryptedSecretKey = encryptOAuthSecretKey(
+        symmetricSecret,
+        apiKeySecret,
+      );
+
+      const mockSettings = {
+        secretKeyEncrypted: encryptedSecretKey,
+        publicKey: null,
+      };
 
       // Create a real JWT with the symmetric key
       const token = await new SignJWT(testPayload)
@@ -85,17 +82,20 @@ describe("validateSubjectToken", () => {
 
       expect(result.sub).toBe("user123");
       expect(result.iss).toBe("https://example.com");
-      expect(operations.decryptOAuthSecretKey).toHaveBeenCalledWith(
-        "encrypted-secret-key",
-        "test-secret",
-      );
     });
 
     it("should reject JWT with wrong symmetric key", async () => {
-      // Mock the decryption to return a different secret
-      jest
-        .mocked(operations.decryptOAuthSecretKey)
-        .mockReturnValue("wrong-secret");
+      // Pre-encrypt a different secret key
+      const wrongSecret = "wrong-secret-key";
+      const encryptedWrongSecret = encryptOAuthSecretKey(
+        wrongSecret,
+        apiKeySecret,
+      );
+
+      const mockSettings = {
+        secretKeyEncrypted: encryptedWrongSecret,
+        publicKey: null,
+      };
 
       // Create a JWT with the correct key
       const token = await new SignJWT(testPayload)
@@ -132,6 +132,26 @@ describe("validateSubjectToken", () => {
           mockLogger,
         ),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it("should throw error when secret key is invalid encrypted format", async () => {
+      const mockSettings = {
+        secretKeyEncrypted: "invalid-encrypted-format",
+        publicKey: null,
+      };
+
+      const token = await new SignJWT(testPayload)
+        .setProtectedHeader({ alg: "HS256" })
+        .sign(new TextEncoder().encode(symmetricSecret));
+
+      await expect(
+        validateSubjectToken(
+          token,
+          OAuthValidationMode.SYMMETRIC,
+          mockSettings,
+          mockLogger,
+        ),
+      ).rejects.toThrow();
     });
   });
 

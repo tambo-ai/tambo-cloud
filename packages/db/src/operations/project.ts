@@ -565,9 +565,3 @@ export async function updateOAuthValidationSettings(
     .where(eq(schema.projects.id, projectId))
     .returning();
 }
-
-// Re-export OAuth encryption functions from core for backward compatibility
-export {
-  decryptOAuthSecretKey,
-  encryptOAuthSecretKey,
-} from "@tambo-ai-cloud/core";

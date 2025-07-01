@@ -1,11 +1,13 @@
 import { BadRequestException, UnauthorizedException } from "@nestjs/common";
-import { OAuthValidationMode } from "@tambo-ai-cloud/core";
-import { operations } from "@tambo-ai-cloud/db";
 import {
-  JWTPayload,
+  decryptOAuthSecretKey,
+  OAuthValidationMode,
+} from "@tambo-ai-cloud/core";
+import {
   createRemoteJWKSet,
   decodeJwt,
   importJWK,
+  JWTPayload,
   jwtVerify,
 } from "jose";
 import { CorrelationLoggerService } from "src/common/services/logger.service";
@@ -33,7 +35,7 @@ export async function validateSubjectToken(
         );
       }
 
-      const secretKey = operations.decryptOAuthSecretKey(
+      const secretKey = decryptOAuthSecretKey(
         oauthSettings.secretKeyEncrypted,
         process.env.API_KEY_SECRET!,
       );

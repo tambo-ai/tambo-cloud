@@ -16,7 +16,7 @@ const IV_LENGTH = 16; // 16 bytes for AES
 /** Prefix for user-facing API keys – intentionally NOT exported. */
 const TAMBO_PREFIX = "tambo_";
 
-/** Strict Base64 check (standard "+"/=" alphabet, length multiple of 4, no whitespace). */
+/** Strict Base64 check (standard "+/=" alphabet, length multiple of 4, no whitespace). */
 const BASE64_REGEX =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 
