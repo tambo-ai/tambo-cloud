@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.73.3](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.73.2...repo-v0.73.3) (2025-07-01)
+
+
+### Bug Fixes
+
+* make contextKey optional ([#1253](https://github.com/tambo-ai/tambo-cloud/issues/1253)) ([ff975e5](https://github.com/tambo-ai/tambo-cloud/commit/ff975e5114bf659940ef1d1fd8103a44f1437a03))
+
+## [0.73.2](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.73.1...repo-v0.73.2) (2025-06-30)
+
+
+### Bug Fixes
+
+* put context key in the url ([#1251](https://github.com/tambo-ai/tambo-cloud/issues/1251)) ([c49a4aa](https://github.com/tambo-ai/tambo-cloud/commit/c49a4aa8d11ac66b2c26b134797087d7c95c1e84))
+
+## [0.73.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.73.0...repo-v0.73.1) (2025-06-30)
+
+
+### Bug Fixes
+
+* don't doublerender toolcall info ([#1249](https://github.com/tambo-ai/tambo-cloud/issues/1249)) ([83454e1](https://github.com/tambo-ai/tambo-cloud/commit/83454e1738c7dd6a7feebc256d2ee6ac9b14246a))
+
+## [0.73.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.72.0...repo-v0.73.0) (2025-06-30)
+
+
+### Features
+
+* oauth endpoint and support for bearer tokens in api ([#1237](https://github.com/tambo-ai/tambo-cloud/issues/1237)) ([c058eb6](https://github.com/tambo-ai/tambo-cloud/commit/c058eb68ad2c03ad38941f347bcd4fc5a6b25f9e))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump drizzle-kit from 0.31.2 to 0.31.4 in the drizzle group ([#1239](https://github.com/tambo-ai/tambo-cloud/issues/1239)) ([913da66](https://github.com/tambo-ai/tambo-cloud/commit/913da66f75cbcc957b627434b7c6d2a55e636af5))
+* **deps-dev:** bump the eslint group with 2 updates ([#1243](https://github.com/tambo-ai/tambo-cloud/issues/1243)) ([aca8a2d](https://github.com/tambo-ai/tambo-cloud/commit/aca8a2d8ddb4e2981919ef5887f77e1a13a96339))
+* **deps:** bump @splinetool/runtime from 1.10.14 to 1.10.16 ([#1241](https://github.com/tambo-ai/tambo-cloud/issues/1241)) ([32b5e3a](https://github.com/tambo-ai/tambo-cloud/commit/32b5e3ac325c5d8b3584e658a1c8b31f38a867a0))
+* **deps:** bump @tambo-ai/typescript-sdk from 0.55.0 to 0.56.0 ([#1244](https://github.com/tambo-ai/tambo-cloud/issues/1244)) ([ec97424](https://github.com/tambo-ai/tambo-cloud/commit/ec97424b1410c70bc00df00fc4a43489a95ce9a2))
+* **deps:** bump @tanstack/react-query from 5.81.2 to 5.81.5 ([#1246](https://github.com/tambo-ai/tambo-cloud/issues/1246)) ([eb6a1dd](https://github.com/tambo-ai/tambo-cloud/commit/eb6a1dd9e2b5e113d447e129efd4062bc846b359))
+* **deps:** bump pg from 8.16.2 to 8.16.3 ([#1247](https://github.com/tambo-ai/tambo-cloud/issues/1247)) ([26a5826](https://github.com/tambo-ai/tambo-cloud/commit/26a58269698b36c18bbe0847c0520592c7314654))
+* **deps:** bump react-hook-form from 7.58.1 to 7.59.0 ([#1245](https://github.com/tambo-ai/tambo-cloud/issues/1245)) ([053c88a](https://github.com/tambo-ai/tambo-cloud/commit/053c88a00ef155d872e389b448817a6d2415a5fa))
+* **deps:** bump recharts from 3.0.0 to 3.0.2 ([#1242](https://github.com/tambo-ai/tambo-cloud/issues/1242)) ([8899d91](https://github.com/tambo-ai/tambo-cloud/commit/8899d91940d6b99ae284c7ff0001c2b4f8902254))
+* **deps:** bump the trpc group with 3 updates ([#1238](https://github.com/tambo-ai/tambo-cloud/issues/1238)) ([e8f28e5](https://github.com/tambo-ai/tambo-cloud/commit/e8f28e50eea424ad1d9a3ff65781db1f494d27b0))
+
 ## [0.72.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.71.0...repo-v0.72.0) (2025-06-27)
 
 
