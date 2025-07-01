@@ -410,4 +410,234 @@ describe("validateSubjectToken", () => {
       ).rejects.toThrow();
     });
   });
+
+  describe("Security validations", () => {
+    describe("Input validation", () => {
+      it("should reject null/empty subject tokens", async () => {
+        await expect(
+          validateSubjectToken("", OAuthValidationMode.NONE, null, mockLogger),
+        ).rejects.toThrow(BadRequestException);
+
+        await expect(
+          validateSubjectToken(
+            null as any,
+            OAuthValidationMode.NONE,
+            null,
+            mockLogger,
+          ),
+        ).rejects.toThrow(BadRequestException);
+      });
+
+      it("should reject oversized tokens", async () => {
+        const largeToken = "a".repeat(9000); // > 8KB limit
+
+        await expect(
+          validateSubjectToken(
+            largeToken,
+            OAuthValidationMode.NONE,
+            null,
+            mockLogger,
+          ),
+        ).rejects.toThrow(BadRequestException);
+      });
+    });
+
+    describe("SSRF protection", () => {
+      it("should reject localhost issuer", async () => {
+        const maliciousPayload = {
+          ...testPayload,
+          iss: "http://localhost:8080",
+        };
+
+        const token = await new SignJWT(maliciousPayload)
+          .setProtectedHeader({ alg: "HS256" })
+          .sign(new TextEncoder().encode(symmetricSecret));
+
+        await expect(
+          validateSubjectToken(
+            token,
+            OAuthValidationMode.ASYMMETRIC_AUTO,
+            null,
+            mockLogger,
+          ),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+
+      it("should reject private network issuer", async () => {
+        const maliciousPayload = {
+          ...testPayload,
+          iss: "https://192.168.1.1",
+        };
+
+        const token = await new SignJWT(maliciousPayload)
+          .setProtectedHeader({ alg: "HS256" })
+          .sign(new TextEncoder().encode(symmetricSecret));
+
+        await expect(
+          validateSubjectToken(
+            token,
+            OAuthValidationMode.ASYMMETRIC_AUTO,
+            null,
+            mockLogger,
+          ),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+
+      it("should reject metadata service issuer", async () => {
+        const maliciousPayload = {
+          ...testPayload,
+          iss: "https://169.254.169.254",
+        };
+
+        const token = await new SignJWT(maliciousPayload)
+          .setProtectedHeader({ alg: "HS256" })
+          .sign(new TextEncoder().encode(symmetricSecret));
+
+        await expect(
+          validateSubjectToken(
+            token,
+            OAuthValidationMode.ASYMMETRIC_AUTO,
+            null,
+            mockLogger,
+          ),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+
+      it("should reject non-HTTPS issuer", async () => {
+        const maliciousPayload = {
+          ...testPayload,
+          iss: "http://example.com",
+        };
+
+        const token = await new SignJWT(maliciousPayload)
+          .setProtectedHeader({ alg: "HS256" })
+          .sign(new TextEncoder().encode(symmetricSecret));
+
+        await expect(
+          validateSubjectToken(
+            token,
+            OAuthValidationMode.ASYMMETRIC_AUTO,
+            null,
+            mockLogger,
+          ),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+
+      it("should reject issuer with path components", async () => {
+        const maliciousPayload = {
+          ...testPayload,
+          iss: "https://example.com/malicious/path",
+        };
+
+        const token = await new SignJWT(maliciousPayload)
+          .setProtectedHeader({ alg: "HS256" })
+          .sign(new TextEncoder().encode(symmetricSecret));
+
+        await expect(
+          validateSubjectToken(
+            token,
+            OAuthValidationMode.ASYMMETRIC_AUTO,
+            null,
+            mockLogger,
+          ),
+        ).rejects.toThrow(BadRequestException);
+      });
+    });
+
+    describe("Key type validation", () => {
+      it("should reject private key in manual public key field", async () => {
+        // Generate an RSA key pair and export the private key
+        const { privateKey } = await generateKeyPair("RS256");
+        const privateJWK = await exportJWK(privateKey);
+
+        const mockSettings = {
+          secretKeyEncrypted: null,
+          publicKey: JSON.stringify(privateJWK),
+        };
+
+        const token = await new SignJWT(testPayload)
+          .setProtectedHeader({ alg: "RS256" })
+          .sign(privateKey);
+
+        await expect(
+          validateSubjectToken(
+            token,
+            OAuthValidationMode.ASYMMETRIC_MANUAL,
+            mockSettings,
+            mockLogger,
+          ),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+
+      it("should reject oversized public key configuration", async () => {
+        const largeKeyConfig = "a".repeat(15000); // > 10KB limit
+
+        const mockSettings = {
+          secretKeyEncrypted: null,
+          publicKey: largeKeyConfig,
+        };
+
+        await expect(
+          validateSubjectToken(
+            "any-token",
+            OAuthValidationMode.ASYMMETRIC_MANUAL,
+            mockSettings,
+            mockLogger,
+          ),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+    });
+
+    describe("Symmetric key validation", () => {
+      it("should reject short symmetric keys", async () => {
+        const shortSecret = "short"; // < 32 characters
+        const encryptedShortSecret = encryptOAuthSecretKey(
+          shortSecret,
+          apiKeySecret,
+        );
+
+        const mockSettings = {
+          secretKeyEncrypted: encryptedShortSecret,
+          publicKey: null,
+        };
+
+        const token = await new SignJWT(testPayload)
+          .setProtectedHeader({ alg: "HS256" })
+          .sign(new TextEncoder().encode(shortSecret));
+
+        await expect(
+          validateSubjectToken(
+            token,
+            OAuthValidationMode.SYMMETRIC,
+            mockSettings,
+            mockLogger,
+          ),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+    });
+
+    describe("Environment validation", () => {
+      it("should throw error when API_KEY_SECRET is not set", async () => {
+        const originalSecret = process.env.API_KEY_SECRET;
+        delete process.env.API_KEY_SECRET;
+
+        try {
+          await expect(
+            validateSubjectToken(
+              "any-token",
+              OAuthValidationMode.SYMMETRIC,
+              { secretKeyEncrypted: "encrypted", publicKey: null },
+              mockLogger,
+            ),
+          ).rejects.toThrow(UnauthorizedException);
+
+          expect(mockLogger.error).toHaveBeenCalledWith(
+            "API_KEY_SECRET environment variable not set",
+          );
+        } finally {
+          process.env.API_KEY_SECRET = originalSecret;
+        }
+      });
+    });
+  });
 });
