@@ -3,6 +3,7 @@ import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { llmProviderConfig } from "@tambo-ai-cloud/backend";
 import {
+  encryptOAuthSecretKey,
   hashKey,
   MCPTransport,
   OAuthValidationMode,
@@ -858,7 +859,7 @@ export const projectRouter = createTRPCRouter({
 
       if (!settings) {
         return {
-          mode: "none" as const,
+          mode: OAuthValidationMode.NONE,
           hasSecretKey: false,
           hasPublicKey: false,
         };
@@ -889,22 +890,22 @@ export const projectRouter = createTRPCRouter({
 
       // Encrypt secret key if provided
       let secretKeyEncrypted: string | null = null;
-      if (secretKey && mode === "symmetric") {
-        secretKeyEncrypted = operations.encryptOAuthSecretKey(
+      if (secretKey && mode === OAuthValidationMode.SYMMETRIC) {
+        secretKeyEncrypted = encryptOAuthSecretKey(
           secretKey,
           env.API_KEY_SECRET,
         );
       }
 
       // Validate inputs based on mode
-      if (mode === "symmetric" && !secretKey) {
+      if (mode === OAuthValidationMode.SYMMETRIC && !secretKey) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Secret key is required for symmetric validation mode",
         });
       }
 
-      if (mode === "asymmetric_manual" && !publicKey) {
+      if (mode === OAuthValidationMode.ASYMMETRIC_MANUAL && !publicKey) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
@@ -915,7 +916,8 @@ export const projectRouter = createTRPCRouter({
       const settings = {
         mode,
         secretKeyEncrypted,
-        publicKey: mode === "asymmetric_manual" ? publicKey : null,
+        publicKey:
+          mode === OAuthValidationMode.ASYMMETRIC_MANUAL ? publicKey : null,
       };
 
       await operations.updateOAuthValidationSettings(
