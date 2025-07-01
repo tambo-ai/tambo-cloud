@@ -1,24 +1,5 @@
 "use client";
 
-import {
-  addMcpServer,
-  authorizeMcpServer,
-  createProject,
-  deleteMcpServer,
-  deleteProjectApiKey,
-  fetchAllProjects,
-  fetchCurrentUser,
-  fetchProjectApiKeys,
-  fetchProjectById,
-  fetchProjectLlmSettings,
-  fetchProjectMcpServers,
-  generateProjectApiKey,
-  getMcpServerTools,
-  removeProject,
-  updateMcpServer,
-  updateProject,
-  updateProjectLlmSettings,
-} from "@/app/(authed)/utils/project-utils";
 import { AuthForm } from "@/components/auth/auth-form";
 import {
   APIKeyList,
@@ -52,27 +33,7 @@ import {
   ThreadTableContainer,
   ThreadTableContainerSchema,
 } from "@/components/observability/thread-table/thread-table-container";
-import { TamboTool } from "@tambo-ai/react";
 import { z } from "zod";
-import {
-  addMcpServerSchema,
-  authorizeMcpServerSchema,
-  createProjectSchema,
-  deleteMcpServerSchema,
-  deleteProjectApiKeySchema,
-  fetchAllProjectsSchema,
-  fetchCurrentUserSchema,
-  fetchProjectApiKeysSchema,
-  fetchProjectByIdSchema,
-  fetchProjectLlmSettingsSchema,
-  fetchProjectMcpServersSchema,
-  generateProjectApiKeySchema,
-  getMcpServerToolsSchema,
-  removeProjectSchema,
-  updateMcpServerSchema,
-  updateProjectLlmSettingsSchema,
-  updateProjectSchema,
-} from "./tools";
 
 export const tamboRegisteredComponents = [
   {
@@ -137,112 +98,5 @@ export const tamboRegisteredComponents = [
       "Displays a comprehensive table of all threads for a specific project with full functionality including search, sorting, deletion, and message viewing. Features responsive design with smooth animations, loading states, and empty state handling. Shows thread ID, creation date, message count, tools, components, and errors. Supports compact mode which hides Updated, Context Key, and Thread Name columns for a cleaner view. IMPORTANT: This component requires a valid project ID (not project name). Always set compact=true for a cleaner interface. Use when users want to view and manage all threads for a specific project.",
     component: ThreadTableContainer,
     propsSchema: ThreadTableContainerSchema,
-  },
-];
-
-export const tamboRegisteredTools: TamboTool[] = [
-  {
-    name: "fetchCurrentUser",
-    description:
-      "Fetches the current user. If the user is not logged in, return a link that leads to the login page at /login",
-    toolSchema: fetchCurrentUserSchema,
-    tool: fetchCurrentUser,
-  },
-  {
-    name: "fetchAllProjects",
-    description: "Fetches all projects for the current user.",
-    toolSchema: fetchAllProjectsSchema,
-    tool: fetchAllProjects,
-  },
-  {
-    name: "fetchProjectById",
-    description: "Fetches a specific project by ID.",
-    toolSchema: fetchProjectByIdSchema,
-    tool: fetchProjectById,
-  },
-  {
-    name: "updateProject",
-    description: "Updates a project.",
-    toolSchema: updateProjectSchema,
-    tool: updateProject,
-  },
-  {
-    name: "createProject",
-    description: "Creates a new project.",
-    toolSchema: createProjectSchema,
-    tool: createProject,
-  },
-  {
-    name: "removeProject",
-    description: "Removes a project.",
-    toolSchema: removeProjectSchema,
-    tool: removeProject,
-  },
-  {
-    name: "fetchProjectApiKeys",
-    description: "Fetches API keys for a project.",
-    toolSchema: fetchProjectApiKeysSchema,
-    tool: fetchProjectApiKeys,
-  },
-  {
-    name: "generateProjectApiKey",
-    description: "Generates a new API key for a project.",
-    toolSchema: generateProjectApiKeySchema,
-    tool: generateProjectApiKey,
-  },
-  {
-    name: "deleteProjectApiKey",
-    description: "Deletes an API key for a project.",
-    toolSchema: deleteProjectApiKeySchema,
-    tool: deleteProjectApiKey,
-  },
-  {
-    name: "fetchProjectLlmSettings",
-    description: "Fetches LLM configuration settings for a project.",
-    toolSchema: fetchProjectLlmSettingsSchema,
-    tool: fetchProjectLlmSettings,
-  },
-  {
-    name: "updateProjectLlmSettings",
-    description:
-      "Updates LLM configuration settings for a project. Always show ProviderKeySection component after calling this tool.",
-    toolSchema: updateProjectLlmSettingsSchema,
-    tool: updateProjectLlmSettings,
-  },
-  {
-    name: "fetchProjectMcpServers",
-    description: "Fetches MCP servers for a project.",
-    toolSchema: fetchProjectMcpServersSchema,
-    tool: fetchProjectMcpServers,
-  },
-  {
-    name: "addMcpServer",
-    description: "Adds a new MCP server to a project.",
-    toolSchema: addMcpServerSchema,
-    tool: addMcpServer,
-  },
-  {
-    name: "updateMcpServer",
-    description: "Updates an existing MCP server for a project.",
-    toolSchema: updateMcpServerSchema,
-    tool: updateMcpServer,
-  },
-  {
-    name: "deleteMcpServer",
-    description: "Deletes an MCP server for a project.",
-    toolSchema: deleteMcpServerSchema,
-    tool: deleteMcpServer,
-  },
-  {
-    name: "authorizeMcpServer",
-    description: "Authorizes an MCP server for a project.",
-    toolSchema: authorizeMcpServerSchema,
-    tool: authorizeMcpServer,
-  },
-  {
-    name: "getMcpServerTools",
-    description: "Gets the tools for an MCP server for a project.",
-    toolSchema: getMcpServerToolsSchema,
-    tool: getMcpServerTools,
   },
 ];

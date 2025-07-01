@@ -15,6 +15,7 @@ import {
   MessageSuggestionsStatus,
 } from "@/components/ui/tambo/message-suggestions";
 import { ScrollableMessageContainer } from "@/components/ui/tambo/scrollable-message-container";
+import { useTamboManagementTools } from "@/components/ui/tambo/chatwithtambo/tools";
 import {
   ThreadContent,
   ThreadContentMessages,
@@ -187,6 +188,7 @@ export const MessageThreadCollapsible = React.forwardRef<
   MessageThreadCollapsibleProps
 >(({ className, contextKey, defaultOpen = false, variant, ...props }, ref) => {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  useTamboManagementTools();
 
   const handleThreadChange = React.useCallback(() => {
     setIsOpen(true);

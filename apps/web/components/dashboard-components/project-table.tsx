@@ -183,10 +183,8 @@ export function ProjectTable({
               >
                 Created
               </TableHead>
-              {/* Messages & Users columns - only visible on lg and up (unless compact is true) */}
-              <TableHead
-                className={`${headerClass} text-foreground ${compact ? "hidden" : "hidden lg:table-cell"}`}
-              >
+              {/* Messages column - visible in both compact and full modes */}
+              <TableHead className={`${headerClass} text-foreground`}>
                 Messages
               </TableHead>
               <TableHead
@@ -300,9 +298,7 @@ export function ProjectTable({
                       </span>
                     </TableCell>
                     {/* Messages & Users - only visible on large screens */}
-                    <TableCell
-                      className={`${cellClass} text-sm ${compact ? "hidden" : "hidden lg:table-cell"}`}
-                    >
+                    <TableCell className={`${cellClass} text-sm`}>
                       {project.messages}
                     </TableCell>
                     <TableCell

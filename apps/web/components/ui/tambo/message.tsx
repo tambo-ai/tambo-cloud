@@ -260,6 +260,9 @@ const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
             ) : (
               safeContent
             )}
+            {message.isCancelled && (
+              <span className="text-muted-foreground text-xs">cancelled</span>
+            )}
           </div>
         )}
         {toolStatusMessage && (
@@ -298,13 +301,6 @@ const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
                     : "max-h-0 opacity-0",
                 )}
               >
-                <pre>
-                  {JSON.stringify(
-                    toolCallRequest ?? "No tool call request",
-                    null,
-                    2,
-                  )}
-                </pre>
                 <span className="whitespace-pre-wrap">
                   tool: {toolCallRequest?.toolName}
                 </span>
@@ -370,7 +366,11 @@ const MessageRenderedComponentArea = React.forwardRef<
     };
   }, []);
 
-  if (!message.renderedComponent || role !== "assistant") {
+  if (
+    !message.renderedComponent ||
+    role !== "assistant" ||
+    message.isCancelled
+  ) {
     return null;
   }
 
