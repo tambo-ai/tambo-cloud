@@ -118,6 +118,7 @@ export class ThreadsController {
 
   @Get(":id")
   @UseGuards(ThreadInProjectGuard)
+  @ApiQuery({ name: "contextKey", required: false })
   async findOne(
     @Param("id") threadId: string,
     @Req() request: Request,
@@ -443,13 +444,6 @@ export class ThreadsController {
     description: "ID of the thread to generate name for",
     example: "thread_123456789",
   })
-  @ApiParam({
-    name: "contextKey",
-    description: "Context key to use for the thread",
-    example: "user_1234",
-    type: "string",
-    required: false,
-  })
   @ApiResponse({
     status: 201,
     description: "Thread name generated successfully",
@@ -460,6 +454,7 @@ export class ThreadsController {
     description: "Thread not found",
     type: ProblemDetailsDto,
   })
+  @ApiQuery({ name: "contextKey", required: false })
   async generateName(
     @Param("id") threadId: string,
     @Req() request: Request,
