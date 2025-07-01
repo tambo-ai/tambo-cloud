@@ -189,6 +189,61 @@ export const deleteProjectApiKeySchema = z
     }),
   );
 
+/** dashboard statistics management */
+
+/**
+ * Zod schema for the `fetchProjectCount` function.
+ * Defines no arguments and returns the count of projects for the current user.
+ */
+export const fetchProjectCountSchema = z
+  .function()
+  .args()
+  .returns(
+    z.object({
+      count: z.number(),
+    }),
+  );
+
+/**
+ * Zod schema for the `fetchTotalMessageUsage` function.
+ * Defines a period argument and returns total message usage.
+ */
+export const fetchTotalMessageUsageSchema = z
+  .function()
+  .args(
+    z
+      .string()
+      .describe(
+        "Time period filter: 'all time', 'per month', or 'per week'. Defaults to 'all time'",
+      ),
+  )
+  .returns(
+    z.object({
+      totalMessages: z.number(),
+      period: z.string(),
+    }),
+  );
+
+/**
+ * Zod schema for the `fetchTotalUsers` function.
+ * Defines a period argument and returns total user count.
+ */
+export const fetchTotalUsersSchema = z
+  .function()
+  .args(
+    z
+      .string()
+      .describe(
+        "Time period filter: 'all time', 'per month', or 'per week'. Defaults to 'all time'",
+      ),
+  )
+  .returns(
+    z.object({
+      totalUsers: z.number(),
+      period: z.string(),
+    }),
+  );
+
 /** llm provider settings management */
 
 /**
@@ -557,6 +612,69 @@ export function useTamboManagementTools() {
         return { deletedKey: "The key was deleted successfully." };
       },
       toolSchema: deleteProjectApiKeySchema,
+    });
+
+    /* dashboard statistics management */
+
+    /**
+     * Registers a tool to fetch the total number of projects for the current user.
+     * Returns the count of projects associated with the user's account.
+     * @returns {Object} Object containing the project count
+     */
+    registerTool({
+      name: "fetchProjectCount",
+      description: "Fetches the total number of projects for the current user.",
+      tool: async () => {
+        const projects = await trpcClient.project.getUserProjects.query();
+        return { count: projects.length };
+      },
+      toolSchema: fetchProjectCountSchema,
+    });
+
+    /**
+     * Registers a tool to fetch total message usage statistics.
+     * @param {string} period - Time period filter ('all time', 'per month', 'per week'). Defaults to 'all time' if not specified.
+     * @returns {Object} Object containing total message count and period
+     */
+    registerTool({
+      name: "fetchTotalMessageUsage",
+      description:
+        "Fetches total message usage statistics with period filtering. Period can be 'all time', 'per month', or 'per week'.",
+      tool: async (period: string) => {
+        // Use 'all time' as default if period is not provided or invalid
+        const validPeriod = period || "all time";
+        const result = await trpcClient.project.getTotalMessageUsage.query({
+          period: validPeriod,
+        });
+        return {
+          totalMessages: result.totalMessages,
+          period: validPeriod,
+        };
+      },
+      toolSchema: fetchTotalMessageUsageSchema,
+    });
+
+    /**
+     * Registers a tool to fetch total user count statistics.
+     * @param {string} period - Time period filter ('all time', 'per month', 'per week'). Defaults to 'all time' if not specified.
+     * @returns {Object} Object containing total user count and period
+     */
+    registerTool({
+      name: "fetchTotalUsers",
+      description:
+        "Fetches total user count statistics with period filtering. Period can be 'all time', 'per month', or 'per week'.",
+      tool: async (period: string) => {
+        // Use 'all time' as default if period is not provided or invalid
+        const validPeriod = period || "all time";
+        const result = await trpcClient.project.getTotalUsers.query({
+          period: validPeriod,
+        });
+        return {
+          totalUsers: result.totalUsers,
+          period: validPeriod,
+        };
+      },
+      toolSchema: fetchTotalUsersSchema,
     });
 
     /* llm provider settings management */
