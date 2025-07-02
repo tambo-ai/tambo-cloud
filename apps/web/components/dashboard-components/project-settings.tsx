@@ -7,6 +7,7 @@ import {
 import { APIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
 import { AvailableMcpServers } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import { CustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
+import { OAuthSettings } from "@/components/dashboard-components/project-details/oauth-settings";
 import { ProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
 import { SettingsPageSkeleton } from "@/components/skeletons/settings-skeletons";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
   const apiKeysRef = useRef<HTMLDivElement>(null);
   const llmProvidersRef = useRef<HTMLDivElement>(null);
   const customInstructionsRef = useRef<HTMLDivElement>(null);
+  const oauthSettingsRef = useRef<HTMLDivElement>(null);
   const mcpServersRef = useRef<HTMLDivElement>(null);
 
   // Add a ref for the scrollable container
@@ -142,6 +144,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
       "api-keys": apiKeysRef,
       "llm-providers": llmProvidersRef,
       "custom-instructions": customInstructionsRef,
+      "oauth-settings": oauthSettingsRef,
       "mcp-servers": mcpServersRef,
     };
 
@@ -329,6 +332,20 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             <Button
               variant="ghost"
               className={`w-full justify-start gap-2 rounded-full ${
+                activeSection === "oauth-settings"
+                  ? "bg-accent"
+                  : "hover:bg-accent"
+              }`}
+              onClick={() => {
+                scrollToSection("oauth-settings");
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              OAuth settings
+            </Button>
+            <Button
+              variant="ghost"
+              className={`w-full justify-start gap-2 rounded-full ${
                 activeSection === "mcp-servers"
                   ? "bg-accent"
                   : "hover:bg-accent"
@@ -346,7 +363,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
 
       {/* Main Layout */}
       <div className="flex gap-8 sm:gap-12 lg:gap-48 w-full">
-        {/* Sidebar Navigation - Hidden on mobile */}
+        {/* Sidebar Navigation */}
         <div className="hidden sm:block py-6 w-48 lg:w-1/5 shrink-0">
           <div className="flex flex-col gap-1">
             <Button
@@ -383,6 +400,17 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             <Button
               variant="ghost"
               className={`justify-start gap-2 rounded-full text-sm ${
+                activeSection === "oauth-settings"
+                  ? "bg-accent"
+                  : "hover:bg-accent"
+              }`}
+              onClick={() => scrollToSection("oauth-settings")}
+            >
+              OAuth settings
+            </Button>
+            <Button
+              variant="ghost"
+              className={`justify-start gap-2 rounded-full text-sm ${
                 activeSection === "mcp-servers"
                   ? "bg-accent"
                   : "hover:bg-accent"
@@ -413,6 +441,10 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
                 project={project}
                 onEdited={handleRefreshProject}
               />
+            </div>
+
+            <div ref={oauthSettingsRef} className="p-2">
+              <OAuthSettings project={project} />
             </div>
 
             <div ref={mcpServersRef} className="p-2">
