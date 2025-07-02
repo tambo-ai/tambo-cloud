@@ -35,7 +35,11 @@ export class Project {
   }
 
   hideApiKey(apiKey: string, visibleCharacters = 4): string {
-    const hiddenPart = "*".repeat(apiKey.length - visibleCharacters);
+    // Clamp the repeat count so it is never negative. If the caller requests
+    // more visible characters than the key has, we reveal the entire key and
+    // add no masking characters.
+    const hiddenCount = Math.max(0, apiKey.length - visibleCharacters);
+    const hiddenPart = "*".repeat(hiddenCount);
     return apiKey.substring(0, visibleCharacters) + hiddenPart;
   }
 
