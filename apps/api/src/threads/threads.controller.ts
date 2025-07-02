@@ -119,6 +119,7 @@ export class ThreadsController {
   @Get(":id")
   @UseGuards(ThreadInProjectGuard)
   @ApiQuery({ name: "contextKey", required: false })
+  @ApiQuery({ name: "includeInternal", required: false, type: Boolean })
   async findOne(
     @Param("id") threadId: string,
     @Req() request: Request,
