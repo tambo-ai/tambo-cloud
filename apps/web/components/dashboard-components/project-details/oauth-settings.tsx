@@ -2,6 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -10,12 +16,28 @@ import { useToast } from "@/hooks/use-toast";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { OAuthValidationMode } from "@tambo-ai-cloud/core";
 import { motion } from "framer-motion";
-import { InfoIcon, Loader2 } from "lucide-react";
+import { ChevronDown, InfoIcon, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 interface OAuthSettingsProps {
   project?: RouterOutputs["project"]["getUserProjects"][number];
 }
+
+// OAuth provider presets
+const OAUTH_PRESETS = [
+  { name: "Google", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
+  { name: "GitHub", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
+  { name: "Microsoft", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
+  { name: "Login.gov", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
+  { name: "Auth0", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
+  { name: "Clerk", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
+  { name: "Supabase Auth", mode: OAuthValidationMode.NONE },
+  {
+    name: "Supabase Auth (beta API Keys)",
+    mode: OAuthValidationMode.ASYMMETRIC_AUTO,
+  },
+  { name: "Neon", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
+] as const;
 
 export function OAuthSettings({ project }: OAuthSettingsProps) {
   const { toast } = useToast();
@@ -147,7 +169,28 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
       <CardContent className="space-y-6">
         {/* Validation Mode Selection */}
         <div className="space-y-4">
-          <Label className="text-base font-medium">Validation Mode</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-medium">Validation Mode</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  Apply a preset
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {OAUTH_PRESETS.map((preset) => (
+                  <DropdownMenuItem
+                    key={preset.name}
+                    onClick={() => handleModeChange(preset.mode)}
+                    className="cursor-pointer whitespace-nowrap"
+                  >
+                    {preset.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           <RadioGroup
             value={selectedMode}
