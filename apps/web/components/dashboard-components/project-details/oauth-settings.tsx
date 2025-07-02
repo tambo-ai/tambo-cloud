@@ -16,8 +16,22 @@ import { useToast } from "@/hooks/use-toast";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { OAuthValidationMode } from "@tambo-ai-cloud/core";
 import { motion } from "framer-motion";
-import { ChevronDown, InfoIcon, Loader2 } from "lucide-react";
+import {
+  Building2,
+  ChevronDown,
+  Database,
+  InfoIcon,
+  Loader2,
+  Shield,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import {
+  SiAuth0,
+  SiClerk,
+  SiGithub,
+  SiGoogle,
+  SiSupabase,
+} from "react-icons/si";
 
 interface OAuthSettingsProps {
   project?: RouterOutputs["project"]["getUserProjects"][number];
@@ -25,18 +39,27 @@ interface OAuthSettingsProps {
 
 // OAuth provider presets
 const OAUTH_PRESETS = [
-  { name: "Google", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
-  { name: "GitHub", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
-  { name: "Microsoft", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
-  { name: "Login.gov", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
-  { name: "Auth0", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
-  { name: "Clerk", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
-  { name: "Supabase Auth", mode: OAuthValidationMode.NONE },
+  { name: "Google", mode: OAuthValidationMode.ASYMMETRIC_AUTO, icon: SiGoogle },
+  { name: "GitHub", mode: OAuthValidationMode.ASYMMETRIC_AUTO, icon: SiGithub },
+  {
+    name: "Microsoft",
+    mode: OAuthValidationMode.ASYMMETRIC_AUTO,
+    icon: Building2,
+  },
+  {
+    name: "Login.gov",
+    mode: OAuthValidationMode.ASYMMETRIC_AUTO,
+    icon: Shield,
+  },
+  { name: "Auth0", mode: OAuthValidationMode.ASYMMETRIC_AUTO, icon: SiAuth0 },
+  { name: "Clerk", mode: OAuthValidationMode.ASYMMETRIC_AUTO, icon: SiClerk },
+  { name: "Supabase Auth", mode: OAuthValidationMode.NONE, icon: SiSupabase },
   {
     name: "Supabase Auth (beta API Keys)",
     mode: OAuthValidationMode.ASYMMETRIC_AUTO,
+    icon: SiSupabase,
   },
-  { name: "Neon", mode: OAuthValidationMode.ASYMMETRIC_AUTO },
+  { name: "Neon", mode: OAuthValidationMode.ASYMMETRIC_AUTO, icon: Database },
 ] as const;
 
 export function OAuthSettings({ project }: OAuthSettingsProps) {
@@ -185,7 +208,10 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
                     onClick={() => handleModeChange(preset.mode)}
                     className="cursor-pointer whitespace-nowrap"
                   >
-                    {preset.name}
+                    <div className="flex items-center gap-2">
+                      <preset.icon className="h-4 w-4" />
+                      {preset.name}
+                    </div>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
