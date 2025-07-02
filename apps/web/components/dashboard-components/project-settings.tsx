@@ -341,7 +341,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
                 setIsMobileMenuOpen(false);
               }}
             >
-              OAuth settings
+              User Authentication
             </Button>
             <Button
               variant="ghost"
@@ -400,17 +400,6 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             <Button
               variant="ghost"
               className={`justify-start gap-2 rounded-full text-sm ${
-                activeSection === "oauth-settings"
-                  ? "bg-accent"
-                  : "hover:bg-accent"
-              }`}
-              onClick={() => scrollToSection("oauth-settings")}
-            >
-              OAuth settings
-            </Button>
-            <Button
-              variant="ghost"
-              className={`justify-start gap-2 rounded-full text-sm ${
                 activeSection === "mcp-servers"
                   ? "bg-accent"
                   : "hover:bg-accent"
@@ -418,6 +407,17 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
               onClick={() => scrollToSection("mcp-servers")}
             >
               MCP servers
+            </Button>
+            <Button
+              variant="ghost"
+              className={`justify-start gap-2 rounded-full text-sm ${
+                activeSection === "oauth-settings"
+                  ? "bg-accent"
+                  : "hover:bg-accent"
+              }`}
+              onClick={() => scrollToSection("oauth-settings")}
+            >
+              User Authentication
             </Button>
           </div>
         </div>
@@ -443,13 +443,12 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
               />
             </div>
 
-            <div ref={oauthSettingsRef} className="p-2">
-              <OAuthSettings project={project} />
-            </div>
-
             <div ref={mcpServersRef} className="p-2">
               <AvailableMcpServers project={project} />
-              <div className="h-[calc(100vh-600px)] min-h-[200px] max-h-[600px]" />
+            </div>
+
+            <div ref={oauthSettingsRef} className="p-2">
+              <OAuthSettings project={project} />
             </div>
           </div>
         </div>

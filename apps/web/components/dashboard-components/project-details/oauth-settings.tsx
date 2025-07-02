@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { OAuthValidationMode } from "@tambo-ai-cloud/core";
 import { motion } from "framer-motion";
-import { InfoIcon, Loader2, Save } from "lucide-react";
+import { InfoIcon, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 interface OAuthSettingsProps {
@@ -191,6 +191,31 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
                   Validate tokens using a shared secret key. Requires storing
                   the secret key securely.
                 </div>
+                {selectedMode === OAuthValidationMode.SYMMETRIC && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-3 space-y-2"
+                  >
+                    <Label htmlFor="secret-key" className="text-sm">
+                      Secret Key
+                    </Label>
+                    <Input
+                      id="secret-key"
+                      type="password"
+                      placeholder="Enter your shared secret key"
+                      value={secretKey}
+                      onChange={(e) => setSecretKey(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {oauthSettings?.hasSecretKey
+                        ? "A secret key is currently stored. Enter a new key to replace it."
+                        : "This key will be encrypted and stored securely."}
+                    </p>
+                  </motion.div>
+                )}
               </div>
             </label>
 
@@ -231,64 +256,41 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
                   Validate tokens using a manually provided public key (RS256,
                   ES256, etc.).
                 </div>
+                {selectedMode === OAuthValidationMode.ASYMMETRIC_MANUAL && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-3 space-y-2"
+                  >
+                    <Label htmlFor="public-key" className="text-sm">
+                      Public Key
+                    </Label>
+                    <Textarea
+                      id="public-key"
+                      placeholder={`-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----`}
+                      value={publicKey}
+                      onChange={(e) => setPublicKey(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      rows={8}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter the public key in PEM format. This will be used to
+                      verify JWT signatures.
+                    </p>
+                  </motion.div>
+                )}
               </div>
             </label>
           </RadioGroup>
         </div>
 
-        {/* Conditional Input Fields */}
-        {selectedMode === OAuthValidationMode.SYMMETRIC && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-2"
-          >
-            <Label htmlFor="secret-key">Secret Key</Label>
-            <Input
-              id="secret-key"
-              type="password"
-              placeholder="Enter your shared secret key"
-              value={secretKey}
-              onChange={(e) => setSecretKey(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              {oauthSettings?.hasSecretKey
-                ? "A secret key is currently stored. Enter a new key to replace it."
-                : "This key will be encrypted and stored securely."}
-            </p>
-          </motion.div>
-        )}
-
-        {selectedMode === OAuthValidationMode.ASYMMETRIC_MANUAL && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-2"
-          >
-            <Label htmlFor="public-key">Public Key</Label>
-            <Textarea
-              id="public-key"
-              placeholder="-----BEGIN PUBLIC KEY-----&#10;...&#10;-----END PUBLIC KEY-----"
-              value={publicKey}
-              onChange={(e) => setPublicKey(e.target.value)}
-              rows={8}
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter the public key in PEM format. This will be used to verify
-              JWT signatures.
-            </p>
-          </motion.div>
-        )}
-
         {/* Save Button */}
-        <div className="flex justify-end pt-4 border-t">
+        <div className="flex justify-end">
           <Button
             onClick={handleSave}
             disabled={!hasUnsavedChanges || isUpdating}
-            className="min-w-[100px]"
           >
             {isUpdating ? (
               <>
@@ -296,10 +298,7 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
                 Saving...
               </>
             ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </>
+              <>Save</>
             )}
           </Button>
         </div>
