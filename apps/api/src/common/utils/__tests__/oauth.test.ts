@@ -357,21 +357,21 @@ describe("validateSubjectToken", () => {
     //   // Generate a real key pair for the test issuer
     //   const { publicKey, privateKey } = await generateKeyPair("RS256");
     //   const publicJWK = await exportJWK(publicKey);
-
+    //
     //   const issuer = "https://auth.example.com";
     //   const payloadWithIssuer = { ...testPayload, iss: issuer };
-
+    //
     //   // Create a real JWT
     //   const token = await new SignJWT(payloadWithIssuer)
     //     .setProtectedHeader({ alg: "RS256", kid: "test-key-id" })
     //     .sign(privateKey);
-
+    //
     //   // Mock the OpenID configuration endpoint
     //   const mockOpenIdConfig = {
     //     issuer,
     //     jwks_uri: `${issuer}/.well-known/jwks.json`,
     //   };
-
+    //
     //   // Mock createRemoteJWKSet to return a local key set
     //   const mockKeySet = {
     //     async [Symbol.asyncIterator]() {
@@ -382,7 +382,7 @@ describe("validateSubjectToken", () => {
     //       };
     //     },
     //   };
-
+    //
     //   // Mock the jose module's createRemoteJWKSet function
     //   jest.doMock("jose", () => {
     //     const actual = jest.requireActual("jose");
@@ -391,19 +391,19 @@ describe("validateSubjectToken", () => {
     //       createRemoteJWKSet: jest.fn().mockReturnValue(mockKeySet),
     //     };
     //   });
-
+    //
     //   (global.fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce({
     //     ok: true,
     //     json: (jest.fn() as any).mockResolvedValue(mockOpenIdConfig),
     //   } as any);
-
+    //
     //   const result = await validateSubjectToken(
     //     token,
     //     OAuthValidationMode.ASYMMETRIC_AUTO,
     //     null,
     //     mockLogger,
     //   );
-
+    //
     //   expect(result.sub).toBe("user123");
     //   expect(result.iss).toBe(issuer);
     //   expect(global.fetch).toHaveBeenCalledWith(
@@ -754,9 +754,11 @@ describe("validateSubjectToken", () => {
   describe("Token expiry timing", () => {
     it("should validate tokens that expire soon but are still valid", async () => {
       // Create a token that expires in 30 seconds (still valid)
+      const expectedExp = Math.floor(Date.now() / 1000) + 30; // expires in 30 seconds
+
       const soonToExpirePayload = {
         ...testPayload,
-        exp: Math.floor(Date.now() / 1000) + 30, // expires in 30 seconds
+        exp: expectedExp,
       };
 
       const soonToExpireToken = await new SignJWT(soonToExpirePayload)
@@ -773,7 +775,7 @@ describe("validateSubjectToken", () => {
 
       expect(result.sub).toBe("user123");
       expect(result.iss).toBe("https://example.com");
-      expect(result.exp).toBe(Math.floor(Date.now() / 1000) + 30);
+      expect(result.exp).toBe(expectedExp);
     });
 
     it("should reject tokens that just expired", async () => {
