@@ -31,13 +31,12 @@ export interface ThreadStats {
   tools: number;
 }
 
+/** ------------ StatCard ------------ */
+
 interface StatCardProps {
   count: number;
   label: string;
   items: MessageItem[];
-  sectionKey: string;
-  isOpen: boolean;
-  onToggle: () => void;
   onItemClick: (messageId: string) => void;
   isCondensed?: boolean;
 }
@@ -50,7 +49,6 @@ const StatCard = memo(
     onItemClick,
     isCondensed = false,
   }: StatCardProps) => {
-    // Icon mapping for condensed view
     const getIcon = () => {
       switch (label.toLowerCase()) {
         case "messages":
@@ -102,6 +100,7 @@ const StatCard = memo(
                   </div>
                 )}
               </div>
+
               {count > 0 && (
                 <div className="text-foreground">
                   <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -109,6 +108,7 @@ const StatCard = memo(
               )}
             </Button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             className="w-72 sm:w-80 max-h-64 sm:max-h-80 overflow-y-auto"
             align="start"
@@ -140,14 +140,14 @@ const StatCard = memo(
 );
 StatCard.displayName = "StatCard";
 
+/** ------------ StatsHeader ------------ */
+
 interface StatsHeaderProps {
   stats: ThreadStats;
   messageItems: MessageItem[];
   componentItems: MessageItem[];
   errorItems: MessageItem[];
   toolItems: MessageItem[];
-  openSections: Record<string, boolean>;
-  onToggleSection: (section: string) => void;
   onScrollToMessage: (messageId: string) => void;
   isCondensed?: boolean;
 }
@@ -159,8 +159,6 @@ export const StatsHeader = memo(
     componentItems,
     errorItems,
     toolItems,
-    openSections,
-    onToggleSection,
     onScrollToMessage,
     isCondensed = false,
   }: StatsHeaderProps) => (
@@ -174,9 +172,6 @@ export const StatsHeader = memo(
         count={stats.messages}
         label="Messages"
         items={messageItems}
-        sectionKey="messages"
-        isOpen={openSections.messages || false}
-        onToggle={() => onToggleSection("messages")}
         onItemClick={onScrollToMessage}
         isCondensed={isCondensed}
       />
@@ -184,9 +179,6 @@ export const StatsHeader = memo(
         count={stats.components}
         label="Components"
         items={componentItems}
-        sectionKey="components"
-        isOpen={openSections.components || false}
-        onToggle={() => onToggleSection("components")}
         onItemClick={onScrollToMessage}
         isCondensed={isCondensed}
       />
@@ -194,9 +186,6 @@ export const StatsHeader = memo(
         count={stats.errors}
         label="Errors"
         items={errorItems}
-        sectionKey="errors"
-        isOpen={openSections.errors || false}
-        onToggle={() => onToggleSection("errors")}
         onItemClick={onScrollToMessage}
         isCondensed={isCondensed}
       />
@@ -204,9 +193,6 @@ export const StatsHeader = memo(
         count={stats.tools}
         label="Tools"
         items={toolItems}
-        sectionKey="tools"
-        isOpen={openSections.tools || false}
-        onToggle={() => onToggleSection("tools")}
         onItemClick={onScrollToMessage}
         isCondensed={isCondensed}
       />

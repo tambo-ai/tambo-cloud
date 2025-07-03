@@ -34,7 +34,6 @@ export function ThreadMessagesModal({
   isLoading = false,
 }: Readonly<ThreadMessagesModalProps>) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const [highlightedMessageId, setHighlightedMessageId] = useState<
     string | null
   >(null);
@@ -73,10 +72,6 @@ export function ThreadMessagesModal({
       setHighlightedMessageId(messageId);
       setTimeout(() => setHighlightedMessageId(null), 3000);
     }
-  }, []);
-
-  const toggleSection = useCallback((section: string) => {
-    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   }, []);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -139,8 +134,6 @@ export function ThreadMessagesModal({
                 componentItems={componentItems}
                 errorItems={errorItems}
                 toolItems={toolItems}
-                openSections={openSections}
-                onToggleSection={toggleSection}
                 onScrollToMessage={scrollToMessage}
               />
             </div>
@@ -159,10 +152,8 @@ export function ThreadMessagesModal({
                     componentItems={componentItems}
                     errorItems={errorItems}
                     toolItems={toolItems}
-                    openSections={openSections}
-                    onToggleSection={toggleSection}
                     onScrollToMessage={scrollToMessage}
-                    isCondensed={true}
+                    isCondensed
                   />
                 </div>
               )}
