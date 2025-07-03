@@ -4,7 +4,7 @@ import { useTamboThreadInput } from "@tambo-ai/react";
 import { FC, useState } from "react";
 
 interface ThreadMessageInputProps {
-  contextKey: string | undefined;
+  contextKey?: string;
   onSubmit: (value: string) => void;
 }
 
@@ -22,13 +22,6 @@ const ThreadMessageInput: FC<ThreadMessageInputProps> = ({
     await submit({ streamResponse: streamEnabled });
     onSubmit(value);
   };
-  if (!contextKey) {
-    return (
-      <p className="text-destructive">
-        No context key provided, cannot send messages
-      </p>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
