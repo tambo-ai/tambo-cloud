@@ -82,7 +82,7 @@ export default function Note({
     <div>
       <h3>{title}</h3>
       <p>{content}</p>
-      {propStatus["createdAt"].isSuccess && <p>{createdAt}</p>}
+      {propStatus["createdAt"]?.isSuccess && <p>{createdAt}</p>}
     </div>
   );
 }
