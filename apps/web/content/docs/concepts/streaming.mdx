@@ -80,7 +80,7 @@ export default function Note({ title, content, createdAt }: NoteProps) {
     <div>
       <h3>{title}</h3>
       <p>{content}</p>
-      <p>{propStatus["createdAt"].isSuccess && createdAt}</p>
+      {propStatus["createdAt"].isSuccess && <p>{createdAt}</p>}
     </div>
   );
 }
