@@ -71,9 +71,11 @@ Tambo provides a `useTamboStreamStatus` hook that allows you to track the stream
 For example, if I want my component to render most props as they stream in, but I want the `createdAt` prop to render only when it is done streaming in:
 
 ```tsx title="props streaming status"
-import { useTamboStreamStatus } from "@tambo-ai/react";
-
-export default function Note({ title, content, createdAt }: NoteProps) {
+export default function Note({
+  title = "",
+  content = "",
+  createdAt = "",
+}: NoteProps) {
   const { propStatus } = useTamboStreamStatus();
 
   return (
