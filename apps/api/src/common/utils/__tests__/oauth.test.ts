@@ -53,6 +53,54 @@ describe("validateSubjectToken", () => {
       expect(result.sub).toBe("user123");
       expect(result.iss).toBe("https://example.com");
     });
+
+    it("should reject expired JWT even in NONE mode (expiry is always checked)", async () => {
+      // Create an expired JWT (expired 1 hour ago)
+      const expiredPayload = {
+        ...testPayload,
+        exp: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
+      };
+
+      const expiredToken = await new SignJWT(expiredPayload)
+        .setProtectedHeader({ alg: "HS256" })
+        .sign(new TextEncoder().encode(symmetricSecret));
+
+      // NONE mode should now reject expired tokens for security
+      await expect(
+        validateSubjectToken(
+          expiredToken,
+          OAuthValidationMode.NONE,
+          null,
+          mockLogger,
+        ),
+      ).rejects.toThrow("Token has expired");
+    });
+
+    it("should handle tokens without expiry in NONE mode", async () => {
+      // Create a token without expiry claim
+      const payloadWithoutExp = {
+        sub: "user123",
+        iss: "https://example.com",
+        aud: "test-audience",
+        iat: Math.floor(Date.now() / 1000),
+      };
+
+      const tokenWithoutExp = await new SignJWT(payloadWithoutExp)
+        .setProtectedHeader({ alg: "HS256" })
+        .sign(new TextEncoder().encode(symmetricSecret));
+
+      // Should work fine without expiry claim
+      const result = await validateSubjectToken(
+        tokenWithoutExp,
+        OAuthValidationMode.NONE,
+        null,
+        mockLogger,
+      );
+
+      expect(result.sub).toBe("user123");
+      expect(result.iss).toBe("https://example.com");
+      expect(result.exp).toBeUndefined();
+    });
   });
 
   describe("SYMMETRIC validation mode", () => {
@@ -82,6 +130,38 @@ describe("validateSubjectToken", () => {
 
       expect(result.sub).toBe("user123");
       expect(result.iss).toBe("https://example.com");
+    });
+
+    it("should reject expired JWT with symmetric key", async () => {
+      // Pre-encrypt the secret key using the real encryption function
+      const encryptedSecretKey = encryptOAuthSecretKey(
+        symmetricSecret,
+        apiKeySecret,
+      );
+
+      const mockSettings = {
+        secretKeyEncrypted: encryptedSecretKey,
+        publicKey: null,
+      };
+
+      // Create an expired JWT (expired 1 hour ago)
+      const expiredPayload = {
+        ...testPayload,
+        exp: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
+      };
+
+      const expiredToken = await new SignJWT(expiredPayload)
+        .setProtectedHeader({ alg: "HS256" })
+        .sign(new TextEncoder().encode(symmetricSecret));
+
+      await expect(
+        validateSubjectToken(
+          expiredToken,
+          OAuthValidationMode.SYMMETRIC,
+          mockSettings,
+          mockLogger,
+        ),
+      ).rejects.toThrow();
     });
 
     it("should reject JWT with wrong symmetric key", async () => {
@@ -180,6 +260,36 @@ describe("validateSubjectToken", () => {
 
       expect(result.sub).toBe("user123");
       expect(result.iss).toBe("https://example.com");
+    });
+
+    it("should reject expired JWT with manual public key", async () => {
+      // Generate a real RSA key pair
+      const { publicKey, privateKey } = await generateKeyPair("RS256");
+      const publicJWK = await exportJWK(publicKey);
+
+      const mockSettings = {
+        secretKeyEncrypted: null,
+        publicKey: JSON.stringify(publicJWK),
+      };
+
+      // Create an expired JWT (expired 1 hour ago)
+      const expiredPayload = {
+        ...testPayload,
+        exp: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
+      };
+
+      const expiredToken = await new SignJWT(expiredPayload)
+        .setProtectedHeader({ alg: "RS256" })
+        .sign(privateKey);
+
+      await expect(
+        validateSubjectToken(
+          expiredToken,
+          OAuthValidationMode.ASYMMETRIC_MANUAL,
+          mockSettings,
+          mockLogger,
+        ),
+      ).rejects.toThrow();
     });
 
     it("should reject JWT with wrong public key", async () => {
@@ -638,6 +748,54 @@ describe("validateSubjectToken", () => {
           process.env.API_KEY_SECRET = originalSecret;
         }
       });
+    });
+  });
+
+  describe("Token expiry timing", () => {
+    it("should validate tokens that expire soon but are still valid", async () => {
+      // Create a token that expires in 30 seconds (still valid)
+      const soonToExpirePayload = {
+        ...testPayload,
+        exp: Math.floor(Date.now() / 1000) + 30, // expires in 30 seconds
+      };
+
+      const soonToExpireToken = await new SignJWT(soonToExpirePayload)
+        .setProtectedHeader({ alg: "HS256" })
+        .sign(new TextEncoder().encode(symmetricSecret));
+
+      // Should work fine - token is not yet expired
+      const result = await validateSubjectToken(
+        soonToExpireToken,
+        OAuthValidationMode.NONE,
+        null,
+        mockLogger,
+      );
+
+      expect(result.sub).toBe("user123");
+      expect(result.iss).toBe("https://example.com");
+      expect(result.exp).toBe(Math.floor(Date.now() / 1000) + 30);
+    });
+
+    it("should reject tokens that just expired", async () => {
+      // Create a token that expired 1 second ago
+      const justExpiredPayload = {
+        ...testPayload,
+        exp: Math.floor(Date.now() / 1000) - 1, // expired 1 second ago
+      };
+
+      const justExpiredToken = await new SignJWT(justExpiredPayload)
+        .setProtectedHeader({ alg: "HS256" })
+        .sign(new TextEncoder().encode(symmetricSecret));
+
+      // Should be rejected as expired
+      await expect(
+        validateSubjectToken(
+          justExpiredToken,
+          OAuthValidationMode.NONE,
+          null,
+          mockLogger,
+        ),
+      ).rejects.toThrow("Token has expired");
     });
   });
 });
