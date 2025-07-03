@@ -31,7 +31,7 @@ export interface ThreadStats {
   tools: number;
 }
 
-/** ------------ StatCard ------------ */
+// StatCard
 
 interface StatCardProps {
   count: number;
@@ -140,7 +140,7 @@ const StatCard = memo(
 );
 StatCard.displayName = "StatCard";
 
-/** ------------ StatsHeader ------------ */
+// StatsHeader
 
 interface StatsHeaderProps {
   stats: ThreadStats;
