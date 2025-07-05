@@ -1,6 +1,5 @@
 "use client";
 
-import { createMarkdownComponents } from "@/components/ui/tambo/markdown-components";
 import { checkHasContent, getSafeContent } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import type { TamboThreadMessage } from "@tambo-ai/react";
@@ -12,6 +11,7 @@ import { Check, ChevronDown, ExternalLink, Loader2, X } from "lucide-react";
 import * as React from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { createMarkdownComponents } from "./markdown-components";
 
 /**
  * CSS variants for the message container
@@ -274,7 +274,7 @@ function getToolStatusMessage(
  * @component ToolcallInfo
  */
 const ToolcallInfo = React.forwardRef<HTMLDivElement, ToolcallInfoProps>(
-  ({ className, markdown = true, ...props }, ref) => {
+  ({ className, ...props }, ref) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const { message, isLoading } = useMessageContext();
     const { thread } = useTambo();
@@ -394,7 +394,9 @@ function keyifyParameters(
  * @param content - The content to check and format
  * @returns Formatted content or original content if not JSON
  */
-function formatToolResult(content: any): React.ReactNode {
+function formatToolResult(
+  content: TamboThreadMessage["content"],
+): React.ReactNode {
   if (!content) return content;
 
   const safeContent = getSafeContent(content);
