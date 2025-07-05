@@ -346,7 +346,7 @@ const ToolcallInfo = React.forwardRef<HTMLDivElement, ToolcallInfoProps>(
           <div
             id={toolDetailsId}
             className={cn(
-              "flex flex-col gap-1 pl-4 overflow-hidden transition-[max-height,opacity] duration-300",
+              "flex flex-col gap-1 p-4 overflow-hidden transition-[max-height,opacity] duration-300 w-full",
               isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
             )}
           >
@@ -360,24 +360,13 @@ const ToolcallInfo = React.forwardRef<HTMLDivElement, ToolcallInfoProps>(
             {associatedToolResponse && (
               <>
                 <span className="whitespace-pre-wrap font-medium">result:</span>
-                <div className="whitespace-pre-wrap">
+                <div>
                   {!associatedToolResponse.content ? (
                     <span className="text-muted-foreground italic">
                       Empty response
                     </span>
-                  ) : React.isValidElement(associatedToolResponse.content) ? (
-                    associatedToolResponse.content
-                  ) : markdown ? (
-                    <ReactMarkdown components={createMarkdownComponents()}>
-                      {typeof getSafeContent(associatedToolResponse.content) ===
-                      "string"
-                        ? (getSafeContent(
-                            associatedToolResponse.content,
-                          ) as string)
-                        : ""}
-                    </ReactMarkdown>
                   ) : (
-                    getSafeContent(associatedToolResponse.content)
+                    formatToolResult(associatedToolResponse.content)
                   )}
                 </div>
               </>
@@ -398,6 +387,30 @@ function keyifyParameters(
   return Object.fromEntries(
     parameters.map((p) => [p.parameterName, p.parameterValue]),
   );
+}
+
+/**
+ * Helper function to detect if content is JSON and format it nicely
+ * @param content - The content to check and format
+ * @returns Formatted content or original content if not JSON
+ */
+function formatToolResult(content: any): React.ReactNode {
+  if (!content) return content;
+
+  const safeContent = getSafeContent(content);
+  if (typeof safeContent !== "string") return safeContent;
+
+  // Try to parse as JSON
+  try {
+    const parsed = JSON.parse(safeContent);
+    return (
+      <pre className="bg-muted/50 rounded-md p-3 text-xs overflow-x-auto">
+        <code className="font-mono">{JSON.stringify(parsed, null, 2)}</code>
+      </pre>
+    );
+  } catch {
+    return safeContent;
+  }
 }
 
 /**
