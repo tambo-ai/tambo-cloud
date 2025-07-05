@@ -359,7 +359,7 @@ const ToolcallInfo = React.forwardRef<HTMLDivElement, ToolcallInfoProps>(
             </span>
             {associatedToolResponse && (
               <>
-                <span className="whitespace-pre-wrap font-medium">result:</span>
+                <span className="whitespace-pre-wrap">result:</span>
                 <div>
                   {!associatedToolResponse.content ? (
                     <span className="text-muted-foreground italic">
@@ -404,8 +404,10 @@ function formatToolResult(content: any): React.ReactNode {
   try {
     const parsed = JSON.parse(safeContent);
     return (
-      <pre className="bg-muted/50 rounded-md p-3 text-xs overflow-x-auto">
-        <code className="font-mono">{JSON.stringify(parsed, null, 2)}</code>
+      <pre className="bg-muted/50 rounded-md p-3 text-xs overflow-x-auto overflow-y-auto max-w-full max-h-64">
+        <code className="font-mono break-words whitespace-pre-wrap">
+          {JSON.stringify(parsed, null, 2)}
+        </code>
       </pre>
     );
   } catch {
