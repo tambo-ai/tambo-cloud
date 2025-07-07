@@ -78,7 +78,7 @@ describe("generateContextKey", () => {
       );
 
       expect(result).toBe(
-        "oauth:user:login.microsoftonline.com:tenant-guid-123:azure-user-456",
+        "oauth:user:sts.windows.net:tenant-guid-123:azure-user-456",
       );
     });
 
