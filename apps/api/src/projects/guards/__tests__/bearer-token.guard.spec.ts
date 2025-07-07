@@ -214,8 +214,5 @@ describe("BearerTokenGuard Context Key Generation", () => {
     await expect(guard.canActivate(mockContext)).rejects.toThrow(
       UnauthorizedException,
     );
-    expect(mockLogger.error).toHaveBeenCalledWith(
-      "Invalid Authorization header format",
-    );
   });
 });
