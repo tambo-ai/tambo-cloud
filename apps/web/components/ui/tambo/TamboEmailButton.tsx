@@ -14,9 +14,21 @@ export const TamboEmailButton = () => {
   }, [setValue]);
 
   /**
+   * The chip is considered “hidden” once the user interacts by either:
+   *  • pressing the chip button
+   *  • focusing the message textarea for the first time
+   *
+   * We compute this value early so that effects below can reference it.
+   */
+  const isHidden = hasPressedButton || hasInputFocused;
+
+  /**
    * ⌘/Ctrl + E keyboard shortcut
    */
   useEffect(() => {
+    // Shortcut should only work while the chip is visible.
+    if (isHidden) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "e") {
         e.preventDefault();
@@ -26,7 +38,7 @@ export const TamboEmailButton = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleInteraction]);
+  }, [handleInteraction, isHidden]);
 
   /**
    * Hide chip once the message textarea is focused for the first time.
@@ -48,7 +60,6 @@ export const TamboEmailButton = () => {
     return () => window.removeEventListener("focusin", handleFocusIn, true);
   }, []);
 
-  const isHidden = hasPressedButton || hasInputFocused;
   if (isHidden) return null;
 
   return (
