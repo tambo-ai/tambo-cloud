@@ -7,6 +7,7 @@ import {
 import { Request } from "express";
 import { decodeJwt, jwtVerify } from "jose";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
+import { generateContextKey } from "../../common/utils/generate-context-key";
 import { ProjectId } from "./apikey.guard";
 
 /**
@@ -81,50 +82,12 @@ export class BearerTokenGuard implements CanActivate {
       // Set the projectId and contextKey on the request
       request[ProjectId] = verifiedPayload.iss;
 
-      // Create a unique context key using both the original issuer and subject
-      // to prevent cross-provider user ID collisions
-      //
-      // Context key formats:
-      // - Google consumer: oauth:user:accounts.google.com:${sub}
-      // - Google Workspace: oauth:user:accounts.google.com:${hd}:${sub}
-      // - Other providers: oauth:user:${hostname}:${sub}
-      // - Legacy fallback: oauth:user:${sub}
-      const originalIssuer = verifiedPayload.original_iss;
-      const originalHostedDomain = verifiedPayload.original_hd; // Google Workspace domain
-      let contextKey: string;
-
-      if (originalIssuer && typeof originalIssuer === "string") {
-        // Use proper URL parsing to extract hostname
-        let issuerHostname: string;
-        try {
-          issuerHostname = new URL(originalIssuer).hostname;
-        } catch {
-          // Fallback to legacy format if URL parsing fails
-          contextKey = `oauth:user:${verifiedPayload.sub}`;
-          request[ContextKey] = contextKey;
-          this.logger.log(
-            `Valid OAuth bearer token used for project ${verifiedPayload.iss} with context ${contextKey}`,
-          );
-          return true;
-        }
-
-        // Handle Google Workspace vs consumer accounts
-        if (
-          issuerHostname === "accounts.google.com" &&
-          originalHostedDomain &&
-          typeof originalHostedDomain === "string"
-        ) {
-          // Google Workspace account: include hosted domain to distinguish from consumer accounts
-          // and to distinguish between different workspace domains
-          contextKey = `oauth:user:${issuerHostname}:${originalHostedDomain}:${verifiedPayload.sub}`;
-        } else {
-          // Regular provider (including Google consumer accounts)
-          contextKey = `oauth:user:${issuerHostname}:${verifiedPayload.sub}`;
-        }
-      } else {
-        // Fallback to legacy format if original_iss is not available
-        contextKey = `oauth:user:${verifiedPayload.sub}`;
-      }
+      // Generate unique context key to prevent cross-provider user ID collisions
+      const contextKey = generateContextKey(
+        verifiedPayload.original_iss,
+        verifiedPayload.original_hd,
+        verifiedPayload.sub,
+      );
 
       request[ContextKey] = contextKey;
 
