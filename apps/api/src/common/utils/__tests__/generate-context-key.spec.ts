@@ -107,21 +107,6 @@ describe("generateContextKey", () => {
         "oauth:user:api.workos.com:org_01234567890abcdef:workos-user-123",
       );
     });
-
-    it("should prefer org_id over org_name when both present", () => {
-      const result = generateContextKey(
-        "https://api.workos.com",
-        {
-          org_id: "org_01234567890abcdef",
-          org_name: "Acme Corp",
-        },
-        "workos-user-456",
-      );
-
-      expect(result).toBe(
-        "oauth:user:api.workos.com:org_01234567890abcdef:workos-user-456",
-      );
-    });
   });
 
   describe("Auth0 Organizations", () => {

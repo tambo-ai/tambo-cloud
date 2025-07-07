@@ -148,7 +148,6 @@ export class OAuthController {
         original_tid: verifiedPayload.tid,
         // WorkOS, Auth0, and other enterprise providers: organization claims
         original_org_id: verifiedPayload.org_id,
-        original_org_name: verifiedPayload.org_name,
       })
         .setProtectedHeader({ alg: "HS256" })
         .sign(signingKey);

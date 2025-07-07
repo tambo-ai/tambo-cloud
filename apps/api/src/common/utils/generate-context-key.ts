@@ -5,8 +5,8 @@
  * Supports enterprise identity providers with organizational context:
  * - Google Workspace: Uses 'hd' (hosted domain) claim
  * - Microsoft Azure AD: Uses 'tid' (tenant ID) claim
- * - WorkOS: Uses 'org_id' and 'org_name' claims
- * - Auth0 Organizations: Uses 'org_id' and 'org_name' claims
+ * - WorkOS: Uses 'org_id' claims
+ * - Auth0 Organizations: Uses 'org_id' claims
  * - Generic providers: Falls back to issuer hostname
  *
  * Context key formats:
@@ -31,7 +31,6 @@ export function generateContextKey(
     tid?: unknown;
     // WorkOS, Auth0, and other enterprise providers
     org_id?: unknown;
-    org_name?: unknown;
   },
   sub: string,
 ): string {

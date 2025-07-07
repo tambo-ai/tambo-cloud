@@ -89,7 +89,6 @@ export class BearerTokenGuard implements CanActivate {
           hd: verifiedPayload.original_hd,
           tid: verifiedPayload.original_tid,
           org_id: verifiedPayload.original_org_id,
-          org_name: verifiedPayload.original_org_name,
         },
         verifiedPayload.sub,
       );
