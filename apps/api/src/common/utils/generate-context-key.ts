@@ -62,13 +62,13 @@ export function generateContextKey(
   // Handle Microsoft Azure AD/Entra ID with tenant context
   if (
     (issuerHostname === "login.microsoftonline.com" ||
-      issuerHostname.includes("microsoftonline.com") ||
+      issuerHostname.endsWith(".microsoftonline.com") ||
       issuerHostname === "sts.windows.net") &&
     orgClaims.tid &&
     typeof orgClaims.tid === "string" &&
     orgClaims.tid.trim() !== ""
   ) {
-    return `oauth:user:login.microsoftonline.com:${orgClaims.tid}:${sub}`;
+    return `oauth:user:${issuerHostname}:${orgClaims.tid}:${sub}`;
   }
 
   // Handle WorkOS, Auth0, and other enterprise providers with org_id
