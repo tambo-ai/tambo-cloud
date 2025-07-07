@@ -5,7 +5,7 @@ describe("generateContextKey", () => {
     it("should generate correct context key for Google consumer account", () => {
       const result = generateContextKey(
         "https://accounts.google.com",
-        undefined, // No hosted domain for consumer accounts
+        {}, // No organizational claims for consumer accounts
         "google-user-123",
       );
 
@@ -15,7 +15,7 @@ describe("generateContextKey", () => {
     it("should generate correct context key for Google Workspace account", () => {
       const result = generateContextKey(
         "https://accounts.google.com",
-        "company.com", // Hosted domain
+        { hd: "company.com" }, // Hosted domain for workspace
         "workspace-user-456",
       );
 
@@ -24,10 +24,10 @@ describe("generateContextKey", () => {
       );
     });
 
-    it("should preserve special characters in hosted domain", () => {
+    it("should preserve hosted domain with special characters", () => {
       const result = generateContextKey(
         "https://accounts.google.com",
-        "my-company@domain.com", // Domain with special characters
+        { hd: "my-company@domain.com" }, // Domain with special characters
         "workspace-user-789",
       );
 
@@ -36,24 +36,105 @@ describe("generateContextKey", () => {
       );
     });
 
-    it("should handle null hosted domain", () => {
+    it("should handle null hosted domain claim", () => {
       const result = generateContextKey(
         "https://accounts.google.com",
-        null,
+        { hd: null },
         "google-user-123",
       );
 
       expect(result).toBe("oauth:user:accounts.google.com:google-user-123");
     });
 
-    it("should handle empty string hosted domain", () => {
+    it("should handle empty string hosted domain claim", () => {
       const result = generateContextKey(
         "https://accounts.google.com",
-        "",
+        { hd: "" },
         "google-user-123",
       );
 
       expect(result).toBe("oauth:user:accounts.google.com:google-user-123");
+    });
+  });
+
+  describe("Microsoft Azure AD / Entra ID", () => {
+    it("should generate correct context key for Azure AD with tenant ID", () => {
+      const result = generateContextKey(
+        "https://login.microsoftonline.com/12345678-1234-1234-1234-123456789012/v2.0",
+        { tid: "12345678-1234-1234-1234-123456789012" },
+        "azure-user-123",
+      );
+
+      expect(result).toBe(
+        "oauth:user:login.microsoftonline.com:12345678-1234-1234-1234-123456789012:azure-user-123",
+      );
+    });
+
+    it("should handle different Microsoft online domains", () => {
+      const result = generateContextKey(
+        "https://sts.windows.net/tenant-id/",
+        { tid: "tenant-guid-123" },
+        "azure-user-456",
+      );
+
+      expect(result).toBe(
+        "oauth:user:login.microsoftonline.com:tenant-guid-123:azure-user-456",
+      );
+    });
+
+    it("should fall back to hostname when no tenant ID present", () => {
+      const result = generateContextKey(
+        "https://login.microsoftonline.com/common/v2.0",
+        {}, // No tenant ID
+        "azure-user-789",
+      );
+
+      expect(result).toBe(
+        "oauth:user:login.microsoftonline.com:azure-user-789",
+      );
+    });
+  });
+
+  describe("WorkOS", () => {
+    it("should generate correct context key with org_id", () => {
+      const result = generateContextKey(
+        "https://api.workos.com",
+        { org_id: "org_01234567890abcdef" },
+        "workos-user-123",
+      );
+
+      expect(result).toBe(
+        "oauth:user:api.workos.com:org_01234567890abcdef:workos-user-123",
+      );
+    });
+
+    it("should prefer org_id over org_name when both present", () => {
+      const result = generateContextKey(
+        "https://api.workos.com",
+        {
+          org_id: "org_01234567890abcdef",
+          org_name: "Acme Corp",
+        },
+        "workos-user-456",
+      );
+
+      expect(result).toBe(
+        "oauth:user:api.workos.com:org_01234567890abcdef:workos-user-456",
+      );
+    });
+  });
+
+  describe("Auth0 Organizations", () => {
+    it("should generate correct context key with org_id", () => {
+      const result = generateContextKey(
+        "https://tenant.auth0.com/",
+        { org_id: "org_abc123def456" },
+        "auth0-user-123",
+      );
+
+      expect(result).toBe(
+        "oauth:user:tenant.auth0.com:org_abc123def456:auth0-user-123",
+      );
     });
   });
 
@@ -61,109 +142,103 @@ describe("generateContextKey", () => {
     it("should generate correct context key for GitHub", () => {
       const result = generateContextKey(
         "https://github.com",
-        undefined,
-        "github-user-789",
+        {},
+        "github-user-123",
       );
 
-      expect(result).toBe("oauth:user:github.com:github-user-789");
+      expect(result).toBe("oauth:user:github.com:github-user-123");
     });
 
-    it("should generate correct context key for Microsoft", () => {
+    it("should generate correct context key for LinkedIn", () => {
       const result = generateContextKey(
-        "https://login.microsoftonline.com",
-        undefined,
-        "microsoft-user-101",
+        "https://www.linkedin.com",
+        {},
+        "linkedin-user-456",
+      );
+
+      expect(result).toBe("oauth:user:www.linkedin.com:linkedin-user-456");
+    });
+
+    it("should handle custom enterprise provider with org claims", () => {
+      const result = generateContextKey(
+        "https://sso.custom-company.com",
+        { org_id: "enterprise-org-123" },
+        "enterprise-user-789",
       );
 
       expect(result).toBe(
-        "oauth:user:login.microsoftonline.com:microsoft-user-101",
+        "oauth:user:sso.custom-company.com:enterprise-org-123:enterprise-user-789",
       );
-    });
-
-    it("should handle custom OAuth provider", () => {
-      const result = generateContextKey(
-        "https://auth.example.com",
-        undefined,
-        "custom-user-555",
-      );
-
-      expect(result).toBe("oauth:user:auth.example.com:custom-user-555");
     });
   });
 
-  describe("Fallback scenarios", () => {
-    it("should fall back to legacy format when original issuer is missing", () => {
+  describe("Edge cases and error handling", () => {
+    it("should fall back to legacy format when issuer is invalid", () => {
       const result = generateContextKey(
-        undefined,
-        undefined,
-        "legacy-user-123",
-      );
-
-      expect(result).toBe("oauth:user:legacy-user-123");
-    });
-
-    it("should fall back to legacy format when original issuer is null", () => {
-      const result = generateContextKey(null, undefined, "legacy-user-456");
-
-      expect(result).toBe("oauth:user:legacy-user-456");
-    });
-
-    it("should fall back to legacy format when original issuer is not a string", () => {
-      const result = generateContextKey(
-        12345, // Invalid type
-        undefined,
-        "legacy-user-789",
-      );
-
-      expect(result).toBe("oauth:user:legacy-user-789");
-    });
-
-    it("should fall back to legacy format when original issuer is invalid URL", () => {
-      const result = generateContextKey(
-        "not-a-valid-url",
-        undefined,
+        null as any, // Cast to any to test the null case
+        { hd: "company.com" },
         "user-123",
       );
 
       expect(result).toBe("oauth:user:user-123");
     });
 
-    it("should fall back to legacy format when original issuer is empty string", () => {
-      const result = generateContextKey("", undefined, "user-456");
+    it("should handle invalid URL in issuer", () => {
+      const result = generateContextKey("not-a-valid-url", {}, "user-456");
 
-      expect(result).toBe("oauth:user:user-456");
+      expect(result).toBe("oauth:user:not-a-valid-url:user-456");
+    });
+
+    it("should handle missing subject", () => {
+      const result = generateContextKey(
+        "https://accounts.google.com",
+        { hd: "company.com" },
+        "",
+      );
+
+      expect(result).toBe("oauth:user:accounts.google.com:company.com:");
+    });
+
+    it("should ignore non-string organizational claims", () => {
+      const result = generateContextKey(
+        "https://accounts.google.com",
+        { hd: 123 as any }, // Cast to any to test invalid type
+        "user-789",
+      );
+
+      expect(result).toBe("oauth:user:accounts.google.com:user-789");
     });
   });
 
-  describe("Edge cases", () => {
-    it("should handle issuer URL with port number", () => {
+  describe("Priority and precedence", () => {
+    it("should prioritize Microsoft tid over org_id for Microsoft issuers", () => {
       const result = generateContextKey(
-        "https://auth.example.com:8080",
-        undefined,
+        "https://login.microsoftonline.com/tenant/v2.0",
+        {
+          tid: "microsoft-tenant-123",
+          org_id: "some-other-org-456",
+        },
         "user-123",
       );
 
-      expect(result).toBe("oauth:user:auth.example.com:user-123");
+      expect(result).toBe(
+        "oauth:user:login.microsoftonline.com:microsoft-tenant-123:user-123",
+      );
     });
 
-    it("should handle issuer URL with path", () => {
+    it("should prioritize Google hd over org_id for Google issuers", () => {
       const result = generateContextKey(
-        "https://auth.example.com/oauth/v2",
-        undefined,
+        "https://accounts.google.com",
+        {
+          hd: "workspace.example.com",
+          org_id: "some-other-org-789",
+        },
         "user-456",
       );
 
-      expect(result).toBe("oauth:user:auth.example.com:user-456");
-    });
-
-    it("should handle HTTP (non-HTTPS) issuer", () => {
-      const result = generateContextKey(
-        "http://localhost:3000",
-        undefined,
-        "dev-user-789",
+      expect(result).toBe(
+        "oauth:user:accounts.google.com:workspace.example.com:user-456",
       );
-
-      expect(result).toBe("oauth:user:localhost:dev-user-789");
     });
   });
 });

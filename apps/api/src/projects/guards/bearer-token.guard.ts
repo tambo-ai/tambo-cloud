@@ -85,7 +85,12 @@ export class BearerTokenGuard implements CanActivate {
       // Generate unique context key to prevent cross-provider user ID collisions
       const contextKey = generateContextKey(
         verifiedPayload.original_iss,
-        verifiedPayload.original_hd,
+        {
+          hd: verifiedPayload.original_hd,
+          tid: verifiedPayload.original_tid,
+          org_id: verifiedPayload.original_org_id,
+          org_name: verifiedPayload.original_org_name,
+        },
         verifiedPayload.sub,
       );
 

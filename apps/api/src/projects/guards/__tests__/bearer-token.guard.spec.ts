@@ -197,7 +197,9 @@ describe("BearerTokenGuard Context Key Generation", () => {
 
       expect(result).toBe(true);
       expect(mockRequest[ProjectId]).toBe(projectId);
-      expect(mockRequest[ContextKey]).toBe("oauth:user:user-123"); // Falls back to legacy
+      expect(mockRequest[ContextKey]).toBe(
+        "oauth:user:not-a-valid-url:user-123",
+      ); // Uses sanitized URL as hostname
     });
   });
 

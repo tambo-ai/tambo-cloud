@@ -1,48 +1,86 @@
 /**
  * Generates a unique context key for OAuth authentication based on the original
- * issuer, hosted domain (for Google Workspace), and subject claims.
+ * issuer and organizational claims from various enterprise identity providers.
+ *
+ * Supports enterprise identity providers with organizational context:
+ * - Google Workspace: Uses 'hd' (hosted domain) claim
+ * - Microsoft Azure AD: Uses 'tid' (tenant ID) claim
+ * - WorkOS: Uses 'org_id' and 'org_name' claims
+ * - Auth0 Organizations: Uses 'org_id' and 'org_name' claims
+ * - Generic providers: Falls back to issuer hostname
  *
  * Context key formats:
  * - Google consumer: oauth:user:accounts.google.com:${sub}
  * - Google Workspace: oauth:user:accounts.google.com:${hd}:${sub}
+ * - Microsoft Azure AD: oauth:user:login.microsoftonline.com:${tid}:${sub}
+ * - WorkOS/Auth0 with org: oauth:user:${hostname}:${org_id}:${sub}
  * - Other providers: oauth:user:${hostname}:${sub}
  * - Legacy fallback: oauth:user:${sub}
  *
  * @param originalIssuer - The original OAuth issuer URL from the token
- * @param originalHostedDomain - Google Workspace hosted domain (hd claim)
+ * @param orgClaims - Object containing organizational claims from the token
  * @param sub - The subject (user ID) from the token
  * @returns A unique context key string
  */
 export function generateContextKey(
   originalIssuer: unknown,
-  originalHostedDomain: unknown,
+  orgClaims: {
+    // Google Workspace
+    hd?: unknown;
+    // Microsoft Azure AD
+    tid?: unknown;
+    // WorkOS, Auth0, and other enterprise providers
+    org_id?: unknown;
+    org_name?: unknown;
+  },
   sub: string,
 ): string {
-  // Fallback to legacy format if original_iss is not available or invalid
+  // Legacy fallback if no issuer information is available
   if (!originalIssuer || typeof originalIssuer !== "string") {
     return `oauth:user:${sub}`;
   }
 
-  // Extract hostname from issuer URL
+  // Parse the issuer URL safely
   let issuerHostname: string;
   try {
     issuerHostname = new URL(originalIssuer).hostname;
   } catch {
-    // Fallback to legacy format if URL parsing fails
-    return `oauth:user:${sub}`;
+    console.warn("Failed to parse issuer URL from token: ", originalIssuer);
+    // If URL parsing fails, use the issuer as-is but sanitized
+    issuerHostname = originalIssuer.replace(/[^a-zA-Z0-9.-]/g, "_");
   }
 
   // Handle Google Workspace vs consumer accounts
   if (
     issuerHostname === "accounts.google.com" &&
-    originalHostedDomain &&
-    typeof originalHostedDomain === "string"
+    orgClaims.hd &&
+    typeof orgClaims.hd === "string" &&
+    orgClaims.hd.trim() !== ""
   ) {
-    // Google Workspace account: include hosted domain to distinguish from consumer accounts
-    // and to distinguish between different workspace domains
-    return `oauth:user:${issuerHostname}:${originalHostedDomain}:${sub}`;
+    return `oauth:user:${issuerHostname}:${orgClaims.hd}:${sub}`;
   }
 
-  // Regular provider (including Google consumer accounts)
+  // Handle Microsoft Azure AD/Entra ID with tenant context
+  if (
+    (issuerHostname === "login.microsoftonline.com" ||
+      issuerHostname.includes("microsoftonline.com") ||
+      issuerHostname === "sts.windows.net") &&
+    orgClaims.tid &&
+    typeof orgClaims.tid === "string" &&
+    orgClaims.tid.trim() !== ""
+  ) {
+    return `oauth:user:login.microsoftonline.com:${orgClaims.tid}:${sub}`;
+  }
+
+  // Handle WorkOS, Auth0, and other enterprise providers with org_id
+  if (
+    orgClaims.org_id &&
+    typeof orgClaims.org_id === "string" &&
+    orgClaims.org_id.trim() !== ""
+  ) {
+    return `oauth:user:${issuerHostname}:${orgClaims.org_id}:${sub}`;
+  }
+
+  // Standard provider without organizational context
   return `oauth:user:${issuerHostname}:${sub}`;
 }
