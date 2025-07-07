@@ -138,6 +138,11 @@ export class OAuthController {
         aud: "tambo",
         iat: currentTime,
         exp: currentTime + expiresIn,
+        // Include original issuer as a custom claim for unique context key generation
+        // This prevents cross-provider user ID collisions (e.g., Google user "123" vs GitHub user "123")
+        original_iss: verifiedPayload.iss,
+        // Include Google hosted domain claim if present (for Workspace vs consumer accounts)
+        original_hd: verifiedPayload.hd,
       })
         .setProtectedHeader({ alg: "HS256" })
         .sign(signingKey);
