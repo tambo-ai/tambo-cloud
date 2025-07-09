@@ -7,16 +7,22 @@ import { formatTemplate } from "@libretto/openai/lib/src/template";
 import { ChatCompletionMessageParam } from "@tambo-ai-cloud/core";
 import {
   convertToCoreMessages,
+  CoreAssistantMessage,
+  CoreMessage,
+  CoreToolMessage,
   generateText,
+  jsonSchema,
   LanguageModel,
   streamText,
   tool,
+  ToolCallPart,
+  ToolContent,
+  ToolResultPart,
   type GenerateTextResult,
   type StreamTextResult,
   type ToolSet,
 } from "ai";
 import type OpenAI from "openai";
-import { z } from "zod";
 import { llmProviderConfig } from "../../config/llm.config";
 import { Provider } from "../../model/providers";
 import {
@@ -139,7 +145,9 @@ export class AISdkClient implements LLMClient {
     messagesFormatted = limitTokens(messagesFormatted, effectiveTokenLimit);
 
     // Convert to AI SDK format
-    const coreMessages = convertToCoreMessages(messagesFormatted);
+    console.log("messagesFormatted:", messagesFormatted);
+    // const coreMessages = convertToCoreMessages(messagesFormatted);
+    // console.log("coreMessages:", coreMessages);
 
     // Prepare tools
     const tools = params.tools ? this.convertTools(params.tools) : undefined;
@@ -147,6 +155,21 @@ export class AISdkClient implements LLMClient {
     // Prepare response format
     const responseFormat = this.extractResponseFormat(params);
 
+    const coreMessages = messagesFormatted.map(
+      (message, index): CoreMessage =>
+        convertOpenAIMessageToCoreMessage(
+          message,
+          messagesFormatted.slice(0, index),
+        ),
+    );
+    console.log(
+      "converted assistant message:",
+      messagesFormatted.findLast((m) => m.role === "assistant"),
+    );
+    console.log(
+      "assistant message:",
+      coreMessages.findLast((m) => m.role === "assistant"),
+    );
     const baseConfig = {
       model: modelInstance,
       messages: coreMessages,
@@ -159,7 +182,8 @@ export class AISdkClient implements LLMClient {
     };
 
     if (params.stream) {
-      const result = await streamText(baseConfig);
+      console.log("starting stream...");
+      const result = streamText(baseConfig);
       return this.handleStreamingResponse(result);
     } else {
       const result = await generateText(baseConfig);
@@ -191,9 +215,9 @@ export class AISdkClient implements LLMClient {
       // Create a simplified tool definition compatible with AI SDK
       // We'll use a simple z.any() for parameters since converting JSON Schema to Zod is complex
       const aiSdkTool = tool({
+        type: "function",
         description: toolDef.function.description || "",
-        parameters: z.any().describe("Tool parameters"), // Simplified for now
-        // No execute function since tools are handled externally
+        parameters: jsonSchema(toolDef.function.parameters ?? {}),
       });
 
       toolSet[toolDef.function.name] = aiSdkTool;
@@ -248,11 +272,28 @@ export class AISdkClient implements LLMClient {
       arguments?: string;
       id?: string;
     } = {};
-
-    for await (const delta of result.textStream) {
-      if (delta) {
-        accumulatedMessage += delta;
+    console.log("STREAMING got result:", result);
+    for await (const delta of result.fullStream) {
+      console.log("STREAMING got delta:", delta);
+      switch (delta.type) {
+        case "text-delta":
+          accumulatedMessage += delta.textDelta;
+          break;
+        case "tool-call":
+          // accumulatedToolCall = delta.toolCall;
+          break;
+        case "tool-call-delta":
+          // accumulatedToolCall = delta.toolCall;
+          break;
+        case "error":
+          console.error("error:", delta.error);
+          throw delta.error;
+          break;
       }
+
+      // if (delta) {
+      //   accumulatedMessage += delta;
+      // }
 
       // Note: For streaming, tool calls should be handled via the fullStream
       // This is a simplified implementation - in practice you'd want to listen to fullStream
@@ -283,6 +324,36 @@ export class AISdkClient implements LLMClient {
         logprobs: null,
       };
     }
+
+    console.log("now checking for tool calls...");
+    const toolCalls = await result.toolCalls;
+    if (toolCalls.length) {
+      console.log(
+        `found ${toolCalls.length} tool calls!`,
+        toolCalls[0].toolName,
+        toolCalls[0].args,
+      );
+      yield {
+        message: {
+          content: accumulatedMessage,
+          role: "assistant",
+          tool_calls: toolCalls.map(
+            (call): OpenAI.Chat.Completions.ChatCompletionMessageToolCall => ({
+              function: {
+                arguments: JSON.stringify(call.args),
+                name: call.toolName,
+              },
+              id: call.toolCallId,
+              type: "function",
+            }),
+          ),
+          refusal: null,
+        },
+        index: 0,
+        logprobs: null,
+      };
+    }
+    console.log("done streaming");
   }
 
   private convertToLLMResponse(
@@ -314,10 +385,83 @@ export class AISdkClient implements LLMClient {
 function tryFormatTemplate(
   messages: ChatCompletionMessageParam[],
   promptTemplateParams: Record<string, unknown>,
-) {
+): ChatCompletionMessageParam[] {
   try {
     return formatTemplate(messages as any, promptTemplateParams);
   } catch (_e) {
     return messages;
   }
+}
+
+function findToolMessage(
+  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+  toolCallId: string,
+): OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam | undefined {
+  return messages.findLast(
+    (
+      message,
+    ): message is OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam => {
+      if (message.role === "assistant") {
+        return !!message.tool_calls?.some((call) => call.id === toolCallId);
+      }
+      return false;
+    },
+  );
+}
+
+/**
+ * This is effectively the same thing as as singular version of
+ * convertToCoreMessages, (which is supposedly deprecated anyway)
+ * but for some reason that function doesn't deal with tool calls.
+ */
+function convertOpenAIMessageToCoreMessage(
+  message: OpenAI.Chat.Completions.ChatCompletionMessageParam,
+  previousMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+): CoreMessage {
+  if (message.role === "developer" || message.role === "function") {
+    throw new Error("Developer messages are not supported");
+  }
+  if (message.role === "tool") {
+    const toolName =
+      findToolMessage(previousMessages, message.tool_call_id)?.tool_calls?.[0]
+        ?.function.name ?? "UNKNOWN_TOOL";
+    console.log("resolved tool call", message.tool_call_id, " to", toolName);
+    return {
+      role: "tool",
+      content:
+        typeof message.content === "string"
+          ? ([
+              {
+                result: message.content,
+                toolCallId: message.tool_call_id,
+                type: "tool-result",
+                toolName: toolName,
+              } satisfies ToolResultPart,
+            ] satisfies ToolContent)
+          : message.content.map(
+              (part): ToolResultPart => ({
+                // TODO: Figure out multi-tool results - is there one
+                // content per tool call?
+                type: "tool-result",
+                result: part.text,
+                toolCallId: message.tool_call_id,
+                toolName: toolName,
+              }),
+            ),
+    } satisfies CoreToolMessage;
+  }
+  if (message.role === "assistant" && message.tool_calls) {
+    return {
+      role: "assistant",
+      content: message.tool_calls.map(
+        (call): ToolCallPart => ({
+          type: "tool-call",
+          args: JSON.parse(call.function.arguments),
+          toolCallId: call.id,
+          toolName: call.function.name,
+        }),
+      ),
+    } satisfies CoreAssistantMessage;
+  }
+  return convertToCoreMessages([message as any])[0];
 }
