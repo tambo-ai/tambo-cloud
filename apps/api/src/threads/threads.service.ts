@@ -1121,7 +1121,6 @@ export class ThreadsService {
 
     // Check tool call limits if we have a tool call request
     if (toolCallRequest) {
-      console.log("have a toolcall request");
       const validationResult = validateToolCallLimits(
         finalThreadMessage,
         threadMessages,
