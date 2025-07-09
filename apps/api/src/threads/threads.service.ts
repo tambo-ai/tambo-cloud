@@ -67,7 +67,7 @@ import {
   isSystemToolCall,
 } from "./util/tool";
 import {
-  MAX_TOTAL_TOOL_CALLS,
+  DEFAULT_MAX_TOTAL_TOOL_CALLS,
   updateToolCallCounts,
   validateToolCallLimits,
 } from "./util/tool-call-tracking";
@@ -764,7 +764,7 @@ export class ThreadsService {
         toolCallCounts,
         systemTools,
         mcpAccessToken,
-        project?.maxToolCallLimit ?? MAX_TOTAL_TOOL_CALLS,
+        project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
       );
     }
 
@@ -799,7 +799,7 @@ export class ThreadsService {
         threadMessageDtoToThreadMessage(messages),
         toolCallCounts,
         toolCallRequest,
-        project?.maxToolCallLimit ?? MAX_TOTAL_TOOL_CALLS,
+        project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
       );
       if (validationResult) {
         // Replace the tool call request with an error message
@@ -1121,6 +1121,7 @@ export class ThreadsService {
 
     // Check tool call limits if we have a tool call request
     if (toolCallRequest) {
+      console.log("have a toolcall request");
       const validationResult = validateToolCallLimits(
         finalThreadMessage,
         threadMessages,
