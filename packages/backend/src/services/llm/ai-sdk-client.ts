@@ -22,6 +22,7 @@ import {
   type ToolSet,
 } from "ai";
 import type OpenAI from "openai";
+import { createLangfuseTelemetryConfig } from "../../config/langfuse.config";
 import { llmProviderConfig } from "../../config/llm.config";
 import { Provider } from "../../model/providers";
 import {
