@@ -80,7 +80,9 @@ export async function validateEmail(
   }
 
   // Extract domain from email
-  const domain = email.split("@")[1]?.toLowerCase();
+  const atIndex = email.lastIndexOf("@");
+  const domain =
+    atIndex > -1 ? email.slice(atIndex + 1).toLowerCase() : undefined;
   if (!domain) {
     return {
       valid: false,
