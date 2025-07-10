@@ -4,7 +4,7 @@ import { groq } from "@ai-sdk/groq";
 import { mistral } from "@ai-sdk/mistral";
 import { openai } from "@ai-sdk/openai";
 import { formatTemplate } from "@libretto/openai/lib/src/template";
-import { ChatCompletionMessageParam } from "@tambo-ai-cloud/core";
+import { ChatCompletionMessageParam, tryParseJson } from "@tambo-ai-cloud/core";
 import {
   convertToCoreMessages,
   CoreAssistantMessage,
@@ -456,7 +456,7 @@ function convertOpenAIMessageToCoreMessage(
       content: message.tool_calls.map(
         (call): ToolCallPart => ({
           type: "tool-call",
-          args: JSON.parse(call.function.arguments),
+          args: tryParseJson(call.function.arguments),
           toolCallId: call.id,
           toolName: call.function.name,
         }),
