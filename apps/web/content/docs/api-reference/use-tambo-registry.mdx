@@ -1,0 +1,69 @@
+---
+title: useTamboRegistry
+description: Helpers for registering components and tools with Tambo.
+---
+
+The `useTamboRegistry` hook exposes helpers for component and tool registration.
+
+## API
+
+### registerComponent
+
+```ts title="example.ts"
+const { registerComponent } = useTamboRegistry();
+```
+
+Registers components so they can be rendered in Tambo responses.
+
+### registerTool
+
+```ts title="example.ts"
+const { registerTool } = useTamboRegistry();
+```
+
+Register a single tool.
+
+### registerTools
+
+```ts title="example.ts"
+const { registerTools } = useTamboRegistry();
+```
+
+Register multiple tools at once.
+
+### addToolAssociation
+
+```ts title="example.ts"
+const { addToolAssociation } = useTamboRegistry();
+```
+
+Link components and tools so Tambo can call the correct tool when a component
+is rendered.
+
+### componentList
+
+```ts title="example.ts"
+const { componentList } = useTamboRegistry();
+```
+
+Array of registered components.
+
+### toolRegistry
+
+```ts title="example.ts"
+const { toolRegistry } = useTamboRegistry();
+```
+
+Full registry of tools.
+
+### componentToolAssociations
+
+```ts title="example.ts"
+const { componentToolAssociations } = useTamboRegistry();
+```
+
+Associations between components and tools.
+
+## Related
+
+- [/docs/api-reference/use-tambo-thread](/docs/api-reference/use-tambo-thread)

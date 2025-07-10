@@ -1,0 +1,17 @@
+---
+title: useTamboClient
+description: Direct access to the underlying Tambo client instance.
+---
+
+Need to drop down and call a low-level method? Grab the raw client with
+`useTamboClient()`.
+
+```ts title="advanced.ts"
+const { client } = useTamboClient();
+
+await client.someAdvancedMethod();
+```
+
+## Related
+
+- [/docs/api-reference/use-tambo-registry](/docs/api-reference/use-tambo-registry)

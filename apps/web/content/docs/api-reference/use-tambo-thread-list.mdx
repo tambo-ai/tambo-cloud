@@ -1,0 +1,23 @@
+---
+title: useTamboThreadList
+description: Fetch and monitor all conversation threads for a project.
+---
+
+`useTamboThreadList` returns the list of threads plus standard React Query
+loading helpers.
+
+```tsx title="threads.tsx"
+const { data: threads, isPending, isError, error } = useTamboThreadList();
+```
+
+## Returned Values
+
+- **data** – `Thread[] \| null` once loaded.
+- **isPending** – `true` while fetching.
+- **isSuccess** – `true` when `data` is available.
+- **isError** – `true` on failure.
+- **error** – the error object.
+
+## Related
+
+- [/docs/api-reference/use-tambo-thread](/docs/api-reference/use-tambo-thread)

@@ -1,4 +1,14 @@
 {
   "title": "API Reference",
-  "pages": ["react-hooks", "cli"]
+  "pages": [
+    "use-tambo-registry",
+    "use-tambo-thread",
+    "use-tambo-thread-list",
+    "use-tambo-thread-input",
+    "use-tambo-suggestions",
+    "use-tambo-client",
+    "use-tambo-component-state",
+    "cli",
+    "react-hooks" // legacy URL with links to the individual pages
+  ]
 }

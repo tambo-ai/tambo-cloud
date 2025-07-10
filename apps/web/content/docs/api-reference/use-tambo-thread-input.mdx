@@ -1,0 +1,37 @@
+---
+title: useTamboThreadInput
+description: Build an input box that submits messages to Tambo.
+---
+
+`useTamboThreadInput` wraps the common “chat input” pattern with
+value-tracking and an async `submit` helper.
+
+```tsx title="ChatInput.tsx"
+const { value, setValue, submit, isPending } = useTamboThreadInput();
+
+return (
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
+      submit();
+    }}
+  >
+    <input value={value} onChange={(e) => setValue(e.target.value)} />
+    <button disabled={isPending}>Send</button>
+  </form>
+);
+```
+
+## Returned Values
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `value` | `string` | Draft text |
+| `setValue` | `(v: string) => void` | Update draft |
+| `submit` | `(opts?) => Promise<void>` | Send message |
+| `isPending` / `isSuccess` / `isError` | `boolean` | React Query flags |
+| `error` | `Error \| null` | Error details |
+
+## Related
+
+- [/docs/api-reference/use-tambo-thread](/docs/api-reference/use-tambo-thread)

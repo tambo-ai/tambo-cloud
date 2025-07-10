@@ -1,0 +1,45 @@
+---
+title: useTamboThread
+description: Access and manage a single conversation thread.
+---
+
+The `useTamboThread` hook exposes the current thread along with helpers for
+sending messages and observing generation state.
+
+## State
+
+- **thread** – current thread object.
+- **generationStage** – lifecycle stage (`IDLE`, `CHOOSING_COMPONENT`, etc.).
+- **inputValue** – current input text.
+- **generationStatusMessage** – human-readable status.
+- **isIdle** – boolean helper derived from `generationStage`.
+
+## Actions
+
+- **sendThreadMessage** – send a user message, optionally with
+  `{ streamResponse: true }`.
+- **switchCurrentThread** – load a different thread by id.
+- **addThreadMessage / updateThreadMessage** – manipulate local thread state.
+- **setLastThreadStatus** – patch status on the most recent message.
+- **setInputValue** – update the draft input.
+
+```tsx title="sendMessage.tsx"
+const { thread, sendThreadMessage, generationStage } = useTamboThread();
+```
+
+## Generation Stage Values
+
+| Stage | Description |
+|-------|-------------|
+| `IDLE` | No active generation |
+| `CHOOSING_COMPONENT` | Selecting component |
+| `FETCHING_CONTEXT` | Running tools for context |
+| `HYDRATING_COMPONENT` | Generating component props |
+| `STREAMING_RESPONSE` | AI is streaming response |
+| `COMPLETE` | Finished successfully |
+| `ERROR` | Generation failed |
+
+## Related
+
+- [/docs/api-reference/use-tambo-thread-input](/docs/api-reference/use-tambo-thread-input)
+- [/docs/api-reference/use-tambo-suggestions](/docs/api-reference/use-tambo-suggestions)

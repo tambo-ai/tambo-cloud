@@ -1,0 +1,26 @@
+---
+title: useTamboComponentState
+description: Persist component-local state that the AI can see.
+---
+
+`useTamboComponentState` mirrors React’s `useState` but keeps the value in the
+thread so Tambo can reference it in later messages.
+
+```tsx title="Counter.tsx"
+const [count, setCount] = useTamboComponentState<number>('count', 0);
+
+return (
+  <button onClick={() => setCount(count + 1)}>
+    Clicks: {count}
+  </button>
+);
+```
+
+## Returned Values
+
+- **value** – current state value.
+- **setValue** – mutate and sync value.
+
+## Related
+
+- [/docs/api-reference/use-tambo-client](/docs/api-reference/use-tambo-client)
