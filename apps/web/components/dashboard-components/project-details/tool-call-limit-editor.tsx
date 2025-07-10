@@ -123,8 +123,8 @@ export function ToolCallLimitEditor({
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              When the AI reaches this limit, it will stop making tool calls and
-              provide a response based on the information gathered so far.
+              When the Tambo reaches this limit, it will finish the response
+              with a message that it has reached the limit.
             </p>
           </div>
         )}
