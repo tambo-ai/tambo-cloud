@@ -6,8 +6,36 @@ description: Fetch and monitor all conversation threads for a project.
 `useTamboThreadList` returns the list of threads plus standard React Query
 loading helpers.
 
-```tsx title="threads.tsx"
-const { data: threads, isPending, isError, error } = useTamboThreadList();
+```tsx title="ThreadList.tsx"
+"use client";
+
+import { useTamboThreadList, useTamboThread } from "@tambo-ai/react";
+
+export function ThreadList() {
+  const { data: threads, isPending, isError, error } = useTamboThreadList();
+  const { switchCurrentThread } = useTamboThread();
+
+  if (isPending) return <p>Loading…</p>;
+  if (isError) return <pre>{String(error)}</pre>;
+
+  return (
+    <ul className="space-y-2">
+      {threads?.map((t) => (
+        <li key={t.id}>
+          <button
+            onClick={() => switchCurrentThread(t.id)}
+            className="w-full text-left rounded p-2 hover:bg-muted"
+          >
+            <span className="font-medium">{t.title ?? "Untitled"}</span>
+            <span className="block text-xs opacity-70">
+              {t.messages.at(-1)?.content.substring(0, 60)}…
+            </span>
+          </button>
+        </li>
+      )) ?? <li>No threads yet.</li>}
+    </ul>
+  );
+}
 ```
 
 ## Returned Values

@@ -23,21 +23,123 @@ sending messages and observing generation state.
 - **setLastThreadStatus** – patch status on the most recent message.
 - **setInputValue** – update the draft input.
 
-```tsx title="sendMessage.tsx"
-const { thread, sendThreadMessage, generationStage } = useTamboThread();
+### Example 1 – Send a Message
+
+```tsx title="SendMessage.tsx"
+"use client";
+
+import { useTamboThread } from "@tambo-ai/react";
+
+export function SendMessage() {
+  const { thread, sendThreadMessage, generationStage } = useTamboThread();
+
+  async function handleSubmit(text: string) {
+    await sendThreadMessage(text, { streamResponse: true });
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const text = (
+          e.currentTarget.elements.namedItem("msg") as HTMLInputElement
+        ).value;
+        handleSubmit(text);
+      }}
+    >
+      <input name="msg" className="input" />
+      <button disabled={generationStage !== "IDLE"} className="btn-primary">
+        Send
+      </button>
+    </form>
+  );
+}
 ```
+
+#### Related
+
+- [/docs/api-reference/use-tambo-thread-input](/docs/api-reference/use-tambo-thread-input)
+
+---
+
+### Example 2 – Switch Threads
+
+```tsx title="ThreadSwitcher.tsx"
+"use client";
+
+import { useTamboThread, useTamboThreadList } from "@tambo-ai/react";
+
+export function ThreadSwitcher() {
+  const { switchCurrentThread, thread } = useTamboThread();
+  const { data: threads } = useTamboThreadList();
+
+  return (
+    <ul>
+      {threads?.map((t) => (
+        <li key={t.id}>
+          <button
+            onClick={() => switchCurrentThread(t.id)}
+            className={t.id === thread?.id ? "font-bold" : ""}
+          >
+            {t.title ?? t.id}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+#### Related
+
+- [/docs/api-reference/use-tambo-thread-list](/docs/api-reference/use-tambo-thread-list)
+
+---
+
+### Example 3 – Update Local Message State
+
+```tsx title="LocalDraft.tsx"
+"use client";
+
+import { useTamboThread } from "@tambo-ai/react";
+
+export function LocalDraft() {
+  const { addThreadMessage, updateThreadMessage } = useTamboThread();
+
+  function addDraft() {
+    const tempId = crypto.randomUUID();
+    addThreadMessage({ id: tempId, role: "user", content: "Draft…" });
+  }
+
+  function updateDraft(tempId: string, content: string) {
+    updateThreadMessage(tempId, { content });
+  }
+
+  return (
+    <button onClick={addDraft} className="btn-sm">
+      Add draft message
+    </button>
+  );
+}
+```
+
+#### Related
+
+- [/docs/api-reference/use-tambo-component-state](/docs/api-reference/use-tambo-component-state)
+
+---
 
 ## Generation Stage Values
 
-| Stage | Description |
-|-------|-------------|
-| `IDLE` | No active generation |
-| `CHOOSING_COMPONENT` | Selecting component |
-| `FETCHING_CONTEXT` | Running tools for context |
+| Stage                 | Description                |
+| --------------------- | -------------------------- |
+| `IDLE`                | No active generation       |
+| `CHOOSING_COMPONENT`  | Selecting component        |
+| `FETCHING_CONTEXT`    | Running tools for context  |
 | `HYDRATING_COMPONENT` | Generating component props |
-| `STREAMING_RESPONSE` | AI is streaming response |
-| `COMPLETE` | Finished successfully |
-| `ERROR` | Generation failed |
+| `STREAMING_RESPONSE`  | AI is streaming response   |
+| `COMPLETE`            | Finished successfully      |
+| `ERROR`               | Generation failed          |
 
 ## Related
 

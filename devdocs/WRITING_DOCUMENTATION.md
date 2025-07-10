@@ -5,15 +5,14 @@ repository. Follow them whenever you add or update documentation.
 
 ## Bite-Sized Pages (🚨 **New Requirement**)
 
-- **One topic per page** – every stand-alone page must cover a _single_ concept,
-  task, or API. Avoid multi-topic “kitchen-sink” overviews.
-- **Keep it short** – as a rule of thumb aim for **≤ 150 lines** of Markdown/
-  MDX content. If a page grows beyond this, split it into logical follow-up
-  pages and add “Related” links.
-- **F-pattern structure** – start with a two-sentence summary, followed by a
-  code block or diagram, then supporting details.
-- **Cross-link** – always end with a “Related” section so readers can navigate
-  to peer topics.
+<Callout type="info" title="Bite-Sized Checklist">
+
+- **One topic per page** – every stand-alone page must cover a _single_ concept, task, or API. Avoid multi-topic “kitchen-sink” overviews.
+- **Keep it short** – aim for **≤ 150 lines** of Markdown/MDX content. If a page grows beyond this, split it into logical follow-up pages and add “Related” links.
+- **F-pattern structure** – start with a two-sentence summary, then a code block or diagram, followed by supporting details.
+- **Cross-link** – always end with a “Related” section so readers can navigate to peer topics.
+
+</Callout>
 
 ## Structure
 

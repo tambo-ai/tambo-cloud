@@ -1,20 +1,25 @@
 ---
 title: useTamboComponentState
-description: Persist component-local state that the AI can see.
+description: Persist component-local state that the AI can reference.
 ---
 
-`useTamboComponentState` mirrors React’s `useState` but keeps the value in the
-thread so Tambo can reference it in later messages.
+<Callout type="info" title="Counter Example">
+  `useTamboComponentState` mirrors React’s `useState` but stores the value in the
+  conversation so Tambo can reason about it in later replies.
 
 ```tsx title="Counter.tsx"
-const [count, setCount] = useTamboComponentState<number>('count', 0);
+"use client";
 
-return (
-  <button onClick={() => setCount(count + 1)}>
-    Clicks: {count}
-  </button>
-);
+import { useTamboComponentState } from "@tambo-ai/react";
+
+export default function Counter() {
+  const [count, setCount] = useTamboComponentState<number>("count", 0);
+
+  return <button onClick={() => setCount(count + 1)}>Clicks: {count}</button>;
+}
 ```
+
+</Callout>
 
 ## Returned Values
 
@@ -23,4 +28,4 @@ return (
 
 ## Related
 
-- [/docs/api-reference/use-tambo-client](/docs/api-reference/use-tambo-client)
+- [/docs/api-reference/use-tambo-thread](/docs/api-reference/use-tambo-thread)

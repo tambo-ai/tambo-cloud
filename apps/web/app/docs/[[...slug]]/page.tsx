@@ -1,7 +1,6 @@
 import { source } from "@/lib/source";
 import { cn } from "@/lib/utils";
 import defaultMdxComponents from "fumadocs-ui/mdx";
-import { Callout } from "fumadocs-ui/components/callout";
 import {
   DocsBody,
   DocsDescription,
@@ -46,16 +45,7 @@ export default async function Page(props: {
       {page.data.description && (
         <DocsDescription>{page.data.description}</DocsDescription>
       )}
-      {/* Bite-sized reminder visible on every documentation page */}
-      <Callout type="info" title="Bite-Sized Docs">
-        Each documentation page should cover a single topic and stay concise. If
-        you notice this page growing beyond a quick read, please open an issue
-        or PR to split it up. See the
-        <a href="https://github.com/tambo-ai/tambo-cloud/blob/main/devdocs/WRITING_DOCUMENTATION.md">
-          Writing Guidelines
-        </a>
-        .
-      </Callout>
+
       <DocsBody>
         <MDX components={customMdxComponents} />
       </DocsBody>

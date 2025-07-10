@@ -9,6 +9,6 @@
     "use-tambo-client",
     "use-tambo-component-state",
     "cli",
-    "react-hooks" // legacy URL with links to the individual pages
+    "react-hooks"
   ]
 }

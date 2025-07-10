@@ -3,14 +3,32 @@ title: useTamboClient
 description: Direct access to the underlying Tambo client instance.
 ---
 
-Need to drop down and call a low-level method? Grab the raw client with
-`useTamboClient()`.
+<Callout type="info" title="Quick Example: Advanced Client Access">
+  Need to drop down and call a low-level method? Grab the raw client with
+  `useTamboClient()` and invoke anything exposed by the SDK.
 
-```ts title="advanced.ts"
-const { client } = useTamboClient();
+```tsx title="advanced-client.tsx"
+"use client";
 
-await client.someAdvancedMethod();
+import { useTamboClient } from "@tambo-ai/react";
+
+export function AdvancedExample() {
+  const { client } = useTamboClient();
+
+  async function handleClick() {
+    // Direct SDK call – not wrapped by a convenience hook.
+    await client.someAdvancedMethod({ force: true });
+  }
+
+  return (
+    <button onClick={handleClick} className="btn-primary">
+      Run advanced action
+    </button>
+  );
+}
 ```
+
+</Callout>
 
 ## Related
 

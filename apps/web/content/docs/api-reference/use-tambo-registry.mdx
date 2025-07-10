@@ -9,57 +9,124 @@ The `useTamboRegistry` hook exposes helpers for component and tool registration.
 
 ### registerComponent
 
-```ts title="example.ts"
-const { registerComponent } = useTamboRegistry();
+```tsx title="register-component.tsx"
+"use client";
+
+import { Button } from "./Button";
+import { useTamboRegistry } from "@tambo-ai/react";
+
+export function App() {
+  const { registerComponent } = useTamboRegistry();
+
+  // Register once on mount
+  React.useEffect(() => {
+    registerComponent({ name: "Button", render: Button });
+  }, [registerComponent]);
+
+  return <Button label="Click me" />;
+}
 ```
 
-Registers components so they can be rendered in Tambo responses.
+Registers a UI component so Tambo can reference and render it in responses.
 
 ### registerTool
 
-```ts title="example.ts"
-const { registerTool } = useTamboRegistry();
+```ts title="register-tool.ts"
+import { useTamboRegistry } from "@tambo-ai/react";
+
+export function useWeatherTool() {
+  const { registerTool } = useTamboRegistry();
+
+  React.useEffect(() => {
+    registerTool({
+      name: "get-weather",
+      execute: async ({ city }) =>
+        fetch(`/api/weather?city=${city}`).then((r) => r.json()),
+      parameters: {
+        type: "object",
+        properties: { city: { type: "string" } },
+        required: ["city"],
+      },
+    });
+  }, [registerTool]);
+}
 ```
 
-Register a single tool.
+Registers a single tool callable by Tambo during a conversation.
 
 ### registerTools
 
-```ts title="example.ts"
-const { registerTools } = useTamboRegistry();
+```ts title="bulk-tools.ts"
+import { useTamboRegistry } from "@tambo-ai/react";
+
+export function useBulkTools() {
+  const { registerTools } = useTamboRegistry();
+
+  React.useEffect(() => {
+    registerTools([
+      {
+        name: "get-user",
+        execute: async ({ id }) =>
+          fetch(`/api/users/${id}`).then((r) => r.json()),
+        parameters: {
+          type: "object",
+          properties: { id: { type: "string" } },
+          required: ["id"],
+        },
+      },
+      {
+        name: "list-orders",
+        execute: async () => fetch(`/api/orders`).then((r) => r.json()),
+      },
+    ]);
+  }, [registerTools]);
+}
 ```
 
-Register multiple tools at once.
+Registers multiple tools in one call.
 
 ### addToolAssociation
 
-```ts title="example.ts"
-const { addToolAssociation } = useTamboRegistry();
+```ts title="component-tool.ts"
+import { useTamboRegistry } from "@tambo-ai/react";
+
+export function useAssociations() {
+  const { addToolAssociation } = useTamboRegistry();
+
+  React.useEffect(() => {
+    addToolAssociation({ component: "WeatherCard", tool: "get-weather" });
+  }, [addToolAssociation]);
+}
 ```
 
-Link components and tools so Tambo can call the correct tool when a component
-is rendered.
+Links components and tools so Tambo can call the correct tool when the component is rendered.
 
 ### componentList
 
-```ts title="example.ts"
+```ts title="component-list.ts"
 const { componentList } = useTamboRegistry();
+
+console.table(componentList);
 ```
 
 Array of registered components.
 
 ### toolRegistry
 
-```ts title="example.ts"
+```ts title="tool-registry.ts"
 const { toolRegistry } = useTamboRegistry();
+
+console.log(toolRegistry);
 ```
 
 Full registry of tools.
 
 ### componentToolAssociations
 
-```ts title="example.ts"
+```ts title="associations.ts"
 const { componentToolAssociations } = useTamboRegistry();
+
+componentToolAssociations.forEach(console.log);
 ```
 
 Associations between components and tools.
