@@ -1,9 +1,10 @@
+import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
 import { NestInstrumentation } from "@opentelemetry/instrumentation-nestjs-core";
 import { resourceFromAttributes } from "@opentelemetry/resources";
-import { NodeSDK } from "@opentelemetry/sdk-node";
+import { NodeSDK, NodeSDKConfiguration } from "@opentelemetry/sdk-node";
 
 // Langfuse configuration
 function createLangfuseConfig() {
@@ -53,10 +54,11 @@ export function initializeOpenTelemetry() {
     }),
     new ExpressInstrumentation(),
     new NestInstrumentation(),
+    ...getNodeAutoInstrumentations(),
   ];
 
   // Create SDK configuration
-  const sdkConfig: any = {
+  const sdkConfig: Partial<NodeSDKConfiguration> = {
     resource,
     instrumentations,
   };
