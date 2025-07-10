@@ -6,6 +6,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "scripts": {
+    "check-types": "echo '@tambo-ai-cloud/typescript-config: nothing to type-check'"
+  },
   "volta": {
     "extends": "../../package.json"
   }
