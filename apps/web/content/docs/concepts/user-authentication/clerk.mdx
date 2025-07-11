@@ -3,31 +3,27 @@ title: Clerk
 description: Learn how to integrate Tambo with Clerk for user authentication.
 ---
 
-This guide shows how to integrate Tambo with Clerk in a Next.js application.
+Clerk is a complete authentication and user management solution that handles authentication through middleware without requiring specific API routes. This guide shows how to integrate it with Tambo.
 
 <Callout type="info" title="Prerequisites">
-  This assumes you have already installed and configured Clerk in your Next.js
-  application. If you haven't, follow the [Clerk Next.js Quick Start
-  guide](https://clerk.com/docs/quickstarts/nextjs) to set up Clerk
-  authentication first.
+  This guide assumes you've already set up Clerk in your Next.js application,
+  including middleware and sign-in/sign-up pages. If you haven't, follow the
+  [Clerk Next.js Quick Start](https://clerk.com/docs/quickstarts/nextjs) first.
 </Callout>
 
-<Callout type="info" title="Required Setup">
-  These docs assume you have already set up Clerk's middleware and
-  sign-in/sign-up pages. Clerk handles authentication through middleware and
-  doesn't require specific API routes.
-</Callout>
+## Installation
 
-## Required Packages
+Install the required packages:
 
 ```bash
-npm install @clerk/nextjs
-npm install @tambo-ai/react
+npm install @clerk/nextjs @tambo-ai/react
 ```
 
-## Server-Side Token Retrieval
+## Integration Options
 
-Create a server component to retrieve the user's session token:
+### Server-Side Token Retrieval (Recommended)
+
+Use this approach for better security and performance, especially when you don't need real-time authentication state changes.
 
 ```tsx title="app/layout.tsx"
 import { auth } from "@clerk/nextjs/server";
@@ -39,8 +35,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const { getToken } = await auth();
-
-  // Get the session token from Clerk
   const token = await getToken();
 
   return (
@@ -52,10 +46,6 @@ export default async function RootLayout({
   );
 }
 ```
-
-## Client-Side Integration
-
-Create a client component to wrap your app with both Clerk's ClerkProvider and TamboProvider:
 
 ```tsx title="app/client-layout.tsx"
 "use client";
@@ -73,8 +63,6 @@ export default function ClientLayout({
   children,
   userToken,
 }: ClientLayoutProps) {
-  // ClerkProvider needed for Clerk client-side hooks
-  // TamboProvider must be in a client component to handle token state
   return (
     <ClerkProvider>
       <TamboProvider userToken={userToken}>{children}</TamboProvider>
@@ -83,14 +71,37 @@ export default function ClientLayout({
 }
 ```
 
-## Alternative: Client-Side Token Retrieval
+### Client-Side Token Retrieval
 
-If you prefer to handle token retrieval on the client side, you can use Clerk's `useAuth` hook:
+Use this approach when you need real-time authentication state management or client-side routing with authentication guards.
 
-```tsx title="app/client-layout-alternative.tsx"
+```tsx title="app/layout.tsx"
 "use client";
 
-import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
+import ClientLayout from "./client-layout";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <ClerkProvider>
+          <ClientLayout>{children}</ClientLayout>
+        </ClerkProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+```tsx title="app/client-layout.tsx"
+"use client";
+
+import { useAuth } from "@clerk/nextjs";
 import { TamboProvider } from "@tambo-ai/react";
 import { ReactNode, useEffect, useState } from "react";
 
@@ -98,7 +109,7 @@ interface ClientLayoutProps {
   children: ReactNode;
 }
 
-function TamboWrapper({ children }: { children: ReactNode }) {
+export default function ClientLayout({ children }: ClientLayoutProps) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const [accessToken, setAccessToken] = useState<string | undefined>();
 
@@ -117,23 +128,13 @@ function TamboWrapper({ children }: { children: ReactNode }) {
     fetchToken();
   }, [isLoaded, isSignedIn, getToken]);
 
-  // TamboProvider must be in a client component to handle token state
   return <TamboProvider userToken={accessToken}>{children}</TamboProvider>;
-}
-
-export default function ClientLayout({ children }: ClientLayoutProps) {
-  // ClerkProvider needed for Clerk client-side hooks
-  return (
-    <ClerkProvider>
-      <TamboWrapper>{children}</TamboWrapper>
-    </ClerkProvider>
-  );
 }
 ```
 
-## Usage in Components
+## Usage
 
-Now you can use Tambo components in your authenticated pages:
+Once configured, you can use Tambo components throughout your application:
 
 ```tsx title="app/dashboard/page.tsx"
 import { MessageThreadFull } from "@components/ui/tambo";
@@ -148,9 +149,11 @@ export default function Dashboard() {
 }
 ```
 
-## Custom JWT Template
+## Advanced Configuration
 
-For advanced use cases, you can create a custom JWT template in Clerk to include specific claims:
+### Custom JWT Templates
+
+For advanced use cases, you can create custom JWT templates in Clerk to include specific claims:
 
 1. Go to your Clerk Dashboard
 2. Navigate to "JWT Templates"

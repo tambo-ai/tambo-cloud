@@ -3,37 +3,34 @@ title: Supabase
 description: Learn how to integrate Tambo with Supabase Auth for user authentication.
 ---
 
-This guide shows how to integrate Tambo with Supabase Auth in a Next.js application.
+Supabase Auth is a complete authentication solution that integrates seamlessly with your Supabase database. This guide shows how to integrate it with Tambo in a Next.js application.
 
 <Callout type="info" title="Prerequisites">
-  This assumes you have already installed and configured Supabase in your
-  Next.js application. If you haven't, follow the [Supabase Next.js Quick Start
-  guide](https://supabase.com/docs/guides/auth/quickstarts/nextjs) to set up
-  Supabase authentication first.
+  This guide assumes you've already set up Supabase Auth in your Next.js
+  application, including the auth callback route. If you haven't, follow the
+  [Supabase Next.js Quick
+  Start](https://supabase.com/docs/guides/auth/quickstarts/nextjs) first.
 </Callout>
 
-<Callout type="info" title="Required Auth Routes">
-  These docs assume you have already set up the Supabase auth callback route at
-  `/auth/callback/route.ts` for handling email verification and OAuth callbacks.
+<Callout type="warn" title="JWT Verification Requirement">
+  Supabase Auth doesn't support asymmetric JWT verification. You **must**
+  disable JWT verification in your Tambo project settings (Settings > User
+  Authentication > Verification Strategy > None) when using Supabase Auth.
 </Callout>
 
-<Callout type="warn" title="JWT Verification">
-  As noted in the main authentication guide, Supabase auth does not support
-  Asymmetric JWT Verification as of July 2025. When using Supabase auth with
-  Tambo, you will need to disable JWT verification in your Tambo project
-  settings.
-</Callout>
+## Installation
 
-## Required Packages
+Install the required packages:
 
 ```bash
-npm install @supabase/supabase-js
-npm install @tambo-ai/react
+npm install @supabase/supabase-js @tambo-ai/react
 ```
 
-## Server-Side Token Retrieval
+## Integration Options
 
-Create a server component to retrieve the user's session token:
+### Server-Side Token Retrieval (Recommended)
+
+Use this approach for better security and performance, especially when you don't need real-time authentication state changes.
 
 ```tsx title="app/layout.tsx"
 import { createServerClient } from "@supabase/supabase-js";
@@ -73,10 +70,6 @@ export default async function RootLayout({
 }
 ```
 
-## Client-Side Integration
-
-Create a client component to wrap your app with TamboProvider:
-
 ```tsx title="app/client-layout.tsx"
 "use client";
 
@@ -92,16 +85,15 @@ export default function ClientLayout({
   children,
   userToken,
 }: ClientLayoutProps) {
-  // TamboProvider must be in a client component to handle token state
   return <TamboProvider userToken={userToken}>{children}</TamboProvider>;
 }
 ```
 
-## Alternative: Client-Side Token Retrieval
+### Client-Side Token Retrieval
 
-If you prefer to handle token retrieval on the client side, you can use Supabase's auth state:
+Use this approach when you need real-time authentication state management or client-side routing with authentication guards.
 
-```tsx title="app/client-layout-alternative.tsx"
+```tsx title="app/client-layout.tsx"
 "use client";
 
 import { TamboProvider } from "@tambo-ai/react";
@@ -114,7 +106,7 @@ interface ClientLayoutProps {
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const [accessToken, setAccessToken] = useState<string | undefined>();
-  const supabase = createClient(); // Assumes createClient utility is available
+  const supabase = createClient();
 
   useEffect(() => {
     // Get initial session
@@ -137,14 +129,13 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  // TamboProvider must be in a client component to handle token state
   return <TamboProvider userToken={accessToken}>{children}</TamboProvider>;
 }
 ```
 
-## Usage in Components
+## Usage
 
-Now you can use Tambo components in your authenticated pages:
+Once configured, you can use Tambo components throughout your application:
 
 ```tsx title="app/dashboard/page.tsx"
 import { MessageThreadFull } from "@components/ui/tambo";
@@ -159,8 +150,19 @@ export default function Dashboard() {
 }
 ```
 
-<Callout type="info" title="Token Management">
-  Supabase automatically handles token refresh in the background. The access
-  token will be automatically updated when it expires, and the TamboProvider
-  will receive the new token.
+## Supabase-Specific Features
+
+### Automatic Token Refresh
+
+Supabase automatically handles token refresh in the background. When tokens expire, Supabase will automatically refresh them, and the TamboProvider will receive the updated token through the auth state change listener.
+
+### Session Management
+
+Supabase provides robust session management across tabs and devices. The auth state change listener ensures that authentication state stays synchronized across your application.
+
+<Callout type="info" title="Why Disable JWT Verification">
+  Supabase uses symmetric JWT signing (HMAC-SHA256) rather than asymmetric
+  signing (RS256). Tambo's JWT verification is designed for asymmetric tokens
+  from OAuth providers. Since Supabase handles authentication security,
+  disabling JWT verification in Tambo is safe and recommended.
 </Callout>

@@ -1,51 +1,27 @@
 ---
-title: Quickstart
+title: User Authentication
 description: Learn how to authenticate users with Tambo.
 ---
 
-In a Tambo application, each user has their own threads and messages,
-and does not have access to other users' threads and messages.
+In a Tambo application, each user has their own threads and messages, isolated from other users' data. This user isolation is achieved through secure token-based authentication.
 
-To accomplish this, Tambo supports user authentication via OAuth 2.0 [Token
-Exchange](https://datatracker.ietf.org/doc/html/rfc8693). This allows you to
-securely identify users with your application's identity provider.
+## How Tambo Authentication Works
 
-## Supported Identity Providers
+Tambo uses OAuth 2.0 [Token Exchange](https://datatracker.ietf.org/doc/html/rfc8693) to securely identify users. Here's what happens:
 
-Tambo supports any OAuth 2.0 provider that provides a [JSON Web Token
-(JWT)](https://datatracker.ietf.org/doc/html/rfc7519) with the `sub` claim
-identifying the user. In addition, Tambo supports OpenID Connect Discovery to
-automatically verify the token without any additional configuration. This
-includes most common identity providers such as Google, Microsoft, and Auth0.
-
-**Note**: As of July 2025, Supabase auth does not support Asymmetric JWT
-Verification. When using Supabase auth with Tambo, you will need to disable JWT
-verification in your project settings.
-
-If your application does not support OpenID Connect Discovery, you can still
-use Tambo's user authentication by configuring your project's JWT verification
-strategy.
-
-**Note**: While it is possible to pass in a `contextKey` to identify the user in
-most Tambo APIs, this is not a secure way to identify users, as each `contextKey`
-is just an unverified string. Using the OAuth 2.0 Token Exchange flow is the
-recommended way to identify users.
-
-## How it works
-
-User authentication is a three-step process:
-
-1. Your application authenticates with the OAuth 2.0 provider and gets back a JWT access token.
-2. Your application sends the JWT access token to Tambo on the `/oauth/token`
-   endpoint, which will return a Tambo token.
-3. Every API request to Tambo must include the Tambo token in the `Authorization` header.
+1. **Your app authenticates the user** with your chosen OAuth provider (Auth0, Clerk, etc.)
+2. **Your app receives a JWT token** from the provider containing user information
+3. **Your app exchanges this token with Tambo** via the `/oauth/token` endpoint
+4. **Tambo returns a Tambo-specific token** that identifies the user for all subsequent API calls
 
 ```mermaid
 sequenceDiagram
-    participant OAuth as OAuth 2.0 Provider
-    participant App as Your Application
+    participant User as User
+    participant App as Your App
+    participant OAuth as OAuth Provider
     participant Tambo as Tambo API
 
+    User->>App: Login request
     App->>OAuth: Authenticate user
     OAuth-->>App: JWT Access Token
 
@@ -53,38 +29,68 @@ sequenceDiagram
     Tambo-->>App: Tambo Token
 
     App->>Tambo: API requests<br/>(Authorization: Bearer {tambo-token})
-    Tambo-->>App: API Response
+    Tambo-->>App: User's threads & messages
 ```
 
-## How to use it
+## Token Requirements
 
-The easiest way to use user authentication is to use `TamboProvider` from the `@tambo-ai/react` package.
+Tambo supports any OAuth 2.0 provider that issues a [JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519) with:
 
-```tsx title="layout.tsx"
+- A `sub` (subject) claim identifying the user
+- Proper signature for verification (when JWT verification is enabled)
+
+This includes most popular providers like Google, Microsoft, Auth0, Clerk, and others.
+
+## Implementation Approaches
+
+### Server-Side Token Retrieval (Recommended)
+
+**Best for**: Most applications, especially those requiring server-side rendering or enhanced security.
+
+- Tokens are retrieved on the server during page rendering
+- More secure as tokens never appear in client-side JavaScript
+- Better for SEO and initial page load performance
+- Handles authentication state before the client renders
+
+### Client-Side Token Retrieval
+
+**Best for**: Highly interactive applications that need real-time authentication state changes.
+
+- Tokens are retrieved in the browser after the page loads
+- Allows for real-time authentication state management
+- Required when using client-side routing with authentication guards
+- May show loading states during token retrieval
+
+## Using TamboProvider
+
+The `TamboProvider` component from `@tambo-ai/react` handles the token exchange process automatically:
+
+```tsx title="Basic Setup"
 "use client";
-// TamboProvider must be used in a client component
+// TamboProvider must be in a client component to manage authentication state
 
 import { TamboProvider } from "@tambo-ai/react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  // Acquire the user token from your application's authentication system.
-  const userToken = useUserToken();
+  const userToken = useUserToken(); // Get token from your auth provider
   return <TamboProvider userToken={userToken}>{children}</TamboProvider>;
 }
 ```
 
-When pass a user token to `TamboProvider`, Tambo will automatically verify the user token and
-use the `sub` claim to identify the user. In addition, Tambo will automatically
-refresh the Tambo token when it expires, or re-request a new Tambo token if the
-user token changes.
+<Callout type="info" title="Why Client Component Required">
+  TamboProvider needs to be in a client component because it manages
+  authentication state, handles token refresh, and provides React context to
+  child components. Server components cannot manage state or provide React
+  context.
+</Callout>
 
 ## Provider-Specific Integration Guides
 
 For detailed integration examples with popular authentication providers, see the following guides:
 
 <Cards>
-  <Card href="/docs/concepts/user-authentication/nextauth" title="NextAuth">
-    Learn how to integrate Tambo with NextAuth using Google OAuth as an example.
+  <Card href="/docs/concepts/user-authentication/nextauth" title="Auth.js">
+    Learn how to integrate Tambo with Auth.js using Google OAuth as an example.
   </Card>
   <Card href="/docs/concepts/user-authentication/auth0" title="Auth0">
     Step-by-step guide for integrating Tambo with Auth0 authentication.
@@ -95,8 +101,11 @@ For detailed integration examples with popular authentication providers, see the
   <Card href="/docs/concepts/user-authentication/supabase" title="Supabase">
     Integration guide for Supabase Auth with Tambo in Next.js applications.
   </Card>
-  <Card href="/docs/concepts/user-authentication/neon" title="Neon Integration">
-    How to use Tambo with Neon Auth and PostgreSQL database integration.
+  <Card
+    href="/docs/concepts/user-authentication/neon"
+    title="Auth.js with Neon"
+  >
+    How to use Tambo with Auth.js and Neon PostgreSQL database integration.
   </Card>
   <Card href="/docs/concepts/user-authentication/workos" title="WorkOS">
     Enterprise-grade authentication with WorkOS and Tambo integration.
@@ -110,25 +119,18 @@ For detailed integration examples with popular authentication providers, see the
   </Card>
 </Cards>
 
-## How to configure your project's JWT verification strategy
+## JWT Verification Strategies
 
-If your application does not support OpenID Connect Discovery, you can still
-use Tambo's user authentication by configuring your project's JWT verification
-strategy.
+When your OAuth provider supports OpenID Connect Discovery (most do), Tambo automatically verifies tokens. For providers that don't, you can configure verification in your project dashboard:
 
-Tambo supports 4 different JWT verification strategies:
+- **OpenID Connect Discovery** (Default): Automatic verification using the provider's public keys
+- **Asymmetric JWT Verification**: Manual verification using a provided public key
+- **Symmetric JWT Verification**: Verification using a shared secret (testing only)
+- **None**: No verification (development only)
 
-- **OpenID Connect Discovery**: Tambo will automatically verify the user token
-  using OpenID Connect Discovery by contacting the user's identity provider's
-  discovery endpoint during token exchange. **This is the default strategy** and
-  requires that your Identity Provider supports Asymmetric JWT signatures.
-- **Asymmetric JWT Verification**: This is the same as OpenID Connect Discovery, except that you can provide
-  a public key to verify the user token.
-- **Symmetric JWT Verification**: Tambo will verify the user token using a
-  private key which you can provide. This is an insecure strategy and should
-  generally only be used for testing, as it requires you to share your private
-  key with Tambo.
-- **None**: No verification is performed.
+<Callout type="warn" title="Supabase Exception">
+  Supabase Auth doesn't support asymmetric JWT verification. You'll need to
+  disable JWT verification in your Tambo project settings when using Supabase.
+</Callout>
 
-All of these strategies can be configured in your project dashboard under
-Settings > User Authentication.
+All verification strategies can be configured in your project dashboard under Settings > User Authentication.

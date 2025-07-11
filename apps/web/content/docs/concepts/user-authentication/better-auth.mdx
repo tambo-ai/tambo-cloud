@@ -3,25 +3,35 @@ title: Better Auth
 description: Learn how to integrate Tambo with Better Auth for user authentication.
 ---
 
-This guide shows how to integrate Tambo with Better Auth in a Next.js application.
+Better Auth is a modern authentication library that provides built-in support for multiple providers and plugins. This guide shows how to integrate it with Tambo in a Next.js application.
 
 <Callout type="info" title="Prerequisites">
-  This assumes you have already installed and configured Better Auth in your
-  Next.js application. If you haven't, follow the [Better Auth Next.js Quick
-  Start guide](https://www.better-auth.com/docs/installation) to set up Better
-  Auth authentication first.
+  This guide assumes you've already set up Better Auth in your Next.js
+  application. If you haven't, follow the [Better Auth Next.js Quick
+  Start](https://www.better-auth.com/docs/installation) first.
 </Callout>
 
-## Required Packages
+## Installation
+
+Install the required packages:
 
 ```bash
-npm install better-auth
-npm install @tambo-ai/react
+npm install better-auth @tambo-ai/react
 ```
 
-## Server-Side Token Retrieval
+## Integration Options
 
-Create a server component to retrieve the user's session token:
+Choose the approach that best fits your application:
+
+### Server-Side Token Retrieval (Recommended)
+
+Use this approach when you want maximum security and don't need real-time authentication state changes in your UI.
+
+**Benefits:**
+
+- Tokens never appear in client-side JavaScript
+- Better for SEO and initial page load performance
+- No loading states for authentication
 
 ```tsx title="app/layout.tsx"
 import { auth } from "./lib/auth"; // Your Better Auth instance
@@ -47,10 +57,6 @@ export default async function RootLayout({
 }
 ```
 
-## Client-Side Integration
-
-Create a client component wrapper for TamboProvider:
-
 ```tsx title="app/client-layout.tsx"
 "use client";
 
@@ -66,16 +72,21 @@ export default function ClientLayout({
   children,
   userToken,
 }: ClientLayoutProps) {
-  // TamboProvider requires "use client" directive to manage authentication state
   return <TamboProvider userToken={userToken}>{children}</TamboProvider>;
 }
 ```
 
-## Alternative: Client-Side Token Retrieval
+### Client-Side Token Retrieval
 
-If you prefer to handle token retrieval on the client side, you can use Better Auth's session hook:
+Use this approach when you need real-time authentication state management or client-side routing with authentication guards.
 
-```tsx title="app/client-layout-alternative.tsx"
+**Benefits:**
+
+- Real-time authentication state updates
+- Better for single-page applications with client-side routing
+- Allows for authentication state-dependent UI rendering
+
+```tsx title="app/client-layout.tsx"
 "use client";
 
 import { authClient } from "./lib/auth-client";
@@ -89,14 +100,13 @@ interface ClientLayoutProps {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const { data: session } = authClient.useSession();
 
-  // TamboProvider must be in a client component to handle token state
   return <TamboProvider userToken={session?.token}>{children}</TamboProvider>;
 }
 ```
 
-## Usage in Components
+## Usage
 
-Now you can use Tambo components in your authenticated pages:
+Once configured, you can use Tambo components throughout your application. The authentication context is automatically handled:
 
 ```tsx title="app/dashboard/page.tsx"
 import { MessageThreadFull } from "@components/ui/tambo";
@@ -110,3 +120,12 @@ export default function Dashboard() {
   );
 }
 ```
+
+## Next Steps
+
+Your Tambo integration is now complete. The `TamboProvider` will automatically:
+
+- Exchange your Better Auth token for a Tambo token
+- Refresh the Tambo token when it expires
+- Handle authentication state changes
+- Provide user isolation for all Tambo API calls
