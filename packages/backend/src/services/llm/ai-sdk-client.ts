@@ -167,7 +167,7 @@ export class AISdkClient implements LLMClient {
 
     // Prepare experimental telemetry for Langfuse
     const experimentalTelemetry = createLangfuseTelemetryConfig({
-      chainId: this.chainId,
+      sessionId: this.chainId,
       provider: this.provider,
       model: this.model,
       functionId: `${this.provider}-${this.model}`,
