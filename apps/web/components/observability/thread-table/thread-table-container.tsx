@@ -47,7 +47,9 @@ export function ThreadTableContainer({
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const { toast } = useToast();
   const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
-  const [allThreads, setAllThreads] = useState<any[]>([]);
+  const [allThreads, setAllThreads] = useState<
+    RouterOutputs["thread"]["getThreads"]["threads"]
+  >([]);
   const [isLoadingAllThreads, setIsLoadingAllThreads] = useState(false);
   const utils = api.useUtils();
 
@@ -69,29 +71,33 @@ export function ThreadTableContainer({
 
   // Fetch all threads if totalCount > 100 and reasonable (< 1000)
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchAllThreads() {
-      if (!initialData || !projectId) return;
+      if (!initialData || !projectId || cancelled) return;
 
       const { totalCount, threads: firstBatch } = initialData;
 
       // If we have 100 or fewer threads, we already have them all
       if (totalCount <= 100) {
-        setAllThreads(firstBatch);
+        if (!cancelled) setAllThreads(firstBatch);
         return;
       }
 
       // If more than 1000 threads, show a warning and work with first 100
       if (totalCount > 1000) {
-        toast({
-          title: "Large dataset",
-          description: `You have ${totalCount} threads. Search and sort will only work on the most recent 100 threads for performance reasons.`,
-        });
-        setAllThreads(firstBatch);
+        if (!cancelled) {
+          toast({
+            title: "Large dataset",
+            description: `You have ${totalCount} threads. Search and sort will only work on the most recent 100 threads for performance reasons.`,
+          });
+          setAllThreads(firstBatch);
+        }
         return;
       }
 
       // Fetch all threads (100 < totalCount <= 1000)
-      setIsLoadingAllThreads(true);
+      if (!cancelled) setIsLoadingAllThreads(true);
       try {
         const allThreadsData = [...firstBatch];
         const numBatches = Math.ceil((totalCount - 100) / 100);
@@ -99,6 +105,8 @@ export function ThreadTableContainer({
         // Fetch remaining batches in parallel (up to 3 at a time)
         const batchPromises = [];
         for (let i = 0; i < numBatches; i++) {
+          if (cancelled) break;
+
           const offset = 100 + i * 100;
           batchPromises.push(
             utils.thread.getThreads.fetch({
@@ -111,28 +119,37 @@ export function ThreadTableContainer({
           // Execute in batches of 3
           if (batchPromises.length === 3 || i === numBatches - 1) {
             const results = await Promise.all(batchPromises);
-            results.forEach((result) => {
-              allThreadsData.push(...result.threads);
-            });
+            if (!cancelled) {
+              results.forEach((result) => {
+                allThreadsData.push(...result.threads);
+              });
+            }
             batchPromises.length = 0;
           }
         }
 
-        setAllThreads(allThreadsData);
+        if (!cancelled) setAllThreads(allThreadsData);
       } catch (error) {
-        console.error("Failed to fetch all threads:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load all threads. Working with partial data.",
-          variant: "destructive",
-        });
-        setAllThreads(firstBatch);
+        if (!cancelled) {
+          console.error("Failed to fetch all threads:", error);
+          toast({
+            title: "Error",
+            description:
+              "Failed to load all threads. Working with partial data.",
+            variant: "destructive",
+          });
+          setAllThreads(firstBatch);
+        }
       } finally {
-        setIsLoadingAllThreads(false);
+        if (!cancelled) setIsLoadingAllThreads(false);
       }
     }
 
     fetchAllThreads();
+
+    return () => {
+      cancelled = true;
+    };
   }, [initialData, projectId, toast, utils]);
 
   // Fetch selected thread details
