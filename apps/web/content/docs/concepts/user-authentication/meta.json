@@ -1,4 +1,13 @@
 {
   "title": "User Authentication",
-  "pages": ["index", "nextauth", "auth0", "clerk", "supabase", "neon", "workos"]
+  "pages": [
+    "index",
+    "nextauth",
+    "auth0",
+    "clerk",
+    "supabase",
+    "neon",
+    "workos",
+    "better-auth"
+  ]
 }
