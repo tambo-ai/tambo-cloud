@@ -1,26 +1,27 @@
 ---
-title: Neon Integration
-description: Learn how to integrate Tambo with Neon Auth for user authentication.
+title: Neon
+description: Learn how to integrate Tambo with Auth.js using Neon as the database backend.
 ---
 
-This guide shows how to integrate Tambo with Neon Auth in a Next.js application.
+This guide shows how to integrate Tambo with Auth.js using Neon as the database backend for session storage.
 
 <Callout type="info" title="Prerequisites">
-  This assumes you have already installed and configured Neon Auth in your
-  Next.js application. If you haven't, follow the [Neon Auth Next.js Quick Start
-  guide](https://neon.com/docs/neon-auth/quick-start/nextjs) to set up Neon
+  This assumes you have already installed and configured Auth.js with Neon as
+  the database adapter. If you haven't, follow the [Neon Auth.js
+  guide](https://neon.tech/docs/guides/auth-authjs) to set up Auth.js with Neon
   authentication first.
 </Callout>
 
 <Callout type="info" title="Required API Routes">
-  These docs assume you have already set up the Neon Auth API routes at
-  `/api/auth/[...neon]/route.ts`.
+  These docs assume you have already set up the Auth.js API routes at
+  `/api/auth/[...nextauth]/route.ts` with Neon as the database adapter.
 </Callout>
 
 ## Required Packages
 
 ```bash
-npm install @neondatabase/neon-auth
+npm install next-auth @auth/neon-adapter
+npm install @neondatabase/serverless
 npm install @tambo-ai/react
 ```
 
@@ -29,7 +30,8 @@ npm install @tambo-ai/react
 Create a server component to retrieve the user's session token:
 
 ```tsx title="app/layout.tsx"
-import { getSession } from "@neondatabase/neon-auth/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./api/auth/[...nextauth]/route";
 import ClientLayout from "./client-layout";
 
 export default async function RootLayout({
@@ -37,7 +39,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
+  const session = await getServerSession(authOptions);
 
   return (
     <html lang="en">
@@ -75,12 +77,12 @@ export default function ClientLayout({
 
 ## Alternative: Client-Side Token Retrieval
 
-If you prefer to handle token retrieval on the client side, you can use Neon's session hook:
+If you prefer to handle token retrieval on the client side, you can use Auth.js's session hook:
 
 ```tsx title="app/client-layout-alternative.tsx"
 "use client";
 
-import { useSession } from "@neondatabase/neon-auth/client";
+import { useSession } from "next-auth/react";
 import { TamboProvider } from "@tambo-ai/react";
 import { ReactNode } from "react";
 
@@ -98,12 +100,12 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 }
 ```
 
-For the client-side approach, you'll need to wrap your app with Neon's SessionProvider:
+For the client-side approach, you'll need to wrap your app with Auth.js's SessionProvider:
 
 ```tsx title="app/root-layout.tsx"
 "use client";
 
-import { SessionProvider } from "@neondatabase/neon-auth/client";
+import { SessionProvider } from "next-auth/react";
 import ClientLayout from "./client-layout-alternative";
 
 export default function RootLayout({
@@ -111,7 +113,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // SessionProvider needed for Neon Auth client-side hooks
+  // SessionProvider needed for Auth.js client-side hooks
   return (
     <html lang="en">
       <body>
@@ -122,6 +124,44 @@ export default function RootLayout({
     </html>
   );
 }
+```
+
+## Auth.js Configuration with Neon
+
+Your Auth.js configuration should use the Neon adapter to store session and user data:
+
+```tsx title="app/api/auth/[...nextauth]/route.ts"
+import NextAuth from "next-auth";
+import { NeonAdapter } from "@auth/neon-adapter";
+import { neon } from "@neondatabase/serverless";
+import GoogleProvider from "next-auth/providers/google";
+
+const sql = neon(process.env.NEON_DATABASE_URL!);
+
+export const authOptions = {
+  adapter: NeonAdapter(sql),
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, account }) {
+      if (account) {
+        token.accessToken = account.access_token;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      session.accessToken = token.accessToken as string;
+      return session;
+    },
+  },
+};
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
 ```
 
 ## Usage in Components

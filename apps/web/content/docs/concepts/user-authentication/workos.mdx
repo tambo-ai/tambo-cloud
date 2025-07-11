@@ -1,5 +1,5 @@
 ---
-title: WorkOS Integration
+title: WorkOS
 description: Learn how to integrate Tambo with WorkOS for user authentication.
 ---
 
@@ -12,9 +12,10 @@ This guide shows how to integrate Tambo with WorkOS in a Next.js application.
   authentication first.
 </Callout>
 
-<Callout type="info" title="Required API Routes">
-  These docs assume you have already set up the WorkOS API routes at
-  `/api/auth/[...workos]/route.ts` with login, callback, and logout endpoints.
+<Callout type="info" title="Required Callback Route">
+  These docs assume you have already set up a WorkOS callback route to handle
+  authentication responses (e.g., `/callback/route.ts`), as configured in your
+  WorkOS dashboard.
 </Callout>
 
 ## Required Packages
