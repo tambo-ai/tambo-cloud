@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { memo, useState } from "react";
 import { formatTime } from "../utils";
+import { HighlightText } from "./highlight-text";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
@@ -21,6 +22,7 @@ interface ToolCallMessageProps {
   isHighlighted?: boolean;
   copiedId: string | null;
   onCopyId: (id: string) => void;
+  searchQuery?: string;
 }
 
 export const ToolCallMessage = memo(
@@ -30,6 +32,7 @@ export const ToolCallMessage = memo(
     isHighlighted = false,
     copiedId,
     onCopyId,
+    searchQuery,
   }: ToolCallMessageProps) => {
     const [showArguments, setShowArguments] = useState(false);
     const [showResponse, setShowResponse] = useState(false);
@@ -164,6 +167,19 @@ export const ToolCallMessage = memo(
       }
     };
 
+    const highlightJson = (jsonStr: string) => {
+      if (!searchQuery) return jsonStr;
+
+      return jsonStr
+        .split(new RegExp(`(${searchQuery})`, "gi"))
+        .map((part) =>
+          part.toLowerCase() === searchQuery.toLowerCase()
+            ? `<mark class="bg-yellow-300 text-black px-0.5 rounded">${part}</mark>`
+            : part,
+        )
+        .join("");
+    };
+
     return (
       <>
         {/* Top metadata bar */}
@@ -207,7 +223,12 @@ export const ToolCallMessage = memo(
                     hasAnyError && "text-red-700",
                   )}
                 >
-                  Tool Call: <span className="font-normal">{toolName}</span>
+                  Tool Call:{" "}
+                  {searchQuery ? (
+                    <HighlightText text={toolName} searchQuery={searchQuery} />
+                  ) : (
+                    <span className="font-normal">{toolName}</span>
+                  )}
                 </span>
               </div>
 
@@ -254,7 +275,15 @@ export const ToolCallMessage = memo(
                 >
                   <div className="p-2 sm:p-4 bg-background">
                     <pre className="text-[10px] sm:text-xs font-mono text-primary overflow-auto">
-                      <code>{formatAllParameters()}</code>
+                      {searchQuery ? (
+                        <code
+                          dangerouslySetInnerHTML={{
+                            __html: highlightJson(formatAllParameters()),
+                          }}
+                        />
+                      ) : (
+                        <code>{formatAllParameters()}</code>
+                      )}
                     </pre>
                   </div>
                 </motion.div>
@@ -321,9 +350,19 @@ export const ToolCallMessage = memo(
                     <div className="p-2 sm:p-4 bg-background max-h-64 sm:max-h-96 overflow-auto">
                       {/* Single unified response content display */}
                       <pre className="text-[10px] sm:text-xs font-mono text-primary whitespace-pre-wrap break-words overflow-auto">
-                        <code>
-                          {formatResponseContent(toolResponse.content)}
-                        </code>
+                        {searchQuery ? (
+                          <code
+                            dangerouslySetInnerHTML={{
+                              __html: highlightJson(
+                                formatResponseContent(toolResponse.content),
+                              ),
+                            }}
+                          />
+                        ) : (
+                          <code>
+                            {formatResponseContent(toolResponse.content)}
+                          </code>
+                        )}
                       </pre>
                     </div>
                   </motion.div>
