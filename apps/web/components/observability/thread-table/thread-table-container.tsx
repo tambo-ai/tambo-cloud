@@ -20,6 +20,7 @@ import { ThreadTable } from "./index";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
+type AllThreadsType = RouterOutputs["thread"]["getThreads"]["threads"];
 
 interface ThreadTableContainerProps {
   projectId: string;
@@ -47,9 +48,7 @@ export function ThreadTableContainer({
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const { toast } = useToast();
   const [isMessagesModalOpen, setIsMessagesModalOpen] = useState(false);
-  const [allThreads, setAllThreads] = useState<
-    RouterOutputs["thread"]["getThreads"]["threads"]
-  >([]);
+  const [allThreads, setAllThreads] = useState<AllThreadsType>([]);
   const [isLoadingAllThreads, setIsLoadingAllThreads] = useState(false);
   const utils = api.useUtils();
 
