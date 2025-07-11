@@ -1,0 +1,197 @@
+---
+title: WorkOS Integration
+description: Learn how to integrate Tambo with WorkOS for user authentication.
+---
+
+This guide shows how to integrate Tambo with WorkOS in a Next.js application.
+
+<Callout type="info" title="Prerequisites">
+  This assumes you have already installed and configured WorkOS in your Next.js
+  application. If you haven't, follow the [WorkOS Next.js Quick Start
+  guide](https://workos.com/docs/user-management/nextjs) to set up WorkOS
+  authentication first.
+</Callout>
+
+<Callout type="info" title="Required API Routes">
+  These docs assume you have already set up the WorkOS API routes at
+  `/api/auth/[...workos]/route.ts` with login, callback, and logout endpoints.
+</Callout>
+
+## Required Packages
+
+```bash
+npm install @workos-inc/node
+npm install @tambo-ai/react
+```
+
+## Server-Side Token Retrieval
+
+Create a server component to retrieve the user's session token:
+
+```tsx title="app/layout.tsx"
+import { getSession } from "@workos-inc/node/middleware";
+import ClientLayout from "./client-layout";
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getSession({
+    cookiePassword: process.env.WORKOS_COOKIE_PASSWORD!,
+  });
+
+  return (
+    <html lang="en">
+      <body>
+        <ClientLayout userToken={session?.accessToken}>{children}</ClientLayout>
+      </body>
+    </html>
+  );
+}
+```
+
+## Client-Side Integration
+
+Create a client component to wrap your app with TamboProvider:
+
+```tsx title="app/client-layout.tsx"
+"use client";
+
+import { TamboProvider } from "@tambo-ai/react";
+import { ReactNode } from "react";
+
+interface ClientLayoutProps {
+  children: ReactNode;
+  userToken?: string;
+}
+
+export default function ClientLayout({
+  children,
+  userToken,
+}: ClientLayoutProps) {
+  // TamboProvider must be in a client component to handle token state
+  return <TamboProvider userToken={userToken}>{children}</TamboProvider>;
+}
+```
+
+## Alternative: Client-Side Token Retrieval
+
+If you prefer to handle token retrieval on the client side, create a custom hook:
+
+```tsx title="hooks/use-workos-auth.ts"
+import { useEffect, useState } from "react";
+
+interface UseWorkOSAuthReturn {
+  accessToken: string | null;
+  user: any | null;
+  loading: boolean;
+}
+
+export function useWorkOSAuth(): UseWorkOSAuthReturn {
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [user, setUser] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const response = await fetch("/api/auth/session");
+        if (response.ok) {
+          const data = await response.json();
+          setAccessToken(data.accessToken);
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error("Error fetching session:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSession();
+  }, []);
+
+  return { accessToken, user, loading };
+}
+```
+
+Create a session endpoint:
+
+```tsx title="app/api/auth/session/route.ts"
+import { NextRequest, NextResponse } from "next/server";
+import { WorkOS } from "@workos-inc/node";
+
+const workos = new WorkOS(process.env.WORKOS_API_KEY!);
+
+export async function GET(request: NextRequest) {
+  const accessToken = request.cookies.get("workos-access-token")?.value;
+
+  if (!accessToken) {
+    return NextResponse.json({ error: "No access token" }, { status: 401 });
+  }
+
+  try {
+    const user = await workos.userManagement.getUser(accessToken);
+
+    return NextResponse.json({
+      accessToken,
+      user,
+    });
+  } catch (error) {
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  }
+}
+```
+
+Use the hook in your client layout:
+
+```tsx title="app/client-layout-alternative.tsx"
+"use client";
+
+import { TamboProvider } from "@tambo-ai/react";
+import { useWorkOSAuth } from "@/hooks/use-workos-auth";
+import { ReactNode } from "react";
+
+interface ClientLayoutProps {
+  children: ReactNode;
+}
+
+export default function ClientLayout({ children }: ClientLayoutProps) {
+  const { accessToken, loading } = useWorkOSAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // TamboProvider must be in a client component to handle token state
+  return (
+    <TamboProvider userToken={accessToken || undefined}>
+      {children}
+    </TamboProvider>
+  );
+}
+```
+
+## Usage in Components
+
+Now you can use Tambo components in your authenticated pages:
+
+```tsx title="app/dashboard/page.tsx"
+import { MessageThreadFull } from "@components/ui/tambo";
+
+export default function Dashboard() {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <MessageThreadFull />
+    </div>
+  );
+}
+```
+
+<Callout type="info" title="Enterprise Features">
+  WorkOS provides enterprise-grade features like SSO, SCIM provisioning, and
+  directory sync. The access token provided to Tambo will include the necessary
+  user identification for secure authentication.
+</Callout>

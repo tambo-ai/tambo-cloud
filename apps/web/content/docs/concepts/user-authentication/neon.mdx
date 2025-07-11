@@ -1,0 +1,142 @@
+---
+title: Neon Integration
+description: Learn how to integrate Tambo with Neon Auth for user authentication.
+---
+
+This guide shows how to integrate Tambo with Neon Auth in a Next.js application.
+
+<Callout type="info" title="Prerequisites">
+  This assumes you have already installed and configured Neon Auth in your
+  Next.js application. If you haven't, follow the [Neon Auth Next.js Quick Start
+  guide](https://neon.com/docs/neon-auth/quick-start/nextjs) to set up Neon
+  authentication first.
+</Callout>
+
+<Callout type="info" title="Required API Routes">
+  These docs assume you have already set up the Neon Auth API routes at
+  `/api/auth/[...neon]/route.ts`.
+</Callout>
+
+## Required Packages
+
+```bash
+npm install @neondatabase/neon-auth
+npm install @tambo-ai/react
+```
+
+## Server-Side Token Retrieval
+
+Create a server component to retrieve the user's session token:
+
+```tsx title="app/layout.tsx"
+import { getSession } from "@neondatabase/neon-auth/server";
+import ClientLayout from "./client-layout";
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getSession();
+
+  return (
+    <html lang="en">
+      <body>
+        <ClientLayout userToken={session?.accessToken}>{children}</ClientLayout>
+      </body>
+    </html>
+  );
+}
+```
+
+## Client-Side Integration
+
+Create a client component to wrap your app with TamboProvider:
+
+```tsx title="app/client-layout.tsx"
+"use client";
+
+import { TamboProvider } from "@tambo-ai/react";
+import { ReactNode } from "react";
+
+interface ClientLayoutProps {
+  children: ReactNode;
+  userToken?: string;
+}
+
+export default function ClientLayout({
+  children,
+  userToken,
+}: ClientLayoutProps) {
+  // TamboProvider must be in a client component to handle token state
+  return <TamboProvider userToken={userToken}>{children}</TamboProvider>;
+}
+```
+
+## Alternative: Client-Side Token Retrieval
+
+If you prefer to handle token retrieval on the client side, you can use Neon's session hook:
+
+```tsx title="app/client-layout-alternative.tsx"
+"use client";
+
+import { useSession } from "@neondatabase/neon-auth/client";
+import { TamboProvider } from "@tambo-ai/react";
+import { ReactNode } from "react";
+
+interface ClientLayoutProps {
+  children: ReactNode;
+}
+
+export default function ClientLayout({ children }: ClientLayoutProps) {
+  const { data: session } = useSession();
+
+  // TamboProvider must be in a client component to handle token state
+  return (
+    <TamboProvider userToken={session?.accessToken}>{children}</TamboProvider>
+  );
+}
+```
+
+For the client-side approach, you'll need to wrap your app with Neon's SessionProvider:
+
+```tsx title="app/root-layout.tsx"
+"use client";
+
+import { SessionProvider } from "@neondatabase/neon-auth/client";
+import ClientLayout from "./client-layout-alternative";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // SessionProvider needed for Neon Auth client-side hooks
+  return (
+    <html lang="en">
+      <body>
+        <SessionProvider>
+          <ClientLayout>{children}</ClientLayout>
+        </SessionProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+## Usage in Components
+
+Now you can use Tambo components in your authenticated pages:
+
+```tsx title="app/dashboard/page.tsx"
+import { MessageThreadFull } from "@components/ui/tambo";
+
+export default function Dashboard() {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <MessageThreadFull />
+    </div>
+  );
+}
+```

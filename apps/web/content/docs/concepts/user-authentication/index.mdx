@@ -1,5 +1,5 @@
 ---
-title: User Authentication
+title: Quickstart
 description: Learn how to authenticate users with Tambo.
 ---
 
@@ -61,6 +61,9 @@ sequenceDiagram
 The easiest way to use user authentication is to use `TamboProvider` from the `@tambo-ai/react` package.
 
 ```tsx title="layout.tsx"
+"use client";
+// TamboProvider must be used in a client component
+
 import { TamboProvider } from "@tambo-ai/react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -74,6 +77,46 @@ When pass a user token to `TamboProvider`, Tambo will automatically verify the u
 use the `sub` claim to identify the user. In addition, Tambo will automatically
 refresh the Tambo token when it expires, or re-request a new Tambo token if the
 user token changes.
+
+## Provider-Specific Integration Guides
+
+For detailed integration examples with popular authentication providers, see the following guides:
+
+<Cards>
+  <Card
+    href="/docs/concepts/user-authentication/nextauth"
+    title="NextAuth Integration"
+  >
+    Learn how to integrate Tambo with NextAuth using Google OAuth as an example.
+  </Card>
+  <Card
+    href="/docs/concepts/user-authentication/auth0"
+    title="Auth0 Integration"
+  >
+    Step-by-step guide for integrating Tambo with Auth0 authentication.
+  </Card>
+  <Card
+    href="/docs/concepts/user-authentication/clerk"
+    title="Clerk Integration"
+  >
+    Complete example of using Tambo with Clerk's authentication system.
+  </Card>
+  <Card
+    href="/docs/concepts/user-authentication/supabase"
+    title="Supabase Integration"
+  >
+    Integration guide for Supabase Auth with Tambo in Next.js applications.
+  </Card>
+  <Card href="/docs/concepts/user-authentication/neon" title="Neon Integration">
+    How to use Tambo with Neon Auth and PostgreSQL database integration.
+  </Card>
+  <Card
+    href="/docs/concepts/user-authentication/workos"
+    title="WorkOS Integration"
+  >
+    Enterprise-grade authentication with WorkOS and Tambo integration.
+  </Card>
+</Cards>
 
 ## How to configure your project's JWT verification strategy
 

@@ -1,0 +1,166 @@
+---
+title: Supabase Integration
+description: Learn how to integrate Tambo with Supabase Auth for user authentication.
+---
+
+This guide shows how to integrate Tambo with Supabase Auth in a Next.js application.
+
+<Callout type="info" title="Prerequisites">
+  This assumes you have already installed and configured Supabase in your
+  Next.js application. If you haven't, follow the [Supabase Next.js Quick Start
+  guide](https://supabase.com/docs/guides/auth/quickstarts/nextjs) to set up
+  Supabase authentication first.
+</Callout>
+
+<Callout type="info" title="Required Auth Routes">
+  These docs assume you have already set up the Supabase auth callback routes at
+  `/auth/callback/route.ts`.
+</Callout>
+
+<Callout type="warn" title="JWT Verification">
+  As noted in the main authentication guide, Supabase auth does not support
+  Asymmetric JWT Verification as of July 2025. When using Supabase auth with
+  Tambo, you will need to disable JWT verification in your Tambo project
+  settings.
+</Callout>
+
+## Required Packages
+
+```bash
+npm install @supabase/supabase-js
+npm install @tambo-ai/react
+```
+
+## Server-Side Token Retrieval
+
+Create a server component to retrieve the user's session token:
+
+```tsx title="app/layout.tsx"
+import { createServerClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+import ClientLayout from "./client-layout";
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookies().get(name)?.value;
+        },
+      },
+    },
+  );
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  return (
+    <html lang="en">
+      <body>
+        <ClientLayout userToken={session?.access_token}>
+          {children}
+        </ClientLayout>
+      </body>
+    </html>
+  );
+}
+```
+
+## Client-Side Integration
+
+Create a client component to wrap your app with TamboProvider:
+
+```tsx title="app/client-layout.tsx"
+"use client";
+
+import { TamboProvider } from "@tambo-ai/react";
+import { ReactNode } from "react";
+
+interface ClientLayoutProps {
+  children: ReactNode;
+  userToken?: string;
+}
+
+export default function ClientLayout({
+  children,
+  userToken,
+}: ClientLayoutProps) {
+  // TamboProvider must be in a client component to handle token state
+  return <TamboProvider userToken={userToken}>{children}</TamboProvider>;
+}
+```
+
+## Alternative: Client-Side Token Retrieval
+
+If you prefer to handle token retrieval on the client side, you can use Supabase's auth state:
+
+```tsx title="app/client-layout-alternative.tsx"
+"use client";
+
+import { TamboProvider } from "@tambo-ai/react";
+import { createClient } from "@/lib/supabase";
+import { ReactNode, useEffect, useState } from "react";
+
+interface ClientLayoutProps {
+  children: ReactNode;
+}
+
+export default function ClientLayout({ children }: ClientLayoutProps) {
+  const [accessToken, setAccessToken] = useState<string | undefined>();
+  const supabase = createClient(); // Assumes createClient utility is available
+
+  useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setAccessToken(session?.access_token);
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  // TamboProvider must be in a client component to handle token state
+  return <TamboProvider userToken={accessToken}>{children}</TamboProvider>;
+}
+```
+
+## Usage in Components
+
+Now you can use Tambo components in your authenticated pages:
+
+```tsx title="app/dashboard/page.tsx"
+import { MessageThreadFull } from "@components/ui/tambo";
+
+export default function Dashboard() {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <MessageThreadFull />
+    </div>
+  );
+}
+```
+
+<Callout type="info" title="Token Management">
+  Supabase automatically handles token refresh in the background. The access
+  token will be automatically updated when it expires, and the TamboProvider
+  will receive the new token.
+</Callout>
