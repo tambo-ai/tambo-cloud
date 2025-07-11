@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Check, ChevronDown, Copy, Monitor } from "lucide-react";
 import { memo, useState } from "react";
 import { formatTime } from "../utils";
-import { HighlightText } from "./highlight-text";
+import { HighlightedJson, HighlightText } from "./highlight";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
@@ -37,19 +37,6 @@ export const ComponentMessage = memo(
       } catch {
         return String(props);
       }
-    };
-
-    const highlightJson = (jsonStr: string) => {
-      if (!searchQuery) return jsonStr;
-
-      return jsonStr
-        .split(new RegExp(`(${searchQuery})`, "gi"))
-        .map((part) =>
-          part.toLowerCase() === searchQuery.toLowerCase()
-            ? `<mark class="bg-yellow-300 text-black px-0.5 rounded">${part}</mark>`
-            : part,
-        )
-        .join("");
     };
 
     return (
@@ -141,15 +128,12 @@ export const ComponentMessage = memo(
                   <div className="p-4 bg-background">
                     <pre className="text-xs font-mono text-primary overflow-auto max-h-96">
                       {searchQuery ? (
-                        <code
-                          dangerouslySetInnerHTML={{
-                            __html: highlightJson(
-                              formatPropsValue(componentProps),
-                            ),
-                          }}
+                        <HighlightedJson
+                          json={formatPropsValue(componentProps)}
+                          searchQuery={searchQuery}
                         />
                       ) : (
-                        <code>{formatPropsValue(componentProps)}</code>
+                        formatPropsValue(componentProps)
                       )}
                     </pre>
                   </div>

@@ -7,7 +7,7 @@ import { Check, Copy } from "lucide-react";
 import { isValidElement, memo, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import { formatTime } from "../utils";
-import { HighlightText } from "./highlight-text";
+import { HighlightText } from "./highlight";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { memo, useState } from "react";
 import { formatTime } from "../utils";
-import { HighlightText } from "./highlight-text";
+import { HighlightedJson, HighlightText } from "./highlight";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
@@ -167,19 +167,6 @@ export const ToolCallMessage = memo(
       }
     };
 
-    const highlightJson = (jsonStr: string) => {
-      if (!searchQuery) return jsonStr;
-
-      return jsonStr
-        .split(new RegExp(`(${searchQuery})`, "gi"))
-        .map((part) =>
-          part.toLowerCase() === searchQuery.toLowerCase()
-            ? `<mark class="bg-yellow-300 text-black px-0.5 rounded">${part}</mark>`
-            : part,
-        )
-        .join("");
-    };
-
     return (
       <>
         {/* Top metadata bar */}
@@ -276,13 +263,12 @@ export const ToolCallMessage = memo(
                   <div className="p-2 sm:p-4 bg-background">
                     <pre className="text-[10px] sm:text-xs font-mono text-primary overflow-auto">
                       {searchQuery ? (
-                        <code
-                          dangerouslySetInnerHTML={{
-                            __html: highlightJson(formatAllParameters()),
-                          }}
+                        <HighlightedJson
+                          json={formatAllParameters()}
+                          searchQuery={searchQuery}
                         />
                       ) : (
-                        <code>{formatAllParameters()}</code>
+                        formatAllParameters()
                       )}
                     </pre>
                   </div>
@@ -351,17 +337,12 @@ export const ToolCallMessage = memo(
                       {/* Single unified response content display */}
                       <pre className="text-[10px] sm:text-xs font-mono text-primary whitespace-pre-wrap break-words overflow-auto">
                         {searchQuery ? (
-                          <code
-                            dangerouslySetInnerHTML={{
-                              __html: highlightJson(
-                                formatResponseContent(toolResponse.content),
-                              ),
-                            }}
+                          <HighlightedJson
+                            json={formatResponseContent(toolResponse.content)}
+                            searchQuery={searchQuery}
                           />
                         ) : (
-                          <code>
-                            {formatResponseContent(toolResponse.content)}
-                          </code>
+                          formatResponseContent(toolResponse.content)
                         )}
                       </pre>
                     </div>
