@@ -53,9 +53,9 @@ export default function ProjectLayout({
       : "overview";
 
   return (
-    <div className="flex flex-col bg-background">
+    <div className="flex flex-col h-screen bg-background">
       {/* Sticky Navigation Section */}
-      <div className="sticky top-[var(--header-height)] z-40 bg-background">
+      <div className="sticky top-[var(--header-height)] z-40 bg-background flex-shrink-0">
         <div className="container mx-auto px-4 md:px-6 pb-0">
           {/* Navigation Row */}
           <motion.div
@@ -129,16 +129,18 @@ export default function ProjectLayout({
       </div>
 
       {/* Scrollable Content Area */}
-      <div className="container mx-auto px-4 py-4 sm:py-6 md:px-6">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeInVariants}
-        >
-          <Suspense fallback={<div className="h-32 animate-pulse"></div>}>
-            {children}
-          </Suspense>
-        </motion.div>
+      <div className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-4 py-4 sm:py-6 md:px-6">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInVariants}
+          >
+            <Suspense fallback={<div className="h-32 animate-pulse"></div>}>
+              {children}
+            </Suspense>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
