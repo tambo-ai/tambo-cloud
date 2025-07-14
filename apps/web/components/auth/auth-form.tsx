@@ -97,15 +97,12 @@ function AuthErrorBanner() {
       <Card className="w-full max-w-md mx-auto border-red-200 bg-red-50">
         <CardContent className="pt-6">
           <div className="space-y-2 text-red-800">
+            <p>{searchParams.get("error_description")}</p>
             <p>
-              <strong>Error:</strong> {searchParams.get("error")}
+              <strong>Error Type:</strong> {searchParams.get("error")}
             </p>
             <p>
               <strong>Error Code:</strong> {searchParams.get("error_code")}
-            </p>
-            <p>
-              <strong>Description:</strong>{" "}
-              {searchParams.get("error_description")}
             </p>
           </div>
         </CardContent>
