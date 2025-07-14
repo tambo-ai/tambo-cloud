@@ -5,7 +5,6 @@ import { api, RouterOutputs } from "@/trpc/react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { ThreadMessagesModal } from "../messages/thread-messages-modal";
-import { calculateThreadStats } from "../utils";
 import { ThreadTable } from "./index";
 
 /**
@@ -19,7 +18,6 @@ import { ThreadTable } from "./index";
  */
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
-type MessageType = ThreadType["messages"][0];
 type AllThreadsType = RouterOutputs["thread"]["getThreads"]["threads"];
 
 interface ThreadTableContainerProps {
@@ -62,6 +60,7 @@ export function ThreadTableContainer({
       projectId,
       offset: 0,
       limit: 100,
+      includeMessages: false,
     },
     {
       enabled: !!projectId,
@@ -112,6 +111,7 @@ export function ThreadTableContainer({
               projectId,
               offset,
               limit: 100,
+              includeMessages: false,
             }),
           );
 
@@ -210,19 +210,16 @@ export function ThreadTableContainer({
   };
 
   const formattedThreads = allThreads.map((thread) => {
-    const stats = calculateThreadStats(
-      (thread.messages as MessageType[]) || [],
-    );
     return {
       id: thread.id,
       name: thread.name || null,
       createdAt: thread.createdAt.toISOString(),
       updatedAt: thread.updatedAt.toISOString(),
       contextKey: thread.contextKey || "user_context_key",
-      messages: thread.messages?.length || 0,
-      tools: stats.tools,
-      components: stats.components,
-      errors: stats.errors,
+      messages: thread.messageCount || 0,
+      tools: thread.toolCount || 0,
+      components: thread.componentCount || 0,
+      errors: thread.errorCount || 0,
     };
   });
 
