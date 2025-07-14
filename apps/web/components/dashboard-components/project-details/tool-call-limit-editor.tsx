@@ -14,6 +14,26 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
+import { z } from "zod";
+
+export const ToolCallLimitEditorProps = z.object({
+  project: z
+    .object({
+      id: z.string().describe("The unique identifier for the project."),
+      maxToolCallLimit: z
+        .number()
+        .describe("The maximum number of tool calls allowed per response."),
+    })
+    .describe("The project to configure tool call limits for."),
+  onEdited: z
+    .function()
+    .args()
+    .returns(z.void())
+    .optional()
+    .describe(
+      "Optional callback function triggered when tool call limit is successfully updated.",
+    ),
+});
 
 interface ToolCallLimitEditorProps {
   project: {
@@ -30,7 +50,7 @@ export function ToolCallLimitEditor({
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [maxToolCallLimit, setMaxToolCallLimit] = useState(
-    project.maxToolCallLimit.toString(),
+    (project?.maxToolCallLimit ?? 10).toString(),
   );
 
   const { mutateAsync: updateProject, isPending: isUpdating } =
@@ -71,9 +91,26 @@ export function ToolCallLimitEditor({
   };
 
   const handleCancel = () => {
-    setMaxToolCallLimit(project.maxToolCallLimit.toString());
+    setMaxToolCallLimit((project?.maxToolCallLimit ?? 10).toString());
     setIsEditing(false);
   };
+
+  if (!project) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">
+            Tool Call Limit
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground">
+            No project data available.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -147,7 +184,7 @@ export function ToolCallLimitEditor({
                   <div>
                     <p className="text-sm font-medium">Current Limit</p>
                     <p className="text-2xl font-bold">
-                      {project.maxToolCallLimit}
+                      {project.maxToolCallLimit ?? 10}
                     </p>
                   </div>
                   <motion.div

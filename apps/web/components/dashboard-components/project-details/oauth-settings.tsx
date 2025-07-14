@@ -32,6 +32,17 @@ import {
   SiOkta,
   SiSupabase,
 } from "react-icons/si";
+import { z } from "zod";
+
+export const OAuthSettingsProps = z.object({
+  project: z
+    .object({
+      id: z.string().describe("The unique identifier for the project."),
+      name: z.string().describe("The name of the project."),
+    })
+    .optional()
+    .describe("The project to configure OAuth validation settings for."),
+});
 
 interface OAuthSettingsProps {
   project?: RouterOutputs["project"]["getUserProjects"][number];
