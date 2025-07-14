@@ -34,7 +34,7 @@ import {
 } from "react-icons/si";
 import { z } from "zod";
 
-export const OAuthSettingsProps = z.object({
+export const OAuthSettingsPropsSchema = z.object({
   project: z
     .object({
       id: z.string().describe("The unique identifier for the project."),

@@ -19,7 +19,7 @@ import {
 } from "@/components/dashboard-components/project-details/daily-messages-chart";
 import {
   OAuthSettings,
-  OAuthSettingsProps,
+  OAuthSettingsPropsSchema,
 } from "@/components/dashboard-components/project-details/oauth-settings";
 import {
   ProjectInfo,
@@ -31,7 +31,7 @@ import {
 } from "@/components/dashboard-components/project-details/provider-key-section";
 import {
   ToolCallLimitEditor,
-  ToolCallLimitEditorProps,
+  ToolCallLimitEditorPropsSchema,
 } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
 import {
   ProjectTable,
@@ -112,13 +112,13 @@ export const tamboRegisteredComponents = [
     description:
       "Comprehensive OAuth token validation configuration interface for project security settings. Allows users to configure different validation modes including none, symmetric key (HS256), asymmetric auto (OpenID Connect), and asymmetric manual. Features preset configurations for popular providers (Google, GitHub, Auth0, Clerk, Supabase, etc.), secure key management with encryption, and real-time validation status. Includes animated form sections and handles loading states. Use when users need to configure OAuth token validation for their project's API endpoints and security requirements.",
     component: OAuthSettings,
-    propsSchema: OAuthSettingsProps,
+    propsSchema: OAuthSettingsPropsSchema,
   },
   {
     name: "ToolCallLimitEditor",
     description:
       "Manages the maximum number of tool calls allowed per AI response to prevent infinite loops and control resource usage. Features inline editing with save/cancel functionality, input validation, and animated state transitions. Shows current limit prominently with explanatory text about behavior when limits are reached. Use when users need to configure or modify their project's tool call limits for performance and cost control.",
     component: ToolCallLimitEditor,
-    propsSchema: ToolCallLimitEditorProps,
+    propsSchema: ToolCallLimitEditorPropsSchema,
   },
 ];

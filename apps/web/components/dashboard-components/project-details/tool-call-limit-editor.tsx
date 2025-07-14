@@ -16,7 +16,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { z } from "zod";
 
-export const ToolCallLimitEditorProps = z.object({
+export const ToolCallLimitEditorPropsSchema = z.object({
   project: z
     .object({
       id: z.string().describe("The unique identifier for the project."),
@@ -36,7 +36,7 @@ export const ToolCallLimitEditorProps = z.object({
 });
 
 interface ToolCallLimitEditorProps {
-  project: {
+  project?: {
     id: string;
     maxToolCallLimit: number;
   };
@@ -70,7 +70,7 @@ export function ToolCallLimitEditor({
 
     try {
       await updateProject({
-        projectId: project.id,
+        projectId: project?.id ?? "",
         maxToolCallLimit: limit,
       });
 
@@ -184,7 +184,7 @@ export function ToolCallLimitEditor({
                   <div>
                     <p className="text-sm font-medium">Current Limit</p>
                     <p className="text-2xl font-bold">
-                      {project.maxToolCallLimit ?? 10}
+                      {project?.maxToolCallLimit ?? 10}
                     </p>
                   </div>
                   <motion.div
