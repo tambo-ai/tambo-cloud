@@ -2,12 +2,7 @@
 
 import { getSupabaseClient } from "@/app/utils/supabase";
 import { useSession } from "@/hooks/auth";
-import {
-  redirect,
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export function AuthedLayoutWrapper({
@@ -49,7 +44,7 @@ export function AuthedLayoutWrapper({
 
       // If no session, redirect to login
       if (!hasValidSession) {
-        redirect(`/login${loginParams}`);
+        router.replace(`/login${loginParams}`);
       } else {
         // Auth check complete, we can render the content
         setIsCheckingAuth(false);
