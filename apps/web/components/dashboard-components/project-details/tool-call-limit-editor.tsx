@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 
 export const ToolCallLimitEditorPropsSchema = z.object({
@@ -36,7 +36,7 @@ export const ToolCallLimitEditorPropsSchema = z.object({
 });
 
 interface ToolCallLimitEditorProps {
-  project?: {
+  project: {
     id: string;
     maxToolCallLimit: number;
   };
@@ -49,12 +49,34 @@ export function ToolCallLimitEditor({
 }: ToolCallLimitEditorProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [maxToolCallLimit, setMaxToolCallLimit] = useState(
-    (project?.maxToolCallLimit ?? 10).toString(),
-  );
+  const [maxToolCallLimit, setMaxToolCallLimit] = useState("");
 
   const { mutateAsync: updateProject, isPending: isUpdating } =
     api.project.updateProject.useMutation();
+
+  useEffect(() => {
+    if (project?.maxToolCallLimit) {
+      setMaxToolCallLimit(project.maxToolCallLimit.toString());
+    }
+  }, [project?.maxToolCallLimit]);
+
+  if (!project) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">
+            Tool Call Limit
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent border-current" />
+            Loading...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleSave = async () => {
     const limit = parseInt(maxToolCallLimit);
@@ -91,26 +113,9 @@ export function ToolCallLimitEditor({
   };
 
   const handleCancel = () => {
-    setMaxToolCallLimit((project?.maxToolCallLimit ?? 10).toString());
+    setMaxToolCallLimit(project.maxToolCallLimit.toString());
     setIsEditing(false);
   };
-
-  if (!project) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">
-            Tool Call Limit
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground">
-            No project data available.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
@@ -155,7 +160,7 @@ export function ToolCallLimitEditor({
                   <Button onClick={handleSave} disabled={isUpdating}>
                     {isUpdating ? (
                       <span className="flex items-center gap-1">
-                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-current" />
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-t-transparent border-current" />
                         Saving...
                       </span>
                     ) : (
@@ -184,7 +189,7 @@ export function ToolCallLimitEditor({
                   <div>
                     <p className="text-sm font-medium">Current Limit</p>
                     <p className="text-2xl font-bold">
-                      {project?.maxToolCallLimit ?? 10}
+                      {project.maxToolCallLimit}
                     </p>
                   </div>
                   <motion.div
