@@ -13,7 +13,12 @@ import { cn } from "@/lib/utils";
 import { RouterOutputs } from "@/trpc/react";
 import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { calculateThreadStats, createMessageItems } from "../utils";
+import {
+  calculateThreadStats,
+  createMessageItems,
+  formatToolParameters,
+  formatToolResponseContent,
+} from "../utils";
 import { StatsHeader } from "./stats-header";
 import { ThreadMessages } from "./thread-messages";
 
@@ -38,13 +43,15 @@ function searchInMessage(message: MessageType, query: string): boolean {
 
   // Search in tool call arguments
   if (message.toolCallRequest?.parameters) {
-    const paramsStr = JSON.stringify(message.toolCallRequest.parameters);
-    if (paramsStr.toLowerCase().includes(lowerQuery)) return true;
+    const formattedParams = formatToolParameters(
+      message.toolCallRequest.parameters,
+    );
+    if (formattedParams.toLowerCase().includes(lowerQuery)) return true;
   }
 
   // Search in component props
   if (message.componentDecision?.props) {
-    const propsStr = JSON.stringify(message.componentDecision.props);
+    const propsStr = JSON.stringify(message.componentDecision.props, null, 2);
     if (propsStr.toLowerCase().includes(lowerQuery)) return true;
   }
 
@@ -79,8 +86,10 @@ function findAllMatches(thread: ThreadType, query: string): SearchMatch[] {
 
     // Check tool calls
     if (message.toolCallRequest) {
-      const paramsStr = JSON.stringify(message.toolCallRequest.parameters);
-      if (paramsStr.toLowerCase().includes(query.toLowerCase())) {
+      const formattedParams = formatToolParameters(
+        message.toolCallRequest.parameters,
+      );
+      if (formattedParams.toLowerCase().includes(query.toLowerCase())) {
         matches.push({
           messageId: message.id,
           messageType: "tool_call",
@@ -96,8 +105,10 @@ function findAllMatches(thread: ThreadType, query: string): SearchMatch[] {
       );
 
       if (toolResponse) {
-        const responseContent = JSON.stringify(toolResponse.content);
-        if (responseContent.toLowerCase().includes(query.toLowerCase())) {
+        const formattedResponse = formatToolResponseContent(
+          toolResponse.content,
+        );
+        if (formattedResponse.toLowerCase().includes(query.toLowerCase())) {
           matches.push({
             messageId: message.id,
             messageType: "tool_call",
@@ -109,7 +120,7 @@ function findAllMatches(thread: ThreadType, query: string): SearchMatch[] {
 
     // Check component decisions
     if (message.componentDecision?.componentName) {
-      const propsStr = JSON.stringify(message.componentDecision.props);
+      const propsStr = JSON.stringify(message.componentDecision.props, null, 2);
       if (propsStr.toLowerCase().includes(query.toLowerCase())) {
         matches.push({
           messageId: message.id,
