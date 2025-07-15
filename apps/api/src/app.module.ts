@@ -23,6 +23,7 @@ import { OAuthModule } from "./oauth/oauth.module";
 import { ProjectsModule } from "./projects/projects.module";
 import { RegistryModule } from "./registry/registry.module";
 import { ThreadsModule } from "./threads/threads.module";
+import { UsersModule } from "./users/users.module";
 
 @Global()
 @Module({
@@ -41,6 +42,7 @@ export class GlobalModule {}
     ExtractorModule,
     ThreadsModule,
     GlobalModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, AuthService],

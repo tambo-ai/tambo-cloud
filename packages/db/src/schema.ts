@@ -539,6 +539,33 @@ export const mcpOauthClientRelations = relations(
 );
 export type DBMcpOauthClient = typeof mcpOauthClients.$inferSelect;
 
+export const welcomeEmailTracking = pgTable(
+  "welcome_email_tracking",
+  ({ text, timestamp, uuid, boolean }) => ({
+    id: text("id")
+      .primaryKey()
+      .notNull()
+      .unique()
+      .default(sql`generate_custom_id('wet_')`),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    emailSent: boolean("email_sent").notNull().default(false),
+    error: text("error"),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  }),
+  (table) => ({
+    sentAtIdx: index("idx_welcome_email_tracking_sent_at").on(table.sentAt),
+    userIdIdx: index("idx_welcome_email_tracking_user_id").on(table.userId),
+    emailSentIdx: index("idx_welcome_email_tracking_email_sent").on(
+      table.emailSent,
+    ),
+  }),
+);
+
 /* The rest of the file below this comment remains unchanged except where noted */
 
 export const projectLogs = pgTable(
