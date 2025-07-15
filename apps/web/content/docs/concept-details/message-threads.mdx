@@ -36,8 +36,8 @@ To send a user's message to tambo, you can use the `submit` function:
 You can also pass in an optional `options` object to the `submit` function.
 
 ```tsx
-setValue("What is the weather like today?");
-
+const userMessage = "What's the weather like today?";
+setValue(userMessage);
 await submit({
   streamResponse: true, // We recommend streaming the response to the user
 });
