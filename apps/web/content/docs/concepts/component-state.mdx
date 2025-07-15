@@ -3,4 +3,12 @@ title: Component State
 description: Pass component state to Tambo for better context and continuity.
 ---
 
-Tambo can track the internal state of generated components using `useTamboComponentState`, providing valuable context for responding to subsequent user messages. This allows the AI to understand what's happening within your components when users make requests like "finish this email for me" or "did I send that email earlier?" By replacing `useState` with `useTamboComponentState`, your component's internal state becomes part of the conversation context, enabling more intelligent and contextual AI responses.
+Tambo can track the internal state of generated components with `useTamboComponentState` and use it as context for responding to subsequent user messages. This allows Tambo to understand actions your user has taken within a component. By replacing `useState` with `useTamboComponentState`, your component's internal state becomes part of the conversation context.
+
+import LearnMore from "@/components/docs/learn-more";
+
+<LearnMore
+  title="More about component state"
+  description="Learn how to give Tambo information about compnent interactions"
+  href="/docs/concept-details/model-context-protocol"
+/>

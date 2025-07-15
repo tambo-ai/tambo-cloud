@@ -1,6 +1,14 @@
 ---
-title: Tracking Progress
+title: Tracking Response Progress
 description: Show users what Tambo is doing during response generation.
 ---
 
-Instead of showing a static loading message, you can track and display the specific stage of Tambo's response generation process to give users better insight into what's happening. Each thread has a `generationStage` property that shows whether Tambo is choosing a component, fetching context, hydrating the component, or streaming the response. This allows you to provide more informative and engaging loading states that help users understand the AI's thought process and current activity.
+You can use a thread's `generationStage` property to display the specific stage of Tambo's response generation process to give users better insight into what's happening.
+
+import LearnMore from "@/components/docs/learn-more";
+
+<LearnMore
+  title="More about tracking response progress"
+  description="Learn about the different response stages"
+  href="/docs/concept-details/tracking-progress"
+/>

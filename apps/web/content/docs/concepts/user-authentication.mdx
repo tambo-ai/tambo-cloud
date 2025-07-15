@@ -3,4 +3,12 @@ title: User Authentication
 description: Secure user isolation and authentication in Tambo applications.
 ---
 
-In a Tambo application, each user has their own threads and messages, isolated from other users' data through secure token-based authentication. Tambo uses OAuth 2.0 Token Exchange to securely identify users, where your app authenticates with an OAuth provider, receives a JWT token, and exchanges it with Tambo for a Tambo-specific token. This ensures that users can only access their own conversation history and data while maintaining security and privacy across your application.
+To ensure each of user in your application can see only their own threads and messages, Tambo allows you to bring your own authentication. Generate an auth token and pass it to Tambo, and configure how Tambo should verify the token to get a user ID. Preset configurations for many popular authentication providers are available to choose from.
+
+import LearnMore from "@/components/docs/learn-more";
+
+<LearnMore
+  title="More about authentication"
+  description="Learn how to use your auth system with Tambo"
+  href="/docs/concept-details/user-authentication"
+/>

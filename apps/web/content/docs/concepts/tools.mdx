@@ -3,4 +3,12 @@ title: Tools
 description: Extend Tambo's capabilities with custom business logic and API integrations.
 ---
 
-Tools enable Tambo to interact with your application's data and functionality by providing a type-safe way to extend the AI's capabilities with custom business logic. When applicable, Tambo automatically calls these tools and uses their outputs to help decide how to respond to messages, what component to show, and what data to fill the component with. Tools are asynchronous functions that can perform any logic you want, from fetching weather data to processing user requests through your existing APIs.
+Tools are normal JavaScript functions that you give Tambo access to. When processing a user message, Tambo may decide to use tools you have registered to retrieve information or to take actions. Tools allow you to extend the capabilities of Tambo.
+
+import LearnMore from "@/components/docs/learn-more";
+
+<LearnMore
+  title="More about tools"
+  description="Learn how to define tools and register them with Tambo"
+  href="/docs/concept-details/tools"
+/>
