@@ -1,16 +1,18 @@
-import { ChevronRight, Code2Icon } from "lucide-react";
+import { ChevronRight, Code2Icon, LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 interface LearnMoreProps {
   title: string;
   description: string;
   href: string;
+  icon?: LucideIcon;
 }
 
 export default function LearnMore({
   title,
   description,
   href,
+  icon: Icon = Code2Icon,
 }: LearnMoreProps) {
   return (
     <Link
@@ -19,7 +21,7 @@ export default function LearnMore({
       style={{ textDecoration: "none" }}
     >
       <div className="flex-shrink-0">
-        <Code2Icon className="bg-gray-200 w-14 h-14 rounded-md bg-accent p-4" />
+        <Icon className="bg-gray-200 w-14 h-14 rounded-md bg-accent p-4" />
       </div>
       <div>
         <div className="flex items-center gap-2">
