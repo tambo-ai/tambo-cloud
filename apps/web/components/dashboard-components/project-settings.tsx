@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
-import { ChevronDown, Trash2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -190,14 +190,14 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
 
   return (
     <motion.div
-      className="flex flex-col px-2 sm:px-4"
+      className="flex flex-col h-[calc(100vh-160px)] sm:h-[calc(100vh-220px)] px-2 sm:px-4"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
       {/* Header */}
-      <div className="bg-background w-full sticky top-0 z-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-2 px-2">
+      <div className="bg-background w-full sticky top-0 z-10 border-b border-border">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 px-2 gap-4">
           {isEditingName ? (
             <Input
               value={editedName}
@@ -220,11 +220,10 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             </h1>
           )}
 
-          <div className="flex gap-1 sm:gap-2 self-end sm:self-auto ml-auto sm:ml-4">
+          <div className="flex gap-2 sm:gap-3 self-end sm:self-auto">
             <Button
               variant="ghost"
-              size="icon"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 sm:h-10 sm:w-10"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 text-sm sm:text-base"
               onClick={() =>
                 setAlertState({
                   show: true,
@@ -234,12 +233,14 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
                 })
               }
               disabled={isDeleting}
-              title="Delete Project"
             >
               {isDeleting ? (
-                <span className="loading loading-spinner loading-sm" />
+                <>
+                  <span className="loading loading-spinner loading-sm mr-2" />
+                  Deleting...
+                </>
               ) : (
-                <Trash2 className="h-4 w-4" />
+                "Delete"
               )}
             </Button>
             {isEditingName ? (
@@ -382,10 +383,10 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
       </div>
 
       {/* Main Layout */}
-      <div className="flex gap-8 sm:gap-12 lg:gap-48 w-full">
+      <div className="flex gap-8 sm:gap-12 lg:gap-48 w-full flex-1 overflow-hidden">
         {/* Sidebar Navigation */}
         <div className="hidden sm:block py-6 w-48 lg:w-1/5 shrink-0">
-          <div className="flex flex-col gap-1">
+          <div className="sticky top-6 flex flex-col gap-1">
             <Button
               variant="ghost"
               className={`justify-start gap-2 rounded-full text-sm ${
@@ -456,9 +457,9 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
         {/* Scrollable Content */}
         <div
           ref={scrollContainerRef}
-          className="h-[calc(100vh-150px)] sm:h-[calc(100vh-200px)] w-full overflow-y-auto pt-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]"
+          className="w-full overflow-y-auto pt-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]"
         >
-          <div className="space-y-4">
+          <div className="space-y-4 pb-8">
             <div ref={apiKeysRef} className="p-2">
               <APIKeyList project={project} />
             </div>
