@@ -385,10 +385,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
       {/* Main splitter */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left: Sidebar (fixed width) */}
-        <div
-          className="hidden sm:block shrink-0 w-48 lg:w-1/5 py-6 px-2 sm:px-4 overflow-hidden"
-          onWheel={(e) => e.preventDefault()}
-        >
+        <div className="hidden sm:block shrink-0 w-48 lg:w-1/5 py-6 px-2 sm:px-4 overflow-hidden">
           <div className="flex flex-col gap-1">
             <Button
               variant="ghost"
