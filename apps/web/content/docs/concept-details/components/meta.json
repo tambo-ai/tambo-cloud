@@ -3,6 +3,7 @@
   "pages": [
     "defining-tambo-components",
     "registering-with-tambo-provider",
-    "registering-components-dynamically"
+    "registering-components-dynamically",
+    "component-state"
   ]
 }
