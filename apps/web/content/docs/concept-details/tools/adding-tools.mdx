@@ -20,28 +20,29 @@ const getWeather = async (city: string) => {
   }
 };
 
-// Create a TamboTool including your tool function
-export const weatherTool: TamboTool = {
-  name: "get_weather",
-  description: "Fetch current weather information for a specified city",
-  tool: getWeather,
-  toolSchema: z
-    .function()
-    .args(z.string().describe("The city to fetch weather for"))
-    .returns(
-      z.object({
-        location: z.object({
-          name: z.string(),
-        }),
-      })
-    ),
-};
+// Create a TamboTool definition including your tool function
+export const tools: TamboTool[] = [
+  {
+    name: "get_weather",
+    description: "Fetch current weather information for a specified city",
+    tool: getWeather,
+    toolSchema: z
+      .function()
+      .args(z.string().describe("The city to fetch weather for"))
+      .returns(
+        z.object({
+          location: z.object({
+            name: z.string(),
+          }),
+        })
+      ),
+  },
+];
 
-//register the tool using the @tambo-ai/react package
-const { registerTool, registerTools } = useTambo();
-
-registerTool(weatherTool); // register a single tool
-registerTools([weatherTool, anotherTool]); // register multiple tools at once
+// Register your tools with Tambo
+<TamboProvider tools={tools}>
+  <App />
+</TamboProvider>;
 ```
 
 Now tambo can fetch weather information for a city when responding to a message!
