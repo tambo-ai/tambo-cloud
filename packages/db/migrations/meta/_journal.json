@@ -407,6 +407,13 @@
       "when": 1752595047873,
       "tag": "0057_breezy_angel",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1752619826111,
+      "tag": "0058_open_power_man",
+      "breakpoints": true
     }
   ]
 }

@@ -337,6 +337,52 @@ export class ThreadsService {
     return await operations.deleteThread(this.getDb(), id);
   }
 
+  private async checkAndSendFirstMessageEmail(
+    projectId: string,
+    usage: typeof schema.projectMessageUsage.$inferSelect | undefined,
+  ): Promise<void> {
+    // Check if this is the first message and email hasn't been sent
+    if (usage && usage.messageCount === 1 && !usage.firstMessageSentAt) {
+      try {
+        // Get project and user details
+        const project = await this.getDb().query.projects.findFirst({
+          where: eq(schema.projects.id, projectId),
+          with: {
+            members: {
+              with: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        if (project && project.members.length > 0) {
+          const user = project.members[0].user;
+
+          // Send first message email
+          const result = await this.emailService.sendFirstMessageEmail(
+            user.email ?? "",
+            null,
+            project.name,
+          );
+
+          if (result.success) {
+            // Update the tracking
+            await operations.updateProjectMessageUsage(
+              this.getDb(),
+              projectId,
+              {
+                firstMessageSentAt: new Date(),
+              },
+            );
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Error sending first message email: ${error}`);
+      }
+    }
+  }
+
   private async checkMessageLimit(projectId: string): Promise<void> {
     const usage = await operations.getProjectMessageUsage(
       this.getDb(),
@@ -353,9 +399,17 @@ export class ThreadsService {
 
     if (!usage) {
       // Create initial usage record
-      await operations.updateProjectMessageUsage(this.getDb(), projectId, {
-        messageCount: usingFallbackKey ? 1 : 0,
-      });
+      const newUsage = await operations.updateProjectMessageUsage(
+        this.getDb(),
+        projectId,
+        {
+          messageCount: 1,
+          hasApiKey: !usingFallbackKey,
+        },
+      );
+
+      // Check for first message email with the newly created usage
+      await this.checkAndSendFirstMessageEmail(projectId, newUsage);
       return;
     }
 
@@ -393,6 +447,9 @@ export class ThreadsService {
     if (usingFallbackKey) {
       await operations.incrementMessageCount(this.getDb(), projectId);
     }
+
+    // Check for first message email
+    await this.checkAndSendFirstMessageEmail(projectId, usage);
   }
 
   async addMessage(

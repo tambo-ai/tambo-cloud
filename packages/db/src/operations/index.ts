@@ -5,3 +5,4 @@ export * from "./suggestions";
 export * from "./thread";
 export * from "./logs";
 export * from "./analytics";
+export * from "./lifecycle";

@@ -40,6 +40,7 @@ export async function updateProjectMessageUsage(
     messageCount?: number;
     hasApiKey?: boolean;
     notificationSentAt?: Date;
+    firstMessageSentAt?: Date;
   },
 ) {
   const usage = await getProjectMessageUsage(db, projectId);
@@ -50,6 +51,7 @@ export async function updateProjectMessageUsage(
       .set({
         ...data,
         updatedAt: new Date(),
+        firstMessageSentAt: data.firstMessageSentAt ?? usage.firstMessageSentAt,
       })
       .where(eq(schema.projectMessageUsage.projectId, projectId))
       .returning();
