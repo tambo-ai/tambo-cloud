@@ -6,7 +6,6 @@
     "tools",
     "model-context-protocol",
     "streaming",
-    "component-state",
     "user-authentication",
     "suggestions"
   ]
