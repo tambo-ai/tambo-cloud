@@ -4,20 +4,30 @@ import { demoComponents } from "@/components/ui/tambo/demo-config";
 import { MessageThreadFull } from "@/components/ui/tambo/message-thread-full";
 import { TamboEmailButton } from "@/components/ui/tambo/tambo-email-button";
 import { env } from "@/lib/env";
-import { TamboProvider } from "@tambo-ai/react";
+import { TamboProvider, useTambo } from "@tambo-ai/react";
+
+function DemoContent() {
+  const { thread } = useTambo();
+  const hasMessages = thread?.messages && thread.messages.length > 0;
+
+  return (
+    <div className="w-full flex justify-center items-center bg-white">
+      <MessageThreadFull />
+      {!hasMessages && <TamboEmailButton />}
+    </div>
+  );
+}
+
 export default function DemoPage() {
   return (
     <div className="w-full flex justify-center items-center h-screen">
-      <div className="w-full flex justify-center items-center bg-white">
-        <TamboProvider
-          apiKey={env.NEXT_PUBLIC_TAMBO_API_KEY!}
-          tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL}
-          components={demoComponents}
-        >
-          <MessageThreadFull />
-          <TamboEmailButton />
-        </TamboProvider>
-      </div>
+      <TamboProvider
+        apiKey={env.NEXT_PUBLIC_TAMBO_API_KEY!}
+        tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL}
+        components={demoComponents}
+      >
+        <DemoContent />
+      </TamboProvider>
     </div>
   );
 }
