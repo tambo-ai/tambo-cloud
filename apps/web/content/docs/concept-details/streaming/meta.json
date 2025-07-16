@@ -3,6 +3,7 @@
   "pages": [
     "response-text-streaming",
     "response-component-streaming",
-    "per-prop-streaming-status"
+    "per-prop-streaming-status",
+    "streaming-props"
   ]
 }
