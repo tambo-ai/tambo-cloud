@@ -1,4 +1,4 @@
-import { eq, lt } from "drizzle-orm";
+import { eq, inArray, lt } from "drizzle-orm";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
 
@@ -53,13 +53,25 @@ export async function getInactiveUsers(
     where: lt(schema.authUsers.createdAt, inactiveDate),
   });
 
+  if (users.length === 0) {
+    return [];
+  }
+
+  const userIds = users.map((u) => u.id);
+  const trackings = await db
+    .select()
+    .from(schema.userLifecycleTracking)
+    .where(inArray(schema.userLifecycleTracking.userId, userIds));
+
+  const trackingByUserId = new Map(trackings.map((t) => [t.userId, t]));
+
   const results: Array<{
     user: typeof schema.authUsers.$inferSelect;
     tracking: typeof schema.userLifecycleTracking.$inferSelect | undefined;
   }> = [];
 
   for (const user of users) {
-    const tracking = await getUserLifecycleTracking(db, user.id);
+    const tracking = trackingByUserId.get(user.id);
     if (
       !tracking ||
       tracking.lastActivityAt < inactiveDate ||
