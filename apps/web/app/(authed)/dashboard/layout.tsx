@@ -21,7 +21,7 @@ const fadeInVariants = {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <DashboardThemeProvider defaultTheme="light">
-      <div className="flex h-screen flex-col bg-background">
+      <div className="flex min-h-screen flex-col bg-background overflow-hidden">
         <DashboardHeader />
 
         {/* Content Area */}
