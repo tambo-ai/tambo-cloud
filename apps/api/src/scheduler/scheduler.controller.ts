@@ -25,4 +25,23 @@ export class SchedulerController {
       email: body.email,
     };
   }
+
+  @Post("test-first-message-email")
+  async testFirstMessageEmail(
+    @Body() body: { email: string; firstName?: string; projectName?: string },
+  ) {
+    console.log(`Sending test first message email to ${body.email}`);
+
+    const result = await this.emailService.sendFirstMessageEmail(
+      body.email,
+      body.firstName,
+      body.projectName,
+    );
+
+    return {
+      message: "Test first message email sent",
+      success: result.success,
+      email: body.email,
+    };
+  }
 }
