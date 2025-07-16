@@ -49,7 +49,7 @@ export class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const result = await this.resend.emails.send({
-        from: "Michael Magán <magan@updates.tambo.co>",
+        from: "Michael Magán <magan@tambo.co>",
         to: userEmail,
         replyTo: "magan@tambo.co",
         subject: welcomeEmail.subject,
@@ -110,7 +110,7 @@ export class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const result = await this.resend.emails.send({
-        from: "Michael Magán <magan@updates.tambo.co>",
+        from: "Michael Magán <magan@tambo.co>",
         to: userEmail,
         replyTo: "magan@tambo.co",
         subject: reactivationEmail.subject,
