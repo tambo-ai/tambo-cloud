@@ -64,14 +64,14 @@ const pricingData = [
   },
   {
     name: "Open Source",
-    subtitle: "Self-host for Free. Forever.",
+    subtitle: "Self-host for Free. Forever. Full self-hosting coming soon.",
     price: "Free",
-    features: [],
-    items: [
+    features: [
       "tambo-ai/react package",
       "ui component library",
-      "tambo server (coming soon)",
+      "Full self-hosting coming soon",
     ],
+    items: [],
     cta: "GitHub",
     popular: false,
     isOpenSource: true,
