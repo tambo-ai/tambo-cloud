@@ -1,9 +1,9 @@
 "use client";
 
 import { DashboardHeader } from "@/components/sections/dashboard-header";
+import { DashboardThemeProvider } from "@/providers/dashboard-theme-provider";
 import { motion } from "framer-motion";
 import { Suspense } from "react";
-import { DashboardThemeProvider } from "@/providers/dashboard-theme-provider";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -21,12 +21,13 @@ const fadeInVariants = {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <DashboardThemeProvider defaultTheme="light">
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex h-screen flex-col bg-background">
         <DashboardHeader />
 
-        {/* Scrollable Content Area */}
-        <div className="container mx-auto px-4 py-6 md:px-6">
+        {/* Content Area */}
+        <div className="flex-1 min-h-0 container mx-auto px-4 md:px-6">
           <motion.div
+            className="h-full"
             initial="hidden"
             animate="visible"
             variants={fadeInVariants}

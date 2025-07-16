@@ -190,14 +190,14 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
 
   return (
     <motion.div
-      className="flex flex-col h-[calc(100vh-160px)] sm:h-[calc(100vh-220px)] px-2 sm:px-4"
+      className="flex flex-col h-full px-4 md:px-6"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
-      {/* Header */}
-      <div className="bg-background w-full sticky top-0 z-10 border-b border-border">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 px-2 gap-4">
+      {/* Header (fixed) */}
+      <div className="shrink-0 bg-background border-b border-border">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 px-2 sm:px-4 gap-4">
           {isEditingName ? (
             <Input
               value={editedName}
@@ -272,121 +272,124 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             )}
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        <div className="sm:hidden py-4 px-2 sm:px-4">
+          <Button
+            variant="outline"
+            className="w-full justify-between"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            <span>
+              Navigate to:{" "}
+              {activeSection
+                .replace("-", " ")
+                .split(" ")
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ")}
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${isMobileMenuOpen ? "rotate-180" : ""}`}
+            />
+          </Button>
+
+          {isMobileMenuOpen && (
+            <div className="mt-2 space-y-1">
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 rounded-full ${
+                  activeSection === "api-keys" ? "bg-accent" : "hover:bg-accent"
+                }`}
+                onClick={() => {
+                  scrollToSection("api-keys");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                API keys
+              </Button>
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 rounded-full ${
+                  activeSection === "llm-providers"
+                    ? "bg-accent"
+                    : "hover:bg-accent"
+                }`}
+                onClick={() => {
+                  scrollToSection("llm-providers");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                LLM providers
+              </Button>
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 rounded-full ${
+                  activeSection === "custom-instructions"
+                    ? "bg-accent"
+                    : "hover:bg-accent"
+                }`}
+                onClick={() => {
+                  scrollToSection("custom-instructions");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Custom instructions
+              </Button>
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 rounded-full ${
+                  activeSection === "mcp-servers"
+                    ? "bg-accent"
+                    : "hover:bg-accent"
+                }`}
+                onClick={() => {
+                  scrollToSection("mcp-servers");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                MCP servers
+              </Button>
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 rounded-full ${
+                  activeSection === "tool-call-limit"
+                    ? "bg-accent"
+                    : "hover:bg-accent"
+                }`}
+                onClick={() => {
+                  scrollToSection("tool-call-limit");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                Tool Call Limit
+              </Button>
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 rounded-full ${
+                  activeSection === "oauth-settings"
+                    ? "bg-accent"
+                    : "hover:bg-accent"
+                }`}
+                onClick={() => {
+                  scrollToSection("oauth-settings");
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                User Authentication
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
-      <div className="sm:hidden py-4">
-        <Button
-          variant="outline"
-          className="w-full justify-between"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      {/* Main splitter */}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Left: Sidebar (fixed width) */}
+        <div
+          className="hidden sm:block shrink-0 w-48 lg:w-1/5 py-6 px-2 sm:px-4 overflow-hidden"
+          onWheel={(e) => e.preventDefault()}
         >
-          <span>
-            Navigate to:{" "}
-            {activeSection
-              .replace("-", " ")
-              .split(" ")
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(" ")}
-          </span>
-          <ChevronDown
-            className={`h-4 w-4 transition-transform ${isMobileMenuOpen ? "rotate-180" : ""}`}
-          />
-        </Button>
-
-        {isMobileMenuOpen && (
-          <div className="mt-2 space-y-1">
-            <Button
-              variant="ghost"
-              className={`w-full justify-start gap-2 rounded-full ${
-                activeSection === "api-keys" ? "bg-accent" : "hover:bg-accent"
-              }`}
-              onClick={() => {
-                scrollToSection("api-keys");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              API keys
-            </Button>
-            <Button
-              variant="ghost"
-              className={`w-full justify-start gap-2 rounded-full ${
-                activeSection === "llm-providers"
-                  ? "bg-accent"
-                  : "hover:bg-accent"
-              }`}
-              onClick={() => {
-                scrollToSection("llm-providers");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              LLM providers
-            </Button>
-            <Button
-              variant="ghost"
-              className={`w-full justify-start gap-2 rounded-full ${
-                activeSection === "custom-instructions"
-                  ? "bg-accent"
-                  : "hover:bg-accent"
-              }`}
-              onClick={() => {
-                scrollToSection("custom-instructions");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              Custom instructions
-            </Button>
-            <Button
-              variant="ghost"
-              className={`w-full justify-start gap-2 rounded-full ${
-                activeSection === "mcp-servers"
-                  ? "bg-accent"
-                  : "hover:bg-accent"
-              }`}
-              onClick={() => {
-                scrollToSection("mcp-servers");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              MCP servers
-            </Button>
-            <Button
-              variant="ghost"
-              className={`w-full justify-start gap-2 rounded-full ${
-                activeSection === "tool-call-limit"
-                  ? "bg-accent"
-                  : "hover:bg-accent"
-              }`}
-              onClick={() => {
-                scrollToSection("tool-call-limit");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              Tool Call Limit
-            </Button>
-            <Button
-              variant="ghost"
-              className={`w-full justify-start gap-2 rounded-full ${
-                activeSection === "oauth-settings"
-                  ? "bg-accent"
-                  : "hover:bg-accent"
-              }`}
-              onClick={() => {
-                scrollToSection("oauth-settings");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              User Authentication
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Main Layout */}
-      <div className="flex gap-8 sm:gap-12 lg:gap-48 w-full flex-1 overflow-hidden">
-        {/* Sidebar Navigation */}
-        <div className="hidden sm:block py-6 w-48 lg:w-1/5 shrink-0">
-          <div className="sticky top-6 flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <Button
               variant="ghost"
               className={`justify-start gap-2 rounded-full text-sm ${
@@ -454,12 +457,12 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
           </div>
         </div>
 
-        {/* Scrollable Content */}
+        {/* Right: Settings pane (scrollable) */}
         <div
           ref={scrollContainerRef}
-          className="w-full overflow-y-auto pt-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]"
+          className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]"
         >
-          <div className="space-y-4 pb-8">
+          <div className="space-y-4 py-6 pb-24">
             <div ref={apiKeysRef} className="p-2">
               <APIKeyList project={project} />
             </div>

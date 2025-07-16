@@ -53,12 +53,12 @@ export default function ProjectLayout({
       : "overview";
 
   return (
-    <div className="flex flex-col">
-      {/* Sticky Navigation Section */}
-      <div className="sticky top-[var(--dashboard-header-height)] z-40 bg-background -mx-4 md:-mx-6 px-4 md:px-6 -mt-6 pt-6 mb-4">
+    <div className="flex flex-col h-screen">
+      {/* Fixed Navigation Section */}
+      <div className="shrink-0 bg-background -mx-4 md:-mx-6 px-4 md:px-6 -mt-6 pt-6 mb-4">
         {/* Navigation Row */}
         <motion.div
-          className="flex flex-col gap-2 sm:gap-4"
+          className="flex flex-col gap-2 sm:gap-4 px-4 md:px-6 py-4"
           initial="hidden"
           animate="visible"
           variants={fadeInVariants}
@@ -125,11 +125,18 @@ export default function ProjectLayout({
       </div>
 
       {/* Content Area */}
-      <motion.div initial="hidden" animate="visible" variants={fadeInVariants}>
-        <Suspense fallback={<div className="h-32 animate-pulse"></div>}>
-          {children}
-        </Suspense>
-      </motion.div>
+      <div className="flex-1 min-h-0">
+        <motion.div
+          className="h-full"
+          initial="hidden"
+          animate="visible"
+          variants={fadeInVariants}
+        >
+          <Suspense fallback={<div className="h-32 animate-pulse"></div>}>
+            {children}
+          </Suspense>
+        </motion.div>
+      </div>
     </div>
   );
 }

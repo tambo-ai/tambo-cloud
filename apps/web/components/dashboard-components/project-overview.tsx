@@ -33,22 +33,26 @@ export function ProjectOverview({ projectId }: ProjectOverviewProps) {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
-      <ProjectInfo
-        project={project}
-        createdAt={new Date(project.createdAt).toLocaleDateString()}
-      />
-      <div>
-        <DailyMessagesChart projectIds={[projectId]} days={30} />
+    <div className="flex flex-col h-full">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 py-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-6 pb-8"
+        >
+          <ProjectInfo
+            project={project}
+            createdAt={new Date(project.createdAt).toLocaleDateString()}
+          />
+          <div>
+            <DailyMessagesChart projectIds={[projectId]} days={30} />
 
-        {/* TODO: Add back in when we have error tracking */}
-        {/* <DailyThreadErrorsChart projectId={projectId} /> */}
+            {/* TODO: Add back in when we have error tracking */}
+            {/* <DailyThreadErrorsChart projectId={projectId} /> */}
+          </div>
+        </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 }
