@@ -1,0 +1,8 @@
+{
+  "title": "Components",
+  "pages": [
+    "defining-tambo-components",
+    "registering-with-tambo-provider",
+    "registering-components-dynamically"
+  ]
+}
