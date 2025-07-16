@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -196,8 +196,8 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
       variants={containerVariants}
     >
       {/* Header */}
-      <div className="bg-background w-full">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between py-2 px-2 gap-4">
+      <div className="bg-background w-full sticky top-0 z-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-2 px-2">
           {isEditingName ? (
             <Input
               value={editedName}
@@ -220,10 +220,11 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             </h1>
           )}
 
-          <div className="flex gap-2 sm:gap-3 self-end sm:self-auto">
+          <div className="flex gap-1 sm:gap-2 self-end sm:self-auto ml-auto sm:ml-4">
             <Button
               variant="ghost"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 text-sm sm:text-base"
+              size="icon"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 sm:h-10 sm:w-10"
               onClick={() =>
                 setAlertState({
                   show: true,
@@ -233,14 +234,12 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
                 })
               }
               disabled={isDeleting}
+              title="Delete Project"
             >
               {isDeleting ? (
-                <>
-                  <span className="loading loading-spinner loading-sm mr-2" />
-                  Deleting...
-                </>
+                <span className="loading loading-spinner loading-sm" />
               ) : (
-                "Delete"
+                <Trash2 className="h-4 w-4" />
               )}
             </Button>
             {isEditingName ? (
