@@ -512,7 +512,7 @@ export function ProviderKeySection({
     setCombinedSelectValue(value);
     setCombinedSelectOpen(false);
 
-    const [providerApiName, modelApiName] = value.split("|");
+    const [providerApiName, modelApiName] = value.split("|", 2);
     setSelectedProviderApiName(providerApiName);
 
     if (modelApiName === "custom") {
