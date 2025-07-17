@@ -1,20 +1,33 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { DEFAULT_OPENAI_MODEL } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion, Variants } from "framer-motion";
-import { ExternalLinkIcon, InfoIcon, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import {
+  Check,
+  ChevronsUpDown,
+  ExternalLinkIcon,
+  InfoIcon,
+  Loader2,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { z } from "zod";
 
@@ -66,6 +79,29 @@ const sectionAnimationVariants: Variants = {
 const shortTransition = { duration: 0.2 };
 
 export const FREE_MESSAGE_LIMIT = 500;
+
+interface ProviderModelOption {
+  value: string;
+  label: string;
+  provider: {
+    apiName: string;
+    displayName: string;
+    isCustomProvider: boolean;
+    requiresBaseUrl?: boolean;
+    apiKeyLink?: string;
+  };
+  model?: {
+    apiName: string;
+    displayName: string;
+    isDefaultModel?: boolean;
+    status?: string;
+    notes?: string;
+    docLink?: string;
+    properties?: {
+      inputTokenLimit?: number;
+    };
+  };
+}
 
 export function ProviderKeySection({
   project,
@@ -148,6 +184,8 @@ export function ProviderKeySection({
   const [selectedModelApiName, setSelectedModelApiName] = useState<
     string | undefined
   >();
+  const [combinedSelectValue, setCombinedSelectValue] = useState<string>("");
+  const [combinedSelectOpen, setCombinedSelectOpen] = useState(false);
   const [customModelName, setCustomModelName] = useState<string>("");
   const [baseUrl, setBaseUrl] = useState<string>("");
   const [maxInputTokens, setMaxInputTokens] = useState<string>("");
@@ -156,6 +194,93 @@ export function ProviderKeySection({
   const [isEditingApiKey, setIsEditingApiKey] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+
+  // Generate combined provider-model options
+  const providerModelOptions: ProviderModelOption[] = useMemo(() => {
+    if (!llmProviderConfigData) return [];
+
+    const options: ProviderModelOption[] = [];
+
+    Object.values(llmProviderConfigData).forEach((provider) => {
+      if (provider.isCustomProvider) {
+        // For custom providers, add a single option
+        options.push({
+          value: `${provider.apiName}|custom`,
+          label: `${provider.displayName} • Custom Model`,
+          provider: {
+            apiName: provider.apiName,
+            displayName: provider.displayName,
+            isCustomProvider: true,
+            requiresBaseUrl: provider.requiresBaseUrl,
+            apiKeyLink: provider.apiKeyLink,
+          },
+        });
+      } else {
+        // For regular providers, add all their models
+        const models = provider.models || {};
+        Object.values(models).forEach((model) => {
+          options.push({
+            value: `${provider.apiName}|${model.apiName}`,
+            label: `${provider.displayName} • ${model.displayName}${
+              model.apiName === DEFAULT_OPENAI_MODEL ? " (default)" : ""
+            }`,
+            provider: {
+              apiName: provider.apiName,
+              displayName: provider.displayName,
+              isCustomProvider: false,
+              apiKeyLink: provider.apiKeyLink,
+            },
+            model: {
+              apiName: model.apiName,
+              displayName: model.displayName,
+              isDefaultModel: model.isDefaultModel,
+              status: model.status,
+              notes: model.notes,
+              docLink: model.docLink,
+              properties: model.properties,
+            },
+          });
+        });
+      }
+    });
+
+    return options.sort((a, b) => {
+      // First, prioritize tested models
+      const aIsTested = a.model?.status === "tested";
+      const bIsTested = b.model?.status === "tested";
+      if (aIsTested && !bIsTested) return -1;
+      if (!aIsTested && bIsTested) return 1;
+
+      return 0;
+    });
+  }, [llmProviderConfigData]);
+
+  const currentProviderConfig =
+    selectedProviderApiName && llmProviderConfigData
+      ? llmProviderConfigData[selectedProviderApiName]
+      : undefined;
+
+  // Find current selected option
+  const currentSelectedOption = providerModelOptions.find(
+    (option) => option.value === combinedSelectValue,
+  );
+
+  // Update combinedSelectValue when individual states change
+  useEffect(() => {
+    if (selectedProviderApiName) {
+      if (currentProviderConfig?.isCustomProvider) {
+        setCombinedSelectValue(`${selectedProviderApiName}|custom`);
+      } else if (selectedModelApiName) {
+        setCombinedSelectValue(
+          `${selectedProviderApiName}|${selectedModelApiName}`,
+        );
+      }
+    }
+  }, [
+    selectedProviderApiName,
+    selectedModelApiName,
+    currentProviderConfig?.isCustomProvider,
+  ]);
 
   // Effect for initializing state from fetched projectLlmSettings
   useEffect(() => {
@@ -271,40 +396,24 @@ export function ProviderKeySection({
     });
 
   // --- Derived State & Data (using TRPC data now) ---
-  const llmProvidersArray = llmProviderConfigData
-    ? Object.values(llmProviderConfigData)
-    : [];
-
-  const currentProviderConfig =
-    selectedProviderApiName && llmProviderConfigData
-      ? llmProviderConfigData[selectedProviderApiName]
-      : undefined;
-
-  const availableModelsArray =
-    currentProviderConfig && !currentProviderConfig.isCustomProvider
-      ? Object.values(currentProviderConfig.models ?? {})
-      : [];
-  const currentModelConfig =
-    currentProviderConfig &&
-    !currentProviderConfig.isCustomProvider &&
-    selectedModelApiName &&
-    currentProviderConfig.models
-      ? currentProviderConfig.models[selectedModelApiName]
-      : undefined;
-
   const currentApiKeyRecord = storedApiKeys?.find(
     (k) => k.providerName === selectedProviderApiName,
   );
+
+  const isUsingDefaultModel = selectedModelApiName === DEFAULT_OPENAI_MODEL;
+  const canUseFreeMessages =
+    selectedProviderApiName === "openai" && isUsingDefaultModel;
+
   const maskedApiKeyDisplay = isLoadingStoredKeysInitial
     ? "Loading..."
     : currentApiKeyRecord
       ? currentApiKeyRecord.partiallyHiddenKey || "s•••••••••••••••••••••••key"
-      : selectedProviderApiName === "openai" || !selectedProviderApiName
+      : canUseFreeMessages
         ? messageUsage?.messageCount &&
           messageUsage.messageCount >= FREE_MESSAGE_LIMIT
           ? "free messages used, please add a key"
           : `using free messages (${messageUsage?.messageCount ?? 0}/${FREE_MESSAGE_LIMIT})`
-        : "No API key set";
+        : "API key required";
 
   // Effect to sync UI state when selectedProviderApiName changes
   useEffect(() => {
@@ -399,18 +508,25 @@ export function ProviderKeySection({
   ]);
 
   // --- Event Handlers (basic implementation for UI interaction) ---
-  const handleProviderSelect = useCallback((apiName: string) => {
-    setSelectedProviderApiName(apiName);
-    setSelectedModelApiName(undefined);
-    setCustomModelName("");
-    setBaseUrl("");
+  const handleCombinedSelectChange = useCallback((value: string) => {
+    setCombinedSelectValue(value);
+    setCombinedSelectOpen(false);
+
+    const [providerApiName, modelApiName] = value.split("|");
+    setSelectedProviderApiName(providerApiName);
+
+    if (modelApiName === "custom") {
+      setSelectedModelApiName(undefined);
+      setCustomModelName("");
+      setBaseUrl("");
+      setMaxInputTokens("");
+    } else {
+      setSelectedModelApiName(modelApiName);
+      setCustomModelName("");
+    }
+
     setApiKeyInput("");
     setIsEditingApiKey(false);
-    setHasUnsavedChanges(true);
-  }, []);
-
-  const handleModelSelect = useCallback((modelApiName: string) => {
-    setSelectedModelApiName(modelApiName);
     setHasUnsavedChanges(true);
   }, []);
 
@@ -435,15 +551,18 @@ export function ProviderKeySection({
       return;
     }
 
-    // Check if API key is required and present
-    if (
-      !["openai", "openai-compatible"].includes(selectedProviderApiName) &&
-      !currentApiKeyRecord?.partiallyHiddenKey
-    ) {
+    // Check if API key is required
+    const requiresApiKey = !canUseFreeMessages;
+
+    if (requiresApiKey && !currentApiKeyRecord?.partiallyHiddenKey) {
+      const errorMessage =
+        selectedProviderApiName === "openai" && !isUsingDefaultModel
+          ? `Free messages are only available for the default model (${DEFAULT_OPENAI_MODEL}). Please add your OpenAI API key to use other models, or switch to the default model.`
+          : "Please add an API key before saving settings for this provider.";
+
       toast({
         title: "Error",
-        description:
-          "Please add an API key before saving settings for this provider.",
+        description: errorMessage,
         variant: "destructive",
       });
       return;
@@ -564,6 +683,8 @@ export function ProviderKeySection({
     setShowValidationErrors,
     llmProviderConfigData,
     getModelConfig,
+    canUseFreeMessages,
+    isUsingDefaultModel,
   ]);
 
   const handleSaveApiKey = useCallback(async () => {
@@ -671,157 +792,146 @@ export function ProviderKeySection({
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-6 p-6">
+      <CardContent className="space-y-4 p-6">
+        {/* Combined Provider • Model Select */}
         <div className="space-y-2 max-w-xl">
-          <Label htmlFor="provider-select">Provider</Label>
-          <Select
-            value={selectedProviderApiName}
-            onValueChange={handleProviderSelect}
-            disabled={isLoadingLlmProviderConfig}
+          <Label htmlFor="provider-model-select">Provider • Model</Label>
+          <Popover
+            open={combinedSelectOpen}
+            onOpenChange={setCombinedSelectOpen}
           >
-            <SelectTrigger id="provider-select" className="w-full">
-              <SelectValue
-                placeholder={
-                  isLoadingLlmProviderConfig
-                    ? "Loading providers..."
-                    : "Select a provider"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {llmProvidersArray.map((provider, index) => (
-                <SelectItem
-                  key={`${index}-${provider.apiName}`}
-                  value={provider.apiName}
-                >
-                  {provider.displayName}
-                  {provider.isDefaultProvider && " (default)"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={combinedSelectOpen}
+                className="w-full justify-between h-10 font-normal"
+                disabled={isLoadingLlmProviderConfig}
+              >
+                {currentSelectedOption ? (
+                  <span className="truncate">
+                    {currentSelectedOption.label}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {isLoadingLlmProviderConfig
+                      ? "Loading..."
+                      : "Select provider and model"}
+                  </span>
+                )}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-[--radix-popover-trigger-width] p-0"
+              align="start"
+            >
+              <Command>
+                <CommandInput placeholder="Search providers and models..." />
+                <CommandList>
+                  <CommandEmpty>No provider or model found.</CommandEmpty>
+                  <CommandGroup>
+                    {providerModelOptions.map((option) => (
+                      <CommandItem
+                        key={option.value}
+                        value={option.value}
+                        onSelect={handleCombinedSelectChange}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center">
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              combinedSelectValue === option.value
+                                ? "opacity-100"
+                                : "opacity-0",
+                            )}
+                          />
+                          <span className="truncate">{option.label}</span>
+                        </div>
+                        {option.model?.status && (
+                          <span
+                            className={cn(
+                              "ml-2 rounded-full px-1.5 py-0.5 text-xs",
+                              option.model.status === "untested"
+                                ? "bg-gray-200 text-gray-700"
+                                : "bg-green-100 text-green-700",
+                            )}
+                          >
+                            {option.model.status.charAt(0).toUpperCase() +
+                              option.model.status.slice(1)}
+                          </span>
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                  {/* Always visible link at bottom */}
+                  <div className="border-t p-2">
+                    <a
+                      href="https://github.com/tambo-ai/tambo-cloud/issues/new?template=feature_request.md&title=Add%20support%20for%20[Model%20Name]"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center text-xs text-foreground hover:text-primary transition-colors"
+                    >
+                      Request support for another model
+                      <ExternalLinkIcon className="ml-1 h-3 w-3" />
+                    </a>
+                  </div>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {showValidationErrors && !combinedSelectValue && (
+            <p className="text-sm text-destructive mt-1">
+              Please select a provider and model
+            </p>
+          )}
+          <a
+            href="https://github.com/tambo-ai/tambo/issues/new?template=feature_request.md&title=Add%20support%20for%20[Model%20Name]"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-xs text-foreground hover:text-primary transition-colors"
+          >
+            Don&apos;t see your model? Request support for another model
+            <ExternalLinkIcon className="ml-1 h-3 w-3" />
+          </a>
         </div>
 
         <AnimatePresence mode="wait">
-          {currentProviderConfig ? (
+          {currentSelectedOption ? (
             <motion.div
-              key={selectedProviderApiName || "provider_config"}
+              key={combinedSelectValue}
               variants={sectionAnimationVariants}
               initial="initial"
               animate="animate"
               exit="exit"
               className="space-y-4 rounded-md max-w-xl"
             >
-              {!currentProviderConfig.isCustomProvider ? (
-                <div className="space-y-2">
-                  <Label htmlFor="model-select">Model</Label>
-                  <Select
-                    value={selectedModelApiName}
-                    onValueChange={handleModelSelect}
-                    disabled={
-                      isLoadingLlmProviderConfig ||
-                      availableModelsArray.length === 0
-                    }
-                  >
-                    <SelectTrigger id="model-select" className="w-full">
-                      <SelectValue
-                        placeholder={
-                          isLoadingLlmProviderConfig
-                            ? "Loading models..."
-                            : availableModelsArray.length === 0
-                              ? "No models configured for this provider"
-                              : "Select a model"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableModelsArray.map((model) => (
-                        <SelectItem key={model.apiName} value={model.apiName}>
-                          <div className="flex w-full items-center justify-between">
-                            <span>
-                              {model.displayName}
-                              {model.isDefaultModel && " (default)"}
-                            </span>
-                            {model.status && (
-                              <span
-                                className={`ml-2 rounded-full px-1.5 py-0.5 text-xs ${
-                                  model.status === "untested"
-                                    ? "bg-gray-200 text-gray-700"
-                                    : "bg-green-100 text-green-700"
-                                }`}
-                              >
-                                {model.status.charAt(0).toUpperCase() +
-                                  model.status.slice(1)}
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {showValidationErrors && !selectedModelApiName && (
-                    <p className="text-sm text-destructive mt-1">
-                      Model selection is required
+              {/* Model Information */}
+              {currentSelectedOption.model && (
+                <div className="space-y-2 text-xs text-foreground">
+                  {currentSelectedOption.model.notes && (
+                    <p className="mb-2 flex items-start">
+                      <InfoIcon className="mr-1.5 mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                      {currentSelectedOption.model.notes}
                     </p>
                   )}
-
-                  {currentModelConfig && (
-                    <div className="space-y-0.5 pt-1 text-xs text-foreground">
-                      {currentModelConfig.notes && (
-                        <p className="mb-2 flex items-start">
-                          <InfoIcon className="mr-1.5 mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-                          {currentModelConfig.notes}
-                        </p>
-                      )}
-                      {currentModelConfig.docLink && (
-                        <a
-                          href={currentModelConfig.docLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center text-link text-xs hover:underline"
-                        >
-                          Learn more
-                          <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                        </a>
-                      )}
-                    </div>
+                  {currentSelectedOption.model.docLink && (
+                    <a
+                      href={currentSelectedOption.model.docLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-link text-xs hover:underline"
+                    >
+                      Learn more
+                      <ExternalLinkIcon className="ml-1 h-3 w-3" />
+                    </a>
                   )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="max-input-tokens">Input Token Limit</Label>
-                    <Input
-                      id="max-input-tokens"
-                      type="number"
-                      min="1"
-                      max={currentModelConfig?.properties?.inputTokenLimit}
-                      placeholder={`e.g., ${currentModelConfig?.properties?.inputTokenLimit ?? 4096}`}
-                      value={maxInputTokens}
-                      onChange={(e) => {
-                        setMaxInputTokens(e.target.value);
-                        setHasUnsavedChanges(true);
-                      }}
-                    />
-                    {showValidationErrors &&
-                      (Number.isNaN(Number(maxInputTokens)) ||
-                        Number(maxInputTokens) <= 0) && (
-                        <p className="text-sm text-destructive mt-1">
-                          Please enter a valid maximum input tokens value
-                        </p>
-                      )}
-                    <p className="text-xs text-foreground">
-                      Tambo will limit the number of tokens sent to the model to
-                      this value.
-                      {currentModelConfig?.properties?.inputTokenLimit && (
-                        <span>
-                          {" "}
-                          Maximum for this model:{" "}
-                          {currentModelConfig.properties.inputTokenLimit.toLocaleString()}
-                        </span>
-                      )}
-                    </p>
-                  </div>
                 </div>
-              ) : (
+              )}
+
+              {/* Custom Provider Fields */}
+              {currentSelectedOption.provider.isCustomProvider && (
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="custom-model-name-compatible">
@@ -847,7 +957,7 @@ export function ProviderKeySection({
                       expects.
                     </p>
                   </div>
-                  {currentProviderConfig.requiresBaseUrl && (
+                  {currentSelectedOption.provider.requiresBaseUrl && (
                     <div className="space-y-2">
                       <Label htmlFor="base-url">Base URL</Label>
                       <Input
@@ -865,7 +975,8 @@ export function ProviderKeySection({
                       </p>
                     </div>
                   )}
-                  {selectedProviderApiName === "openai-compatible" && (
+                  {currentSelectedOption.provider.apiName ===
+                    "openai-compatible" && (
                     <div className="space-y-2">
                       <Label htmlFor="max-input-tokens">
                         Maximum Input Tokens
@@ -897,18 +1008,58 @@ export function ProviderKeySection({
                 </div>
               )}
 
+              {/* Input Token Limit for Regular Models */}
+              {!currentSelectedOption.provider.isCustomProvider && (
+                <div className="space-y-2">
+                  <Label htmlFor="max-input-tokens">Input Token Limit</Label>
+                  <Input
+                    id="max-input-tokens"
+                    type="number"
+                    min="1"
+                    max={
+                      currentSelectedOption.model?.properties?.inputTokenLimit
+                    }
+                    placeholder={`e.g., ${currentSelectedOption.model?.properties?.inputTokenLimit ?? 4096}`}
+                    value={maxInputTokens}
+                    onChange={(e) => {
+                      setMaxInputTokens(e.target.value);
+                      setHasUnsavedChanges(true);
+                    }}
+                  />
+                  {showValidationErrors &&
+                    (Number.isNaN(Number(maxInputTokens)) ||
+                      Number(maxInputTokens) <= 0) && (
+                      <p className="text-sm text-destructive mt-1">
+                        Please enter a valid maximum input tokens value
+                      </p>
+                    )}
+                  <p className="text-xs text-foreground">
+                    Tambo will limit the number of tokens sent to the model to
+                    this value.
+                    {currentSelectedOption.model?.properties
+                      ?.inputTokenLimit && (
+                      <span>
+                        {" "}
+                        Maximum for this model:{" "}
+                        {currentSelectedOption.model.properties.inputTokenLimit.toLocaleString()}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
+
+              {/* API Key Section */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium">
                     API Key
-                    {currentProviderConfig.displayName !==
+                    {currentSelectedOption?.provider.displayName !==
                       "OpenAI Compatible" &&
-                      ` for ${currentProviderConfig.displayName}`}
-                    {currentProviderConfig.displayName ===
-                      "OpenAI Compatible" && " (Optional)"}
+                      ` for ${currentSelectedOption?.provider.displayName}`}
                   </Label>
                 </div>
 
+                {/* API Key Input/Display - keeping existing logic */}
                 {isEditingApiKey ? (
                   <motion.div
                     key="edit-api-key-form"
@@ -925,12 +1076,12 @@ export function ProviderKeySection({
                           value={apiKeyInput}
                           onChange={(e) => setApiKeyInput(e.target.value)}
                           placeholder={
-                            currentProviderConfig?.apiName === "openai"
+                            currentSelectedOption.provider.apiName === "openai"
                               ? "Enter API Key or leave empty to use free messages"
                               : `Enter API Key${
-                                  currentProviderConfig?.displayName !==
+                                  currentSelectedOption.provider.displayName !==
                                   "OpenAI Compatible"
-                                    ? ` for ${currentProviderConfig?.displayName}`
+                                    ? ` for ${currentSelectedOption.provider.displayName}`
                                     : ""
                                 }`
                           }
@@ -955,8 +1106,9 @@ export function ProviderKeySection({
                           isUpdatingApiKey ||
                           isValidatingApiKey ||
                           (!apiKeyInput.trim() &&
-                            currentProviderConfig?.apiName !== "openai" &&
-                            currentProviderConfig?.apiName !==
+                            currentSelectedOption.provider.apiName !==
+                              "openai" &&
+                            currentSelectedOption.provider.apiName !==
                               "openai-compatible") ||
                           (!apiKeyValidation?.isValid && !!apiKeyInput.trim())
                         }
@@ -982,7 +1134,6 @@ export function ProviderKeySection({
                     </div>
 
                     {/* Validation feedback */}
-
                     {apiKeyInput && apiKeyValidation && (
                       <div className="space-y-1">
                         {!apiKeyValidation.isValid && (
@@ -990,7 +1141,8 @@ export function ProviderKeySection({
                             <p className="text-sm text-destructive">
                               {apiKeyValidation.error}
                             </p>
-                            {currentProviderConfig?.apiName === "mistral" && (
+                            {currentSelectedOption.provider.apiName ===
+                              "mistral" && (
                               <p className="text-sm text-muted-foreground">
                                 Note: Mistral API keys may be invalid for a few
                                 minutes after creation.
@@ -1042,37 +1194,23 @@ export function ProviderKeySection({
                     </Button>
                   </motion.div>
                 )}
-                {currentProviderConfig.apiKeyLink && (
+                {currentSelectedOption.provider.apiKeyLink && (
                   <p className="pt-1 text-xs text-foreground">
                     Need an API key?{" "}
                     <a
-                      href={currentProviderConfig.apiKeyLink}
+                      href={currentSelectedOption.provider.apiKeyLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center text-link hover:underline"
                     >
-                      Get one from {currentProviderConfig.displayName}
+                      Get one from {currentSelectedOption.provider.displayName}
                       <ExternalLinkIcon className="ml-1 h-3 w-3" />
                     </a>
                   </p>
                 )}
               </div>
             </motion.div>
-          ) : selectedProviderApiName && !isLoadingLlmProviderConfig ? (
-            <motion.div
-              key="provider_specific_skeleton"
-              variants={sectionAnimationVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="overflow-hidden"
-            >
-              <div className="mt-4 h-40 w-full animate-pulse space-y-4 rounded-md bg-muted p-4">
-                <div className="h-10 rounded bg-muted-foreground/10" />
-                <div className="h-16 rounded bg-muted-foreground/10" />
-              </div>
-            </motion.div>
-          ) : !selectedProviderApiName && !isLoadingLlmProviderConfig ? (
+          ) : !isLoadingLlmProviderConfig ? (
             <motion.div
               key="select_provider_placeholder"
               variants={sectionAnimationVariants}
@@ -1082,7 +1220,7 @@ export function ProviderKeySection({
               className="overflow-hidden text-center"
             >
               <p className="py-6 text-sm text-muted-foreground">
-                Select a provider to configure its models and API key.
+                Select a provider and model to configure settings and API key.
               </p>
             </motion.div>
           ) : null}
