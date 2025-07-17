@@ -3,7 +3,7 @@ title: Response Component Streaming
 description: Stream response components from Tambo as they are being generated.
 ---
 
-Similar to response text, when you send a message to Tambo with `streamResponse: true`, Tambo will stream props into any chosen component's props as they are generated rather than waiting for the entire response to complete. The current state of a component being streamed in can be accessed through the latest thread message`s `renderedComponent` field.
+Similar to response text, when you send a message to Tambo, Tambo will stream props into any chosen component's props as they are generated rather than waiting for the entire response to complete. The current state of a component being streamed in can be accessed through the latest thread message`s `renderedComponent` field.
 
 To see the response component update in realtime, render your thread messages like normal.
 
