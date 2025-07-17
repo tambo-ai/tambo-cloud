@@ -3,6 +3,7 @@ import { Email, ReactivationEmailVariables } from "./types";
 export const reactivationEmail: Email<ReactivationEmailVariables> = {
   subject: "Quick check-in from Michael at tambo 👋",
   html: (variables) => {
+    // Handle empty firstname - use "there" as fallback
     const displayName = variables.firstName?.trim() || "there";
     const dayText = variables.daysSinceSignup === 1 ? "day" : "days";
 
@@ -26,13 +27,13 @@ Sometimes getting started can feel overwhelming, so I'd be happy to:
 • Answer any questions you might have
 • Jump on a quick 15-minute onboarding call
 
-Just reply to this email or <a href="https://calendly.com/michael-tambo/onboarding" style="color: #0066cc; text-decoration: underline;">book a time that works for you</a>.
+Just reply to this email or <a href="https://cal.com/michaelmagan" style="color: #0066cc; text-decoration: underline;">book a time that works for you</a>.
 
 No pressure at all - I know how busy things get. But if you're still interested in using tambo, I'm here to make sure you have a great experience.
 
 Best,
 Michael
-Co-Founder, <img src="https://tambo.co/logo/icon/Octo-Icon.png" alt="tambo logo" style="width: 20px; height: 20px; vertical-align: middle; display: inline-block;"> tambo
+Co-Founder, tambo
 
 P.S. If you're no longer interested, no worries at all! Just let me know and I'll make sure we don't send any more emails.
 </pre>

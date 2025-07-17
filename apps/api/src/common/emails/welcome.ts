@@ -14,7 +14,7 @@ export const welcomeEmail: Email<WelcomeEmailVariables> = {
   </head>
   <body style="margin: 0; padding: 0">
 <pre style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #000; white-space: pre-wrap; word-wrap: break-word; margin: 0; padding: 0;">
-Hi ${displayName}!
+Hey ${displayName}!
 
 Just wanted to say thank you for signing up to tambo-ai.
 
@@ -23,7 +23,7 @@ I'm curious-- how did you hear about us? Also are you just looking around or do 
 Whatever the reason, anything you need I'm here to help.
 
 Michael
-Co-Founder, <img src="https://tambo.co/logo/icon/Octo-Icon.png" alt="tambo logo" style="width: 20px; height: 20px; vertical-align: middle; display: inline-block;"> tambo
+Co-Founder, tambo
 
 Oh, and join our <a href="https://discord.gg/HhGVeRFKep" style="color: #0066cc; text-decoration: underline;">discord</a> community to connect with us and other users.
 </pre>

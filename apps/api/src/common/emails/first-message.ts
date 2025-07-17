@@ -3,6 +3,7 @@ import { Email, FirstMessageEmailVariables } from "./types";
 export const firstMessageEmail: Email<FirstMessageEmailVariables> = {
   subject: "Nice work sending your first message! 🎉",
   html: (variables) => {
+    // Handle empty firstname - use "there" as fallback
     const displayName = variables.firstName?.trim() || "there";
 
     return `<!DOCTYPE html>
@@ -28,7 +29,7 @@ Questions? Just reply to this email or hop into our <a href="https://discord.gg/
 Happy building!
 
 Michael
-Co-Founder, <img src="https://tambo.co/logo/icon/Octo-Icon.png" alt="tambo logo" style="width: 20px; height: 20px; vertical-align: middle; display: inline-block;"> tambo
+Co-Founder, tambo
 </pre>
   </body>
 </html>`;
