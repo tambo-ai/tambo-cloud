@@ -8,12 +8,11 @@ import { TamboProvider, useTambo } from "@tambo-ai/react";
 
 function DemoContent() {
   const { thread } = useTambo();
-  const hasMessages = thread?.messages && thread.messages.length > 0;
 
   return (
     <div className="w-full flex justify-center items-center bg-white">
       <MessageThreadFull />
-      {!hasMessages && <TamboEmailButton />}
+      <TamboEmailButton />
     </div>
   );
 }

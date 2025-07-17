@@ -1,14 +1,47 @@
 import { Button } from "@/components/ui/button";
-import { useTamboThreadInput } from "@tambo-ai/react";
-import { useCallback, useEffect, useState } from "react";
+import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export const TamboEmailButton = () => {
   const { setValue } = useTamboThreadInput();
-  const [hasPressedButton, setHasPressedButton] = useState(false);
+  const { thread } = useTambo();
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isManuallyHidden, setIsManuallyHidden] = useState(false);
+
+  // Compute whether button should be hidden
+  const shouldHideButton = useMemo(() => {
+    const hasMessages = thread?.messages && thread.messages.length > 0;
+    return hasMessages || isInputFocused || isManuallyHidden;
+  }, [thread?.messages, isInputFocused, isManuallyHidden]);
+
+  // Listen for input focus/blur events
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.matches('textarea[data-slot="message-input-textarea"]')) {
+        setIsInputFocused(true);
+      }
+    };
+
+    const handleFocusOut = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.matches('textarea[data-slot="message-input-textarea"]')) {
+        setIsInputFocused(false);
+      }
+    };
+
+    document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
+
+    return () => {
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
+    };
+  }, []);
 
   const handleInteraction = useCallback(() => {
     setValue("Help me send an email to the founders.");
-    setHasPressedButton(true);
+    setIsManuallyHidden(true);
   }, [setValue]);
 
   useEffect(() => {
@@ -24,7 +57,9 @@ export const TamboEmailButton = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleInteraction]);
 
-  if (hasPressedButton) return null;
+  if (shouldHideButton) {
+    return null;
+  }
 
   return (
     <div className="z-10" data-tambo-email-button>
