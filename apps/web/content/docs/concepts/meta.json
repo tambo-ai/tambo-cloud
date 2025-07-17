@@ -1,12 +1,13 @@
 {
   "title": "Concepts",
   "pages": [
-    "registering-components",
+    "components",
     "message-threads",
     "tools",
     "model-context-protocol",
     "streaming",
     "user-authentication",
-    "suggestions"
+    "suggestions",
+    "tracking-progress"
   ]
 }
