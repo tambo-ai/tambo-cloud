@@ -268,18 +268,23 @@ export function ProviderKeySection({
   // Update combinedSelectValue when individual states change
   useEffect(() => {
     if (selectedProviderApiName) {
+      let newValue = "";
       if (currentProviderConfig?.isCustomProvider) {
-        setCombinedSelectValue(`${selectedProviderApiName}|custom`);
+        newValue = `${selectedProviderApiName}|custom`;
       } else if (selectedModelApiName) {
-        setCombinedSelectValue(
-          `${selectedProviderApiName}|${selectedModelApiName}`,
-        );
+        newValue = `${selectedProviderApiName}|${selectedModelApiName}`;
+      }
+
+      // Only update if the value has actually changed
+      if (newValue && newValue !== combinedSelectValue) {
+        setCombinedSelectValue(newValue);
       }
     }
   }, [
     selectedProviderApiName,
     selectedModelApiName,
     currentProviderConfig?.isCustomProvider,
+    combinedSelectValue,
   ]);
 
   // Effect for initializing state from fetched projectLlmSettings
