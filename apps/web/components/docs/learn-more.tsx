@@ -17,7 +17,7 @@ export default function LearnMore({
   return (
     <Link
       href={href}
-      className="flex items-center gap-4 p-4 rounded-lg group"
+      className="flex items-center gap-4 rounded-lg group"
       style={{ textDecoration: "none" }}
     >
       <div className="flex-shrink-0">
