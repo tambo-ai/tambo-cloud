@@ -83,3 +83,32 @@ export async function getInactiveUsers(
 
   return results;
 }
+
+export async function getInactiveUsersWithProjects(
+  db: HydraDb,
+  inactiveDays: number = 14,
+): Promise<
+  Array<
+    typeof schema.authUsers.$inferSelect & {
+      projects: Array<
+        typeof schema.projectMembers.$inferSelect & {
+          project: typeof schema.projects.$inferSelect;
+        }
+      >;
+    }
+  >
+> {
+  const inactiveDate = new Date();
+  inactiveDate.setDate(inactiveDate.getDate() - inactiveDays);
+
+  return await db.query.authUsers.findMany({
+    where: lt(schema.authUsers.createdAt, inactiveDate),
+    with: {
+      projects: {
+        with: {
+          project: true,
+        },
+      },
+    },
+  });
+}

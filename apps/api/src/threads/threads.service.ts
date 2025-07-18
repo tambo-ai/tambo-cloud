@@ -342,39 +342,42 @@ export class ThreadsService {
     usage: typeof schema.projectMessageUsage.$inferSelect | undefined,
   ): Promise<void> {
     // Check if this is the first message and email hasn't been sent
-    if (usage && usage.messageCount === 1 && !usage.firstMessageSentAt) {
+    if (usage && usage.messageCount <= 1 && !usage.firstMessageSentAt) {
       try {
-        // Get project and user details
-        const project = await this.getDb().query.projects.findFirst({
-          where: eq(schema.projects.id, projectId),
-          with: {
-            members: {
-              with: {
-                user: true,
-              },
-            },
-          },
-        });
+        // Get project and user details using operations
+        const project = await operations.getProjectMembers(
+          this.getDb(),
+          projectId,
+        );
 
         if (project && project.members.length > 0) {
           const user = project.members[0].user;
 
-          // Send first message email
-          const result = await this.emailService.sendFirstMessageEmail(
-            user.email ?? "",
-            null,
-            project.name,
-          );
-
-          if (result.success) {
-            // Update the tracking
-            await operations.updateProjectMessageUsage(
+          // Check if user has received first message email in ANY of their projects
+          const hasReceivedFirstMessageEmail =
+            await operations.hasUserReceivedFirstMessageEmail(
               this.getDb(),
-              projectId,
-              {
-                firstMessageSentAt: new Date(),
-              },
+              user.id,
             );
+
+          if (!hasReceivedFirstMessageEmail) {
+            // Send first message email
+            const result = await this.emailService.sendFirstMessageEmail(
+              user.email ?? "",
+              null,
+              project.name,
+            );
+
+            if (result.success) {
+              // Update the tracking
+              await operations.updateProjectMessageUsage(
+                this.getDb(),
+                projectId,
+                {
+                  firstMessageSentAt: new Date(),
+                },
+              );
+            }
           }
         }
       } catch (error) {
@@ -403,8 +406,7 @@ export class ThreadsService {
         this.getDb(),
         projectId,
         {
-          messageCount: 1,
-          hasApiKey: !usingFallbackKey,
+          messageCount: usingFallbackKey ? 1 : 0,
         },
       );
 

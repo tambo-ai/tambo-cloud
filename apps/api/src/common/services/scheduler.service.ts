@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { getDb, HydraDatabase, schema } from "@tambo-ai-cloud/db";
-import { and, eq, lt } from "drizzle-orm";
+import { getDb, HydraDatabase, operations, schema } from "@tambo-ai-cloud/db";
+import { eq } from "drizzle-orm";
 import { EmailService } from "./email.service";
 
 @Injectable()
@@ -33,16 +33,10 @@ export class SchedulerService {
       // 1. Signed up more than 2 weeks ago
       // 2. Haven't been active in the last 2 weeks OR haven't set up a project
       // 3. Haven't received a reactivation email in the last month
-      const inactiveUsers = await this.db.query.authUsers.findMany({
-        where: and(lt(schema.authUsers.createdAt, twoWeeksAgo)),
-        with: {
-          projects: {
-            with: {
-              project: true,
-            },
-          },
-        },
-      });
+      const inactiveUsers = await operations.getInactiveUsersWithProjects(
+        this.db,
+        14,
+      );
 
       for (const user of inactiveUsers) {
         try {
