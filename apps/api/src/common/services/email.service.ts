@@ -10,7 +10,10 @@ import { welcomeEmail } from "../emails/welcome";
 @Injectable()
 export class EmailService {
   private readonly resend: Resend;
-  private readonly fromEmail = "tambo-ai <noreply@updates.tambo.co>";
+  private readonly fromEmailDefault: string;
+  private readonly fromEmailPersonal: string;
+  private readonly replyToSupport: string;
+  private readonly replyToPersonal: string;
 
   constructor(private readonly configService: ConfigService) {
     const resendApiKey = this.configService.get<string>("RESEND_API_KEY");
@@ -18,6 +21,34 @@ export class EmailService {
       throw new Error("RESEND_API_KEY is not configured");
     }
     this.resend = new Resend(resendApiKey);
+
+    // Load email configuration from environment variables (required)
+    this.fromEmailDefault =
+      this.configService.get<string>("EMAIL_FROM_DEFAULT")!;
+    if (!this.fromEmailDefault) {
+      throw new Error("EMAIL_FROM_DEFAULT is not configured");
+    }
+
+    this.fromEmailPersonal = this.configService.get<string>(
+      "EMAIL_FROM_PERSONAL",
+    )!;
+    if (!this.fromEmailPersonal) {
+      throw new Error("EMAIL_FROM_PERSONAL is not configured");
+    }
+
+    this.replyToSupport = this.configService.get<string>(
+      "EMAIL_REPLY_TO_SUPPORT",
+    )!;
+    if (!this.replyToSupport) {
+      throw new Error("EMAIL_REPLY_TO_SUPPORT is not configured");
+    }
+
+    this.replyToPersonal = this.configService.get<string>(
+      "EMAIL_REPLY_TO_PERSONAL",
+    )!;
+    if (!this.replyToPersonal) {
+      throw new Error("EMAIL_REPLY_TO_PERSONAL is not configured");
+    }
   }
 
   async sendMessageLimitNotification(
@@ -27,9 +58,9 @@ export class EmailService {
   ) {
     try {
       await this.resend.emails.send({
-        from: this.fromEmail,
+        from: this.fromEmailDefault,
         to: userEmail,
-        replyTo: "support@tambo.co",
+        replyTo: this.replyToSupport,
         subject: messageLimitEmail.subject,
         html: messageLimitEmail.html({
           projectId,
@@ -49,9 +80,9 @@ export class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const result = await this.resend.emails.send({
-        from: "Michael Magán <magan@tambo.co>",
+        from: this.fromEmailPersonal,
         to: userEmail,
-        replyTo: "magan@tambo.co",
+        replyTo: this.replyToPersonal,
         subject: welcomeEmail.subject,
         html: welcomeEmail.html({
           firstName,
@@ -77,9 +108,9 @@ export class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const result = await this.resend.emails.send({
-        from: this.fromEmail,
+        from: this.fromEmailDefault,
         to: userEmail,
-        replyTo: "support@tambo.co",
+        replyTo: this.replyToSupport,
         subject: firstMessageEmail.subject,
         html: firstMessageEmail.html({
           firstName,
@@ -110,9 +141,9 @@ export class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const result = await this.resend.emails.send({
-        from: "Michael Magán <magan@tambo.co>",
+        from: this.fromEmailPersonal,
         to: userEmail,
-        replyTo: "magan@tambo.co",
+        replyTo: this.replyToPersonal,
         subject: reactivationEmail.subject,
         html: reactivationEmail.html({
           firstName,
