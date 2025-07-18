@@ -10,7 +10,7 @@ Define your tool function and register it with tambo. Tools are asynchronous fun
 const getWeather = async (city: string) => {
   try {
     const weather = await fetch(
-      `http://api.weatherapi.com/v1/current.json?key=${process.env.NEXT_PUBLIC_WEATHER_API_KEY}&q=${city}`
+      `http://api.weatherapi.com/v1/current.json?key=${process.env.NEXT_PUBLIC_WEATHER_API_KEY}&q=${city}`,
     );
     return weather.json();
   } catch (error) {
@@ -32,7 +32,7 @@ export const tools: TamboTool[] = [
           location: z.object({
             name: z.string(),
           }),
-        })
+        }),
       ),
   },
 ];
