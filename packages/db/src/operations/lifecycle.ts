@@ -5,30 +5,30 @@ import type { HydraDb } from "../types";
 export async function getUserLifecycleTracking(
   db: HydraDb,
   userId: string,
-): Promise<typeof schema.userLifecycleTracking.$inferSelect | undefined> {
-  return await db.query.userLifecycleTracking.findFirst({
-    where: eq(schema.userLifecycleTracking.userId, userId),
+): Promise<typeof schema.tamboUsers.$inferSelect | undefined> {
+  return await db.query.tamboUsers.findFirst({
+    where: eq(schema.tamboUsers.userId, userId),
   });
 }
 
 export async function updateUserLifecycleTracking(
   db: HydraDb,
   userId: string,
-  data: Partial<typeof schema.userLifecycleTracking.$inferInsert>,
-): Promise<typeof schema.userLifecycleTracking.$inferSelect> {
+  data: Partial<typeof schema.tamboUsers.$inferInsert>,
+): Promise<typeof schema.tamboUsers.$inferSelect> {
   const existing = await getUserLifecycleTracking(db, userId);
 
   if (existing) {
     const [updated] = await db
-      .update(schema.userLifecycleTracking)
+      .update(schema.tamboUsers)
       .set(data)
-      .where(eq(schema.userLifecycleTracking.userId, userId))
+      .where(eq(schema.tamboUsers.userId, userId))
       .returning();
     return updated;
   }
 
   const [created] = await db
-    .insert(schema.userLifecycleTracking)
+    .insert(schema.tamboUsers)
     .values({
       userId,
       ...data,
@@ -43,7 +43,7 @@ export async function getInactiveUsers(
 ): Promise<
   Array<{
     user: typeof schema.authUsers.$inferSelect;
-    tracking: typeof schema.userLifecycleTracking.$inferSelect | undefined;
+    tracking: typeof schema.tamboUsers.$inferSelect | undefined;
   }>
 > {
   const inactiveDate = new Date();
@@ -60,14 +60,14 @@ export async function getInactiveUsers(
   const userIds = users.map((u) => u.id);
   const trackings = await db
     .select()
-    .from(schema.userLifecycleTracking)
-    .where(inArray(schema.userLifecycleTracking.userId, userIds));
+    .from(schema.tamboUsers)
+    .where(inArray(schema.tamboUsers.userId, userIds));
 
   const trackingByUserId = new Map(trackings.map((t) => [t.userId, t]));
 
   const results: Array<{
     user: typeof schema.authUsers.$inferSelect;
-    tracking: typeof schema.userLifecycleTracking.$inferSelect | undefined;
+    tracking: typeof schema.tamboUsers.$inferSelect | undefined;
   }> = [];
 
   for (const user of users) {

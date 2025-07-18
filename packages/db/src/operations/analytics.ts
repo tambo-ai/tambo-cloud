@@ -1,12 +1,6 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
-
-/**
- * The welcome email tracking table.
- */
-export type WelcomeEmailTracking =
-  typeof schema.welcomeEmailTracking.$inferSelect;
 
 /**
  * Track a welcome email sent to a user.
@@ -21,12 +15,29 @@ export async function trackWelcomeEmail(
   emailSent: boolean,
   error?: string,
 ) {
-  await db.insert(schema.welcomeEmailTracking).values({
-    userId,
-    emailSent,
-    error,
-    sentAt: new Date(),
+  // Try to update existing record first
+  const existing = await db.query.tamboUsers.findFirst({
+    where: eq(schema.tamboUsers.userId, userId),
   });
+
+  if (existing) {
+    await db
+      .update(schema.tamboUsers)
+      .set({
+        welcomeEmailSent: emailSent,
+        welcomeEmailError: error,
+        welcomeEmailSentAt: new Date(),
+      })
+      .where(eq(schema.tamboUsers.userId, userId));
+  } else {
+    // Create new record
+    await db.insert(schema.tamboUsers).values({
+      userId,
+      welcomeEmailSent: emailSent,
+      welcomeEmailError: error,
+      welcomeEmailSentAt: new Date(),
+    });
+  }
 }
 
 /**
@@ -48,11 +59,13 @@ export async function getWelcomeEmailStats(
   const result = await db
     .select({
       total: sql<number>`count(*)`,
-      successful: sql<number>`count(*) filter (where email_sent = true)`,
-      failed: sql<number>`count(*) filter (where email_sent = false)`,
+      successful: sql<number>`count(*) filter (where welcome_email_sent = true)`,
+      failed: sql<number>`count(*) filter (where welcome_email_sent = false)`,
     })
-    .from(schema.welcomeEmailTracking)
-    .where(sql`sent_at >= now() - interval '${sql.raw(intervalMap[period])}'`);
+    .from(schema.tamboUsers)
+    .where(
+      sql`welcome_email_sent_at >= now() - interval '${sql.raw(intervalMap[period])}'`,
+    );
 
   return result[0];
 }

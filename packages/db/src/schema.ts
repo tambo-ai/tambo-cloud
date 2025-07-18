@@ -540,73 +540,62 @@ export const mcpOauthClientRelations = relations(
 );
 export type DBMcpOauthClient = typeof mcpOauthClients.$inferSelect;
 
-export const welcomeEmailTracking = pgTable(
-  "welcome_email_tracking",
-  ({ text, timestamp, uuid, boolean }) => ({
+export const tamboUsers = pgTable(
+  "tambo_users",
+  ({ text, timestamp, uuid, boolean, integer }) => ({
     id: text("id")
       .primaryKey()
       .notNull()
       .unique()
-      .default(sql`generate_custom_id('wet_')`),
+      .default(sql`generate_custom_id('tu_')`),
     userId: uuid("user_id")
-      .notNull()
-      .references(() => authUsers.id, { onDelete: "cascade" }),
-    emailSent: boolean("email_sent").notNull().default(false),
-    error: text("error"),
-    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  }),
-  (table) => ({
-    sentAtIdx: index("idx_welcome_email_tracking_sent_at").on(table.sentAt),
-    userIdIdx: index("idx_welcome_email_tracking_user_id").on(table.userId),
-    emailSentIdx: index("idx_welcome_email_tracking_email_sent").on(
-      table.emailSent,
-    ),
-  }),
-);
-
-export const userLifecycleTracking = pgTable(
-  "user_lifecycle_tracking",
-  ({ text, timestamp, uuid, boolean }) => ({
-    id: text("id")
-      .primaryKey()
       .notNull()
       .unique()
-      .default(sql`generate_custom_id('ult_')`),
-    userId: uuid("user_id")
-      .notNull()
       .references(() => authUsers.id, { onDelete: "cascade" }),
     projectId: text("project_id").references(() => projects.id, {
       onDelete: "cascade",
     }),
+
+    // Activity tracking
     lastActivityAt: timestamp("last_activity_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    hasSetupProject: boolean("has_setup_project").notNull().default(false),
+
+    // Welcome email tracking
+    welcomeEmailSent: boolean("welcome_email_sent").notNull().default(false),
+    welcomeEmailError: text("welcome_email_error"),
+    welcomeEmailSentAt: timestamp("welcome_email_sent_at", {
+      withTimezone: true,
+    }),
+
+    // Reactivation email tracking
     reactivationEmailSentAt: timestamp("reactivation_email_sent_at", {
       withTimezone: true,
     }),
     reactivationEmailCount: integer("reactivation_email_count")
       .notNull()
       .default(0),
-    hasSetupProject: boolean("has_setup_project").notNull().default(false),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   }),
   (table) => ({
-    userIdIdx: index("idx_user_lifecycle_tracking_user_id").on(table.userId),
-    lastActivityIdx: index("idx_user_lifecycle_tracking_last_activity").on(
+    userIdIdx: index("idx_tambo_users_user_id").on(table.userId),
+    lastActivityIdx: index("idx_tambo_users_last_activity").on(
       table.lastActivityAt,
     ),
-    reactivationSentIdx: index(
-      "idx_user_lifecycle_tracking_reactivation_sent",
-    ).on(table.reactivationEmailSentAt),
+    reactivationSentIdx: index("idx_tambo_users_reactivation_sent").on(
+      table.reactivationEmailSentAt,
+    ),
+    welcomeEmailSentIdx: index("idx_tambo_users_welcome_email_sent").on(
+      table.welcomeEmailSent,
+    ),
   }),
 );
 
-export type DBUserLifecycleTracking = typeof userLifecycleTracking.$inferSelect;
+export type DBTamboUser = typeof tamboUsers.$inferSelect;
 
 /* The rest of the file below this comment remains unchanged except where noted */
 

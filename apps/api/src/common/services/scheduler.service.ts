@@ -41,15 +41,14 @@ export class SchedulerService {
       for (const user of inactiveUsers) {
         try {
           // Check lifecycle tracking
-          let lifecycleTracking =
-            await this.db.query.userLifecycleTracking.findFirst({
-              where: eq(schema.userLifecycleTracking.userId, user.id),
-            });
+          let lifecycleTracking = await this.db.query.tamboUsers.findFirst({
+            where: eq(schema.tamboUsers.userId, user.id),
+          });
 
           if (!lifecycleTracking) {
             // Create tracking record
             [lifecycleTracking] = await this.db
-              .insert(schema.userLifecycleTracking)
+              .insert(schema.tamboUsers)
               .values({
                 userId: user.id,
                 hasSetupProject: user.projects.length > 0,
@@ -91,13 +90,13 @@ export class SchedulerService {
           if (result.success) {
             // Update tracking
             await this.db
-              .update(schema.userLifecycleTracking)
+              .update(schema.tamboUsers)
               .set({
                 reactivationEmailSentAt: new Date(),
                 reactivationEmailCount:
                   lifecycleTracking.reactivationEmailCount + 1,
               })
-              .where(eq(schema.userLifecycleTracking.id, lifecycleTracking.id));
+              .where(eq(schema.tamboUsers.id, lifecycleTracking.id));
 
             console.log(`Sent reactivation email to ${user.email}`);
           }
@@ -116,21 +115,21 @@ export class SchedulerService {
   // Update user activity when they perform actions
   async updateUserActivity(userId: string, projectId?: string) {
     try {
-      const tracking = await this.db.query.userLifecycleTracking.findFirst({
-        where: eq(schema.userLifecycleTracking.userId, userId),
+      const tracking = await this.db.query.tamboUsers.findFirst({
+        where: eq(schema.tamboUsers.userId, userId),
       });
 
       if (tracking) {
         await this.db
-          .update(schema.userLifecycleTracking)
+          .update(schema.tamboUsers)
           .set({
             lastActivityAt: new Date(),
             hasSetupProject: tracking.hasSetupProject || !!projectId,
             projectId: projectId || tracking.projectId,
           })
-          .where(eq(schema.userLifecycleTracking.id, tracking.id));
+          .where(eq(schema.tamboUsers.id, tracking.id));
       } else {
-        await this.db.insert(schema.userLifecycleTracking).values({
+        await this.db.insert(schema.tamboUsers).values({
           userId,
           projectId,
           hasSetupProject: !!projectId,
