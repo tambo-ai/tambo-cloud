@@ -12,12 +12,9 @@ export default function Layout({ children }: { children: ReactNode }) {
       nav={{
         ...baseOptions.nav,
       }}
-      links={[
-        {
-          text: "Documentation",
-          url: "/docs",
-        },
-      ]}
+      sidebar={{
+        collapsible: false,
+      }}
       containerProps={{
         className: "bg-fd-background",
       }}

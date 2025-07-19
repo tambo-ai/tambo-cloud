@@ -1,5 +1,12 @@
 /* Custom styles for documentation section */
 
+/* Override universal selector to remove borders */
+*,
+::before,
+::after {
+  border: none !important;
+}
+
 /* Override fumadocs theme variables specifically for docs section */
 :root {
   --fd-background: 0 0% 100% !important;
