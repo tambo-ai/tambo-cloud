@@ -87,7 +87,7 @@ export default function RootLayout({
                 enableSystem={false}
                 forcedTheme="light"
               >
-                <RootProvider search={{ enabled: false }}>
+                <RootProvider search={{ enabled: true }}>
                   {children}
                 </RootProvider>
                 <ComponentsThemeProvider defaultTheme="light">
