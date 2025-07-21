@@ -8,12 +8,12 @@ const handler = NextAuth({
   adapter: SupabaseAdapter(),
   providers: [
     GitHub({
-      clientId: env.GITHUB_ID!,
-      clientSecret: env.GITHUB_SECRET!,
+      clientId: env.GITHUB_CLIENT_ID!,
+      clientSecret: env.GITHUB_CLIENT_SECRET!,
     }),
     Google({
-      clientId: env.GOOGLE_ID!,
-      clientSecret: env.GOOGLE_SECRET!,
+      clientId: env.GOOGLE_CLIENT_ID!,
+      clientSecret: env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
   session: {
