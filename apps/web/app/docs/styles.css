@@ -43,11 +43,6 @@
 }
 
 /* Remove sidebar border */
-.fd-sidebar {
-  border-right: none !important;
-}
-
-/* Alternative: target the specific class */
 [class*="md:border-e"] {
-  border-right: none !important;
+  border-right: none;
 }

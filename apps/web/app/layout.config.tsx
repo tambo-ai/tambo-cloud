@@ -1,18 +1,17 @@
 import { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
+import Image from "next/image";
 
 export const baseOptions: BaseLayoutProps = {
   nav: {
-    // title: (
-    //   <Image
-    //     src="/logo/icon/Octo-Icon.svg"
-    //     width={20}
-    //     height={20}
-    //     alt="Octo Icon"
-    //     className="w-8 h-8"
-    //   />
-    // ),
-    enableSearch: false,
+    title: (
+      <Image
+        src="/logo/lockup/Tambo-Lockup.svg"
+        alt="Tambo Lockup"
+        width={100}
+        height={26}
+        className="h-7 w-auto"
+      />
+    ),
   },
   disableThemeSwitch: true,
-  // githubUrl: "https://github.com/tambo-ai/tambo",
 };

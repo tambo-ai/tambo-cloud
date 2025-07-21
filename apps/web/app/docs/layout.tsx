@@ -14,12 +14,6 @@ export default function Layout({ children }: { children: ReactNode }) {
       }}
       sidebar={{
         collapsible: false,
-        tabs: {
-          transform: (option, node) => ({
-            ...option,
-            icon: <div>hi</div>,
-          }),
-        },
       }}
       containerProps={{
         className: "bg-fd-background",
