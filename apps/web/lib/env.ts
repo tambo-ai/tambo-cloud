@@ -27,6 +27,13 @@ export const env = createEnv({
     COMPOSIO_API_KEY: z.string().min(1).optional(),
     ALLOW_LOCAL_MCP_SERVERS: z.string().min(1).optional(),
     GITHUB_TOKEN: z.string().min(1).optional(),
+    // NextAuth OAuth providers
+    GITHUB_ID: z.string().min(1).optional(),
+    GITHUB_SECRET: z.string().min(1).optional(),
+    GOOGLE_ID: z.string().min(1).optional(),
+    GOOGLE_SECRET: z.string().min(1).optional(),
+    NEXTAUTH_SECRET: z.string().min(1).optional(),
+    NEXTAUTH_URL: z.string().url().optional(),
   },
   /*
    * Environment variables available on the client (and server).
@@ -79,5 +86,12 @@ export const env = createEnv({
     COMPOSIO_API_KEY: process.env.COMPOSIO_API_KEY,
     ALLOW_LOCAL_MCP_SERVERS: process.env.ALLOW_LOCAL_MCP_SERVERS,
     GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+    // NextAuth OAuth providers
+    GITHUB_ID: process.env.GITHUB_ID,
+    GITHUB_SECRET: process.env.GITHUB_SECRET,
+    GOOGLE_ID: process.env.GOOGLE_ID,
+    GOOGLE_SECRET: process.env.GOOGLE_SECRET,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   },
 });
