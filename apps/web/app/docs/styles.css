@@ -1,12 +1,5 @@
 /* Custom styles for documentation section */
 
-/* Override universal selector to remove borders */
-/* *,
-::before,
-::after {
-  border: none !important;
-} */
-
 /* Override fumadocs theme variables specifically for docs section */
 :root {
   --fd-background: 0 0% 100% !important;
@@ -43,11 +36,6 @@
 .fd-prose h6 {
   font-family: "Inter", sans-serif !important;
   margin-bottom: 0.5rem !important;
-}
-
-/* Ensure links have the right color */
-.fd-prose a {
-  color: hsl(186 94% 13%) !important; /* Match your primary-foreground */
 }
 
 .fd-prose a:hover {
