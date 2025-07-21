@@ -43,8 +43,8 @@
 }
 
 /* Remove sidebar border */
-[class*="md:border-e"] {
-  border-right: none;
+#nd-sidebar [class*="md:border-e"] {
+  border-right: none !important;
 }
 
 #nd-toc {
