@@ -46,3 +46,11 @@
 [class*="md:border-e"] {
   border-right: none;
 }
+
+#nd-toc {
+  margin-top: 40px !important;
+}
+
+#nd-sidebar {
+  margin-top: 50px !important;
+}
