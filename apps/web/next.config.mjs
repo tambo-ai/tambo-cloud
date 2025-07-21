@@ -52,6 +52,16 @@ const config = {
 
     return config;
   },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/:path*",
+          destination: "https://mcp.inkeep.com/tamboco/mcp/:path*",
+        },
+      ],
+    };
+  },
 };
 
 export default withMDX(config);
