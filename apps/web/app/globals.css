@@ -377,3 +377,8 @@ html {
 }
 
 @import "./highlight-custom.css";
+
+/* Prevent layout shift by always showing scrollbar */
+html {
+  scrollbar-gutter: stable;
+}
