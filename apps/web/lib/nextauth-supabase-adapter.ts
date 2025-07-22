@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters";
+import pg from "pg";
 import { env } from "./env";
 
 // Type definitions for the adapter
@@ -35,35 +35,31 @@ interface UnlinkAccountData {
   providerAccountId: string;
 }
 
-// Create Supabase client with service role key for direct database access
-const supabase = createClient(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  },
-);
+async function getPgClient() {
+  const pgClient = new pg.Client(env.DATABASE_URL);
+  await pgClient.connect();
+  return pgClient;
+}
 
 export function SupabaseAdapter(): Adapter {
   return {
     async createUser(data: CreateUserData) {
-      const { data: user, error } = await supabase
-        .from("auth.users")
-        .insert({
-          id: data.id || crypto.randomUUID(),
-          email: data.email,
-          email_confirmed_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          raw_user_meta_data: data.name ? { name: data.name } : {},
-        })
-        .select()
-        .single();
+      console.log("Creating user", data);
+      const client = await getPgClient();
+      const { error, rows } = await client.query(
+        `INSERT INTO auth.users (id, email, email_confirmed_at, created_at, updated_at, raw_user_meta_data) VALUES ($1, $2, $3, $4, $5, $6) returning *`,
+        [
+          data.id || crypto.randomUUID(),
+          data.email,
+          new Date().toISOString(),
+          new Date().toISOString(),
+          new Date().toISOString(),
+          data.name ? { name: data.name } : {},
+        ],
+      );
 
-      if (error) throw error;
+      if (error || !rows.length) throw error;
+      const user = rows[0];
 
       return {
         id: user.id,
@@ -74,13 +70,14 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async getUser(id) {
-      const { data: user, error } = await supabase
-        .from("auth.users")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const client = await getPgClient();
+      const { rows: users, error: userError } = await client.query(
+        `SELECT * FROM auth.users WHERE id = $1`,
+        [id],
+      );
 
-      if (error || !user) return null;
+      if (userError || !users.length) return null;
+      const user = users[0];
 
       return {
         id: user.id,
@@ -91,13 +88,15 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async getUserByEmail(email) {
-      const { data: user, error } = await supabase
-        .from("auth.users")
-        .select("*")
-        .eq("email", email)
-        .single();
+      console.log("AUTH: Getting user by email", email);
+      const client = await getPgClient();
+      const { rows: users, error: userError } = await client.query(
+        `SELECT * FROM auth.users WHERE email = $1`,
+        [email],
+      );
 
-      if (error || !user) return null;
+      if (userError || !users.length) return null;
+      const user = users[0];
 
       return {
         id: user.id,
@@ -108,22 +107,29 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async getUserByAccount({ provider, providerAccountId }) {
-      const { data: identity, error } = await supabase
-        .from("auth.identities")
-        .select("user_id, identity_data")
-        .eq("provider", provider)
-        .eq("provider_id", providerAccountId)
-        .single();
+      console.log("AUTH: Getting user by account", provider, providerAccountId);
+      const client = await getPgClient();
+      const rows = await client.query(`SELECT current_user`);
+      console.log("AUTH: current role: ", rows.rows[0]);
 
-      if (error || !identity) return null;
+      const { rows: identity, error } = await client.query(
+        `SELECT * FROM auth.identities WHERE provider = $1 AND provider_id = $2`,
+        [provider, providerAccountId],
+      );
+      console.log("AUTH: identity: ", identity);
 
-      const { data: user, error: userError } = await supabase
-        .from("auth.users")
-        .select("*")
-        .eq("id", identity.user_id)
-        .single();
+      if (error || !identity) {
+        console.log("AUTH: No identity found", error, identity);
+        return null;
+      }
 
-      if (userError || !user) return null;
+      const { rows: users, error: userError } = await client.query(
+        `SELECT * FROM auth.users WHERE id = $1`,
+        [identity[0].user_id],
+      );
+
+      if (userError || !users.length) return null;
+      const user = users[0];
 
       return {
         id: user.id,
@@ -134,18 +140,20 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async updateUser(data: UpdateUserData) {
-      const { data: user, error } = await supabase
-        .from("auth.users")
-        .update({
-          email: data.email,
-          raw_user_meta_data: data.name ? { name: data.name } : {},
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", data.id)
-        .select()
-        .single();
+      console.log("AUTH: Updating user", data);
+      const client = await getPgClient();
+      const { error, rows } = await client.query(
+        `UPDATE auth.users SET email = $1, raw_user_meta_data = $2, updated_at = $3 WHERE id = $4 returning *`,
+        [
+          data.email,
+          data.name ? { name: data.name } : {},
+          new Date().toISOString(),
+          data.id,
+        ],
+      );
 
-      if (error) throw error;
+      if (error || !rows.length) throw error;
+      const user = rows[0];
 
       return {
         id: user.id,
@@ -156,59 +164,70 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async deleteUser(userId) {
-      const { error } = await supabase
-        .from("auth.users")
-        .delete()
-        .eq("id", userId);
+      console.log("AUTH: Deleting user", userId);
+      const client = await getPgClient();
+      const { error, rows } = await client.query(
+        `DELETE FROM auth.users WHERE id = $1 returning *`,
+        [userId],
+      );
 
-      if (error) throw error;
+      if (error || !rows.length) throw error;
     },
 
     async linkAccount(data: LinkAccountData) {
-      const { error } = await supabase.from("auth.identities").insert({
-        id: crypto.randomUUID(),
-        user_id: data.userId,
-        provider: data.provider,
-        provider_id: data.providerAccountId,
-        identity_data: {
-          access_token: data.access_token,
-          expires_at: data.expires_at,
-          refresh_token: data.refresh_token,
-          token_type: data.token_type,
-          scope: data.scope,
-          id_token: data.id_token,
-          session_state: data.session_state,
-        },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+      console.log("AUTH: Linking account", data);
+      const client = await getPgClient();
+      const { error, rows } = await client.query(
+        `INSERT INTO auth.identities (id, user_id, provider, provider_id, identity_data, created_at, updated_at) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7) returning *`,
+        [
+          crypto.randomUUID(),
+          data.userId,
+          data.provider,
+          data.providerAccountId,
+          {
+            access_token: data.access_token,
+            expires_at: data.expires_at,
+            refresh_token: data.refresh_token,
+            token_type: data.token_type,
+            scope: data.scope,
+            id_token: data.id_token,
+            session_state: data.session_state,
+          },
+          new Date().toISOString(),
+          new Date().toISOString(),
+        ],
+      );
 
-      if (error) throw error;
+      if (error || !rows.length) throw error;
     },
 
     async unlinkAccount({ provider, providerAccountId }: UnlinkAccountData) {
-      const { error } = await supabase
-        .from("auth.identities")
-        .delete()
-        .eq("provider", provider)
-        .eq("provider_id", providerAccountId);
+      console.log("AUTH: Unlinking account", provider, providerAccountId);
+      const client = await getPgClient();
+      const { error, rows } = await client.query(
+        `DELETE FROM auth.identities WHERE provider = $1 AND provider_id = $2 returning *`,
+        [provider, providerAccountId],
+      );
 
-      if (error) throw error;
+      if (error || !rows.length) throw error;
     },
 
     async createSession(data) {
-      const { data: session, error } = await supabase
-        .from("auth.sessions")
-        .insert({
-          id: data.sessionToken,
-          user_id: data.userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      console.log("AUTH: Creating session", data);
+      const client = await getPgClient();
+      const { error, rows } = await client.query(
+        `INSERT INTO auth.sessions (id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4) returning *`,
+        [
+          data.sessionToken,
+          data.userId,
+          new Date().toISOString(),
+          new Date().toISOString(),
+        ],
+      );
 
-      if (error) throw error;
+      if (error || !rows.length) throw error;
+      const session = rows[0];
 
       return {
         sessionToken: session.id,
@@ -218,21 +237,23 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async getSessionAndUser(sessionToken) {
-      const { data: session, error: sessionError } = await supabase
-        .from("auth.sessions")
-        .select("*")
-        .eq("id", sessionToken)
-        .single();
+      console.log("AUTH: Getting session and user", sessionToken);
+      const client = await getPgClient();
+      const { rows: sessions, error: sessionError } = await client.query(
+        `SELECT * FROM auth.sessions WHERE id = $1`,
+        [sessionToken],
+      );
 
-      if (sessionError || !session) return null;
+      if (sessionError || !sessions.length) return null;
+      const session = sessions[0];
 
-      const { data: user, error: userError } = await supabase
-        .from("auth.users")
-        .select("*")
-        .eq("id", session.user_id)
-        .single();
+      const { rows: users, error: userError } = await client.query(
+        `SELECT * FROM auth.users WHERE id = $1`,
+        [session.user_id],
+      );
 
-      if (userError || !user) return null;
+      if (userError || !users.length) return null;
+      const user = users[0];
 
       return {
         session: {
@@ -251,17 +272,15 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async updateSession(data) {
-      const { data: session, error } = await supabase
-        .from("auth.sessions")
-        .update({
-          updated_at: new Date().toISOString(),
-          not_after: data.expires,
-        })
-        .eq("id", data.sessionToken)
-        .select()
-        .single();
+      console.log("AUTH: Updating session", data);
+      const client = await getPgClient();
+      const { error, rows } = await client.query(
+        `UPDATE auth.sessions SET updated_at = $1, not_after = $2 WHERE id = $3 returning *`,
+        [new Date().toISOString(), data.expires, data.sessionToken],
+      );
 
-      if (error) throw error;
+      if (error || !rows.length) throw error;
+      const session = rows[0];
 
       return {
         sessionToken: session.id,
@@ -271,21 +290,25 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async deleteSession(sessionToken) {
-      const { error } = await supabase
-        .from("auth.sessions")
-        .delete()
-        .eq("id", sessionToken);
+      console.log("AUTH: Deleting session", sessionToken);
+      const client = await getPgClient();
+      const { error, rows } = await client.query(
+        `DELETE FROM auth.sessions WHERE id = $1 returning *`,
+        [sessionToken],
+      );
 
-      if (error) throw error;
+      if (error || !rows.length) throw error;
     },
 
     async createVerificationToken(data) {
+      console.log("AUTH: Creating verification token", data);
       // This would typically use the one_time_tokens table
       // For simplicity, we'll skip this for now
       return data;
     },
 
     async useVerificationToken({ identifier, token }) {
+      console.log("AUTH: Using verification token", identifier, token);
       // This would typically use the one_time_tokens table
       // For simplicity, we'll skip this for now
       return null;
