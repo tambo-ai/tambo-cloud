@@ -142,6 +142,7 @@ export class ThreadsService {
     const apiKey = await this.validateProjectAndProviderKeys(
       projectId,
       providerName as Provider,
+      modelName,
     );
     if (!apiKey && providerName !== "openai-compatible") {
       throw new Error(
@@ -337,6 +338,55 @@ export class ThreadsService {
     return await operations.deleteThread(this.getDb(), id);
   }
 
+  private async checkAndSendFirstMessageEmail(
+    projectId: string,
+    usage: typeof schema.projectMessageUsage.$inferSelect | undefined,
+  ): Promise<void> {
+    // Check if this is the first message and email hasn't been sent
+    if (usage && usage.messageCount <= 1 && !usage.firstMessageSentAt) {
+      try {
+        // Get project and user details using operations
+        const project = await operations.getProjectMembers(
+          this.getDb(),
+          projectId,
+        );
+
+        if (project && project.members.length > 0) {
+          const user = project.members[0].user;
+
+          // Check if user has received first message email in ANY of their projects
+          const hasReceivedFirstMessageEmail =
+            await operations.hasUserReceivedFirstMessageEmail(
+              this.getDb(),
+              user.id,
+            );
+
+          if (!hasReceivedFirstMessageEmail) {
+            // Send first message email
+            const result = await this.emailService.sendFirstMessageEmail(
+              user.email ?? "",
+              null,
+              project.name,
+            );
+
+            if (result.success) {
+              // Update the tracking
+              await operations.updateProjectMessageUsage(
+                this.getDb(),
+                projectId,
+                {
+                  firstMessageSentAt: new Date(),
+                },
+              );
+            }
+          }
+        }
+      } catch (error) {
+        this.logger.error(`Error sending first message email: ${error}`);
+      }
+    }
+  }
+
   private async checkMessageLimit(projectId: string): Promise<void> {
     const usage = await operations.getProjectMessageUsage(
       this.getDb(),
@@ -353,9 +403,16 @@ export class ThreadsService {
 
     if (!usage) {
       // Create initial usage record
-      await operations.updateProjectMessageUsage(this.getDb(), projectId, {
-        messageCount: usingFallbackKey ? 1 : 0,
-      });
+      const newUsage = await operations.updateProjectMessageUsage(
+        this.getDb(),
+        projectId,
+        {
+          messageCount: usingFallbackKey ? 1 : 0,
+        },
+      );
+
+      // Check for first message email with the newly created usage
+      await this.checkAndSendFirstMessageEmail(projectId, newUsage);
       return;
     }
 
@@ -393,6 +450,9 @@ export class ThreadsService {
     if (usingFallbackKey) {
       await operations.incrementMessageCount(this.getDb(), projectId);
     }
+
+    // Check for first message email
+    await this.checkAndSendFirstMessageEmail(projectId, usage);
   }
 
   async addMessage(
@@ -1244,6 +1304,7 @@ export class ThreadsService {
   private async validateProjectAndProviderKeys(
     projectId: string,
     providerName: Provider,
+    modelName?: string,
   ): Promise<string | undefined> {
     const projectWithKeys =
       await this.projectsService.findOneWithKeys(projectId);
@@ -1255,6 +1316,12 @@ export class ThreadsService {
 
     if (!providerKeys.length) {
       if (providerName === "openai") {
+        // Only allow fallback key for default model
+        if (modelName !== DEFAULT_OPENAI_MODEL) {
+          throw new NotFoundException(
+            `No API key found for project ${projectId}. Free messages are only available for the default model (${DEFAULT_OPENAI_MODEL}). Please add your OpenAI API key to use other models.`,
+          );
+        }
         const fallbackKey = process.env.FALLBACK_OPENAI_API_KEY;
         if (!fallbackKey) {
           throw new NotFoundException(
@@ -1277,6 +1344,12 @@ export class ThreadsService {
     if (!chosenKey) {
       // Check for fallback key if OpenAI is requested
       if (providerName === "openai") {
+        // Only allow fallback key for default model
+        if (modelName !== DEFAULT_OPENAI_MODEL) {
+          throw new NotFoundException(
+            `No OpenAI API key found for project ${projectId}. Free messages are only available for the default model (${DEFAULT_OPENAI_MODEL}). Please add your OpenAI API key to use other models.`,
+          );
+        }
         const fallbackKey = process.env.FALLBACK_OPENAI_API_KEY;
         if (!fallbackKey) {
           throw new NotFoundException(
