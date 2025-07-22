@@ -4,5 +4,4 @@ export * from "./usage";
 export * from "./suggestions";
 export * from "./thread";
 export * from "./logs";
-export * from "./analytics";
-export * from "./lifecycle";
+export * from "./tambo-user";

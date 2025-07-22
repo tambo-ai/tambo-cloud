@@ -1,8 +1,8 @@
-import { eq, inArray, lt } from "drizzle-orm";
+import { eq, inArray, lt, sql } from "drizzle-orm";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
 
-export async function getUserLifecycleTracking(
+export async function getTamboUser(
   db: HydraDb,
   userId: string,
 ): Promise<typeof schema.tamboUsers.$inferSelect | undefined> {
@@ -11,12 +11,12 @@ export async function getUserLifecycleTracking(
   });
 }
 
-export async function updateUserLifecycleTracking(
+export async function updateTamboUser(
   db: HydraDb,
   userId: string,
   data: Partial<typeof schema.tamboUsers.$inferInsert>,
 ): Promise<typeof schema.tamboUsers.$inferSelect> {
-  const existing = await getUserLifecycleTracking(db, userId);
+  const existing = await getTamboUser(db, userId);
 
   if (existing) {
     const [updated] = await db
@@ -37,7 +37,50 @@ export async function updateUserLifecycleTracking(
   return created;
 }
 
-export async function getInactiveUsers(
+/**
+ * Track a welcome email sent to a user.
+ */
+export async function trackWelcomeEmail(
+  db: HydraDb,
+  userId: string,
+  emailSent: boolean,
+  error?: string,
+) {
+  return await updateTamboUser(db, userId, {
+    welcomeEmailSent: emailSent,
+    welcomeEmailError: error,
+    welcomeEmailSentAt: new Date(),
+  });
+}
+
+/**
+ * Get statistics about welcome emails sent to users.
+ */
+export async function getWelcomeEmailStats(
+  db: HydraDb,
+  period: "daily" | "weekly" | "monthly" = "daily",
+) {
+  const intervalMap = {
+    daily: "1 day",
+    weekly: "7 days",
+    monthly: "30 days",
+  };
+
+  const result = await db
+    .select({
+      total: sql<number>`count(*)`,
+      successful: sql<number>`count(*) filter (where welcome_email_sent = true)`,
+      failed: sql<number>`count(*) filter (where welcome_email_sent = false)`,
+    })
+    .from(schema.tamboUsers)
+    .where(
+      sql`welcome_email_sent_at >= now() - interval '${sql.raw(intervalMap[period])}'`,
+    );
+
+  return result[0];
+}
+
+export async function getInactiveTamboUsers(
   db: HydraDb,
   inactiveDays: number = 14,
 ): Promise<
