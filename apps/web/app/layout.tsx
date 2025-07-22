@@ -13,6 +13,7 @@ import {
 } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { ComponentsThemeProvider } from "@/providers/components-theme-provider";
+import { NextAuthProvider } from "@/providers/nextauth-provider";
 import { TamboProviderWrapper } from "@/providers/tambo-provider";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Analytics } from "@vercel/analytics/react";
@@ -87,16 +88,18 @@ export default function RootLayout({
                 enableSystem={false}
                 forcedTheme="light"
               >
-                <RootProvider search={{ enabled: true }}>
-                  {children}
-                </RootProvider>
-                <ComponentsThemeProvider defaultTheme="light">
-                  <MessageThreadCollapsible
-                    className="z-50"
-                    defaultOpen={false}
-                  />
-                </ComponentsThemeProvider>
-                <TailwindIndicator />
+                <NextAuthProvider>
+                  <RootProvider search={{ enabled: true }}>
+                    {children}
+                  </RootProvider>
+                  <ComponentsThemeProvider defaultTheme="light">
+                    <MessageThreadCollapsible
+                      className="z-50"
+                      defaultOpen={false}
+                    />
+                  </ComponentsThemeProvider>
+                  <TailwindIndicator />
+                </NextAuthProvider>
               </ThemeProvider>
               <Toaster />
               <Analytics />
