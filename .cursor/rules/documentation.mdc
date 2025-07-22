@@ -166,8 +166,8 @@ function IntegratedComponent() {
   // Show how features work together
 }
 ```
-````
 
+```
 <Callout type="info" title="Related Feature">
   The **[Other Feature](/docs/path)** provides complementary functionality.
 </Callout>
@@ -285,3 +285,4 @@ title: Page Title
 description: Brief description
 ---
 ```
+````

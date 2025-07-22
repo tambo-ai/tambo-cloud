@@ -3,9 +3,9 @@ title: Component Streaming Status
 description: Track individual prop streaming status with fine-grained control over rendering.
 ---
 
-## How Does It Work?
+The `useTamboStreamStatus` hook lets you track both overall and per-prop streaming status, so you can show loading or completed states for each prop as they arrive.
 
-The `useTamboStreamStatus` hook provides both global and per-prop streaming status tracking. When AI streams props into your components, not all properties arrive simultaneously - some props (like a title) might stream in quickly, while others (like complex content) take longer.
+## How Does It Work?
 
 Without per-prop tracking, you're forced to show nothing until all props are ready (poor UX) or show everything with default values (potentially confusing). This hook gives you granular control over what renders when.
 
@@ -84,7 +84,7 @@ function ArticleCard({ title, content, author }) {
 
 ### Progressive Rendering
 
-Show content as it becomes available:
+Show each prop as it becomes available:
 
 ```tsx title="progressive-rendering.tsx"
 function DashboardWidget({ title, data, config }) {

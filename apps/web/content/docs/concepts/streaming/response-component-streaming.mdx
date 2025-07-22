@@ -3,9 +3,11 @@ title: Response Component Streaming
 description: Stream response components from Tambo as they are being generated with real-time prop updates.
 ---
 
+When you `message.renderedComponent` is called, it will return a component and it will update the props as the values stream in.
+
 ## How Does It Work?
 
-Tambo streams props into your components as they're generated, creating a dynamic experience where content appears progressively rather than waiting for completion.
+Inside the provider the `thread.messages` array is updated with the `renderedComponent` property.
 
 ```tsx title="basic-streaming.tsx"
 import { useTambo } from "@tambo-ai/react";
@@ -101,30 +103,6 @@ const WeatherWidget = ({
       <div className="humidity">
         {humidity !== undefined ? `${humidity}%` : "Loading humidity..."}
       </div>
-    </div>
-  );
-};
-```
-
-### 3. Nullish Coalescing (Most Control)
-
-```tsx title="nullish-coalescing.tsx"
-const ProductCard = ({
-  name,
-  price,
-  description,
-}: {
-  name?: string;
-  price?: number;
-  description?: string;
-}) => {
-  return (
-    <div className="product-card">
-      <h3>{name ?? "Loading product..."}</h3>
-      <p className="price">
-        {price !== undefined ? `$${price}` : "Loading price..."}
-      </p>
-      <p className="description">{description ?? "Loading description..."}</p>
     </div>
   );
 };
