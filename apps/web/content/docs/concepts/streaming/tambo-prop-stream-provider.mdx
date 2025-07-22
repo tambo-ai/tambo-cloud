@@ -193,35 +193,3 @@ Add visual feedback during streaming:
   <h2 className="transition-opacity">{title}</h2>
 </TamboPropStreamProvider.Complete>
 ```
-
-## TypeScript Support
-
-The provider supports generic constraints for type safety:
-
-```tsx title="typescript-support.tsx"
-interface WeatherData {
-  location: string;
-  temperature: number;
-  condition: string;
-}
-
-function WeatherCard({ data }: { data: WeatherData }) {
-  const { streamStatus } = useTamboStreamStatus<WeatherData>();
-
-  return (
-    <TamboPropStreamProvider data={data} streamStatus={streamStatus}>
-      <TamboPropStreamProvider.Loading>
-        <div>Loading weather data...</div>
-      </TamboPropStreamProvider.Loading>
-      <TamboPropStreamProvider.Complete>
-        <div>
-          <h2>{data.location}</h2>
-          <p>
-            {data.temperature}°C - {data.condition}
-          </p>
-        </div>
-      </TamboPropStreamProvider.Complete>
-    </TamboPropStreamProvider>
-  );
-}
-```
