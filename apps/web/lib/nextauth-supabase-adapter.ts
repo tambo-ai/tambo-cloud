@@ -1,5 +1,5 @@
+import { getDbClient } from "@tambo-ai-cloud/db";
 import { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters";
-import pg from "pg";
 import { env } from "./env";
 
 // Type definitions for the adapter
@@ -35,17 +35,11 @@ interface UnlinkAccountData {
   providerAccountId: string;
 }
 
-async function getPgClient() {
-  const pgClient = new pg.Client(env.DATABASE_URL);
-  await pgClient.connect();
-  return pgClient;
-}
-
 export function SupabaseAdapter(): Adapter {
   return {
     async createUser(data: CreateUserData) {
       console.log("Creating user", data);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
           `INSERT INTO auth.users (id, email, email_confirmed_at, created_at, updated_at, raw_user_meta_data) VALUES ($1, $2, $3, $4, $5, $6) returning *`,
@@ -69,12 +63,12 @@ export function SupabaseAdapter(): Adapter {
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async getUser(id) {
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows: users } = await client.query(
           `SELECT * FROM auth.users WHERE id = $1`,
@@ -91,13 +85,13 @@ export function SupabaseAdapter(): Adapter {
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async getUserByEmail(email) {
       console.log("AUTH: Getting user by email", email);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows: users } = await client.query(
           `SELECT * FROM auth.users WHERE email = $1`,
@@ -114,17 +108,14 @@ export function SupabaseAdapter(): Adapter {
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async getUserByAccount({ provider, providerAccountId }) {
       console.log("AUTH: Getting user by account", provider, providerAccountId);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
-        const rows = await client.query(`SELECT current_user`);
-        console.log("AUTH: current role: ", rows.rows[0]);
-
         const { rows: identity } = await client.query(
           `SELECT * FROM auth.identities WHERE provider = $1 AND provider_id = $2`,
           [provider, providerAccountId],
@@ -151,13 +142,13 @@ export function SupabaseAdapter(): Adapter {
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async updateUser(data: UpdateUserData) {
       console.log("AUTH: Updating user", data);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
           `UPDATE auth.users SET email = $1, raw_user_meta_data = $2, updated_at = $3 WHERE id = $4 returning *`,
@@ -179,13 +170,13 @@ export function SupabaseAdapter(): Adapter {
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async deleteUser(userId) {
       console.log("AUTH: Deleting user", userId);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
           `DELETE FROM auth.users WHERE id = $1 returning *`,
@@ -194,13 +185,13 @@ export function SupabaseAdapter(): Adapter {
 
         if (!rows.length) throw new Error("Failed to delete user");
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async linkAccount(data: LinkAccountData) {
       console.log("AUTH: Linking account", data);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
           `INSERT INTO auth.identities (id, user_id, provider, provider_id, identity_data, created_at, updated_at) 
@@ -226,13 +217,13 @@ export function SupabaseAdapter(): Adapter {
 
         if (!rows.length) throw new Error("Failed to link account");
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async unlinkAccount({ provider, providerAccountId }: UnlinkAccountData) {
       console.log("AUTH: Unlinking account", provider, providerAccountId);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
           `DELETE FROM auth.identities WHERE provider = $1 AND provider_id = $2 returning *`,
@@ -241,13 +232,13 @@ export function SupabaseAdapter(): Adapter {
 
         if (!rows.length) throw new Error("Failed to unlink account");
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async createSession(data) {
       console.log("AUTH: Creating session", data);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
           `INSERT INTO auth.sessions (id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4) returning *`,
@@ -268,13 +259,13 @@ export function SupabaseAdapter(): Adapter {
           expires: data.expires,
         } as AdapterSession;
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async getSessionAndUser(sessionToken) {
       console.log("AUTH: Getting session and user", sessionToken);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows: sessions } = await client.query(
           `SELECT * FROM auth.sessions WHERE id = $1`,
@@ -307,13 +298,13 @@ export function SupabaseAdapter(): Adapter {
           } as AdapterUser,
         };
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async updateSession(data) {
       console.log("AUTH: Updating session", data);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
           `UPDATE auth.sessions SET updated_at = $1, not_after = $2 WHERE id = $3 returning *`,
@@ -329,13 +320,13 @@ export function SupabaseAdapter(): Adapter {
           expires: data.expires,
         } as AdapterSession;
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
     async deleteSession(sessionToken) {
       console.log("AUTH: Deleting session", sessionToken);
-      const client = await getPgClient();
+      const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
           `DELETE FROM auth.sessions WHERE id = $1 returning *`,
@@ -344,7 +335,7 @@ export function SupabaseAdapter(): Adapter {
 
         if (!rows.length) throw new Error("Failed to delete session");
       } finally {
-        await client.end();
+        client.release();
       }
     },
 
