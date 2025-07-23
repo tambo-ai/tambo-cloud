@@ -70,22 +70,6 @@ export const ProjectStep = memo(function ProjectStep({
             onClick={() => onProjectSelect(project.id, project.name)}
             className="w-full h-12 justify-start text-base font-medium transition-all hover:scale-[1.02]"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="mr-2"
-            >
-              <path d="M3 3h18v18H3z" />
-              <path d="M15 9h.01" />
-              <path d="M9 15h.01" />
-            </svg>
             {project.name}
           </Button>
         ))}
