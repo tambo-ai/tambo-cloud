@@ -1,7 +1,6 @@
 "use client";
 
-import { getSupabaseClient } from "@/app/utils/supabase";
-import { useSession } from "@/hooks/auth";
+import { useSession } from "next-auth/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -16,7 +15,8 @@ export function AuthedLayoutWrapper({
   const searchParams = useSearchParams();
   const router = useRouter();
   const code = searchParams.get("code");
-  const { data: session, isLoading: isSessionLoading } = useSession();
+  const { data: session, status } = useSession();
+  const isSessionLoading = status === "loading";
 
   // Use client-side session info when available, fallback to server-provided status when loading
   const hasValidSession =
