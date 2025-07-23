@@ -153,7 +153,6 @@ export function CLIAuthPage() {
   });
 
   const createProjectMutation = api.project.createProject2.useMutation();
-  const addProviderKeyMutation = api.project.addProviderKey.useMutation();
   const generateApiKeyMutation = api.project.generateApiKey.useMutation();
 
   const steps = ["select a project", "generate key"];
@@ -204,18 +203,11 @@ export function CLIAuthPage() {
   }, [stopTimer]);
 
   const handleCreateProject = useCallback(
-    async (projectName: string, providerKey?: string) => {
+    async (projectName: string) => {
       try {
         // Create the project
         const project = await createProjectMutation.mutateAsync({
           name: projectName,
-        });
-
-        // Add provider key if provided
-        await addProviderKeyMutation.mutateAsync({
-          projectId: project.id,
-          provider: "openai",
-          providerKey: providerKey ?? "",
         });
 
         // Invalidate project list query to refresh the data
@@ -233,12 +225,7 @@ export function CLIAuthPage() {
         throw error;
       }
     },
-    [
-      createProjectMutation,
-      addProviderKeyMutation,
-      utils.project.getUserProjects,
-      handleProjectSelect,
-    ],
+    [createProjectMutation, utils.project.getUserProjects, handleProjectSelect],
   );
 
   const navigateToProject = useCallback(() => {
