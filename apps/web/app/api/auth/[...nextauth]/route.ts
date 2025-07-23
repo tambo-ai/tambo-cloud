@@ -57,8 +57,8 @@ export const authOptions: NextAuthOptions = {
         session.user = user;
       } else if (token) {
         session.user = token;
-        session.accessToken = token.accessToken;
-        session.provider = token.provider;
+        // session.accessToken = token.accessToken;
+        // session.provider = token.provider;
       }
       // if (session.user) {
       //   (session.user as any).id = token.id;

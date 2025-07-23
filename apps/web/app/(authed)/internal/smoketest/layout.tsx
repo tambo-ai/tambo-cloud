@@ -1,6 +1,6 @@
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { Metadata } from "next";
-import { getServerSession } from "next-auth";
+import { getServerSession, User } from "next-auth";
 import { ClientLayout } from "./components/client-layout";
 
 export const metadata: Metadata = {
@@ -14,10 +14,10 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
+  const user = session?.user as User | undefined;
 
   // Get the OAuth access token from the session
-  const userToken = session?.user?.idToken;
-  console.log("smoketest session: ", userToken ? userToken : session);
+  const userToken = user?.idToken;
 
   return <ClientLayout userToken={userToken}>{children}</ClientLayout>;
 }
