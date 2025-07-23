@@ -12,6 +12,7 @@ const ProviderConfig = {
     clientId: env.GOOGLE_CLIENT_ID!,
     clientSecret: env.GOOGLE_CLIENT_SECRET!,
     idToken: true,
+    allowDangerousEmailAccountLinking: true,
     authorization: {
       params: {
         prompt: "consent", // force refresh_token on every login
@@ -23,6 +24,7 @@ const ProviderConfig = {
   github: {
     clientId: env.GITHUB_CLIENT_ID!,
     clientSecret: env.GITHUB_CLIENT_SECRET!,
+    allowDangerousEmailAccountLinking: true,
   },
 };
 
