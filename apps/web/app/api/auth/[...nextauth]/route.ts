@@ -97,6 +97,9 @@ async function refreshTokenIfNecessary(
   account: Account | null,
   token: JWT,
 ): Promise<JWT> {
+  if (!token.idToken) {
+    return token;
+  }
   const refreshToken = account?.refresh_token;
   const idToken = decodeJwt(token.idToken as string);
   const isExpired = idToken.exp && Date.now() < idToken.exp * 1000;
