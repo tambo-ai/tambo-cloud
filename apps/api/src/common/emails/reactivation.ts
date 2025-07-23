@@ -6,10 +6,6 @@ export const reactivationEmail: Email<ReactivationEmailVariables> = {
     // Handle empty firstname - use "there" as fallback
     const displayName = variables.firstName?.trim() || "there";
     const dayText = variables.daysSinceSignup === 1 ? "day" : "days";
-    const calendarLink = process.env.CALENDAR_URL;
-    if (!calendarLink) {
-      throw new Error("CALENDAR_URL is not configured");
-    }
 
     return `<!DOCTYPE html>
 <html>
@@ -31,7 +27,7 @@ Sometimes getting started can feel overwhelming, so I'd be happy to:
 • Answer any questions you might have
 • Jump on a quick 15-minute onboarding call
 
-Just reply to this email or <a href="${calendarLink}" style="color: #0066cc; text-decoration: underline;">book a time that works for you</a>.
+Just reply to this email or <a href="${process.env.CALENDAR_URL}" style="color: #0066cc; text-decoration: underline;">book a time that works for you</a>.
 
 No pressure at all - I know how busy things get. But if you're still interested in using tambo, I'm here to make sure you have a great experience.
 
