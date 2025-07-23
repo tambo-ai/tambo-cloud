@@ -32,9 +32,9 @@ function getDb(databaseUrl: string): HydraDatabase {
 
     globalPool = pool;
   }
-  console.log(
-    `Database status: ${globalPool.totalCount} connections (${globalPool.idleCount} idle)`,
-  );
+  // console.log(
+  //   `Database status: ${globalPool.totalCount} connections (${globalPool.idleCount} idle)`,
+  // );
   const db = drizzle(globalPool, { schema });
 
   return db;
