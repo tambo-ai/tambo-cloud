@@ -45,7 +45,16 @@ async function getOidcConfig(issuer: string): Promise<OidcProviderConfig> {
   return config;
 }
 
-// Generic refresh helper:
+/**
+ * Refresh any OIDC token by using OIDC discovery to get the refresh endpoint
+ * and then using the refresh token to get a new access token
+ *
+ * @param token - The token to refresh
+ * @param refreshToken - The refresh token to use
+ * @param client_id - The client ID to use
+ * @param client_secret - The client secret to use
+ * @returns The refreshed token
+ */
 export async function refreshOidcToken(
   token: JWTPayload,
   refreshToken: string,
