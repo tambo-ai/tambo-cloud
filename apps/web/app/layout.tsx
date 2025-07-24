@@ -19,7 +19,9 @@ import { TRPCReactProvider } from "@/trpc/react";
 import { Analytics } from "@vercel/analytics/react";
 import { RootProvider } from "fumadocs-ui/provider";
 import type { Metadata, Viewport } from "next";
+import { getServerSession } from "next-auth";
 import { Suspense } from "react";
+import { authOptions } from "./api/auth/[...nextauth]/route";
 import "./globals.css";
 import { PHProvider, PostHogPageview } from "./providers";
 
@@ -48,7 +50,7 @@ export const viewport: Viewport = {
   themeColor: [{ media: "(prefers-color-scheme: light)", color: "white" }],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -56,6 +58,7 @@ export default function RootLayout({
   // Generate schema for the website and organization
   const websiteSchema = generateWebsiteSchema();
   const organizationSchema = generateOrganizationSchema();
+  const session = await getServerSession(authOptions);
 
   return (
     <html
@@ -88,7 +91,7 @@ export default function RootLayout({
                 enableSystem={false}
                 forcedTheme="light"
               >
-                <NextAuthProvider>
+                <NextAuthProvider session={session}>
                   <RootProvider search={{ enabled: true }}>
                     {children}
                   </RootProvider>
