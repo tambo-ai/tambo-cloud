@@ -34,15 +34,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  jwt: {
-    // encode: async ({ secret, token }) => {
-    //   console.log("AUTH ADAPTER: jwt encode with", secret, token);
-    //   return token;
-    // },
-    // decode: async ({ secret, token }) => {
-    //   console.log("AUTH ADAPTER: jwt decode with", secret, token);
-    //   return token;
-  },
+
   callbacks: {
     async jwt({ token, account, user }) {
       console.log("AUTH ROUTE: jwt callback with", token, account, user);
@@ -66,15 +58,7 @@ export const authOptions: NextAuthOptions = {
         session.user = user;
       } else if (token) {
         session.user = token;
-        // session.accessToken = token.accessToken;
-        // session.provider = token.provider;
       }
-      // if (session.user) {
-      //   (session.user as any).id = token.id;
-      //   // Include access token in session
-      //   (session as any).accessToken = token.accessToken;
-      //   (session as any).provider = token.provider;
-      // }
       return session;
     },
   },
