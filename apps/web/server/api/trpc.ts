@@ -16,7 +16,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { env } from "@/lib/env";
 import { getDb, HydraDb } from "@tambo-ai-cloud/db";
 import { sql } from "drizzle-orm";
-import { getServerSession } from "next-auth";
+import { getServerSession, User } from "next-auth";
 
 export type Context = {
   db: HydraDb;
@@ -51,7 +51,7 @@ export const createTRPCContext = async (opts: {
   // Map NextAuth session to the expected user format
   const user = session?.user
     ? {
-        id: (session.user as any).id,
+        id: (session.user as User).id,
         email: session.user.email,
         name: session.user.name,
         image: session.user.image,
