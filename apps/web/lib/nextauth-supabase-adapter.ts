@@ -91,7 +91,7 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async getUserByEmail(email) {
-      console.log("AUTH: Getting user by email", email);
+      // console.log("AUTH: Getting user by email", email);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows: users } = await client.query(
@@ -114,17 +114,17 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async getUserByAccount({ provider, providerAccountId }) {
-      console.log("AUTH: Getting user by account", provider, providerAccountId);
+      // console.log("AUTH: Getting user by account", provider, providerAccountId);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows: identity } = await client.query(
           `SELECT * FROM auth.identities WHERE provider = $1 AND provider_id = $2`,
           [provider, providerAccountId],
         );
-        console.log("AUTH: identity: ", identity);
+        // console.log("AUTH: identity: ", identity);
 
         if (!identity.length) {
-          console.log("AUTH: No identity found", identity);
+          // console.log("AUTH: No identity found", identity);
           return null;
         }
 
@@ -148,7 +148,7 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async updateUser(data: UpdateUserData) {
-      console.log("AUTH: Updating user", data);
+      // console.log("AUTH: Updating user", data);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
@@ -176,7 +176,7 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async deleteUser(userId) {
-      console.log("AUTH: Deleting user", userId);
+      // console.log("AUTH: Deleting user", userId);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
@@ -191,7 +191,7 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async linkAccount(data: LinkAccountData) {
-      console.log("AUTH: Linking account", data);
+      // console.log("AUTH: Linking account", data);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
@@ -223,7 +223,7 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async unlinkAccount({ provider, providerAccountId }: UnlinkAccountData) {
-      console.log("AUTH: Unlinking account", provider, providerAccountId);
+      // console.log("AUTH: Unlinking account", provider, providerAccountId);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
@@ -238,7 +238,7 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async createSession(data) {
-      console.log("AUTH: Creating session", data);
+      // console.log("AUTH: Creating session", data);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
@@ -265,7 +265,7 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async getSessionAndUser(sessionToken) {
-      console.log("AUTH: Getting session and user", sessionToken);
+      // console.log("AUTH: Getting session and user", sessionToken);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows: sessions } = await client.query(
@@ -304,7 +304,7 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async updateSession(data) {
-      console.log("AUTH: Updating session", data);
+      // console.log("AUTH: Updating session", data);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
@@ -326,7 +326,7 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async deleteSession(sessionToken) {
-      console.log("AUTH: Deleting session", sessionToken);
+      // console.log("AUTH: Deleting session", sessionToken);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const { rows } = await client.query(
@@ -341,14 +341,14 @@ export function SupabaseAdapter(): Adapter {
     },
 
     async createVerificationToken(data) {
-      console.log("AUTH: Creating verification token", data);
+      // console.log("AUTH: Creating verification token", data);
       // This would typically use the one_time_tokens table
       // For simplicity, we'll skip this for now
       return data;
     },
 
     async useVerificationToken({ identifier, token }) {
-      console.log("AUTH: Using verification token", identifier, token);
+      // console.log("AUTH: Using verification token", identifier, token);
       // This would typically use the one_time_tokens table
       // For simplicity, we'll skip this for now
       return null;

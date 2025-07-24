@@ -37,7 +37,7 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, account, user }) {
-      console.log("AUTH ROUTE: jwt callback with", token, account, user);
+      // console.log("AUTH ROUTE: jwt callback with", token, account, user);
       // Persist the OAuth access_token to the token right after signin
       if (account) {
         token.accessToken = account.access_token;
@@ -53,7 +53,7 @@ export const authOptions: NextAuthOptions = {
       return refreshedToken;
     },
     async session({ session, token, user }) {
-      console.log("AUTH ROUTE: session callback with", session, token, user);
+      // console.log("AUTH ROUTE: session callback with", session, token, user);
       if (user) {
         session.user = user;
       } else if (token) {
