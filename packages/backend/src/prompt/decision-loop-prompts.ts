@@ -34,7 +34,11 @@ then call the 'show_component_Weather' tool to pass the weather information to t
 {custom_instructions}`,
     {
       additional_context: additionalContext
-        ? `Please use this context to help you answer the user's question:
+        ? `IMPORTANT: The following context is provided to help you understand the user's environment and state. 
+Use this information to provide more relevant and contextual responses, but DO NOT directly mention or 
+reference this context in your responses unless specifically asked about it by the user.
+
+Context:
 ${JSON.stringify(additionalContext, null, 2)}
 `
         : "",
