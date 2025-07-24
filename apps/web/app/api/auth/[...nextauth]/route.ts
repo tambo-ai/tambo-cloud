@@ -86,13 +86,40 @@ async function refreshTokenIfNecessary(
   }
   const refreshToken = account?.refresh_token;
   const idToken = decodeJwt(token.idToken as string);
-  const isExpired = idToken.exp && Date.now() < idToken.exp * 1000;
+
+  // Extract expiration and issued-at times (in seconds)
+  const exp = idToken.exp;
+  const iat = idToken.iat;
+  const now = Date.now();
+
+  // If missing exp or iat, skip refresh logic
+  if (!exp || !iat) {
+    return token;
+  }
+
+  // Calculate time windows (all in milliseconds)
+  const expMs = exp * 1000;
+  const iatMs = iat * 1000;
+  const totalLifetime = expMs - iatMs;
+  const timeLeft = expMs - now;
+  const tenPercentWindow = 0.1 * totalLifetime;
+  const oneMinute = 60_000;
+  const refreshThreshold = Math.min(tenPercentWindow, oneMinute);
+
+  // Refresh if expiring in next 30 seconds, or within threshold
+  const shouldRefresh =
+    timeLeft < 30_000 || // less than 30 seconds left
+    timeLeft < refreshThreshold; // within 10% of window or 1 min, whichever is smaller
+
   const provider =
     ProviderConfig[token.provider as keyof typeof ProviderConfig];
-  if (!isExpired || !refreshToken || typeof token.idToken !== "string") {
+
+  if (!shouldRefresh || !refreshToken || typeof token.idToken !== "string") {
     // Just leave the token as is - this will likely throw an error somewhere else
     return token;
   }
+
+  // Proactively refresh the token
   const refreshedToken = await refreshOidcToken(
     idToken,
     refreshToken,

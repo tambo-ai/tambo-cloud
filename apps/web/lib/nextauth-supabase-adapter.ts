@@ -41,14 +41,15 @@ export function SupabaseAdapter(): Adapter {
       console.log("Creating user", data);
       const client = await getDbClient(env.DATABASE_URL);
       try {
+        const now = new Date().toISOString();
         const { rows } = await client.query(
           `INSERT INTO auth.users (id, email, email_confirmed_at, created_at, updated_at, raw_user_meta_data) VALUES ($1, $2, $3, $4, $5, $6) returning *`,
           [
             data.id || crypto.randomUUID(),
             data.email,
-            new Date().toISOString(),
-            new Date().toISOString(),
-            new Date().toISOString(),
+            now,
+            now,
+            now,
             data.name ? { name: data.name } : {},
           ],
         );
