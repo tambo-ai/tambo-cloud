@@ -1,4 +1,4 @@
-import { getDbClient } from "@tambo-ai-cloud/db";
+import { withDbClient } from "@tambo-ai-cloud/db";
 import { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters";
 import { env } from "./env";
 
@@ -38,8 +38,7 @@ interface UnlinkAccountData {
 export function SupabaseAdapter(): Adapter {
   return {
     async createUser(data: CreateUserData) {
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const now = new Date().toISOString();
         const { rows } = await client.query(
           `INSERT INTO auth.users (id, email, email_confirmed_at, created_at, updated_at, raw_user_meta_data) VALUES ($1, $2, $3, $4, $5, $6) returning *`,
@@ -62,14 +61,11 @@ export function SupabaseAdapter(): Adapter {
           name: user.raw_user_meta_data?.name,
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async getUser(id) {
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows: users } = await client.query(
           `SELECT * FROM auth.users WHERE id = $1`,
           [id],
@@ -84,15 +80,12 @@ export function SupabaseAdapter(): Adapter {
           name: user.raw_user_meta_data?.name,
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async getUserByEmail(email) {
       // console.log("AUTH: Getting user by email", email);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows: users } = await client.query(
           `SELECT * FROM auth.users WHERE email = $1`,
           [email],
@@ -107,15 +100,12 @@ export function SupabaseAdapter(): Adapter {
           name: user.raw_user_meta_data?.name,
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async getUserByAccount({ provider, providerAccountId }) {
       // console.log("AUTH: Getting user by account", provider, providerAccountId);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows: identity } = await client.query(
           `SELECT * FROM auth.identities WHERE provider = $1 AND provider_id = $2`,
           [provider, providerAccountId],
@@ -141,15 +131,12 @@ export function SupabaseAdapter(): Adapter {
           name: user.raw_user_meta_data?.name,
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async updateUser(data: UpdateUserData) {
       // console.log("AUTH: Updating user", data);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows } = await client.query(
           `UPDATE auth.users SET email = $1, raw_user_meta_data = $2, updated_at = $3 WHERE id = $4 returning *`,
           [
@@ -169,30 +156,24 @@ export function SupabaseAdapter(): Adapter {
           name: user.raw_user_meta_data?.name,
           image: user.raw_user_meta_data?.avatar_url,
         } as AdapterUser;
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async deleteUser(userId) {
       // console.log("AUTH: Deleting user", userId);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows } = await client.query(
           `DELETE FROM auth.users WHERE id = $1 returning *`,
           [userId],
         );
 
         if (!rows.length) throw new Error("Failed to delete user");
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async linkAccount(data: LinkAccountData) {
       // console.log("AUTH: Linking account", data);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows } = await client.query(
           `INSERT INTO auth.identities (id, user_id, provider, provider_id, identity_data, created_at, updated_at) 
           VALUES ($1, $2, $3, $4, $5, $6, $7) returning *`,
@@ -216,30 +197,24 @@ export function SupabaseAdapter(): Adapter {
         );
 
         if (!rows.length) throw new Error("Failed to link account");
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async unlinkAccount({ provider, providerAccountId }: UnlinkAccountData) {
       // console.log("AUTH: Unlinking account", provider, providerAccountId);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows } = await client.query(
           `DELETE FROM auth.identities WHERE provider = $1 AND provider_id = $2 returning *`,
           [provider, providerAccountId],
         );
 
         if (!rows.length) throw new Error("Failed to unlink account");
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async createSession(data) {
       // console.log("AUTH: Creating session", data);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows } = await client.query(
           `INSERT INTO auth.sessions (id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4) returning *`,
           [
@@ -258,15 +233,12 @@ export function SupabaseAdapter(): Adapter {
           userId: session.user_id,
           expires: data.expires,
         } as AdapterSession;
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async getSessionAndUser(sessionToken) {
       // console.log("AUTH: Getting session and user", sessionToken);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows: sessions } = await client.query(
           `SELECT * FROM auth.sessions WHERE id = $1`,
           [sessionToken],
@@ -297,15 +269,12 @@ export function SupabaseAdapter(): Adapter {
             image: user.raw_user_meta_data?.avatar_url,
           } as AdapterUser,
         };
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async updateSession(data) {
       // console.log("AUTH: Updating session", data);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows } = await client.query(
           `UPDATE auth.sessions SET updated_at = $1, not_after = $2 WHERE id = $3 returning *`,
           [new Date().toISOString(), data.expires, data.sessionToken],
@@ -319,24 +288,19 @@ export function SupabaseAdapter(): Adapter {
           userId: session.user_id,
           expires: data.expires,
         } as AdapterSession;
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async deleteSession(sessionToken) {
       // console.log("AUTH: Deleting session", sessionToken);
-      const client = await getDbClient(env.DATABASE_URL);
-      try {
+      return await withDbClient(env.DATABASE_URL, async (client) => {
         const { rows } = await client.query(
           `DELETE FROM auth.sessions WHERE id = $1 returning *`,
           [sessionToken],
         );
 
         if (!rows.length) throw new Error("Failed to delete session");
-      } finally {
-        client.release();
-      }
+      });
     },
 
     async createVerificationToken(data) {

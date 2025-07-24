@@ -78,4 +78,4 @@ async function closeDb() {
 
 export * from "./oauth/OAuthLocalProvider";
 export * from "./types";
-export { closeDb, getDb, getDbClient, operations, schema }; // `withDbClient` exported above
+export { closeDb, getDb, operations, schema }; // `withDbClient` exported above
