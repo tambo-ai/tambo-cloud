@@ -13,8 +13,10 @@ export class AdvanceThreadDto {
   availableComponents?: AvailableComponentDto[];
   clientTools?: ComponentContextToolMetadataDto[];
   @ApiProperty({
+    type: "object",
+    additionalProperties: true,
     description:
-      "Additional context to provide to the AI for generating responses",
+      "Additional context to provide to the AI beyond the user query, such as the info about the current page the user is visiting.",
     example: {
       client: {
         localTime: "7/23/2025, 9:33:42 PM",
@@ -24,7 +26,6 @@ export class AdvanceThreadDto {
         instructions: "Special instructions here",
       },
     },
-    required: false,
   })
   additionalContext?: Record<string, any>;
   forceToolChoice?: string;
