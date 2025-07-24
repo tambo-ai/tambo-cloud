@@ -18,7 +18,7 @@ export class AdvanceThreadDto {
     description:
       "Additional context to provide to the AI beyond the user query, such as the info about the current page the user is visiting.",
     example: {
-      client: {
+      system: {
         localTime: "7/23/2025, 9:33:42 PM",
         timezone: "America/New_York",
       },
