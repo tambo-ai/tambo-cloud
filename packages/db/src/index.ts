@@ -35,6 +35,31 @@ async function getDbClient(databaseUrl: string): Promise<PoolClient> {
   return client;
 }
 
+/**
+ * Convenience helper that ensures a `PoolClient` is always released back to the pool.
+ *
+ * Usage:
+ * ```ts
+ * const result = await withDbClient(env.DATABASE_URL, async (client) => {
+ *   const { rows } = await client.query("select now()");
+ *   return rows[0];
+ * });
+ * ```
+ *
+ * The client is automatically released whether the callback resolves or throws.
+ */
+export async function withDbClient<T>(
+  databaseUrl: string,
+  fn: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const client = await getDbClient(databaseUrl);
+  try {
+    return await fn(client);
+  } finally {
+    client.release();
+  }
+}
+
 function getDb(databaseUrl: string): HydraDatabase {
   const pool = getPool(databaseUrl);
   // console.log(
@@ -53,4 +78,4 @@ async function closeDb() {
 
 export * from "./oauth/OAuthLocalProvider";
 export * from "./types";
-export { closeDb, getDb, getDbClient, operations, schema };
+export { closeDb, getDb, getDbClient, operations, schema }; // `withDbClient` exported above
