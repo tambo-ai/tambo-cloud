@@ -38,7 +38,6 @@ interface UnlinkAccountData {
 export function SupabaseAdapter(): Adapter {
   return {
     async createUser(data: CreateUserData) {
-      console.log("Creating user", data);
       const client = await getDbClient(env.DATABASE_URL);
       try {
         const now = new Date().toISOString();

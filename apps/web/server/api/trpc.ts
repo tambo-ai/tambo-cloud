@@ -47,7 +47,6 @@ export const createTRPCContext = async (opts: {
 }): Promise<Context> => {
   const session = await getServerSession(authOptions);
   const db = getDb(env.DATABASE_URL);
-  console.log("TRPC: got session", session);
 
   // Map NextAuth session to the expected user format
   const user = session?.user
@@ -151,7 +150,6 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
         }
       : {};
 
-    console.log("using claims ", jwtClaims);
     try {
       await tx.execute(sql`
         -- auth.jwt()
