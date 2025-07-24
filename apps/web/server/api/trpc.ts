@@ -8,6 +8,7 @@
  */
 
 import { initTRPC, TRPCError } from "@trpc/server";
+import { type JWTPayload } from "jose";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
@@ -135,20 +136,9 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
   return await ctx.db.transaction(async (tx) => {
     const user = ctx.user;
 
-    /**
-     * Whitelisted roles that a request is allowed to assume when running inside
-     * the transaction.  If the incoming JWT’s `role` claim is not in this list
-     * (or is absent), we fall back to the least-privileged `anon` role.
-     */
-    const allowedRoles = new Set<string>([
-      "postgres",
-      "anon",
-      "authenticated",
-      "service_role",
-    ]);
-
     // Create JWT-like claims structure for the database
-    const jwtClaims = user
+    const role = user ? "authenticated" : "anon";
+    const jwtClaims: JWTPayload = user
       ? {
           sub: user.id,
           iss: "nextauth", // NextAuth as issuer
@@ -157,12 +147,9 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
           exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
           email: user.email,
           name: user.name,
-          role: "authenticated",
+          role,
         }
       : {};
-
-    const requestedRole = jwtClaims.role ?? "anon";
-    const safeRole = allowedRoles.has(requestedRole) ? requestedRole : "anon";
 
     console.log("using claims ", jwtClaims);
     try {
@@ -176,7 +163,7 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
           jwtClaims.sub ?? "",
         )}', TRUE);												
         -- set local role
-        set local role ${sql.raw(safeRole)};
+        set local role ${sql.raw(role)};
       `);
       return await next({ ctx: { ...ctx, db: tx } });
     } catch (error) {
