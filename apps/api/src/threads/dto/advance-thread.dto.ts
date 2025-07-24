@@ -12,7 +12,21 @@ export class AdvanceThreadDto {
   contextKey?: string;
   availableComponents?: AvailableComponentDto[];
   clientTools?: ComponentContextToolMetadataDto[];
-  additionalContext?: string;
+  @ApiProperty({
+    description:
+      "Additional context to provide to the AI for generating responses",
+    example: {
+      client: {
+        localTime: "7/23/2025, 9:33:42 PM",
+        timezone: "America/New_York",
+      },
+      custom: {
+        instructions: "Special instructions here",
+      },
+    },
+    required: false,
+  })
+  additionalContext?: object;
   forceToolChoice?: string;
   @ApiProperty({
     description: "Tool call counts",
