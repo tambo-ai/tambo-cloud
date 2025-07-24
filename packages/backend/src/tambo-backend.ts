@@ -23,7 +23,7 @@ interface HydraBackendOptions {
 interface RunDecisionLoopParams {
   messages: ThreadMessage[];
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[];
-  additionalContext?: object | undefined;
+  additionalContext?: Record<string, any> | undefined;
   customInstructions: string | undefined;
   forceToolChoice?: string;
 }

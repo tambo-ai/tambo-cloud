@@ -2,7 +2,7 @@ import { createPromptTemplate } from "@tambo-ai-cloud/core";
 
 export function generateDecisionLoopPrompt(
   customInstructions: string | undefined,
-  additionalContext: object | undefined,
+  additionalContext: Record<string, any> | undefined,
 ) {
   return createPromptTemplate(
     `

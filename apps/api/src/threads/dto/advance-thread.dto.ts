@@ -26,7 +26,7 @@ export class AdvanceThreadDto {
     },
     required: false,
   })
-  additionalContext?: object;
+  additionalContext?: Record<string, any>;
   forceToolChoice?: string;
   @ApiProperty({
     description: "Tool call counts",

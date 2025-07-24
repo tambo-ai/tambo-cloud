@@ -95,7 +95,7 @@ export interface ThreadMessage {
   component?: LegacyComponentDecision;
   componentState?: Record<string, unknown>;
   /** Additional context for the message */
-  additionalContext?: object;
+  additionalContext?: Record<string, any>;
 
   /** Type of action performed */
   actionType?: ActionType;
