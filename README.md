@@ -113,6 +113,11 @@ If you prefer to set things up manually, follow these steps:
    ./scripts/init-database.sh
    ```
 
+   **Note**: The Docker stack runs on different ports to avoid conflicts with local development:
+   - Docker Web: http://localhost:3210 (vs local:3000)
+   - Docker API: http://localhost:3211 (vs local:3001)
+   - Docker PostgreSQL: localhost:5433 (vs local:5432)
+
 4. **Start Development Server**:
    ```bash
    npm run dev

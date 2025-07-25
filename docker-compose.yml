@@ -24,7 +24,7 @@ services:
     volumes:
       - tambo_postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - tambo_network
     healthcheck:
@@ -45,10 +45,10 @@ services:
       dockerfile: apps/web/Dockerfile
     container_name: tambo_web
     ports:
-      - "3000:3000"
+      - "3210:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_TAMBO_API_URL=${NEXT_PUBLIC_TAMBO_API_URL:-http://localhost:3001}
+      - NEXT_PUBLIC_TAMBO_API_URL=${NEXT_PUBLIC_TAMBO_API_URL:-http://localhost:3211}
       - NEXT_PUBLIC_TAMBO_API_KEY=${NEXT_PUBLIC_TAMBO_API_KEY}
       - NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
       - NEXT_PUBLIC_POSTHOG_KEY=${NEXT_PUBLIC_POSTHOG_KEY}
@@ -80,7 +80,7 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: tambo_api
     ports:
-      - "3001:3000"
+      - "3211:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000

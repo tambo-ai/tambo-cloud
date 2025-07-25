@@ -56,9 +56,9 @@ docker compose --env-file docker.env ps
 
 echo -e "${GREEN}🎉 Tambo Docker Stack started successfully!${NC}"
 echo -e "${BLUE}📋 Available services:${NC}"
-echo -e "  • Tambo Web: http://localhost:3000"
-echo -e "  • Tambo API: http://localhost:3001"
-echo -e "  • PostgreSQL Database: localhost:5432"
+echo -e "  • Tambo Web: http://localhost:3210"
+echo -e "  • Tambo API: http://localhost:3211"
+echo -e "  • PostgreSQL Database: localhost:5433"
 echo -e ""
 echo -e "${YELLOW}💡 To stop the stack: ./scripts/tambo-stop.sh${NC}"
 echo -e "${YELLOW}💡 To view logs: ./scripts/tambo-logs.sh${NC}" 

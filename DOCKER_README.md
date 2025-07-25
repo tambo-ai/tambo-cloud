@@ -36,17 +36,29 @@ This document describes how to run Tambo using Docker with a PostgreSQL database
    ```
 
 5. **Access your applications:**
-   - Tambo Web: http://localhost:3000
-   - Tambo API: http://localhost:3001
-   - PostgreSQL Database: localhost:5432
+   - Tambo Web: http://localhost:3210
+   - Tambo API: http://localhost:3211
+   - PostgreSQL Database: localhost:5433
 
 ## Services
 
 The Docker stack includes the following services:
 
-- **postgres**: PostgreSQL 15 database
-- **web**: Tambo Next.js web application
-- **api**: Tambo NestJS API server
+- **postgres**: PostgreSQL 15 database (port 5433)
+- **web**: Tambo Next.js web application (port 3210)
+- **api**: Tambo NestJS API server (port 3211)
+
+### Port Configuration
+
+The Docker stack uses different ports than local development to avoid conflicts:
+
+| Service    | Docker Port | Local Development Port |
+| ---------- | ----------- | ---------------------- |
+| Web App    | 3210        | 3000                   |
+| API        | 3211        | 3001                   |
+| PostgreSQL | 5433        | 5432                   |
+
+This allows you to run both the Docker stack and local development simultaneously.
 
 ## Environment Variables
 
@@ -108,7 +120,7 @@ Sets up the Docker environment for first-time use.
 docker compose --env-file docker.env exec postgres psql -U postgres -d tambo
 
 # Or connect from host
-psql -h localhost -p 5432 -U postgres -d tambo
+psql -h localhost -p 5433 -U postgres -d tambo
 ```
 
 ### Running Migrations
