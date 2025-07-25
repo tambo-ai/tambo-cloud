@@ -8,8 +8,36 @@ volumes:
   tambo_node_modules:
   tambo_api_dist:
   tambo_web_next:
+  tambo_postgres_data:
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: tambo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tambo}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - tambo_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - tambo_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-tambo}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   # Web Service (Next.js)
   web:
     build:
@@ -20,8 +48,6 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL:-http://localhost:8000}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - NEXT_PUBLIC_TAMBO_API_URL=${NEXT_PUBLIC_TAMBO_API_URL:-http://localhost:3001}
       - NEXT_PUBLIC_TAMBO_API_KEY=${NEXT_PUBLIC_TAMBO_API_KEY}
       - NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
@@ -36,7 +62,10 @@ services:
       - ALLOW_LOCAL_MCP_SERVERS=${ALLOW_LOCAL_MCP_SERVERS}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
     depends_on:
-      - api
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
     networks:
       - tambo_network
     restart: unless-stopped
@@ -74,6 +103,9 @@ services:
       - WEATHER_API_KEY=${WEATHER_API_KEY}
       - COMPOSIO_API_KEY=${COMPOSIO_API_KEY}
       - ALLOW_LOCAL_MCP_SERVERS=${ALLOW_LOCAL_MCP_SERVERS}
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - tambo_network
     restart: unless-stopped

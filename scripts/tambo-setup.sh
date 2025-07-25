@@ -30,7 +30,7 @@ if ! command -v docker compose &> /dev/null; then
     exit 1
 fi
 
-# Check if jq is installed (needed for Supabase script)
+# Check if jq is installed (needed for health checks)
 if ! command -v jq &> /dev/null; then
     echo -e "${YELLOW}⚠️  jq is not installed. Installing jq...${NC}"
     if command -v apt-get &> /dev/null; then
@@ -62,20 +62,10 @@ else
     echo -e "${BLUE}ℹ️  docker.env already exists${NC}"
 fi
 
-# Download Supabase docker files
-echo -e "${YELLOW}📦 Downloading Supabase Docker files...${NC}"
-if [ -f "scripts/update-supabase.sh" ]; then
-    chmod +x scripts/update-supabase.sh
-    ./scripts/update-supabase.sh
-else
-    echo -e "${RED}❌ scripts/update-supabase.sh not found!${NC}"
-    exit 1
-fi
-
 # Make scripts executable
 echo -e "${YELLOW}🔧 Making scripts executable...${NC}"
 chmod +x scripts/tambo-*.sh
-chmod +x scripts/update-supabase.sh
+chmod +x scripts/init-database.sh
 
 echo -e "${GREEN}✅ Setup completed successfully!${NC}"
 echo -e ""
@@ -83,14 +73,17 @@ echo -e "${BLUE}📋 Next steps:${NC}"
 echo -e "1. ${YELLOW}Edit docker.env${NC} with your actual values:"
 echo -e "   - Update passwords and secrets"
 echo -e "   - Add your API keys (OpenAI, etc.)"
-echo -e "   - Configure SMTP settings (optional)"
+echo -e "   - Configure other settings as needed"
 echo -e ""
 echo -e "2. ${YELLOW}Start the stack:${NC}"
 echo -e "   ./scripts/tambo-start.sh"
 echo -e ""
-echo -e "3. ${YELLOW}Access your applications:${NC}"
+echo -e "3. ${YELLOW}Initialize the database:${NC}"
+echo -e "   ./scripts/init-database.sh"
+echo -e ""
+echo -e "4. ${YELLOW}Access your applications:${NC}"
 echo -e "   - Tambo Web: http://localhost:3000"
 echo -e "   - Tambo API: http://localhost:3001"
-echo -e "   - Supabase Studio: http://localhost:8000"
+echo -e "   - PostgreSQL Database: localhost:5432"
 echo -e ""
 echo -e "${YELLOW}💡 For help, run: ./scripts/tambo-logs.sh --help${NC}" 
