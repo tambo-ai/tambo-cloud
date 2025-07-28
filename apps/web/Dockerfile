@@ -21,20 +21,9 @@ COPY --chown=nextjs:nodejs . .
 # Install all dependencies
 RUN npm ci
 
-ARG NEXTAUTH_SECRET
-ARG NEXTAUTH_URL
-ARG DATABASE_URL
-ARG API_KEY_SECRET
-ARG PROVIDER_KEY_SECRET
-ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-ENV NEXTAUTH_URL=${NEXTAUTH_URL}
-ENV DATABASE_URL=${DATABASE_URL}
-ENV API_KEY_SECRET=${API_KEY_SECRET}
-ENV PROVIDER_KEY_SECRET=${PROVIDER_KEY_SECRET}
-
 # Build the application
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN npx turbo build --filter=tambo-ai-landing-page
+RUN SKIP_ENV_VALIDATION=true npx turbo build --filter=tambo-ai-landing-page
 
 # Set production environment
 ENV NODE_ENV=production

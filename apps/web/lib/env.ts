@@ -90,4 +90,5 @@ export const env = createEnv({
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   },
+  skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
 });
