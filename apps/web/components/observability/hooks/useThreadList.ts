@@ -57,6 +57,7 @@ export interface UseThreadListReturn {
   setAlertState: (state: AlertState) => void;
   handleSort: (field: SortField) => void;
   handleSelectAll: (checked: boolean) => void;
+  handleSelectAllOnPage: (checked: boolean) => void;
   handleSelectThread: (threadId: string, checked: boolean) => void;
   handlePageChange: (page: number) => void;
   handleDeleteClick: () => void;
@@ -196,6 +197,17 @@ export function useThreadList({
       }
     },
     [filteredThreads],
+  );
+
+  const handleSelectAllOnPage = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        setSelectedThreads(new Set(currentThreads.map((t) => t.id)));
+      } else {
+        setSelectedThreads(new Set());
+      }
+    },
+    [currentThreads],
   );
 
   // Optimize callbacks with stable references
@@ -402,6 +414,7 @@ export function useThreadList({
     setAlertState,
     handleSort,
     handleSelectAll,
+    handleSelectAllOnPage,
     handleSelectThread,
     handlePageChange,
     handleDeleteClick,

@@ -325,21 +325,74 @@ export async function getThreadsByProjectWithCounts(
   projectId: string,
   {
     contextKey,
-    offset = 0,
-    limit = 10,
-  }: { contextKey?: string; offset?: number; limit?: number } = {},
+    searchQuery,
+    sortField = "created",
+    sortDirection = "desc",
+  }: {
+    contextKey?: string;
+    searchQuery?: string;
+    sortField?:
+      | "created"
+      | "updated"
+      | "threadId"
+      | "threadName"
+      | "contextKey";
+    sortDirection?: "asc" | "desc";
+  } = {},
 ) {
+  // Build where conditions
+  const whereConditions = [eq(schema.threads.projectId, projectId)];
+
+  if (contextKey) {
+    whereConditions.push(eq(schema.threads.contextKey, contextKey));
+  }
+
+  // Add search conditions
+  if (searchQuery && searchQuery.trim()) {
+    const query = `%${searchQuery.trim().toLowerCase()}%`;
+    const searchConditions = [
+      sql`LOWER(${schema.threads.id}) LIKE ${query}`,
+      sql`LOWER(${schema.threads.name}) LIKE ${query}`,
+      sql`LOWER(${schema.threads.contextKey}) LIKE ${query}`,
+    ].filter(Boolean);
+
+    if (searchConditions.length > 0) {
+      const orCondition = or(...searchConditions);
+      if (orCondition) {
+        whereConditions.push(orCondition);
+      }
+    }
+  }
+
+  // Build order by
+  const getOrderBy = () => {
+    let field;
+    switch (sortField) {
+      case "created":
+        field = schema.threads.createdAt;
+        break;
+      case "updated":
+        field = schema.threads.updatedAt;
+        break;
+      case "threadId":
+        field = schema.threads.id;
+        break;
+      case "threadName":
+        field = schema.threads.name;
+        break;
+      case "contextKey":
+        field = schema.threads.contextKey;
+        break;
+      default:
+        field = schema.threads.createdAt;
+    }
+    return sortDirection === "asc" ? field : desc(field);
+  };
+
   // Get threads without messages
   const threads = await db.query.threads.findMany({
-    where: contextKey
-      ? and(
-          eq(schema.threads.projectId, projectId),
-          eq(schema.threads.contextKey, contextKey),
-        )
-      : eq(schema.threads.projectId, projectId),
-    orderBy: (threads, { desc }) => [desc(threads.createdAt)],
-    offset,
-    limit,
+    where: and(...whereConditions),
+    orderBy: [getOrderBy()],
   });
 
   if (threads.length === 0) {
@@ -387,4 +440,42 @@ export async function getThreadsByProjectWithCounts(
     toolCount: countsMap.get(thread.id)?.toolCount || 0,
     componentCount: countsMap.get(thread.id)?.componentCount || 0,
   }));
+}
+
+export async function countThreadsByProjectWithSearch(
+  db: HydraDb,
+  projectId: string,
+  {
+    contextKey,
+    searchQuery,
+  }: {
+    contextKey?: string;
+    searchQuery?: string;
+  } = {},
+) {
+  // Build where conditions
+  const whereConditions = [eq(schema.threads.projectId, projectId)];
+
+  if (contextKey) {
+    whereConditions.push(eq(schema.threads.contextKey, contextKey));
+  }
+
+  // Add search conditions
+  if (searchQuery && searchQuery.trim()) {
+    const query = `%${searchQuery.trim().toLowerCase()}%`;
+    const searchConditions = [
+      sql`LOWER(${schema.threads.id}) LIKE ${query}`,
+      sql`LOWER(${schema.threads.name}) LIKE ${query}`,
+      sql`LOWER(${schema.threads.contextKey}) LIKE ${query}`,
+    ].filter(Boolean);
+
+    if (searchConditions.length > 0) {
+      const orCondition = or(...searchConditions);
+      if (orCondition) {
+        whereConditions.push(orCondition);
+      }
+    }
+  }
+
+  return await db.$count(schema.threads, and(...whereConditions));
 }

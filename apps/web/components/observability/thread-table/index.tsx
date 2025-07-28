@@ -18,7 +18,12 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { memo, useCallback } from "react";
-import { Thread, useThreadList } from "../hooks/useThreadList";
+import {
+  SortDirection,
+  Thread,
+  useThreadList,
+  SortField,
+} from "../hooks/useThreadList";
 import { SORT_FIELDS, getSortDirectionLabel, getSortLabel } from "../utils";
 import { ThreadTableHeader } from "./thread-table-header";
 import { ThreadRow } from "./thread-table-row";
@@ -30,6 +35,21 @@ export interface ThreadTableProps {
   projectId: string;
   isLoading: boolean;
   compact?: boolean;
+
+  // Server-side pagination props
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
+
+  // Server-side search props
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+
+  // Server-side sort props
+  sortField: SortField;
+  sortDirection: SortDirection;
+  onSort: (field: string) => void;
 }
 
 export const ThreadTable = memo(
@@ -62,6 +82,7 @@ export const ThreadTable = memo(
       setAlertState,
       handleSort,
       handleSelectAll,
+      handleSelectAllOnPage,
       handleSelectThread,
       handlePageChange,
       handleDeleteClick,
@@ -235,7 +256,7 @@ export const ThreadTable = memo(
                   currentThreads.length > 0 &&
                   currentThreads.every((t) => selectedThreads.has(t.id))
                 }
-                onSelectAll={handleSelectAll}
+                onSelectAll={handleSelectAllOnPage}
                 hasCurrentThreads={currentThreads.length > 0}
                 compact={compact}
               />
