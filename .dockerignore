@@ -121,3 +121,7 @@ __tests__/
 .eslintrc*
 .prettierrc*
 jest.config.* 
+
+# Don't keep rebuilding when docker-compose.yml changes
+docker-compose.yml
+.turbo/
