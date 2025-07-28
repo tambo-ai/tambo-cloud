@@ -8,10 +8,20 @@ export const threadRouter = createTRPCRouter({
       z.object({
         projectId: z.string(),
         contextKey: z.string().optional(),
+        offset: z.number().min(0).default(0),
+        limit: z.number().min(1).max(100).default(10),
         includeMessages: z.boolean().optional().default(true),
         searchQuery: z.string().optional(),
         sortField: z
-          .enum(["created", "updated", "threadId", "threadName", "contextKey"])
+          .enum([
+            "created",
+            "updated",
+            "threadId",
+            "threadName",
+            "contextKey",
+            "messages",
+            "errors",
+          ])
           .optional()
           .default("created"),
         sortDirection: z.enum(["asc", "desc"]).optional().default("desc"),
@@ -27,12 +37,20 @@ export const threadRouter = createTRPCRouter({
 
       // Get both threads and total count
       const [threads, totalCount] = await Promise.all([
-        operations.getThreadsByProjectWithCounts(ctx.db, input.projectId, {
-          contextKey: input.contextKey,
-          searchQuery: input.searchQuery,
-          sortField: input.sortField,
-          sortDirection: input.sortDirection,
-        }),
+        operations.getThreadsByProjectWithCounts(
+          ctx.db,
+          input.projectId,
+          input.contextKey,
+          {
+            offset: input.offset,
+            limit: input.limit,
+          },
+          {
+            searchQuery: input.searchQuery,
+            sortField: input.sortField,
+            sortDirection: input.sortDirection,
+          },
+        ),
         operations.countThreadsByProjectWithSearch(ctx.db, input.projectId, {
           contextKey: input.contextKey,
           searchQuery: input.searchQuery,

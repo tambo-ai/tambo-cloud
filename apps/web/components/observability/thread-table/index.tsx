@@ -20,9 +20,9 @@ import {
 import { memo, useCallback } from "react";
 import {
   SortDirection,
+  SortField,
   Thread,
   useThreadList,
-  SortField,
 } from "../hooks/useThreadList";
 import { SORT_FIELDS, getSortDirectionLabel, getSortLabel } from "../utils";
 import { ThreadTableHeader } from "./thread-table-header";
@@ -60,31 +60,27 @@ export const ThreadTable = memo(
     projectId,
     isLoading,
     compact = false,
+    // Server-side props
+    currentPage,
+    totalPages,
+    totalCount,
+    onPageChange,
+    searchQuery,
+    onSearchChange,
+    sortField,
+    sortDirection,
+    onSort,
   }: ThreadTableProps) => {
     const {
       // State
-      sortField,
-      sortDirection,
-      searchQuery,
       selectedThreads,
       alertState,
 
-      // Computed values
-      currentThreads,
-      totalThreads,
-      totalPages,
-      startIndex,
-      endIndex,
-      currentPage,
-
       // Actions
-      setSearchQuery,
       setAlertState,
-      handleSort,
       handleSelectAll,
       handleSelectAllOnPage,
       handleSelectThread,
-      handlePageChange,
       handleDeleteClick,
       handleDeleteConfirm,
       areAllCurrentThreadsSelected,
@@ -124,6 +120,11 @@ export const ThreadTable = memo(
         )
       : SORT_FIELDS;
 
+    // Use the server-side pagination values directly
+    const startIndex = (currentPage - 1) * threads.length;
+    const endIndex = startIndex + threads.length;
+
+    // Use threads directly (no filtering/sorting needed - server does this)
     return (
       <div className="space-y-4">
         {/* Search, Filters, and Actions */}
@@ -143,7 +144,7 @@ export const ThreadTable = memo(
                 {availableSortFields.map((field) => (
                   <DropdownMenuItem
                     key={field}
-                    onClick={() => handleSort(field)}
+                    onClick={() => onSort(field)}
                     className="flex items-center justify-between cursor-pointer"
                   >
                     <span>{getSortLabel(field)}</span>
@@ -162,7 +163,7 @@ export const ThreadTable = memo(
             <Input
               placeholder="Search threads..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => onSearchChange(e.target.value)}
               className="pl-9 rounded-full border w-full"
               aria-label="Search threads by ID, name, or context key"
               role="searchbox"
@@ -224,18 +225,18 @@ export const ThreadTable = memo(
             <div className="flex items-center justify-end gap-2 px-2 sm:px-4 py-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm text-foreground">
-                  {startIndex + 1}-{Math.min(endIndex, totalThreads)} of{" "}
-                  {totalThreads}
+                  {startIndex + 1}-{Math.min(endIndex, totalCount)} of{" "}
+                  {totalCount}
                 </span>
                 <button
-                  onClick={() => handlePageChange(currentPage - 1)}
+                  onClick={() => onPageChange(currentPage - 1)}
                   disabled={currentPage <= 1}
                   className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => handlePageChange(currentPage + 1)}
+                  onClick={() => onPageChange(currentPage + 1)}
                   disabled={currentPage >= totalPages}
                   className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:pointer-events-none"
                 >
@@ -251,18 +252,18 @@ export const ThreadTable = memo(
               <ThreadTableHeader
                 currentField={sortField}
                 direction={sortDirection}
-                onSort={handleSort}
+                onSort={onSort}
                 allSelected={
-                  currentThreads.length > 0 &&
-                  currentThreads.every((t) => selectedThreads.has(t.id))
+                  threads.length > 0 &&
+                  threads.every((t) => selectedThreads.has(t.id))
                 }
                 onSelectAll={handleSelectAllOnPage}
-                hasCurrentThreads={currentThreads.length > 0}
+                hasCurrentThreads={threads.length > 0}
                 compact={compact}
               />
               <TableBody>
-                {currentThreads.length > 0 ? (
-                  currentThreads.map((thread) => (
+                {threads.length > 0 ? (
+                  threads.map((thread) => (
                     <ThreadRow
                       key={thread.id}
                       thread={thread}

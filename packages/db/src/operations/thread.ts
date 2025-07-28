@@ -323,20 +323,28 @@ export async function updateThreadGenerationStatus(
 export async function getThreadsByProjectWithCounts(
   db: HydraDb,
   projectId: string,
+  contextKey?: string,
   {
-    contextKey,
+    offset = 0,
+    limit = 5,
+  }: {
+    offset?: number;
+    limit?: number;
+  } = {},
+  {
     searchQuery,
     sortField = "created",
     sortDirection = "desc",
   }: {
-    contextKey?: string;
     searchQuery?: string;
     sortField?:
       | "created"
       | "updated"
       | "threadId"
       | "threadName"
-      | "contextKey";
+      | "contextKey"
+      | "messages"
+      | "errors";
     sortDirection?: "asc" | "desc";
   } = {},
 ) {
@@ -364,7 +372,64 @@ export async function getThreadsByProjectWithCounts(
     }
   }
 
-  // Build order by
+  // sorting by counts
+  if (sortField === "messages" || sortField === "errors") {
+    // Create a subquery for counts
+    const countsSubquery = db
+      .select({
+        threadId: schema.messages.threadId,
+        messageCount: count(schema.messages.id).as("messageCount"),
+        errorCount: count(
+          sql`CASE WHEN ${schema.messages.error} IS NOT NULL THEN 1 END`,
+        ).as("errorCount"),
+      })
+      .from(schema.messages)
+      .groupBy(schema.messages.threadId)
+      .as("counts");
+
+    // Build the main query with join
+    const orderBy =
+      sortField === "messages"
+        ? sortDirection === "asc"
+          ? countsSubquery.messageCount
+          : desc(countsSubquery.messageCount)
+        : sortDirection === "asc"
+          ? countsSubquery.errorCount
+          : desc(countsSubquery.errorCount);
+
+    const threadsWithCounts = await db
+      .select({
+        id: schema.threads.id,
+        projectId: schema.threads.projectId,
+        contextKey: schema.threads.contextKey,
+        metadata: schema.threads.metadata,
+        createdAt: schema.threads.createdAt,
+        updatedAt: schema.threads.updatedAt,
+        generationStage: schema.threads.generationStage,
+        statusMessage: schema.threads.statusMessage,
+        name: schema.threads.name,
+        messageCount: sql`COALESCE(${countsSubquery.messageCount}, 0)`.as(
+          "messageCount",
+        ),
+        errorCount: sql`COALESCE(${countsSubquery.errorCount}, 0)`.as(
+          "errorCount",
+        ),
+      })
+      .from(schema.threads)
+      .leftJoin(countsSubquery, eq(schema.threads.id, countsSubquery.threadId))
+      .where(and(...whereConditions))
+      .orderBy(orderBy)
+      .offset(offset)
+      .limit(limit);
+
+    return threadsWithCounts.map((thread) => ({
+      ...thread,
+      messageCount: Number(thread.messageCount),
+      errorCount: Number(thread.errorCount),
+    }));
+  }
+
+  // non-count sorting
   const getOrderBy = () => {
     let field;
     switch (sortField) {
@@ -393,6 +458,8 @@ export async function getThreadsByProjectWithCounts(
   const threads = await db.query.threads.findMany({
     where: and(...whereConditions),
     orderBy: [getOrderBy()],
+    offset,
+    limit,
   });
 
   if (threads.length === 0) {
@@ -408,12 +475,6 @@ export async function getThreadsByProjectWithCounts(
       errorCount: count(
         sql`CASE WHEN ${schema.messages.error} IS NOT NULL THEN 1 END`,
       ).as("errorCount"),
-      toolCount: count(
-        sql`CASE WHEN ${schema.messages.toolCallRequest} IS NOT NULL THEN 1 END`,
-      ).as("toolCount"),
-      componentCount: count(
-        sql`CASE WHEN ${schema.messages.componentDecision}->>'componentName' IS NOT NULL THEN 1 END`,
-      ).as("componentCount"),
     })
     .from(schema.messages)
     .where(inArray(schema.messages.threadId, threadIds))
@@ -426,8 +487,6 @@ export async function getThreadsByProjectWithCounts(
       {
         messageCount: Number(c.messageCount),
         errorCount: Number(c.errorCount),
-        toolCount: Number(c.toolCount),
-        componentCount: Number(c.componentCount),
       },
     ]),
   );
@@ -437,8 +496,6 @@ export async function getThreadsByProjectWithCounts(
     ...thread,
     messageCount: countsMap.get(thread.id)?.messageCount || 0,
     errorCount: countsMap.get(thread.id)?.errorCount || 0,
-    toolCount: countsMap.get(thread.id)?.toolCount || 0,
-    componentCount: countsMap.get(thread.id)?.componentCount || 0,
   }));
 }
 

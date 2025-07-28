@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import { ThreadMessagesModal } from "../messages/thread-messages-modal";
 import { ThreadTable } from "./index";
+import { THREADS_PER_PAGE } from "../utils";
 
 /**
  * Self-contained wrapper for ThreadTable that handles TRPC data fetching and state management.
@@ -49,14 +50,20 @@ export function ThreadTableContainer({
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<
-    "created" | "updated" | "threadId" | "threadName" | "contextKey"
+    | "created"
+    | "updated"
+    | "threadId"
+    | "threadName"
+    | "contextKey"
+    | "messages"
+    | "errors"
   >("created");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const { toast } = useToast();
   const utils = api.useUtils();
 
-  const threadsPerPage = 10;
+  const threadsPerPage = THREADS_PER_PAGE;
 
   // Fetch threads with server-side pagination and search
   const {
@@ -66,6 +73,8 @@ export function ThreadTableContainer({
   } = api.thread.getThreads.useQuery(
     {
       projectId,
+      offset: (currentPage - 1) * threadsPerPage,
+      limit: threadsPerPage,
       includeMessages: false,
       searchQuery: searchQuery.trim() || undefined,
       sortField,
@@ -159,8 +168,6 @@ export function ThreadTableContainer({
     updatedAt: thread.updatedAt.toISOString(),
     contextKey: thread.contextKey || "user_context_key",
     messages: thread.messageCount || 0,
-    tools: thread.toolCount || 0,
-    components: thread.componentCount || 0,
     errors: thread.errorCount || 0,
   }));
 
