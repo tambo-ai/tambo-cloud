@@ -17,9 +17,12 @@ export const env = createEnv({
     INTERNAL_SLACK_USER_ID: z.string().min(1).optional(),
     SLACK_OAUTH_TOKEN: z.string().min(1).optional(),
     PORT: z.string().min(1).optional(),
-    DATABASE_URL: z.string().min(1),
-    API_KEY_SECRET: z.string().min(1),
-    PROVIDER_KEY_SECRET: z.string().min(1),
+    DATABASE_URL: z
+      .string()
+      .min(1)
+      .default("postgresql://dummy:dummy@localhost:5432/dummy"),
+    API_KEY_SECRET: z.string().min(1).default("dummy-secret-for-build"),
+    PROVIDER_KEY_SECRET: z.string().min(1).default("dummy-secret-for-build"),
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_AUDIENCE_ID: z.string().min(1).optional(),
     // for smoketesting
@@ -42,8 +45,6 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-    NEXT_PUBLIC_SUPABASE_URL: z.string().min(1),
     NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_POSTHOG_HOST: z.string().min(1).optional(),
     // for dogfooding our own API
@@ -66,8 +67,6 @@ export const env = createEnv({
     SLACK_OAUTH_TOKEN: process.env.SLACK_OAUTH_TOKEN,
     PORT: process.env.PORT,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     DATABASE_URL: process.env.DATABASE_URL,
     API_KEY_SECRET: process.env.API_KEY_SECRET,
     PROVIDER_KEY_SECRET: process.env.PROVIDER_KEY_SECRET,
