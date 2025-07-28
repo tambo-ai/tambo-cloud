@@ -41,6 +41,13 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        # These are needed at build time
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
+        DATABASE_URL: ${DATABASE_URL}
+        API_KEY_SECRET: ${API_KEY_SECRET}
+        PROVIDER_KEY_SECRET: ${PROVIDER_KEY_SECRET}
     container_name: tambo_web
     ports:
       - "3210:3000"
@@ -67,7 +74,7 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-      - GITHIB_TOKEN=${GITHIB_TOKEN}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
     depends_on:

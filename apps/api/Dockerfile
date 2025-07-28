@@ -25,12 +25,12 @@ ENV NODE_OPTIONS="--experimental-require-module"
 RUN npx turbo build --filter=hydra-api
 
 # Set production environment
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 
 
 EXPOSE 3000
 
-ENV PORT 3000
+ENV PORT=3000
 
 CMD ["node", "apps/api/dist/apps/api/src/main"]
