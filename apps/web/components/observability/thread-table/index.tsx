@@ -24,7 +24,12 @@ import {
   Thread,
   useThreadList,
 } from "../hooks/useThreadList";
-import { SORT_FIELDS, getSortDirectionLabel, getSortLabel } from "../utils";
+import {
+  SORT_FIELDS,
+  THREADS_PER_PAGE,
+  getSortDirectionLabel,
+  getSortLabel,
+} from "../utils";
 import { ThreadTableHeader } from "./thread-table-header";
 import { ThreadRow } from "./thread-table-row";
 
@@ -79,7 +84,6 @@ export const ThreadTable = memo(
       // Actions
       setAlertState,
       handleSelectAll,
-      handleSelectAllOnPage,
       handleSelectThread,
       handleDeleteClick,
       handleDeleteConfirm,
@@ -100,13 +104,6 @@ export const ThreadTable = memo(
       [onViewMessages],
     );
 
-    const handleThreadSelect = useCallback(
-      (threadId: string, checked: boolean) => {
-        handleSelectThread(threadId, checked);
-      },
-      [handleSelectThread],
-    );
-
     if (isLoading || projectId === undefined) {
       return <ThreadTableSkeleton />;
     }
@@ -121,7 +118,7 @@ export const ThreadTable = memo(
       : SORT_FIELDS;
 
     // Use the server-side pagination values directly
-    const startIndex = (currentPage - 1) * threads.length;
+    const startIndex = (currentPage - 1) * THREADS_PER_PAGE;
     const endIndex = startIndex + threads.length;
 
     // Use threads directly (no filtering/sorting needed - server does this)
@@ -257,7 +254,7 @@ export const ThreadTable = memo(
                   threads.length > 0 &&
                   threads.every((t) => selectedThreads.has(t.id))
                 }
-                onSelectAll={handleSelectAllOnPage}
+                onSelectAll={handleSelectAll}
                 hasCurrentThreads={threads.length > 0}
                 compact={compact}
               />
@@ -269,7 +266,7 @@ export const ThreadTable = memo(
                       thread={thread}
                       isSelected={selectedThreads.has(thread.id)}
                       isDeleting={deletingThreadIds.has(thread.id)}
-                      onSelect={handleThreadSelect}
+                      onSelect={handleSelectThread}
                       onViewMessages={handleViewMessages}
                       compact={compact}
                     />

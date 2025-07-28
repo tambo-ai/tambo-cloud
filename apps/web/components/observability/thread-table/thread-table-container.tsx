@@ -130,8 +130,6 @@ export function ThreadTableContainer({
 
   const handleThreadsDeleted = useCallback(async () => {
     await utils.thread.getThreads.invalidate({ projectId });
-    // Reset to first page after deletion
-    setCurrentPage(1);
   }, [utils, projectId]);
 
   const handleSort = useCallback(

@@ -40,7 +40,6 @@ export interface UseThreadListReturn {
   // Actions
   setAlertState: (state: AlertState) => void;
   handleSelectAll: (checked: boolean) => void;
-  handleSelectAllOnPage: (checked: boolean) => void;
   handleSelectThread: (threadId: string, checked: boolean) => void;
   handleDeleteClick: () => void;
   handleDeleteConfirm: () => Promise<void>;
@@ -92,17 +91,6 @@ export function useThreadList({
   }, []);
 
   const handleSelectAll = useCallback(
-    (checked: boolean) => {
-      if (checked) {
-        setSelectedThreads(new Set(threads.map((t) => t.id)));
-      } else {
-        setSelectedThreads(new Set());
-      }
-    },
-    [threads],
-  );
-
-  const handleSelectAllOnPage = useCallback(
     (checked: boolean) => {
       if (checked) {
         setSelectedThreads(new Set(threads.map((t) => t.id)));
@@ -284,7 +272,6 @@ export function useThreadList({
     // Actions
     setAlertState,
     handleSelectAll,
-    handleSelectAllOnPage,
     handleSelectThread,
     handleDeleteClick,
     handleDeleteConfirm,

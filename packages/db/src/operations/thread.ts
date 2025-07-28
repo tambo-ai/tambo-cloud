@@ -534,5 +534,9 @@ export async function countThreadsByProjectWithSearch(
     }
   }
 
-  return await db.$count(schema.threads, and(...whereConditions));
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(schema.threads)
+    .where(and(...whereConditions));
+  return count;
 }
