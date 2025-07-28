@@ -17,12 +17,9 @@ export const env = createEnv({
     INTERNAL_SLACK_USER_ID: z.string().min(1).optional(),
     SLACK_OAUTH_TOKEN: z.string().min(1).optional(),
     PORT: z.string().min(1).optional(),
-    DATABASE_URL: z
-      .string()
-      .min(1)
-      .default("postgresql://dummy:dummy@localhost:5432/dummy"),
-    API_KEY_SECRET: z.string().min(1).default("dummy-secret-for-build"),
-    PROVIDER_KEY_SECRET: z.string().min(1).default("dummy-secret-for-build"),
+    DATABASE_URL: z.string().min(1),
+    API_KEY_SECRET: z.string().min(1),
+    PROVIDER_KEY_SECRET: z.string().min(1),
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_AUDIENCE_ID: z.string().min(1).optional(),
     // for smoketesting
