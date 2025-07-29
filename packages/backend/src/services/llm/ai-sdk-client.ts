@@ -14,6 +14,7 @@ import {
   jsonSchema,
   LanguageModel,
   streamText,
+  Tool,
   tool,
   ToolCallPart,
   ToolContent,
@@ -377,7 +378,7 @@ export class AISdkClient implements LLMClient {
   }
 
   private convertToLLMResponse(
-    result: GenerateTextResult<Record<string, any>, undefined>,
+    result: GenerateTextResult<Record<string, Tool>, undefined>,
   ): LLMResponse {
     const toolCalls = result.toolCalls.map((call) => ({
       function: {
