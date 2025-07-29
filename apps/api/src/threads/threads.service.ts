@@ -92,13 +92,6 @@ export class ThreadsService {
     return this.db;
   }
 
-  private async getHydraBackend(
-    threadId: string,
-    userId: string,
-  ): Promise<TamboBackend> {
-    return await this.createHydraBackendForThread(threadId, userId);
-  }
-
   private async createHydraBackendForThread(
     threadId: string,
     userId: string,
@@ -561,7 +554,7 @@ export class ThreadsService {
     try {
       const threadMessages = await this.getMessages(message.threadId);
 
-      const tamboBackend = await this.getHydraBackend(
+      const tamboBackend = await this.createHydraBackendForThread(
         message.threadId,
         contextKey,
       );
@@ -639,7 +632,7 @@ export class ThreadsService {
 
     const tamboBackend = await this.createHydraBackendForThread(
       threadId,
-      thread.contextKey ?? TAMBO_ANON_CONTEXT_KEY,
+      `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
     );
     const generatedName = await tamboBackend.generateThreadName(
       threadMessageDtoToThreadMessage(messages),
@@ -781,7 +774,7 @@ export class ThreadsService {
     // Use the shared method to create the TamboBackend instance
     const tamboBackend = await this.createHydraBackendForThread(
       thread.id,
-      contextKey ?? TAMBO_ANON_CONTEXT_KEY,
+      `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
     );
 
     // Log available components
