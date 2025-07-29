@@ -1,5 +1,15 @@
 import { ActionType, GenerationStage } from "@tambo-ai-cloud/core";
-import { and, count, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  or,
+  sql,
+  ilike,
+} from "drizzle-orm";
 import { mergeSuperJson } from "../drizzleUtil";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
@@ -357,11 +367,12 @@ export async function getThreadsByProjectWithCounts(
 
   // Add search conditions
   if (searchQuery && searchQuery.trim()) {
-    const query = `%${searchQuery.trim().toLowerCase()}%`;
+    const trimmedQuery = searchQuery.trim();
+
     const searchConditions = [
-      sql`LOWER(${schema.threads.id}) LIKE ${query}`,
-      sql`LOWER(${schema.threads.name}) LIKE ${query}`,
-      sql`LOWER(${schema.threads.contextKey}) LIKE ${query}`,
+      eq(schema.threads.id, trimmedQuery),
+      eq(schema.threads.contextKey, trimmedQuery),
+      ilike(schema.threads.name, `%${trimmedQuery}%`),
     ].filter(Boolean);
 
     if (searchConditions.length > 0) {
@@ -519,11 +530,12 @@ export async function countThreadsByProjectWithSearch(
 
   // Add search conditions
   if (searchQuery && searchQuery.trim()) {
-    const query = `%${searchQuery.trim().toLowerCase()}%`;
+    const trimmedQuery = searchQuery.trim();
+
     const searchConditions = [
-      sql`LOWER(${schema.threads.id}) LIKE ${query}`,
-      sql`LOWER(${schema.threads.name}) LIKE ${query}`,
-      sql`LOWER(${schema.threads.contextKey}) LIKE ${query}`,
+      eq(schema.threads.id, trimmedQuery),
+      eq(schema.threads.contextKey, trimmedQuery),
+      ilike(schema.threads.name, `%${trimmedQuery}%`),
     ].filter(Boolean);
 
     if (searchConditions.length > 0) {
