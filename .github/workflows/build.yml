@@ -22,6 +22,8 @@ jobs:
       DATABASE_URL: "postgresql://dummy-user:dummy-password@dummy-host:5432/dummy-database"
       API_KEY_SECRET: "dummy-api-key-secret"
       PROVIDER_KEY_SECRET: "dummy-provider-key-secret"
+      NEXTAUTH_SECRET: "dummy-nextauth-secret"
+      NEXTAUTH_URL: "http://localhost:3000"
 
     steps:
       - name: Checkout repository
