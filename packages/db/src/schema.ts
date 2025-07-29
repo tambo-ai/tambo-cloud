@@ -232,6 +232,7 @@ export const projectMessageUsage = pgTable(
   "project_message_usage",
   ({ text, timestamp, integer, boolean }) => ({
     projectId: text("project_id")
+      .primaryKey()
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     messageCount: integer("message_count").notNull().default(0),
