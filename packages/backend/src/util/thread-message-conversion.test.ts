@@ -221,6 +221,7 @@ describe("threadMessagesToChatHistory", () => {
         content: [
           { type: "text", text: "user input" },
         ] as ChatCompletionContentPartText[],
+        additionalContext: { extra: "context" },
       };
 
       const result = threadMessagesToChatCompletionMessageParam([userMessage]);
