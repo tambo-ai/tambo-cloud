@@ -57,6 +57,7 @@ function searchInMessage(message: MessageType, query: string): boolean {
 
   // Search in additional context
   if (
+    message.role === "user" && // only search in user messages since we don't have context for assistant messages
     message.additionalContext &&
     Object.keys(message.additionalContext).length > 0
   ) {
@@ -100,6 +101,7 @@ function findAllMatches(thread: ThreadType, query: string): SearchMatch[] {
 
     // Check additional context
     if (
+      message.role === "user" && // only search in user messages since we don't have context for assistant messages
       message.additionalContext &&
       Object.keys(message.additionalContext).length > 0
     ) {
