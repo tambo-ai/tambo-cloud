@@ -1152,11 +1152,8 @@ export class ThreadsService {
       // Update db message on interval
       const currentTime = Date.now();
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
-        const start = Date.now();
         // Fire off cancellation check asynchronously - will update isThreadCancelled for future iterations
         checkCancellationStatus();
-
-        const threadFetchEnd = Date.now();
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (isThreadCancelled) {
@@ -1177,10 +1174,6 @@ export class ThreadsService {
           ...threadMessage,
           content: convertContentPartToDto(threadMessage.content),
         });
-        const updateMessageEnd = Date.now();
-        console.log(
-          `findOne thread took ${threadFetchEnd - start}ms, updateMessage took ${updateMessageEnd - threadFetchEnd}ms`,
-        );
         lastUpdateTime = currentTime;
       }
 
