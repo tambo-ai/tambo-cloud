@@ -44,10 +44,21 @@ echo -e "${YELLOW}⏳ Waiting for services to start...${NC}"
 sleep 10
 
 # Check if PostgreSQL is healthy
-POSTGRES_HEALTH=$(docker compose --env-file docker.env ps --format json | jq -r '.[] | select(.Service == "postgres") | .Health')
-if [ "$POSTGRES_HEALTH" != "healthy" ]; then
-    echo -e "${YELLOW}⏳ Waiting for PostgreSQL to be healthy...${NC}"
+echo -e "${YELLOW}⏳ Checking PostgreSQL health...${NC}"
+POSTGRES_RUNNING=$(docker compose --env-file docker.env ps -q postgres 2>/dev/null | wc -l)
+if [ "$POSTGRES_RUNNING" -eq 0 ]; then
+    echo -e "${YELLOW}⏳ Waiting for PostgreSQL to start...${NC}"
     sleep 20
+fi
+
+# Check if postgres container is healthy
+POSTGRES_CONTAINER=$(docker compose --env-file docker.env ps -q postgres 2>/dev/null)
+if [ -n "$POSTGRES_CONTAINER" ]; then
+    POSTGRES_HEALTH=$(docker inspect --format='{{.State.Health.Status}}' "$POSTGRES_CONTAINER" 2>/dev/null || echo "unknown")
+    if [ "$POSTGRES_HEALTH" != "healthy" ]; then
+        echo -e "${YELLOW}⏳ Waiting for PostgreSQL to be healthy...${NC}"
+        sleep 20
+    fi
 fi
 
 # Check service status
