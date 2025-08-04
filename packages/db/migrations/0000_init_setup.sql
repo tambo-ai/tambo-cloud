@@ -33,3 +33,84 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Create user schema if it doesn't exist (for NextAuth adapter compatibility)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'user') THEN
+        CREATE SCHEMA "user";
+    END IF;
+END $$;
+
+-- Create user tables if they don't exist (for NextAuth adapter compatibility)
+DO $$ 
+BEGIN
+    -- Create users table if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'user' AND table_name = 'users') THEN
+        CREATE TABLE "user"."users" (
+            "id" uuid PRIMARY KEY NOT NULL,
+            "email" text NOT NULL,
+            "email_confirmed_at" timestamp with time zone,
+            "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+            "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+            "raw_user_meta_data" jsonb DEFAULT '{}'::jsonb
+        );
+        
+        -- Create index on email for fast lookups
+        CREATE INDEX "user_email_idx" ON "user"."users" USING btree ("email");
+    END IF;
+    
+    -- Create identities table if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'user' AND table_name = 'identities') THEN
+        CREATE TABLE "user"."identities" (
+            "id" uuid PRIMARY KEY NOT NULL,
+            "user_id" uuid NOT NULL,
+            "provider" text NOT NULL,
+            "provider_id" text NOT NULL,
+            "identity_data" jsonb DEFAULT '{}'::jsonb,
+            "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+            "updated_at" timestamp with time zone DEFAULT now() NOT NULL
+        );
+        
+        -- Add foreign key constraint if it doesn't exist
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints 
+            WHERE constraint_name = 'identities_user_id_users_id_fk' 
+            AND table_schema = 'user' 
+            AND table_name = 'identities'
+        ) THEN
+            ALTER TABLE "user"."identities" ADD CONSTRAINT "identities_user_id_users_id_fk" 
+            FOREIGN KEY ("user_id") REFERENCES "user"."users"("id") ON DELETE cascade ON UPDATE no action;
+        END IF;
+        
+        -- Create indexes for identities table
+        CREATE INDEX "identity_provider_provider_id_idx" ON "user"."identities" USING btree ("provider","provider_id");
+        CREATE INDEX "identity_user_id_idx" ON "user"."identities" USING btree ("user_id");
+    END IF;
+    
+    -- Create sessions table if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'user' AND table_name = 'sessions') THEN
+        CREATE TABLE "user"."sessions" (
+            "id" text PRIMARY KEY NOT NULL,
+            "user_id" uuid NOT NULL,
+            "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+            "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+            "not_after" timestamp with time zone
+        );
+        
+        -- Add foreign key constraint if it doesn't exist
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints 
+            WHERE constraint_name = 'sessions_user_id_users_id_fk' 
+            AND table_schema = 'user' 
+            AND table_name = 'sessions'
+        ) THEN
+            ALTER TABLE "user"."sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" 
+            FOREIGN KEY ("user_id") REFERENCES "user"."users"("id") ON DELETE cascade ON UPDATE no action;
+        END IF;
+        
+        -- Create indexes for sessions table
+        CREATE INDEX "session_user_id_idx" ON "user"."sessions" USING btree ("user_id");
+        CREATE INDEX "session_not_after_idx" ON "user"."sessions" USING btree ("not_after");
+    END IF;
+END $$;
+
