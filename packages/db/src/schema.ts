@@ -632,9 +632,9 @@ export const projectLogs = pgTable(
 export type DBProjectLog = typeof projectLogs.$inferSelect;
 
 // User schema for NextAuth adapter tables
-export const userSchema = pgSchema("user");
+export const authSchema = pgSchema("auth");
 
-export const users = userSchema.table(
+export const users = authSchema.table(
   "users",
   ({ text, timestamp, uuid, jsonb }) => ({
     id: uuid("id").primaryKey().notNull(),
@@ -651,7 +651,7 @@ export const users = userSchema.table(
   (table) => [index("user_email_idx").on(table.email)],
 );
 
-export const identities = userSchema.table(
+export const identities = authSchema.table(
   "identities",
   ({ text, timestamp, uuid, jsonb }) => ({
     id: uuid("id").primaryKey().notNull(),
@@ -677,7 +677,7 @@ export const identities = userSchema.table(
   ],
 );
 
-export const sessions = userSchema.table(
+export const sessions = authSchema.table(
   "sessions",
   ({ text, timestamp, uuid }) => ({
     id: text("id").primaryKey().notNull(),
