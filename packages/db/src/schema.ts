@@ -20,6 +20,7 @@ import {
   integer,
   pgPolicy,
   pgRole,
+  pgSchema,
   pgTable,
   unique,
   uuid,
@@ -629,3 +630,95 @@ export const projectLogs = pgTable(
 );
 
 export type DBProjectLog = typeof projectLogs.$inferSelect;
+
+// User schema for NextAuth adapter tables
+export const userSchema = pgSchema("user");
+
+export const users = userSchema.table(
+  "users",
+  ({ text, timestamp, uuid, jsonb }) => ({
+    id: uuid("id").primaryKey().notNull(),
+    email: text("email").notNull(),
+    emailConfirmedAt: timestamp("email_confirmed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    rawUserMetaData: jsonb("raw_user_meta_data").default({}),
+  }),
+  (table) => [index("user_email_idx").on(table.email)],
+);
+
+export const identities = userSchema.table(
+  "identities",
+  ({ text, timestamp, uuid, jsonb }) => ({
+    id: uuid("id").primaryKey().notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    provider: text("provider").notNull(),
+    providerId: text("provider_id").notNull(),
+    identityData: jsonb("identity_data").default({}),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  }),
+  (table) => [
+    index("identity_provider_provider_id_idx").on(
+      table.provider,
+      table.providerId,
+    ),
+    index("identity_user_id_idx").on(table.userId),
+  ],
+);
+
+export const sessions = userSchema.table(
+  "sessions",
+  ({ text, timestamp, uuid }) => ({
+    id: text("id").primaryKey().notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    notAfter: timestamp("not_after", { withTimezone: true }),
+  }),
+  (table) => [
+    index("session_user_id_idx").on(table.userId),
+    index("session_not_after_idx").on(table.notAfter),
+  ],
+);
+
+// Relations for user schema tables
+export const userSchemaUserRelations = relations(users, ({ many }) => ({
+  identities: many(identities),
+  sessions: many(sessions),
+}));
+
+export const userSchemaIdentityRelations = relations(identities, ({ one }) => ({
+  user: one(users, {
+    fields: [identities.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userSchemaSessionRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
+// Export types for user schema tables
+export type DBUser = typeof users.$inferSelect;
+export type DBIdentity = typeof identities.$inferSelect;
+export type DBSession = typeof sessions.$inferSelect;
