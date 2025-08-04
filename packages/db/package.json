@@ -21,12 +21,12 @@
     "@tambo-ai-cloud/eslint-config": "*",
     "@tambo-ai-cloud/typescript-config": "*",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/pg": "^8.15.4",
+    "@types/pg": "^8.15.5",
     "drizzle-kit": "^0.31.4"
   },
   "dependencies": {
     "@tambo-ai-cloud/core": "*",
-    "drizzle-orm": "^0.44.3",
+    "drizzle-orm": "^0.44.4",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3",
     "superjson": "^2.2.2"
