@@ -45,6 +45,26 @@ export async function createThread(
   return thread;
 }
 
+export async function getThread(
+  db: HydraDb,
+  threadId: string,
+  projectId: string,
+  contextKey?: string,
+) {
+  return await db.query.threads.findFirst({
+    where: contextKey
+      ? and(
+          eq(schema.threads.id, threadId),
+          eq(schema.threads.projectId, projectId),
+          eq(schema.threads.contextKey, contextKey),
+        )
+      : and(
+          eq(schema.threads.id, threadId),
+          eq(schema.threads.projectId, projectId),
+        ),
+  });
+}
+
 export async function getThreadForProjectId(
   db: HydraDb,
   threadId: string,
@@ -63,17 +83,20 @@ export async function getThreadForProjectId(
           eq(schema.threads.id, threadId),
           eq(schema.threads.projectId, projectId),
         ),
-    with: includeInternal
-      ? {
-          messages: {
-            where: undefined,
-            orderBy: (messages, { asc }) => [asc(messages.createdAt)],
-            with: {
-              suggestions: true,
-            },
-          },
-        }
-      : undefined,
+    with: {
+      messages: {
+        where: includeInternal
+          ? undefined
+          : or(
+              isNull(schema.messages.actionType),
+              eq(schema.messages.actionType, ActionType.ToolCall),
+            ),
+        orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+        with: {
+          suggestions: true,
+        },
+      },
+    },
   });
 }
 
