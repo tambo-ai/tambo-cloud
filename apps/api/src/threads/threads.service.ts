@@ -1155,6 +1155,7 @@ export class ThreadsService {
         // Fire off cancellation check asynchronously - will update isThreadCancelled for future iterations
         checkCancellationStatus();
 
+        // Disabling rule since isThreadCancelled is updated asynchronously
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (isThreadCancelled) {
           yield {
