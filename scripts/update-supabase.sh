@@ -5,6 +5,14 @@
 
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the project root directory (parent of scripts directory)
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root directory
+cd "$PROJECT_ROOT"
+
 SUPABASE_REPO="https://github.com/supabase/supabase"
 SUPABASE_DOCKER_PATH="docker"
 SUPABASE_BRANCH="master"

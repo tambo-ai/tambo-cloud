@@ -12,8 +12,17 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the project root directory (parent of scripts directory)
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root directory
+cd "$PROJECT_ROOT"
+
 echo -e "${GREEN}🚀 Tambo Docker Setup${NC}"
 echo -e "${BLUE}This script will help you set up Tambo for self-hosting with Docker${NC}"
+echo -e "${BLUE}📁 Working directory: $(pwd)${NC}"
 echo -e ""
 
 # Check if Docker is installed

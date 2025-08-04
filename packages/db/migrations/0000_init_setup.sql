@@ -41,6 +41,14 @@ BEGIN
     END IF;
 END $$;
 
+-- Create extensions schema if it doesn't exist (for Supabase compatibility)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'extensions') THEN
+        CREATE SCHEMA "extensions";
+    END IF;
+END $$;
+
 -- Create auth tables if they don't exist (for NextAuth adapter compatibility)
 DO $$ 
 BEGIN

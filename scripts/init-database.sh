@@ -12,7 +12,16 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the project root directory (parent of scripts directory)
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root directory
+cd "$PROJECT_ROOT"
+
 echo -e "${GREEN}🗄️  Initializing Tambo Database...${NC}"
+echo -e "${BLUE}📁 Working directory: $(pwd)${NC}"
 
 # Check if docker.env exists
 if [ ! -f "docker.env" ]; then
@@ -56,7 +65,17 @@ echo -e "${GREEN}✅ PostgreSQL is ready!${NC}"
 
 # Run database migrations
 echo -e "${BLUE}🔄 Running database migrations...${NC}"
-cd ..
+
+# Get actual database credentials from the running container
+echo -e "${BLUE}📋 Getting database credentials from running container...${NC}"
+POSTGRES_PASSWORD=$(docker compose --env-file docker.env exec -T postgres printenv POSTGRES_PASSWORD 2>/dev/null || echo "your-super-secret-and-long-postgres-password")
+POSTGRES_USER=$(docker compose --env-file docker.env exec -T postgres printenv POSTGRES_USER 2>/dev/null || echo "postgres")
+POSTGRES_DB=$(docker compose --env-file docker.env exec -T postgres printenv POSTGRES_DB 2>/dev/null || echo "tambo")
+
+# Create proper DATABASE_URL for local migration
+LOCAL_DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5433/${POSTGRES_DB}"
+export DATABASE_URL="$LOCAL_DATABASE_URL"
+echo -e "${BLUE}📋 Using local database URL: $DATABASE_URL${NC}"
 
 # Run the database migrations using the npm script
 echo -e "${BLUE}📊 Running database migrations...${NC}"
