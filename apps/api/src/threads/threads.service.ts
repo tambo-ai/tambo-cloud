@@ -1141,8 +1141,8 @@ export class ThreadsService {
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
         const start = Date.now();
         const thread = await this.findOne(threadId, projectId);
-        const end = Date.now();
-        console.log(`findOne thread took ${end - start}ms`);
+        const threadFetchEnd = Date.now();
+
         if (thread.generationStage === GenerationStage.CANCELLED) {
           yield {
             responseMessageDto: {
@@ -1161,6 +1161,10 @@ export class ThreadsService {
           ...threadMessage,
           content: convertContentPartToDto(threadMessage.content),
         });
+        const updateMessageEnd = Date.now();
+        console.log(
+          `findOne thread took ${threadFetchEnd - start}ms, updateMessage took ${updateMessageEnd - threadFetchEnd}ms`,
+        );
         lastUpdateTime = currentTime;
       }
 

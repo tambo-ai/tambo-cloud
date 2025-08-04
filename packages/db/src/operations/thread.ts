@@ -4,11 +4,11 @@ import {
   count,
   desc,
   eq,
+  ilike,
   inArray,
   isNull,
   or,
   sql,
-  ilike,
 } from "drizzle-orm";
 import { mergeSuperJson } from "../drizzleUtil";
 import * as schema from "../schema";
@@ -63,20 +63,17 @@ export async function getThreadForProjectId(
           eq(schema.threads.id, threadId),
           eq(schema.threads.projectId, projectId),
         ),
-    with: {
-      messages: {
-        where: includeInternal
-          ? undefined
-          : or(
-              isNull(schema.messages.actionType),
-              eq(schema.messages.actionType, ActionType.ToolCall),
-            ),
-        orderBy: (messages, { asc }) => [asc(messages.createdAt)],
-        with: {
-          suggestions: true,
-        },
-      },
-    },
+    with: includeInternal
+      ? {
+          messages: {
+            where: undefined,
+            orderBy: (messages, { asc }) => [asc(messages.createdAt)],
+            with: {
+              suggestions: true,
+            },
+          },
+        }
+      : undefined,
   });
 }
 
