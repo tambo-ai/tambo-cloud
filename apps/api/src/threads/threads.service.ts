@@ -1168,7 +1168,7 @@ export class ThreadsService {
           return;
         }
 
-        updateMessage(db, inProgressMessage.id, {
+        await updateMessage(db, inProgressMessage.id, {
           ...threadMessage,
           content: convertContentPartToDto(threadMessage.content),
         });
