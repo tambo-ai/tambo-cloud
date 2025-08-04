@@ -56,10 +56,10 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'auth' AND table_name = 'users') THEN
         CREATE TABLE "auth"."users" (
             "id" uuid PRIMARY KEY NOT NULL,
-            "email" text NOT NULL,
+            "email" text,
             "email_confirmed_at" timestamp with time zone,
-            "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-            "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+            "created_at" timestamp with time zone DEFAULT now(),
+            "updated_at" timestamp with time zone DEFAULT now(),
             "raw_user_meta_data" jsonb DEFAULT '{}'::jsonb
         );
         
