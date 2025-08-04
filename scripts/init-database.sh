@@ -27,6 +27,18 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# Check if npx is available
+if ! command -v npx &> /dev/null; then
+    echo -e "${RED}❌ npx is not available. Please install Node.js and npm first.${NC}"
+    exit 1
+fi
+
+# Check if npm is available
+if ! command -v npm &> /dev/null; then
+    echo -e "${RED}❌ npm is not available. Please install Node.js and npm first.${NC}"
+    exit 1
+fi
+
 # Check if PostgreSQL container is running
 if ! docker compose --env-file docker.env ps postgres | grep -q "Up"; then
     echo -e "${RED}❌ PostgreSQL container is not running. Please start the stack first:${NC}"
@@ -42,21 +54,9 @@ done
 
 echo -e "${GREEN}✅ PostgreSQL is ready!${NC}"
 
-# Check if drizzle-kit is available
-if ! command -v npx &> /dev/null; then
-    echo -e "${RED}❌ npx is not available. Please install Node.js and npm first.${NC}"
-    exit 1
-fi
-
 # Run database migrations
 echo -e "${BLUE}🔄 Running database migrations...${NC}"
 cd ..
-
-# Check if npm is available
-if ! command -v npm &> /dev/null; then
-    echo -e "${RED}❌ npm is not available. Please install Node.js and npm first.${NC}"
-    exit 1
-fi
 
 # Run the database migrations using the npm script
 echo -e "${BLUE}📊 Running database migrations...${NC}"

@@ -16,6 +16,25 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Check if curl is available
+if ! command -v curl &> /dev/null; then
+    echo -e "${RED}❌ curl is not available. Please install curl first.${NC}"
+    exit 1
+fi
+
+# Check if jq is available
+if ! command -v jq &> /dev/null; then
+    echo -e "${RED}❌ jq is not available. Please install jq first.${NC}"
+    exit 1
+fi
+
+# Check if docker.env exists
+if [ ! -f "docker.env" ]; then
+    echo -e "${RED}❌ docker.env file not found!${NC}"
+    echo -e "${YELLOW}📝 Please copy docker.env.example to docker.env and update with your values${NC}"
+    exit 1
+fi
+
 echo -e "${GREEN}🚀 Updating Supabase Docker Compose files...${NC}"
 
 # Create docker directory if it doesn't exist

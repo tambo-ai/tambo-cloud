@@ -10,6 +10,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Check if docker.env exists
+if [ ! -f "docker.env" ]; then
+    echo -e "${RED}❌ docker.env file not found!${NC}"
+    echo -e "${YELLOW}📝 Please copy docker.env.example to docker.env and update with your values${NC}"
+    exit 1
+fi
+
 echo -e "${BLUE}📋 Tambo Docker Stack Logs${NC}"
 echo -e "${YELLOW}Press Ctrl+C to exit${NC}"
 echo -e ""
@@ -33,13 +40,6 @@ show_usage() {
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     show_usage
     exit 0
-fi
-
-# Check if docker.env exists
-if [ ! -f "docker.env" ]; then
-    echo -e "${RED}❌ docker.env file not found!${NC}"
-    echo -e "${YELLOW}📝 Please copy docker.env.example to docker.env and update with your values${NC}"
-    exit 1
 fi
 
 # If service name provided, show logs for that service only

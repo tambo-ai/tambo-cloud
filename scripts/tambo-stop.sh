@@ -12,6 +12,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Check if docker.env exists
+if [ ! -f "docker.env" ]; then
+    echo -e "${RED}❌ docker.env file not found!${NC}"
+    echo -e "${YELLOW}📝 Please copy docker.env.example to docker.env and update with your values${NC}"
+    exit 1
+fi
+
 echo -e "${YELLOW}🛑 Stopping Tambo Docker Stack...${NC}"
 
 # Stop all services
