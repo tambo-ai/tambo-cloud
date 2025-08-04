@@ -1132,14 +1132,13 @@ export class ThreadsService {
     let lastUpdateTime = 0;
     const updateIntervalMs = 500;
 
-    let isThreadCancelled = false;
+    const cancellationRef = { current: false };
 
     const checkCancellationStatus = async () => {
       try {
         const thread = await operations.getThread(db, threadId, projectId);
-        if (thread?.generationStage === GenerationStage.CANCELLED) {
-          isThreadCancelled = true;
-        }
+        cancellationRef.current =
+          thread?.generationStage === GenerationStage.CANCELLED;
       } catch (error) {
         logger.error(`Error checking thread cancellation status: ${error}`);
       }
@@ -1152,12 +1151,10 @@ export class ThreadsService {
       // Update db message on interval
       const currentTime = Date.now();
       if (currentTime - lastUpdateTime >= updateIntervalMs) {
-        // Fire off cancellation check asynchronously - will update isThreadCancelled for future iterations
+        // Fire off cancellation check asynchronously - will update cancellationRef for future iterations
         checkCancellationStatus();
 
-        // Disabling rule since isThreadCancelled is updated asynchronously
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (isThreadCancelled) {
+        if (cancellationRef.current) {
           yield {
             responseMessageDto: {
               ...threadMessage,
