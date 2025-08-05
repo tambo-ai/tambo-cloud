@@ -36,9 +36,9 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
-# Build all containers
-echo -e "${BLUE}🚀 Building containers...${NC}"
-docker compose --env-file docker.env build
+# Build all containers with BuildKit
+echo -e "${BLUE}🚀 Building containers with BuildKit...${NC}"
+DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose --env-file docker.env build
 
 echo -e "${GREEN}✅ Build completed!${NC}"
 echo -e "${YELLOW}💡 To start the containers: ./scripts/tambo-start.sh${NC}" 
