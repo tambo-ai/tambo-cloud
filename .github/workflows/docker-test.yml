@@ -59,7 +59,7 @@ jobs:
       - name: Wait for services to be healthy
         run: |
           # Wait for PostgreSQL to be healthy (reduced wait time)
-          timeout 45 bash -c 'until docker compose --env-file docker.env ps --format json | jq -r ".[] | select(.Service == \"postgres\") | .Health" | grep -q "healthy"; do sleep 3; done'
+          timeout 45 bash -c 'until docker compose --env-file docker.env ps postgres | grep -q "healthy"; do sleep 3; done'
 
           # Wait for API to be ready (using the /health endpoint)
           timeout 45 bash -c 'until curl -f http://localhost:3211/health 2>/dev/null; do sleep 3; done'
@@ -73,7 +73,7 @@ jobs:
           docker compose --env-file docker.env ps
 
           echo "=== Service Health Checks ==="
-          echo "PostgreSQL: $(docker compose --env-file docker.env ps --format json | jq -r '.[] | select(.Service == "postgres") | .Health')"
+          echo "PostgreSQL: $(docker compose --env-file docker.env ps postgres | grep -o 'healthy\|unhealthy\|starting' || echo 'unknown')"
 
           echo "=== Service Endpoints ==="
           echo "Testing API health endpoint..."
