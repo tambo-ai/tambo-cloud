@@ -35,15 +35,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Setup Docker environment
         run: |
           ./scripts/tambo-setup.sh
@@ -57,10 +48,7 @@ jobs:
 
       - name: Start Docker stack
         run: |
-          # Build with cache mount for faster builds
-          docker compose --env-file docker.env build --build-arg BUILDKIT_INLINE_CACHE=1
-          # Start services
-          docker compose --env-file docker.env up -d
+          ./scripts/tambo-start.sh
         timeout-minutes: 8
 
       - name: Wait for services to be healthy
