@@ -1,5 +1,13 @@
 CREATE EXTENSION if not exists pgcrypto;
 
+DO $$ 
+BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    CREATE ROLE "authenticated";
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+END IF;
+END $$;
+
 -- Generate a custom ID with a prefix and a random part, for use as a unique identifier
 CREATE OR REPLACE FUNCTION generate_custom_id(
     prefix TEXT,
@@ -38,6 +46,8 @@ DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'auth') THEN
         CREATE SCHEMA "auth";
+        -- Grant all privileges on the auth schema to the authenticated role
+        GRANT ALL PRIVILEGES ON SCHEMA "auth" TO "authenticated";
     END IF;
 END $$;
 
@@ -122,3 +132,51 @@ BEGIN
     END IF;
 END $$;
 
+-- supabase functions
+CREATE OR REPLACE FUNCTION auth.email()
+ RETURNS text
+ LANGUAGE sql
+ STABLE
+AS $function$
+  select 
+  coalesce(
+    nullif(current_setting('request.jwt.claim.email', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'email')
+  )::text
+$function$;
+
+CREATE OR REPLACE FUNCTION auth.jwt()
+ RETURNS jsonb
+ LANGUAGE sql
+ STABLE
+AS $function$
+  select 
+    coalesce(
+        nullif(current_setting('request.jwt.claim', true), ''),
+        nullif(current_setting('request.jwt.claims', true), '')
+    )::jsonb
+$function$;
+
+CREATE OR REPLACE FUNCTION auth.role()
+ RETURNS text
+ LANGUAGE sql
+ STABLE
+AS $function$
+  select 
+  coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
+  )::text
+$function$;
+
+CREATE OR REPLACE FUNCTION auth.uid()
+ RETURNS uuid
+ LANGUAGE sql
+ STABLE
+AS $function$
+  select 
+  coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')
+  )::uuid
+$function$;
