@@ -41,10 +41,9 @@ echo -e "${BLUE}🚀 Building containers with BuildKit...${NC}"
 
 # Check if running in GitHub Actions
 if [ -n "$GITHUB_ACTIONS" ]; then
-    echo -e "${YELLOW}📦 Using GitHub Actions cache for builds...${NC}"
-    DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose --env-file docker.env build \
-        --build-arg BUILDKIT_CACHE_FROM=type=gha \
-        --build-arg BUILDKIT_CACHE_TO=type=gha,mode=max
+    echo -e "${YELLOW}📦 Using GitHub Actions environment with caching...${NC}"
+    # The docker-compose.yml now includes proper caching configuration
+    DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose --env-file docker.env build
 else
     echo -e "${YELLOW}📦 Using default Docker caching...${NC}"
     DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose --env-file docker.env build

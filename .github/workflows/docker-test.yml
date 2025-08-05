@@ -46,10 +46,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
 
-      - name: Build Docker images
-        run: |
-          ./scripts/tambo-build.sh
-        timeout-minutes: 8
+      - name: Build web image with caching
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/web/Dockerfile
+          push: false
+          tags: tambo-web:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=development
+
+      - name: Build api image with caching
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/api/Dockerfile
+          push: false
+          tags: tambo-api:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=development
 
       - name: Start Docker stack
         run: |

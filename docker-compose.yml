@@ -38,11 +38,18 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      # Conditional caching based on environment
+      cache_from:
+        - type=gha
+      cache_to:
+        - type=gha,mode=max
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
     container_name: tambo_web
     ports:
       - "3210:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
       - NEXT_PUBLIC_TAMBO_API_URL=${NEXT_PUBLIC_TAMBO_API_URL:-http://localhost:3211}
       - NEXT_PUBLIC_TAMBO_API_KEY=${NEXT_PUBLIC_TAMBO_API_KEY}
       - NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
@@ -87,11 +94,18 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      # Conditional caching based on environment
+      cache_from:
+        - type=gha
+      cache_to:
+        - type=gha,mode=max
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
     container_name: tambo_api
     ports:
       - "3211:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
       - DATABASE_URL=${DATABASE_URL}
       - API_KEY_SECRET=${API_KEY_SECRET}
