@@ -19,6 +19,10 @@ jobs:
   docker-test:
     name: Test Docker Stack
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     env:
       # Use GitHub's Docker layer caching
       DOCKER_BUILDKIT: 1
