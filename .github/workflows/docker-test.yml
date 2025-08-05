@@ -19,10 +19,17 @@ jobs:
   docker-test:
     name: Test Docker Stack
     runs-on: ubuntu-latest
+    env:
+      # Use GitHub's Docker layer caching
+      DOCKER_BUILDKIT: 1
+      COMPOSE_DOCKER_CLI_BUILD: 1
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -46,19 +53,22 @@ jobs:
 
       - name: Start Docker stack
         run: |
-          ./scripts/tambo-start.sh
-        timeout-minutes: 5
+          # Build with cache mount for faster builds
+          docker compose --env-file docker.env build --build-arg BUILDKIT_INLINE_CACHE=1
+          # Start services
+          docker compose --env-file docker.env up -d
+        timeout-minutes: 8
 
       - name: Wait for services to be healthy
         run: |
-          # Wait for PostgreSQL to be healthy
-          timeout 60 bash -c 'until docker compose --env-file docker.env ps --format json | jq -r ".[] | select(.Service == \"postgres\") | .Health" | grep -q "healthy"; do sleep 5; done'
+          # Wait for PostgreSQL to be healthy (reduced wait time)
+          timeout 45 bash -c 'until docker compose --env-file docker.env ps --format json | jq -r ".[] | select(.Service == \"postgres\") | .Health" | grep -q "healthy"; do sleep 3; done'
 
           # Wait for API to be ready (using the /health endpoint)
-          timeout 60 bash -c 'until curl -f http://localhost:3211/health 2>/dev/null; do sleep 5; done'
+          timeout 45 bash -c 'until curl -f http://localhost:3211/health 2>/dev/null; do sleep 3; done'
 
           # Wait for Web to be ready
-          timeout 60 bash -c 'until curl -f http://localhost:3210/ 2>/dev/null; do sleep 5; done'
+          timeout 45 bash -c 'until curl -f http://localhost:3210/ 2>/dev/null; do sleep 3; done'
 
       - name: Check service status
         run: |
@@ -81,7 +91,7 @@ jobs:
       - name: Initialize database
         run: |
           ./scripts/init-database.sh
-        timeout-minutes: 3
+        timeout-minutes: 2
 
       - name: Verify database initialization
         run: |
@@ -96,7 +106,7 @@ jobs:
       - name: Stop Docker stack
         if: always()
         run: |
-          ./scripts/tambo-stop.sh
+          docker compose --env-file docker.env down
         timeout-minutes: 2
 
       - name: Cleanup
