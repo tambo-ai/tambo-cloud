@@ -98,7 +98,7 @@ jobs:
       - name: Stop Docker stack
         if: always()
         run: |
-          docker compose --env-file docker.env down
+          ./scripts/tambo-stop.sh
         timeout-minutes: 2
 
       - name: Cleanup
