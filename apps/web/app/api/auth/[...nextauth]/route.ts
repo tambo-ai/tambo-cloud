@@ -6,6 +6,7 @@ import NextAuth, { Account, NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
+import { Provider } from "next-auth/providers/index";
 
 // Domain restriction helper
 import { isEmailAllowed } from "@tambo-ai-cloud/core";
@@ -31,9 +32,20 @@ const ProviderConfig = {
   },
 };
 
+function getProviders(): Provider[] {
+  const providers: Provider[] = [];
+  if (env.GITHUB_CLIENT_ID) {
+    providers.push(GitHub(ProviderConfig.github));
+  }
+  if (env.GOOGLE_CLIENT_ID) {
+    providers.push(Google(ProviderConfig.google));
+  }
+  return providers;
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: SupabaseAdapter(),
-  providers: [GitHub(ProviderConfig.github), Google(ProviderConfig.google)],
+  providers: getProviders(),
   session: {
     strategy: "jwt",
   },
@@ -142,7 +154,7 @@ async function refreshTokenIfNecessary(
     return token;
   }
   const refreshToken = account?.refresh_token;
-  const idToken = decodeJwt(token.idToken as string);
+  const idToken = decodeJwt(token.idToken);
 
   // Extract expiration and issued-at times (in seconds)
   const exp = idToken.exp;
