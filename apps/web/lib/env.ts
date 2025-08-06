@@ -33,6 +33,7 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     NEXTAUTH_SECRET: z.string().min(1),
     NEXTAUTH_URL: z.string().url(),
+    EMAIL_FROM_DEFAULT: z.string().min(1),
 
     // Whitelabeling (server-side copies; optional so can be omitted)
     TAMBO_WHITELABEL_ORG_NAME: z.string().min(1).optional(),
@@ -106,6 +107,7 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    EMAIL_FROM_DEFAULT: process.env.EMAIL_FROM_DEFAULT,
 
     // Whitelabeling server values (mirrors client fallbacks)
     TAMBO_WHITELABEL_ORG_NAME: process.env.TAMBO_WHITELABEL_ORG_NAME,

@@ -4,6 +4,7 @@ import { refreshOidcToken } from "@tambo-ai-cloud/core";
 import { decodeJwt } from "jose";
 import NextAuth, { Account, NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
+import Email from "next-auth/providers/email";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { Provider } from "next-auth/providers/index";
@@ -39,6 +40,25 @@ function getProviders(): Provider[] {
   }
   if (env.GOOGLE_CLIENT_ID) {
     providers.push(Google(ProviderConfig.google));
+  }
+  if (!providers.length) {
+    // Right now only fall back to email if no providers are configured
+    if (env.RESEND_API_KEY) {
+      providers.push(
+        Email({
+          server: {
+            host: "smtp.resend.com",
+            port: 587,
+            auth: {
+              user: "resend",
+              pass: env.RESEND_API_KEY,
+            },
+          },
+          from: env.EMAIL_FROM_DEFAULT,
+        }),
+      );
+    }
+    throw new Error("No providers configured");
   }
   return providers;
 }
