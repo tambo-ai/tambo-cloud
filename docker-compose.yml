@@ -3,15 +3,12 @@ networks:
     driver: bridge
 
 volumes:
-  tambo_node_modules:
-  tambo_api_dist:
-  tambo_web_next:
   tambo_postgres_data:
 
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:15
+    image: postgres:17
     container_name: tambo_postgres
     restart: unless-stopped
     environment:
@@ -31,21 +28,28 @@ services:
           "CMD-SHELL",
           "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-tambo}",
         ]
-      interval: 10s
+      interval: 8s
       timeout: 5s
-      retries: 5
-      start_period: 30s
+      retries: 4
+      start_period: 20s
 
   # Web Service (Next.js)
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      # Conditional caching based on environment
+      cache_from:
+        - type=gha
+      cache_to:
+        - type=gha,mode=max
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
     container_name: tambo_web
     ports:
       - "3210:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
       - NEXT_PUBLIC_TAMBO_API_URL=${NEXT_PUBLIC_TAMBO_API_URL:-http://localhost:3211}
       - NEXT_PUBLIC_TAMBO_API_KEY=${NEXT_PUBLIC_TAMBO_API_KEY}
       - NEXT_PUBLIC_POSTHOG_HOST=${NEXT_PUBLIC_POSTHOG_HOST}
@@ -74,24 +78,34 @@ services:
       postgres:
         condition: service_healthy
       api:
-        condition: service_started
+        condition: service_healthy
     networks:
       - tambo_network
     restart: unless-stopped
-    volumes:
-      - tambo_web_next:/app/apps/web/.next
-      - tambo_node_modules:/app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 20s
+      timeout: 8s
+      retries: 3
+      start_period: 30s
 
   # API Service (NestJS)
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      # Conditional caching based on environment
+      cache_from:
+        - type=gha
+      cache_to:
+        - type=gha,mode=max
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
     container_name: tambo_api
     ports:
       - "3211:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
       - DATABASE_URL=${DATABASE_URL}
       - API_KEY_SECRET=${API_KEY_SECRET}
@@ -122,12 +136,9 @@ services:
     networks:
       - tambo_network
     restart: unless-stopped
-    volumes:
-      - tambo_api_dist:/app/apps/api/dist
-      - tambo_node_modules:/app/node_modules
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 20s
+      timeout: 8s
       retries: 3
-      start_period: 40s
+      start_period: 30s

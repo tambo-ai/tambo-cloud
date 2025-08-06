@@ -21,12 +21,12 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.0",
+    "@modelcontextprotocol/sdk": "^1.17.1",
     "commander": "^14.0.0",
     "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.32",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   }
 }
