@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { useTamboThread, useTamboThreadInput } from "@tambo-ai/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { ArrowUp, Square } from "lucide-react";
-import { usePathname } from "next/navigation";
 import * as React from "react";
 
 /**
@@ -117,7 +116,6 @@ const MessageInput = React.forwardRef<HTMLFormElement, MessageInputProps>(
     const [displayValue, setDisplayValue] = React.useState("");
     const [submitError, setSubmitError] = React.useState<string | null>(null);
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-    const pathname = usePathname();
 
     React.useEffect(() => {
       setDisplayValue(value);
@@ -137,11 +135,6 @@ const MessageInput = React.forwardRef<HTMLFormElement, MessageInputProps>(
           await submit({
             contextKey,
             streamResponse: true,
-            additionalContext: {
-              pageInfo: {
-                url: pathname,
-              },
-            },
           });
           setValue("");
           setTimeout(() => {
@@ -157,15 +150,7 @@ const MessageInput = React.forwardRef<HTMLFormElement, MessageInputProps>(
           );
         }
       },
-      [
-        value,
-        submit,
-        contextKey,
-        setValue,
-        setDisplayValue,
-        setSubmitError,
-        pathname,
-      ],
+      [value, submit, contextKey, setValue, setDisplayValue, setSubmitError],
     );
 
     const contextValue = React.useMemo(

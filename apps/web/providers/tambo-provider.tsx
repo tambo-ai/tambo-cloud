@@ -14,6 +14,9 @@ export function TamboProviderWrapper({ children }: TamboProviderWrapperProps) {
       apiKey={env.NEXT_PUBLIC_TAMBO_DASH_KEY!}
       tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL}
       components={tamboRegisteredComponents}
+      contextHelpers={{
+        userPage: true,
+      }}
     >
       {children}
     </TamboProvider>
