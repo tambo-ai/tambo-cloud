@@ -58,7 +58,6 @@ function getProviders(): Provider[] {
         }),
       );
     }
-    throw new Error("No providers configured");
   }
   return providers;
 }
