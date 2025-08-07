@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function UnauthorizedPage() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-4 space-y-6 bg-gray-50 text-gray-900">
+    <main className="flex flex-col items-center justify-center min-h-screen p-4 gap-6 bg-gray-50 text-gray-900">
       <h1 className="text-3xl font-semibold">Unauthorized</h1>
       <p>
         You are not authorized to access this application with the provided

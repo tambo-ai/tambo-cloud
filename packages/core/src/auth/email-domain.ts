@@ -37,7 +37,7 @@ export function isEmailAllowed({
     return false;
   }
 
-  const domain = allowedDomain.toLowerCase();
+  const domain = allowedDomain.trim().toLowerCase();
   const emailLower = email.toLowerCase();
 
   return emailLower.endsWith(`@${domain}`);
