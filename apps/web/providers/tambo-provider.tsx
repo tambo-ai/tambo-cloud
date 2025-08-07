@@ -2,7 +2,7 @@
 
 import { tamboRegisteredComponents } from "@/components/ui/tambo/chatwithtambo/config";
 import { env } from "@/lib/env";
-import { TamboProvider } from "@tambo-ai/react";
+import { TamboProvider, currentPageContextHelper } from "@tambo-ai/react";
 
 type TamboProviderWrapperProps = Readonly<{
   children: React.ReactNode;
@@ -15,7 +15,7 @@ export function TamboProviderWrapper({ children }: TamboProviderWrapperProps) {
       tamboUrl={env.NEXT_PUBLIC_TAMBO_API_URL}
       components={tamboRegisteredComponents}
       contextHelpers={{
-        userPage: true,
+        userPage: currentPageContextHelper,
       }}
     >
       {children}
