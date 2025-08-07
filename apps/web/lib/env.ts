@@ -24,7 +24,6 @@ export const env = createEnv({
     RESEND_AUDIENCE_ID: z.string().min(1).optional(),
     // for smoketesting
     WEATHER_API_KEY: z.string().min(1).optional(),
-    COMPOSIO_API_KEY: z.string().min(1).optional(),
     ALLOW_LOCAL_MCP_SERVERS: z.string().min(1).optional(),
     GITHUB_TOKEN: z.string().min(1).optional(),
     // NextAuth OAuth providers
@@ -38,6 +37,9 @@ export const env = createEnv({
     // Whitelabeling (server-side copies; optional so can be omitted)
     TAMBO_WHITELABEL_ORG_NAME: z.string().min(1).optional(),
     TAMBO_WHITELABEL_ORG_LOGO: z.string().url().optional(),
+    // Restrict logins to a specific verified email domain when self-hosting.
+    // When unset, any verified email is allowed.
+    ALLOWED_LOGIN_DOMAIN: z.string().min(1).optional(),
   },
   /*
    * Environment variables available on the client (and server).
@@ -95,7 +97,6 @@ export const env = createEnv({
     NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_LOGO:
       process.env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_LOGO ??
       process.env.TAMBO_WHITELABEL_ORG_LOGO,
-    COMPOSIO_API_KEY: process.env.COMPOSIO_API_KEY,
     ALLOW_LOCAL_MCP_SERVERS: process.env.ALLOW_LOCAL_MCP_SERVERS,
     GITHUB_TOKEN: process.env.GITHUB_TOKEN,
     // NextAuth OAuth providers
@@ -109,6 +110,7 @@ export const env = createEnv({
     // Whitelabeling server values (mirrors client fallbacks)
     TAMBO_WHITELABEL_ORG_NAME: process.env.TAMBO_WHITELABEL_ORG_NAME,
     TAMBO_WHITELABEL_ORG_LOGO: process.env.TAMBO_WHITELABEL_ORG_LOGO,
+    ALLOWED_LOGIN_DOMAIN: process.env.ALLOWED_LOGIN_DOMAIN,
   },
   skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
 });
