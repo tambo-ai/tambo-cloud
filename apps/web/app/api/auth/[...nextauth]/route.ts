@@ -216,9 +216,8 @@ async function refreshTokenIfNecessary(
   );
   return {
     ...token,
-    accessToken: refreshedToken.accessToken,
-    idToken: refreshedToken.idToken,
-    refreshToken: refreshedToken.refreshToken,
+    accessToken: refreshedToken.accessToken as string,
+    idToken: refreshedToken.idToken as string,
     expiresAt: refreshedToken.expiresAt,
     scope: refreshedToken.scope,
     tokenType: refreshedToken.tokenType,
