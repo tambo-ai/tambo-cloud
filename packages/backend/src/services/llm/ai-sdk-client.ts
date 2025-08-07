@@ -177,10 +177,15 @@ export class AISdkClient implements LLMClient {
       functionId: `${this.provider}-${this.model}`,
     });
 
+    // Only include temperature if it is defined
+    const temperature =
+      llmProviderConfig[this.provider].models?.[this.model]?.properties
+        .temperature;
+
     const baseConfig: TextCompleteParams = {
       model: modelInstance,
       messages: coreMessages,
-      temperature: 0,
+      temperature: temperature !== undefined ? temperature : 0,
       tools,
       toolChoice: params.tool_choice
         ? this.convertToolChoice(params.tool_choice)

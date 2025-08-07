@@ -2,6 +2,7 @@ export interface LlmModelCapabilities {
   inputTokenLimit: number;
   supportsTools?: boolean;
   supportsJsonMode?: boolean;
+  temperature?: number;
   // We can add other specific capabilities here
 }
 
