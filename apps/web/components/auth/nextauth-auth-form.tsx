@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useSignIn } from "@/hooks/nextauth";
+import { useAuthProviders } from "@/hooks/use-auth-providers";
 import { useToast } from "@/hooks/use-toast";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -16,19 +17,18 @@ interface AuthFormProps {
   routeOnSuccess?: string;
 }
 
-type AuthProvider = "github" | "google";
-
 export function NextAuthAuthForm({
   routeOnSuccess = "/dashboard",
 }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const signIn = useSignIn();
+  const { data: providers, isLoading: isLoadingProviders } = useAuthProviders();
 
-  const handleAuth = async (provider: AuthProvider) => {
+  const handleAuth = async (providerId: string) => {
     setIsLoading(true);
     try {
-      await signIn(provider, {
+      await signIn(providerId, {
         callbackUrl: routeOnSuccess,
       });
     } catch (error) {
@@ -41,6 +41,23 @@ export function NextAuthAuthForm({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const renderProviderButton = (provider: any) => {
+    const IconComponent = Icons[provider.icon as keyof typeof Icons];
+
+    return (
+      <Button
+        key={provider.id}
+        variant="outline"
+        onClick={async () => await handleAuth(provider.id)}
+        disabled={isLoading}
+        className="w-full h-12 text-base font-medium transition-all hover:scale-[1.02] hover:bg-accent hover:text-accent-foreground"
+      >
+        {IconComponent && <IconComponent className="mr-3 h-5 w-5" />}
+        {provider.displayName}
+      </Button>
+    );
   };
 
   return (
@@ -58,24 +75,19 @@ export function NextAuthAuthForm({
         </CardHeader>
         <CardContent className="space-y-4 pb-8">
           <div className="space-y-4">
-            <Button
-              variant="outline"
-              onClick={async () => await handleAuth("github")}
-              disabled={isLoading}
-              className="w-full h-12 text-base font-medium transition-all hover:scale-[1.02] hover:bg-accent hover:text-accent-foreground"
-            >
-              <Icons.github className="mr-3 h-5 w-5" />
-              Continue with GitHub
-            </Button>
-            <Button
-              variant="outline"
-              onClick={async () => await handleAuth("google")}
-              disabled={isLoading}
-              className="w-full h-12 text-base font-medium transition-all hover:scale-[1.02] hover:bg-accent hover:text-accent-foreground"
-            >
-              <Icons.google className="mr-3 h-5 w-5" />
-              Continue with Google
-            </Button>
+            {isLoadingProviders ? (
+              <div className="flex items-center justify-center py-8">
+                <Icons.spinner className="h-6 w-6 animate-spin" />
+              </div>
+            ) : providers &&
+              Array.isArray(providers) &&
+              providers.length > 0 ? (
+              providers.map(renderProviderButton)
+            ) : (
+              <div className="text-center text-muted-foreground py-4">
+                No authentication providers available
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
