@@ -17,7 +17,7 @@ export const openaiModels: LlmModelConfig = {
   "gpt-5-mini-2025-08-07": {
     apiName: "gpt-5-mini-2025-08-07",
     displayName: "gpt-5-mini",
-    status: "untested",
+    status: "tested",
     notes:
       "A faster, more cost-efficient version of GPT-5 for well-defined tasks",
     docLink: "https://platform.openai.com/docs/models/gpt-5-mini",
@@ -73,7 +73,7 @@ export const openaiModels: LlmModelConfig = {
   "o3-2025-04-16": {
     apiName: "o3-2025-04-16",
     displayName: "o3",
-    status: "untested",
+    status: "tested",
     notes: "The most powerful reasoning model",
     docLink: "https://platform.openai.com/docs/models/o3",
     tamboDocLink: "https://docs.tambo.co",
