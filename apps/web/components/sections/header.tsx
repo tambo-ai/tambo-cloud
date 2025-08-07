@@ -1,7 +1,8 @@
 import { Icons } from "@/components/icons";
 import { siteConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
-import { env } from "@/lib/env";
+// Whitelabel badge (client component)
+import { WhitelabelBadge } from "@/components/whitelabel-badge";
 import Link from "next/link";
 
 // Client components
@@ -40,29 +41,8 @@ export function Header({
           >
             <Icons.logo className="h-6 w-auto" aria-label={siteConfig.name} />
 
-            {/* Whitelabel elements */}
-            {(env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_LOGO ||
-              env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME) && (
-              <span className="ml-2 flex items-center gap-2">
-                {env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_LOGO && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_LOGO}
-                    alt={
-                      env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME
-                        ? `${env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME} logo`
-                        : "Organization logo"
-                    }
-                    className="h-6 w-auto"
-                  />
-                )}
-                {env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME && (
-                  <span className="text-sm font-medium">
-                    {env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME}
-                  </span>
-                )}
-              </span>
-            )}
+            {/* Partner whitelabel badge */}
+            <WhitelabelBadge />
           </Link>
 
           {/* Desktop navigation - client component */}
