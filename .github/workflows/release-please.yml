@@ -63,5 +63,8 @@ jobs:
                 fields:
                   - type: mrkdwn
                     text: "*Triggered by*\n${{ github.actor }}"
+        # Slack webhook is provided securely via repository secret.
+        # Ensure the secret `SLACK_RELEASE_PLEASE_WEBHOOK_URL` is configured
+        # in Settings → Secrets and variables → Actions.
         env:
-          SLACK_WEBHOOK_URL: ${{ vars.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_RELEASE_PLEASE_WEBHOOK_URL }}
