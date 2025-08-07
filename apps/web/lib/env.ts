@@ -18,12 +18,15 @@ export const env = createEnv({
     SLACK_OAUTH_TOKEN: z.string().min(1).optional(),
     PORT: z.string().min(1).optional(),
     DATABASE_URL: z.string().min(1),
-    API_KEY_SECRET: z.string().min(1),
-    PROVIDER_KEY_SECRET: z.string().min(1),
+    /** Generate with `openssl rand -hex 32` */
+    API_KEY_SECRET: z.string().min(8),
+    /** Generate with `openssl rand -hex 32` */
+    PROVIDER_KEY_SECRET: z.string().min(8),
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_AUDIENCE_ID: z.string().min(1).optional(),
     // for smoketesting
     WEATHER_API_KEY: z.string().min(1).optional(),
+    // Dev-only, allow testing server-side MCP servers running locally
     ALLOW_LOCAL_MCP_SERVERS: z.string().min(1).optional(),
     GITHUB_TOKEN: z.string().min(1).optional(),
     // NextAuth OAuth providers
@@ -31,7 +34,9 @@ export const env = createEnv({
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
-    NEXTAUTH_SECRET: z.string().min(1),
+    /** Generate with `openssl rand -hex 32` */
+    NEXTAUTH_SECRET: z.string().min(8),
+    /** URL of the client app so we can redirect back to it after auth, e.g. https://tambo.co or http://localhost:3000 */
     NEXTAUTH_URL: z.string().url(),
     EMAIL_FROM_DEFAULT: z.string().min(1),
 
