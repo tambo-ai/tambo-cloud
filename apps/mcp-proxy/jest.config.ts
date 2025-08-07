@@ -1,4 +1,10 @@
+import { createRequire } from "module";
 import type { JestConfigWithTsJest } from "ts-jest";
+
+// Polyfill require for ESM Jest config (Node 20+).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const _require: any =
+  typeof require !== "undefined" ? require : createRequire(import.meta.url);
 
 const config: JestConfigWithTsJest = {
   preset: "ts-jest",
@@ -7,7 +13,7 @@ const config: JestConfigWithTsJest = {
   moduleNameMapper: {
     "^@tambo-ai-cloud/(.*)$": "<rootDir>/../../packages/$1/src",
   },
-  prettierPath: require.resolve("prettier"),
+  prettierPath: _require.resolve("prettier"),
   transform: {
     "^.+\\.tsx?$": [
       "ts-jest",
