@@ -28,6 +28,9 @@ export function ProviderButton({
     try {
       await signIn(provider.id, {
         callbackUrl: routeOnSuccess,
+        // TODO: when the provider is email, we need to pass the email
+        // address to the callbackUrl, and probably have an input field
+        // for the email address.
       });
     } catch (error) {
       console.error("Auth failed:", error);

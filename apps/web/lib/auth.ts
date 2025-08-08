@@ -225,12 +225,16 @@ async function refreshTokenIfNecessary(
   };
 }
 
+/**
+ * Get the auth providers configured in the environment and other metadata
+ * needed for the login page.
+ * @returns The auth providers configured in the environment.
+ */
 export function getAuthProviders(): AuthProviderConfig[] {
   const providers = getProviders();
 
   // Get provider IDs from NextAuth
   const providerIds = providers.map((provider) => provider.id);
-  console.log("providerIds", providerIds);
 
   // Get provider configurations with metadata
   const providerConfigs = getAvailableProviderConfigs(providerIds);
