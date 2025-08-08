@@ -32,7 +32,7 @@
     "ajv": "^8.17.1",
     "gpt-tokenizer": "^3.0.1",
     "langfuse": "^3.38.4",
-    "openai": "^5.10.2",
+    "openai": "^5.11.0",
     "partial-json": "^0.1.7",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.24.3"
@@ -44,7 +44,7 @@
     "jest": "^30.0.5",
     "prettier-2": "npm:prettier@^2",
     "ts-jest": "^29.4.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   },
   "engines": {
     "node": ">=22",

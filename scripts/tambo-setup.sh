@@ -12,8 +12,17 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the project root directory (parent of scripts directory)
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root directory
+cd "$PROJECT_ROOT"
+
 echo -e "${GREEN}🚀 Tambo Docker Setup${NC}"
 echo -e "${BLUE}This script will help you set up Tambo for self-hosting with Docker${NC}"
+echo -e "${BLUE}📁 Working directory: $(pwd)${NC}"
 echo -e ""
 
 # Check if Docker is installed
@@ -62,11 +71,6 @@ else
     echo -e "${BLUE}ℹ️  docker.env already exists${NC}"
 fi
 
-# Make scripts executable
-echo -e "${YELLOW}🔧 Making scripts executable...${NC}"
-chmod +x scripts/tambo-*.sh
-chmod +x scripts/init-database.sh
-
 echo -e "${GREEN}✅ Setup completed successfully!${NC}"
 echo -e ""
 echo -e "${BLUE}📋 Next steps:${NC}"
@@ -75,13 +79,16 @@ echo -e "   - Update passwords and secrets"
 echo -e "   - Add your API keys (OpenAI, etc.)"
 echo -e "   - Configure other settings as needed"
 echo -e ""
-echo -e "2. ${YELLOW}Start the stack:${NC}"
+echo -e "2. ${YELLOW}Build the containers:${NC}"
+echo -e "   ./scripts/tambo-build.sh"
+echo -e ""
+echo -e "3. ${YELLOW}Start the stack:${NC}"
 echo -e "   ./scripts/tambo-start.sh"
 echo -e ""
-echo -e "3. ${YELLOW}Initialize the database:${NC}"
+echo -e "4. ${YELLOW}Initialize the database:${NC}"
 echo -e "   ./scripts/init-database.sh"
 echo -e ""
-echo -e "4. ${YELLOW}Access your applications:${NC}"
+echo -e "5. ${YELLOW}Access your applications:${NC}"
 echo -e "   - Tambo Web: http://localhost:3210"
 echo -e "   - Tambo API: http://localhost:3211"
 echo -e "   - PostgreSQL Database: localhost:5433"
