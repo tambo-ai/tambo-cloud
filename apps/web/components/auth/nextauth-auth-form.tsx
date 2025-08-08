@@ -1,5 +1,4 @@
-import { Icons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
+"use client";
 import {
   Card,
   CardContent,
@@ -7,59 +6,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useSignIn } from "@/hooks/nextauth";
-import { useAuthProviders } from "@/hooks/use-auth-providers";
-import { useToast } from "@/hooks/use-toast";
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { AuthProviderConfig } from "@/lib/auth-providers";
+import { AuthErrorBanner } from "./auth-error-banner";
+import { ProviderButton } from "./provider-button";
 
 interface AuthFormProps {
   routeOnSuccess?: string;
+  providers: AuthProviderConfig[];
 }
 
 export function NextAuthAuthForm({
   routeOnSuccess = "/dashboard",
+  providers,
 }: AuthFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const signIn = useSignIn();
-  const { data: providers, isLoading: isLoadingProviders } = useAuthProviders();
-
-  const handleAuth = async (providerId: string) => {
-    setIsLoading(true);
-    try {
-      await signIn(providerId, {
-        callbackUrl: routeOnSuccess,
-      });
-    } catch (error) {
-      console.error("Auth failed:", error);
-      toast({
-        title: "Error",
-        description: "Failed to authenticate. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const renderProviderButton = (provider: any) => {
-    const IconComponent = Icons[provider.icon as keyof typeof Icons];
-
-    return (
-      <Button
-        key={provider.id}
-        variant="outline"
-        onClick={async () => await handleAuth(provider.id)}
-        disabled={isLoading}
-        className="w-full h-12 text-base font-medium transition-all hover:scale-[1.02] hover:bg-accent hover:text-accent-foreground"
-      >
-        {IconComponent && <IconComponent className="mr-3 h-5 w-5" />}
-        {provider.displayName}
-      </Button>
-    );
-  };
-
   return (
     <div className="flex flex-col items-center justify-center min-h-[450px] w-full px-4 gap-6">
       <Card className="w-full max-w-md mx-auto shadow-lg border-2">
@@ -75,14 +34,14 @@ export function NextAuthAuthForm({
         </CardHeader>
         <CardContent className="space-y-4 pb-8">
           <div className="space-y-4">
-            {isLoadingProviders ? (
-              <div className="flex items-center justify-center py-8">
-                <Icons.spinner className="h-6 w-6 animate-spin" />
-              </div>
-            ) : providers &&
-              Array.isArray(providers) &&
-              providers.length > 0 ? (
-              providers.map(renderProviderButton)
+            {providers.length > 0 ? (
+              providers.map((provider) => (
+                <ProviderButton
+                  key={provider.id}
+                  provider={provider}
+                  routeOnSuccess={routeOnSuccess}
+                />
+              ))
             ) : (
               <div className="text-center text-muted-foreground py-4">
                 No authentication providers available
@@ -94,34 +53,4 @@ export function NextAuthAuthForm({
       <AuthErrorBanner />
     </div>
   );
-}
-
-function AuthErrorBanner() {
-  const searchParams = useSearchParams();
-  const error = searchParams.get("error");
-
-  if (error) {
-    return (
-      <Card className="w-full max-w-md mx-auto border-red-200 bg-red-50">
-        <CardContent className="pt-6">
-          <div className="space-y-2 text-red-800">
-            <p>Authentication failed. Please try again.</p>
-            {error === "Configuration" && (
-              <p className="text-sm">Server configuration error.</p>
-            )}
-            {error === "AccessDenied" && (
-              <p className="text-sm">
-                Access denied. Please check your credentials.
-              </p>
-            )}
-            {error === "Verification" && (
-              <p className="text-sm">Verification failed. Please try again.</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return null;
 }

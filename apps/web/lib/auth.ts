@@ -8,6 +8,10 @@ import Email from "next-auth/providers/email";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { Provider } from "next-auth/providers/index";
+import {
+  AuthProviderConfig,
+  getAvailableProviderConfigs,
+} from "./auth-providers";
 
 const ProviderConfig = {
   google: {
@@ -54,6 +58,10 @@ function getProviders(): Provider[] {
           from: env.EMAIL_FROM_DEFAULT,
         }),
       );
+    } else {
+      console.error(
+        "No email provider configured, but RESEND_API_KEY is not set. Please set RESEND_API_KEY to use email authentication.",
+      );
     }
   }
   return providers;
@@ -71,7 +79,7 @@ export const authOptions: NextAuthOptions = {
      * Restrict sign-in to verified emails belonging to the configured domain
      * when `ALLOWED_LOGIN_DOMAIN` is set.
      */
-    async signIn({ user, account, profile }) {
+    async signIn({ user, profile }) {
       const allowedDomain = env.ALLOWED_LOGIN_DOMAIN;
 
       // Attempt to determine verification status. Google returns
@@ -81,7 +89,6 @@ export const authOptions: NextAuthOptions = {
       // has been verified.
 
       const email = user?.email ?? (profile as any)?.email;
-
       // Google: `profile.email_verified` or `profile.verified_email`
       let emailVerified = false;
       if ((user as any)?.emailVerified) {
@@ -216,4 +223,17 @@ async function refreshTokenIfNecessary(
     scope: refreshedToken.scope,
     tokenType: refreshedToken.tokenType,
   };
+}
+
+export function getAuthProviders(): AuthProviderConfig[] {
+  const providers = getProviders();
+
+  // Get provider IDs from NextAuth
+  const providerIds = providers.map((provider) => provider.id);
+  console.log("providerIds", providerIds);
+
+  // Get provider configurations with metadata
+  const providerConfigs = getAvailableProviderConfigs(providerIds);
+
+  return providerConfigs;
 }
