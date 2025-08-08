@@ -10,6 +10,7 @@ export const openaiModels: LlmModelConfig = {
     tamboDocLink: "https://docs.tambo.co",
     properties: {
       inputTokenLimit: 400000,
+      temperature: 1,
       supportsTools: true,
       supportsJsonMode: true,
     },
