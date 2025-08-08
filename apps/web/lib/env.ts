@@ -18,21 +18,34 @@ export const env = createEnv({
     SLACK_OAUTH_TOKEN: z.string().min(1).optional(),
     PORT: z.string().min(1).optional(),
     DATABASE_URL: z.string().min(1),
-    API_KEY_SECRET: z.string().min(1),
-    PROVIDER_KEY_SECRET: z.string().min(1),
+    /** Generate with `openssl rand -hex 32` */
+    API_KEY_SECRET: z.string().min(8),
+    /** Generate with `openssl rand -hex 32` */
+    PROVIDER_KEY_SECRET: z.string().min(8),
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_AUDIENCE_ID: z.string().min(1).optional(),
     // for smoketesting
     WEATHER_API_KEY: z.string().min(1).optional(),
+    // Dev-only, allow testing server-side MCP servers running locally
     ALLOW_LOCAL_MCP_SERVERS: z.string().min(1).optional(),
     GITHUB_TOKEN: z.string().min(1).optional(),
     // NextAuth OAuth providers
-    GITHUB_CLIENT_ID: z.string().min(1).optional(),
-    GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
-    GOOGLE_CLIENT_ID: z.string().min(1).optional(),
-    GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
-    NEXTAUTH_SECRET: z.string().min(1),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+    /** Generate with `openssl rand -hex 32` */
+    NEXTAUTH_SECRET: z.string().min(8),
+    /** URL of the client app so we can redirect back to it after auth, e.g. https://tambo.co or http://localhost:3000 */
     NEXTAUTH_URL: z.string().url(),
+    EMAIL_FROM_DEFAULT: z.string().min(1),
+
+    // Whitelabeling (server-side copies; optional so can be omitted)
+    TAMBO_WHITELABEL_ORG_NAME: z.string().min(1).optional(),
+    TAMBO_WHITELABEL_ORG_LOGO: z.string().url().optional(),
+    // Restrict logins to a specific verified email domain when self-hosting.
+    // When unset, any verified email is allowed.
+    ALLOWED_LOGIN_DOMAIN: z.string().min(1).optional(),
   },
   /*
    * Environment variables available on the client (and server).
@@ -49,6 +62,10 @@ export const env = createEnv({
     NEXT_PUBLIC_TAMBO_API_URL: z.string().min(1).optional(),
     NEXT_PUBLIC_SMOKETEST_TAMBO_API_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_SMOKETEST_PROJECT_ID: z.string().min(1).optional(),
+
+    // Whitelabeling vars
+    NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME: z.string().min(1).optional(),
+    NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_LOGO: z.string().url().optional(),
   },
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
@@ -78,6 +95,14 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_SMOKETEST_TAMBO_API_KEY,
     NEXT_PUBLIC_SMOKETEST_PROJECT_ID:
       process.env.NEXT_PUBLIC_SMOKETEST_PROJECT_ID,
+
+    // Whitelabeling (falls back to non-public vars for convenience)
+    NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME:
+      process.env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME ??
+      process.env.TAMBO_WHITELABEL_ORG_NAME,
+    NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_LOGO:
+      process.env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_LOGO ??
+      process.env.TAMBO_WHITELABEL_ORG_LOGO,
     ALLOW_LOCAL_MCP_SERVERS: process.env.ALLOW_LOCAL_MCP_SERVERS,
     GITHUB_TOKEN: process.env.GITHUB_TOKEN,
     // NextAuth OAuth providers
@@ -87,6 +112,12 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    EMAIL_FROM_DEFAULT: process.env.EMAIL_FROM_DEFAULT,
+
+    // Whitelabeling server values (mirrors client fallbacks)
+    TAMBO_WHITELABEL_ORG_NAME: process.env.TAMBO_WHITELABEL_ORG_NAME,
+    TAMBO_WHITELABEL_ORG_LOGO: process.env.TAMBO_WHITELABEL_ORG_LOGO,
+    ALLOWED_LOGIN_DOMAIN: process.env.ALLOWED_LOGIN_DOMAIN,
   },
   skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
 });
