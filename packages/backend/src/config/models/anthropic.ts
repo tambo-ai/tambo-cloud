@@ -74,7 +74,7 @@ export const anthropicModels: LlmModelConfig = {
   "claude-3-5-haiku-20241022": {
     apiName: "claude-3-5-haiku-20241022",
     displayName: "Claude Haiku 3.5",
-    status: "untested",
+    status: "known-issues",
     notes:
       "Claude 3.5 Haiku is Anthropic's fastest and most affordable model. Great for real-time tasks like chatbots, coding, and data extraction.",
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",

@@ -12,7 +12,7 @@ export interface LlmModelConfigInfo {
   /** User-friendly name, e.g., "GPT-4o Mini" */
   displayName: string;
   /** The status of the model integration */
-  status: "tested" | "untested";
+  status: "tested" | "untested" | "known-issues";
   /** For known issues, specific behaviors, etc. */
   notes?: string;
   /** Link to external documentation about the model or its issues */

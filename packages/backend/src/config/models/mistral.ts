@@ -4,7 +4,7 @@ export const mistralModels: LlmModelConfig = {
   "mistral-medium-2505": {
     apiName: "mistral-medium-2505",
     displayName: "Mistral Medium 3",
-    status: "tested",
+    status: "known-issues",
     notes:
       "Mistral Medium 3 is designed to be frontier-class, particularly in categories of professional use.",
     docLink: "https://mistral.ai/news/mistral-medium-3",
@@ -32,7 +32,7 @@ export const mistralModels: LlmModelConfig = {
   "magistral-medium-2506": {
     apiName: "magistral-medium-2506",
     displayName: "Magistral Medium 1",
-    status: "untested",
+    status: "tested",
     notes:
       "Magistral Medium 1 is a frontier-class reasoning model released June 2025.",
     docLink: "https://mistral.ai/news/magistral",
@@ -46,7 +46,7 @@ export const mistralModels: LlmModelConfig = {
   "mistral-large-2411": {
     apiName: "mistral-large-2411",
     displayName: "Mistral Large 2.1",
-    status: "tested",
+    status: "known-issues",
     notes:
       "Mistral Large 2.1 is Mistral's top-tier large model for high-complexity tasks with the lastest version released November 2024.",
     docLink: "https://mistral.ai/news/pixtral-large",
