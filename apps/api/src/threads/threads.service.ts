@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import * as Sentry from "@sentry/nestjs";
 import {
   generateChainId,
   getToolsFromSources,
@@ -96,87 +97,119 @@ export class ThreadsService {
     threadId: string,
     userId: string,
   ): Promise<TamboBackend> {
-    const chainId = await generateChainId(threadId);
+    return await Sentry.startSpan(
+      {
+        name: "threads.createHydraBackend",
+        op: "threads",
+        attributes: { threadId, userId },
+      },
+      async () => {
+        const chainId = await generateChainId(threadId);
 
-    const threadData = await this.getDb().query.threads.findFirst({
-      where: eq(schema.threads.id, threadId),
-      columns: { projectId: true },
-    });
+        const threadData = await this.getDb().query.threads.findFirst({
+          where: eq(schema.threads.id, threadId),
+          columns: { projectId: true },
+        });
 
-    if (!threadData?.projectId) {
-      throw new NotFoundException(
-        `Thread with ID ${threadId} not found or has no project associated.`,
-      );
-    }
+        if (!threadData?.projectId) {
+          throw new NotFoundException(
+            `Thread with ID ${threadId} not found or has no project associated.`,
+          );
+        }
 
-    const projectId = threadData.projectId;
+        const projectId = threadData.projectId;
 
-    // 1. Fetch project-specific LLM settings
-    const project = await this.projectsService.findOne(projectId);
-    if (!project) {
-      throw new NotFoundException(`Project with ID ${projectId} not found.`);
-    }
+        // 1. Fetch project-specific LLM settings
+        const project = await this.projectsService.findOne(projectId);
+        if (!project) {
+          throw new NotFoundException(
+            `Project with ID ${projectId} not found.`,
+          );
+        }
 
-    // Determine the provider, model, and baseURL from project settings
-    // Provider defaults to 'openai' if not set on the project, model to 'gpt-4o'
-    const providerName = project.defaultLlmProviderName ?? "openai";
-    let modelName = project.defaultLlmModelName;
-    let customModelOverride = project.customLlmModelName;
-    const baseURL = project.customLlmBaseURL;
-    const maxInputTokens = project.maxInputTokens;
+        // Determine the provider, model, and baseURL from project settings
+        // Provider defaults to 'openai' if not set on the project, model to 'gpt-4o'
+        const providerName = project.defaultLlmProviderName ?? "openai";
+        let modelName = project.defaultLlmModelName;
+        let customModelOverride = project.customLlmModelName;
+        const baseURL = project.customLlmBaseURL;
+        const maxInputTokens = project.maxInputTokens;
 
-    if (providerName === "openai-compatible") {
-      // For openai-compatible, the customLlmModelName is the actual model name
-      modelName = project.customLlmModelName ?? DEFAULT_OPENAI_MODEL; // Fallback if customLlmModelName is null
-      customModelOverride = undefined; // No separate override for openai-compatible
-    } else if (customModelOverride) {
-      // For other providers, if customLlmModelName is set, it overrides defaultLlmModelName
-      modelName = customModelOverride;
-    } else {
-      modelName = modelName ?? DEFAULT_OPENAI_MODEL; // Fallback if no default model and no override
-    }
+        if (providerName === "openai-compatible") {
+          // For openai-compatible, the customLlmModelName is the actual model name
+          modelName = project.customLlmModelName ?? DEFAULT_OPENAI_MODEL; // Fallback if customLlmModelName is null
+          customModelOverride = undefined; // No separate override for openai-compatible
+        } else if (customModelOverride) {
+          // For other providers, if customLlmModelName is set, it overrides defaultLlmModelName
+          modelName = customModelOverride;
+        } else {
+          modelName = modelName ?? DEFAULT_OPENAI_MODEL; // Fallback if no default model and no override
+        }
 
-    // 2. Get the API key for the determined provider
-    const apiKey = await this.validateProjectAndProviderKeys(
-      projectId,
-      providerName as Provider,
-      modelName,
+        // 2. Get the API key for the determined provider
+        const apiKey = await this.validateProjectAndProviderKeys(
+          projectId,
+          providerName as Provider,
+          modelName,
+        );
+        if (!apiKey && providerName !== "openai-compatible") {
+          throw new Error(
+            `Provider key required but not found for project ${projectId} and provider ${providerName}`,
+          );
+        }
+
+        return new TamboBackend(apiKey, chainId, userId, {
+          provider: providerName as Provider,
+          model: modelName,
+          baseURL: baseURL ?? undefined,
+          maxInputTokens,
+        });
+      },
     );
-    if (!apiKey && providerName !== "openai-compatible") {
-      throw new Error(
-        `Provider key required but not found for project ${projectId} and provider ${providerName}`,
-      );
-    }
-
-    return new TamboBackend(apiKey, chainId, userId, {
-      provider: providerName as Provider,
-      model: modelName,
-      baseURL: baseURL ?? undefined,
-      maxInputTokens,
-    });
   }
 
   async createThread(
     createThreadDto: Omit<ThreadRequest, "contextKey">,
     contextKey?: string,
   ): Promise<Thread> {
-    const thread = await operations.createThread(this.getDb(), {
-      projectId: createThreadDto.projectId,
-      contextKey: contextKey,
-      metadata: createThreadDto.metadata,
-      name: createThreadDto.name,
-    });
-    return {
-      id: thread.id,
-      createdAt: thread.createdAt,
-      updatedAt: thread.updatedAt,
-      name: thread.name ?? undefined,
-      contextKey: thread.contextKey ?? undefined,
-      metadata: thread.metadata ?? undefined,
-      generationStage: thread.generationStage,
-      statusMessage: thread.statusMessage ?? undefined,
-      projectId: thread.projectId,
-    };
+    return await Sentry.startSpan(
+      {
+        name: "threads.create",
+        op: "threads",
+        attributes: {
+          projectId: createThreadDto.projectId,
+          hasContextKey: !!contextKey,
+        },
+      },
+      async () => {
+        const thread = await operations.createThread(this.getDb(), {
+          projectId: createThreadDto.projectId,
+          contextKey: contextKey,
+          metadata: createThreadDto.metadata,
+          name: createThreadDto.name,
+        });
+
+        // Add breadcrumb for thread creation
+        Sentry.addBreadcrumb({
+          message: "Thread created",
+          category: "threads",
+          level: "info",
+          data: { threadId: thread.id, projectId: thread.projectId },
+        });
+
+        return {
+          id: thread.id,
+          createdAt: thread.createdAt,
+          updatedAt: thread.updatedAt,
+          name: thread.name ?? undefined,
+          contextKey: thread.contextKey ?? undefined,
+          metadata: thread.metadata ?? undefined,
+          generationStage: thread.generationStage,
+          statusMessage: thread.statusMessage ?? undefined,
+          projectId: thread.projectId,
+        };
+      },
+    );
   }
 
   async findAllForProject(
@@ -386,81 +419,107 @@ export class ThreadsService {
   }
 
   private async checkMessageLimit(projectId: string): Promise<void> {
-    const usage = await operations.getProjectMessageUsage(
-      this.getDb(),
-      projectId,
-    );
-
-    // Check if we're using the fallback key
-    const projectWithKeys =
-      await this.projectsService.findOneWithKeys(projectId);
-    const project = await this.projectsService.findOne(projectId);
-    if (!project) {
-      throw new NotFoundException("Project not found");
-    }
-    const providerKeys = projectWithKeys?.getProviderKeys() ?? [];
-    // Check specifically if we have a key for the provider being used
-    const openaiKey = providerKeys.find((key) => key.providerName === "openai");
-    // Using fallback key if we're using openai with default model but no openai key
-    const usingFallbackKey =
-      !openaiKey &&
-      (project.defaultLlmProviderName === "openai" ||
-        !project.defaultLlmProviderName) &&
-      (project.defaultLlmModelName === DEFAULT_OPENAI_MODEL ||
-        !project.defaultLlmModelName);
-
-    if (!usage) {
-      // Create initial usage record
-      const newUsage = await operations.updateProjectMessageUsage(
-        this.getDb(),
-        projectId,
-        {
-          messageCount: usingFallbackKey ? 1 : 0,
-        },
-      );
-
-      // Check for first message email with the newly created usage
-      await this.checkAndSendFirstMessageEmail(projectId, newUsage);
-      return;
-    }
-
-    if (!usage.hasApiKey && usage.messageCount >= FREE_MESSAGE_LIMIT) {
-      // Only send email if we haven't sent one before
-      if (!usage.notificationSentAt) {
-        // Get project owner's email from auth.users
-        const projectOwner = await this.getDb().query.projectMembers.findFirst({
-          where: eq(schema.projectMembers.projectId, projectId),
-          with: {
-            user: true,
-          },
-        });
-
-        const ownerEmail = projectOwner?.user.email;
-
-        if (ownerEmail) {
-          await this.emailService.sendMessageLimitNotification(
+    return await Sentry.startSpan(
+      {
+        name: "threads.checkMessageLimit",
+        op: "validation",
+        attributes: { projectId },
+      },
+      async () => {
+        try {
+          const usage = await operations.getProjectMessageUsage(
+            this.getDb(),
             projectId,
-            ownerEmail,
-            project.name,
           );
 
-          // Update the notification sent timestamp
-          await operations.updateProjectMessageUsage(this.getDb(), projectId, {
-            notificationSentAt: new Date(),
+          // Check if we're using the fallback key
+          const projectWithKeys =
+            await this.projectsService.findOneWithKeys(projectId);
+          const project = await this.projectsService.findOne(projectId);
+          if (!project) {
+            throw new NotFoundException("Project not found");
+          }
+          const providerKeys = projectWithKeys?.getProviderKeys() ?? [];
+          // Check specifically if we have a key for the provider being used
+          const openaiKey = providerKeys.find(
+            (key) => key.providerName === "openai",
+          );
+          // Using fallback key if we're using openai with default model but no openai key
+          const usingFallbackKey =
+            !openaiKey &&
+            (project.defaultLlmProviderName === "openai" ||
+              !project.defaultLlmProviderName) &&
+            (project.defaultLlmModelName === DEFAULT_OPENAI_MODEL ||
+              !project.defaultLlmModelName);
+
+          if (!usage) {
+            // Create initial usage record
+            const newUsage = await operations.updateProjectMessageUsage(
+              this.getDb(),
+              projectId,
+              {
+                messageCount: usingFallbackKey ? 1 : 0,
+              },
+            );
+
+            // Check for first message email with the newly created usage
+            await this.checkAndSendFirstMessageEmail(projectId, newUsage);
+            return;
+          }
+
+          if (!usage.hasApiKey && usage.messageCount >= FREE_MESSAGE_LIMIT) {
+            // Only send email if we haven't sent one before
+            if (!usage.notificationSentAt) {
+              // Get project owner's email from auth.users
+              const projectOwner =
+                await this.getDb().query.projectMembers.findFirst({
+                  where: eq(schema.projectMembers.projectId, projectId),
+                  with: {
+                    user: true,
+                  },
+                });
+
+              const ownerEmail = projectOwner?.user.email;
+
+              if (ownerEmail) {
+                await this.emailService.sendMessageLimitNotification(
+                  projectId,
+                  ownerEmail,
+                  project.name,
+                );
+
+                // Update the notification sent timestamp
+                await operations.updateProjectMessageUsage(
+                  this.getDb(),
+                  projectId,
+                  {
+                    notificationSentAt: new Date(),
+                  },
+                );
+              }
+            }
+
+            // Track rate limit hit
+            Sentry.captureMessage("Free message limit reached", "warning");
+
+            throw new FreeLimitReachedError();
+          }
+
+          // Only increment message count if using fallback key
+          if (usingFallbackKey) {
+            await operations.incrementMessageCount(this.getDb(), projectId);
+          }
+
+          // Check for first message email
+          await this.checkAndSendFirstMessageEmail(projectId, usage);
+        } catch (error) {
+          Sentry.captureException(error, {
+            tags: { projectId, operation: "checkMessageLimit" },
           });
+          throw error;
         }
-      }
-
-      throw new FreeLimitReachedError();
-    }
-
-    // Only increment message count if using fallback key
-    if (usingFallbackKey) {
-      await operations.incrementMessageCount(this.getDb(), projectId);
-    }
-
-    // Check for first message email
-    await this.checkAndSendFirstMessageEmail(projectId, usage);
+      },
+    );
   }
 
   async addMessage(
@@ -559,54 +618,97 @@ export class ThreadsService {
     messageId: string,
     generateSuggestionsDto: SuggestionsGenerateDto,
   ): Promise<SuggestionDto[]> {
-    const message = await this.getMessage(messageId);
-
-    const contextKey = message.thread.contextKey ?? TAMBO_ANON_CONTEXT_KEY;
-    try {
-      const threadMessages = await this.getMessages(message.threadId);
-
-      const tamboBackend = await this.createHydraBackendForThread(
-        message.threadId,
-        contextKey,
-      );
-      const suggestions = await tamboBackend.generateSuggestions(
-        threadMessages as ThreadMessage[],
-        generateSuggestionsDto.maxSuggestions ?? 3,
-        generateSuggestionsDto.availableComponents ?? [],
-        message.threadId,
-        false,
-      );
-
-      if (!suggestions.suggestions.length) {
-        throw new SuggestionGenerationError(messageId);
-      }
-
-      const savedSuggestions = await operations.createSuggestions(
-        this.getDb(),
-        suggestions.suggestions.map((suggestion) => ({
+    return await Sentry.startSpan(
+      {
+        name: "threads.generateSuggestions",
+        op: "ai.suggestions",
+        attributes: {
           messageId,
-          title: suggestion.title,
-          detailedSuggestion: suggestion.detailedSuggestion,
-        })),
-      );
+          maxSuggestions: generateSuggestionsDto.maxSuggestions,
+        },
+      },
+      async () => {
+        try {
+          const message = await this.getMessage(messageId);
+          const contextKey =
+            message.thread.contextKey ?? TAMBO_ANON_CONTEXT_KEY;
 
-      this.logger.log(
-        `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`,
-      );
-      return savedSuggestions.map(mapSuggestionToDto);
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Error generating suggestions: ${errorMessage}`,
-        errorStack,
-      );
-      throw new SuggestionGenerationError(messageId, {
-        maxSuggestions: generateSuggestionsDto.maxSuggestions,
-        availableComponents: generateSuggestionsDto.availableComponents,
-      });
-    }
+          // Add breadcrumb
+          Sentry.addBreadcrumb({
+            message: "Generating suggestions",
+            category: "ai",
+            level: "info",
+            data: { messageId, threadId: message.threadId },
+          });
+
+          const threadMessages = await this.getMessages(message.threadId);
+          const tamboBackend = await this.createHydraBackendForThread(
+            message.threadId,
+            contextKey,
+          );
+
+          const suggestions = await tamboBackend.generateSuggestions(
+            threadMessages as ThreadMessage[],
+            generateSuggestionsDto.maxSuggestions ?? 3,
+            generateSuggestionsDto.availableComponents ?? [],
+            message.threadId,
+            false,
+          );
+
+          if (!suggestions.suggestions.length) {
+            throw new SuggestionGenerationError(messageId);
+          }
+
+          const savedSuggestions = await operations.createSuggestions(
+            this.getDb(),
+            suggestions.suggestions.map((suggestion) => ({
+              messageId,
+              title: suggestion.title,
+              detailedSuggestion: suggestion.detailedSuggestion,
+            })),
+          );
+
+          // Track successful suggestion generation
+          Sentry.addBreadcrumb({
+            message: "Suggestions generated successfully",
+            category: "ai",
+            level: "info",
+            data: {
+              messageId,
+              count: savedSuggestions.length,
+            },
+          });
+
+          this.logger.log(
+            `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`,
+          );
+          return savedSuggestions.map(mapSuggestionToDto);
+        } catch (error) {
+          // Capture suggestion generation errors with context
+          Sentry.withScope((scope) => {
+            scope.setTag("operation", "generateSuggestions");
+            scope.setTag("messageId", messageId);
+            scope.setContext(
+              "suggestionParams",
+              generateSuggestionsDto as unknown as Record<string, unknown>,
+            );
+            Sentry.captureException(error);
+          });
+
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          const errorStack = error instanceof Error ? error.stack : undefined;
+          this.logger.error(
+            `Error generating suggestions: ${errorMessage}`,
+            errorStack,
+          );
+          throw new SuggestionGenerationError(messageId, {
+            maxSuggestions: generateSuggestionsDto.maxSuggestions,
+            availableComponents: generateSuggestionsDto.availableComponents,
+          });
+        }
+      },
+    );
   }
 
   // generateThreadName overloads
@@ -740,192 +842,246 @@ export class ThreadsService {
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
-    const db = this.getDb();
-
-    // Rate limiting check
-    await this.checkMessageLimit(projectId);
-
-    const thread = await this.ensureThread(
-      projectId,
-      unresolvedThreadId,
-      contextKey,
-    );
-
-    // Check if we should ignore this request due to cancellation
-    const shouldIgnore = await this.shouldIgnoreCancelledToolResponse(
-      advanceRequestDto,
-      thread,
-    );
-    if (shouldIgnore) {
-      this.logger.log(
-        `Ignoring tool response due to cancellation for thread ${thread.id}`,
-      );
-      return {
-        responseMessageDto: {
-          id: "",
-          role: MessageRole.Assistant,
-          content: [],
-          threadId: thread.id,
-          componentState: {},
-          createdAt: new Date(),
+    return await Sentry.startSpan(
+      {
+        name: "threads.advance",
+        op: "threads.process",
+        attributes: {
+          projectId,
+          threadId: unresolvedThreadId,
+          stream: !!stream,
+          hasMessage: !!advanceRequestDto.messageToAppend,
+          toolCallCount: Object.keys(toolCallCounts).length,
         },
-        generationStage: GenerationStage.COMPLETE,
-        statusMessage: "",
-        mcpAccessToken: "",
-      };
-    }
-
-    // Ensure only one request per thread adds its user message and continues
-    const userMessage = await addUserMessage(
-      db,
-      thread.id,
-      advanceRequestDto.messageToAppend,
-      this.logger,
-    );
-
-    // Use the shared method to create the TamboBackend instance
-    const tamboBackend = await this.createHydraBackendForThread(
-      thread.id,
-      `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
-    );
-
-    // Log available components
-    this.logger.log(
-      `Available components for thread ${thread.id}: ${JSON.stringify(
-        advanceRequestDto.availableComponents?.map((comp) => comp.name),
-      )}`,
-    );
-
-    // Log detailed component information
-    if (advanceRequestDto.availableComponents?.length) {
-      this.logger.log(
-        `Component details for thread ${thread.id}: ${JSON.stringify(
-          advanceRequestDto.availableComponents.map((comp) => ({
-            name: comp.name,
-            description: comp.description,
-            contextTools: comp.contextTools.length || 0,
-          })),
-        )}`,
-      );
-    }
-
-    const messages = await this.getMessages(thread.id, true);
-    const project = await operations.getProject(db, projectId);
-    const customInstructions = project?.customInstructions ?? undefined;
-
-    if (messages.length === 0) {
-      throw new Error("No messages found");
-    }
-    const systemToolsStart = Date.now();
-
-    const systemTools =
-      cachedSystemTools ?? (await getSystemTools(db, projectId));
-    const systemToolsEnd = Date.now();
-    const systemToolsDuration = systemToolsEnd - systemToolsStart;
-    if (!cachedSystemTools) {
-      this.logger.log(`System tools took ${systemToolsDuration}ms to fetch`);
-    }
-    const mcpAccessToken = await this.authService.generateMcpAccessToken(
-      projectId,
-      thread.id,
-      contextKey,
-    );
-
-    if (stream) {
-      return await this.generateStreamingResponse(
-        projectId,
-        thread.id,
-        db,
-        tamboBackend,
-        threadMessageDtoToThreadMessage(messages),
-        userMessage,
-        advanceRequestDto,
-        customInstructions,
-        toolCallCounts,
-        systemTools,
-        mcpAccessToken,
-        project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
-      );
-    }
-
-    const responseMessage = await processThreadMessage(
-      db,
-      thread.id,
-      threadMessageDtoToThreadMessage(messages),
-      advanceRequestDto,
-      tamboBackend,
-      systemTools,
-      customInstructions,
-    );
-
-    const {
-      responseMessageDto,
-      resultingGenerationStage,
-      resultingStatusMessage,
-    } = await addAssistantResponse(
-      db,
-      thread.id,
-      userMessage,
-      responseMessage,
-      this.logger,
-    );
-
-    const toolCallRequest = responseMessage.toolCallRequest;
-
-    // Check tool call limits if we have a tool call request
-    if (toolCallRequest) {
-      const validationResult = validateToolCallLimits(
-        responseMessageDto,
-        threadMessageDtoToThreadMessage(messages),
-        toolCallCounts,
-        toolCallRequest,
-        project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
-      );
-      if (validationResult) {
-        // Replace the tool call request with an error message
-        const errorMessage = await this.handleToolCallLimitViolation(
-          validationResult,
-          thread.id,
-          responseMessageDto.id,
-        );
-        return {
-          responseMessageDto: errorMessage,
-          generationStage: GenerationStage.COMPLETE,
-          statusMessage: "Tool call limit reached",
-          mcpAccessToken,
-        };
-      }
-    }
-
-    if (isSystemToolCall(toolCallRequest, systemTools)) {
-      if (!responseMessage.toolCallId) {
-        console.warn(
-          `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
-        );
-      }
-      return await this.handleSystemToolCall(
-        toolCallRequest,
-        responseMessage.toolCallId ?? "",
-        systemTools,
-        responseMessage,
-        advanceRequestDto,
-        projectId,
-        thread.id,
-        false,
-        toolCallCounts,
-      );
-    }
-
-    return {
-      responseMessageDto: {
-        ...responseMessageDto,
-        content: convertContentPartToDto(responseMessageDto.content),
-        componentState: responseMessageDto.componentState ?? {},
       },
-      generationStage: resultingGenerationStage,
-      statusMessage: resultingStatusMessage,
-      mcpAccessToken,
-    };
+      async () => {
+        const db = this.getDb();
+
+        try {
+          // Add breadcrumb for thread advancement
+          Sentry.addBreadcrumb({
+            message: "Starting thread advancement",
+            category: "threads",
+            level: "info",
+            data: {
+              projectId,
+              threadId: unresolvedThreadId,
+              messageRole: advanceRequestDto.messageToAppend.role,
+            },
+          });
+
+          // Rate limiting check
+          await this.checkMessageLimit(projectId);
+
+          const thread = await this.ensureThread(
+            projectId,
+            unresolvedThreadId,
+            contextKey,
+          );
+
+          // Set user context for better error tracking
+          Sentry.setContext("thread", {
+            id: thread.id,
+            projectId: thread.projectId,
+            contextKey: thread.contextKey,
+            generationStage: thread.generationStage,
+          });
+
+          // Check if we should ignore this request due to cancellation
+          const shouldIgnore = await this.shouldIgnoreCancelledToolResponse(
+            advanceRequestDto,
+            thread,
+          );
+          if (shouldIgnore) {
+            this.logger.log(
+              `Ignoring tool response due to cancellation for thread ${thread.id}`,
+            );
+            return {
+              responseMessageDto: {
+                id: "",
+                role: MessageRole.Assistant,
+                content: [],
+                threadId: thread.id,
+                componentState: {},
+                createdAt: new Date(),
+              },
+              generationStage: GenerationStage.COMPLETE,
+              statusMessage: "",
+              mcpAccessToken: "",
+            };
+          }
+
+          // Ensure only one request per thread adds its user message and continues
+          const userMessage = await addUserMessage(
+            db,
+            thread.id,
+            advanceRequestDto.messageToAppend,
+            this.logger,
+          );
+
+          // Use the shared method to create the TamboBackend instance
+          const tamboBackend = await this.createHydraBackendForThread(
+            thread.id,
+            `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
+          );
+
+          // Log available components
+          this.logger.log(
+            `Available components for thread ${thread.id}: ${JSON.stringify(
+              advanceRequestDto.availableComponents?.map((comp) => comp.name),
+            )}`,
+          );
+
+          // Log detailed component information
+          if (advanceRequestDto.availableComponents?.length) {
+            this.logger.log(
+              `Component details for thread ${thread.id}: ${JSON.stringify(
+                advanceRequestDto.availableComponents.map((comp) => ({
+                  name: comp.name,
+                  description: comp.description,
+                  contextTools: comp.contextTools.length || 0,
+                })),
+              )}`,
+            );
+          }
+
+          const messages = await this.getMessages(thread.id, true);
+          const project = await operations.getProject(db, projectId);
+          const customInstructions = project?.customInstructions ?? undefined;
+
+          if (messages.length === 0) {
+            throw new Error("No messages found");
+          }
+          const systemToolsStart = Date.now();
+
+          const systemTools =
+            cachedSystemTools ?? (await getSystemTools(db, projectId));
+          const systemToolsEnd = Date.now();
+          const systemToolsDuration = systemToolsEnd - systemToolsStart;
+          if (!cachedSystemTools) {
+            this.logger.log(
+              `System tools took ${systemToolsDuration}ms to fetch`,
+            );
+          }
+          const mcpAccessToken = await this.authService.generateMcpAccessToken(
+            projectId,
+            thread.id,
+            contextKey,
+          );
+
+          if (stream) {
+            return await this.generateStreamingResponse(
+              projectId,
+              thread.id,
+              db,
+              tamboBackend,
+              threadMessageDtoToThreadMessage(messages),
+              userMessage,
+              advanceRequestDto,
+              customInstructions,
+              toolCallCounts,
+              systemTools,
+              mcpAccessToken,
+              project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
+            );
+          }
+
+          const responseMessage = await processThreadMessage(
+            db,
+            thread.id,
+            threadMessageDtoToThreadMessage(messages),
+            advanceRequestDto,
+            tamboBackend,
+            systemTools,
+            customInstructions,
+          );
+
+          const {
+            responseMessageDto,
+            resultingGenerationStage,
+            resultingStatusMessage,
+          } = await addAssistantResponse(
+            db,
+            thread.id,
+            userMessage,
+            responseMessage,
+            this.logger,
+          );
+
+          const toolCallRequest = responseMessage.toolCallRequest;
+
+          // Check tool call limits if we have a tool call request
+          if (toolCallRequest) {
+            const validationResult = validateToolCallLimits(
+              responseMessageDto,
+              threadMessageDtoToThreadMessage(messages),
+              toolCallCounts,
+              toolCallRequest,
+              project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
+            );
+            if (validationResult) {
+              // Replace the tool call request with an error message
+              const errorMessage = await this.handleToolCallLimitViolation(
+                validationResult,
+                thread.id,
+                responseMessageDto.id,
+              );
+              return {
+                responseMessageDto: errorMessage,
+                generationStage: GenerationStage.COMPLETE,
+                statusMessage: "Tool call limit reached",
+                mcpAccessToken,
+              };
+            }
+          }
+
+          if (isSystemToolCall(toolCallRequest, systemTools)) {
+            if (!responseMessage.toolCallId) {
+              console.warn(
+                `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
+              );
+            }
+            return await this.handleSystemToolCall(
+              toolCallRequest,
+              responseMessage.toolCallId ?? "",
+              systemTools,
+              responseMessage,
+              advanceRequestDto,
+              projectId,
+              thread.id,
+              false,
+              toolCallCounts,
+            );
+          }
+
+          return {
+            responseMessageDto: {
+              ...responseMessageDto,
+              content: convertContentPartToDto(responseMessageDto.content),
+              componentState: responseMessageDto.componentState ?? {},
+            },
+            generationStage: resultingGenerationStage,
+            statusMessage: resultingStatusMessage,
+            mcpAccessToken,
+          };
+        } catch (error) {
+          // Capture any errors with full context
+          Sentry.withScope((scope) => {
+            scope.setTag("operation", "advanceThread");
+            scope.setTag("projectId", projectId);
+            scope.setTag("threadId", unresolvedThreadId);
+            scope.setContext("request", {
+              stream,
+              hasMessage: !!advanceRequestDto.messageToAppend,
+              availableComponents:
+                advanceRequestDto.availableComponents?.length,
+            });
+            Sentry.captureException(error);
+          });
+          throw error;
+        }
+      },
+    );
   }
 
   private async handleSystemToolCall(
@@ -963,30 +1119,68 @@ export class ThreadsService {
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
-    const messageWithToolResponse: AdvanceThreadDto = await callSystemTool(
-      systemTools,
-      toolCallRequest,
-      toolCallId,
-      componentDecision,
-      advanceRequestDto,
-    );
-    if (messageWithToolResponse === advanceRequestDto) {
-      throw new Error("No tool call response, returning assistant message");
-    }
+    return await Sentry.startSpan(
+      {
+        name: "threads.handleSystemToolCall",
+        op: "tools.system",
+        attributes: {
+          toolName: toolCallRequest.toolName,
+          toolCallId,
+          projectId,
+          threadId,
+          stream,
+        },
+      },
+      async () => {
+        try {
+          // Add breadcrumb for tool call
+          Sentry.addBreadcrumb({
+            message: `Executing system tool: ${toolCallRequest.toolName}`,
+            category: "tools",
+            level: "info",
+            data: { toolCallId, threadId },
+          });
 
-    // Update tool call counts with the current tool call
-    const updatedToolCallCounts = updateToolCallCounts(
-      toolCallCounts,
-      toolCallRequest,
-    );
+          const messageWithToolResponse: AdvanceThreadDto =
+            await callSystemTool(
+              systemTools,
+              toolCallRequest,
+              toolCallId,
+              componentDecision,
+              advanceRequestDto,
+            );
 
-    return await this.advanceThread(
-      projectId,
-      messageWithToolResponse,
-      threadId,
-      stream,
-      updatedToolCallCounts,
-      systemTools,
+          if (messageWithToolResponse === advanceRequestDto) {
+            throw new Error(
+              "No tool call response, returning assistant message",
+            );
+          }
+
+          // Update tool call counts with the current tool call
+          const updatedToolCallCounts = updateToolCallCounts(
+            toolCallCounts,
+            toolCallRequest,
+          );
+
+          return await this.advanceThread(
+            projectId,
+            messageWithToolResponse,
+            threadId,
+            stream,
+            updatedToolCallCounts,
+            systemTools,
+          );
+        } catch (error) {
+          Sentry.captureException(error, {
+            tags: {
+              toolName: toolCallRequest.toolName,
+              projectId,
+              threadId,
+            },
+          });
+          throw error;
+        }
+      },
     );
   }
 
@@ -1004,78 +1198,202 @@ export class ThreadsService {
     mcpAccessToken: string,
     maxToolCallLimit: number,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
-    const latestMessage = messages[messages.length - 1];
-    if (latestMessage.role === MessageRole.Tool) {
-      await updateGenerationStage(
-        db,
-        threadId,
-        GenerationStage.HYDRATING_COMPONENT,
-        `Hydrating ${latestMessage.component?.componentName}...`,
-      );
-      // Since we don't a store tool responses in the db, assumes that the tool response is the messageToAppend
-      const toolResponse = extractToolResponse(
-        advanceRequestDto.messageToAppend,
-      );
-      if (!toolResponse) {
-        throw new Error("No tool response found");
-      }
-      const { originalTools, strictTools } = getToolsFromSources(
-        advanceRequestDto.availableComponents ?? [],
-        advanceRequestDto.clientTools ?? [],
-        systemTools,
-      );
+    return await Sentry.startSpan(
+      {
+        name: "threads.generateStreamingResponse",
+        op: "stream.generate",
+        attributes: {
+          projectId,
+          threadId,
+          messageCount: messages.length,
+          hasCustomInstructions: !!customInstructions,
+          toolCallCount: Object.keys(toolCallCounts).length,
+        },
+      },
+      async () => {
+        try {
+          const latestMessage = messages[messages.length - 1];
 
-      const streamedResponseMessage = await tamboBackend.runDecisionLoop({
-        messages,
-        strictTools,
-        customInstructions,
-      });
+          // Add breadcrumb for stream generation start
+          Sentry.addBreadcrumb({
+            message: "Starting streaming response generation",
+            category: "stream",
+            level: "info",
+            data: {
+              threadId,
+              projectId,
+              latestMessageRole: latestMessage.role,
+              hasToolResponse: latestMessage.role === MessageRole.Tool,
+            },
+          });
 
-      return this.handleAdvanceThreadStream(
-        projectId,
-        threadId,
-        streamedResponseMessage,
-        messages,
-        userMessage,
-        systemTools,
-        advanceRequestDto,
-        originalTools,
-        toolCallCounts,
-        mcpAccessToken,
-        maxToolCallLimit,
-      );
-    }
+          if (latestMessage.role === MessageRole.Tool) {
+            await updateGenerationStage(
+              db,
+              threadId,
+              GenerationStage.HYDRATING_COMPONENT,
+              `Hydrating ${latestMessage.component?.componentName}...`,
+            );
 
-    await updateGenerationStage(
-      db,
-      threadId,
-      GenerationStage.FETCHING_CONTEXT,
-      `Fetching data...`,
-    );
-    const { originalTools, strictTools } = getToolsFromSources(
-      advanceRequestDto.availableComponents ?? [],
-      advanceRequestDto.clientTools ?? [],
-      systemTools,
-    );
+            // Track tool response processing
+            Sentry.addBreadcrumb({
+              message: `Processing tool response for ${latestMessage.component?.componentName}`,
+              category: "tools",
+              level: "info",
+              data: {
+                threadId,
+                componentName: latestMessage.component?.componentName,
+              },
+            });
 
-    const streamedResponseMessage = await tamboBackend.runDecisionLoop({
-      messages,
-      strictTools,
-      customInstructions,
-      forceToolChoice: advanceRequestDto.forceToolChoice,
-    });
-    return this.handleAdvanceThreadStream(
-      projectId,
-      threadId,
-      streamedResponseMessage,
-      messages,
-      userMessage,
-      systemTools,
-      advanceRequestDto,
-      originalTools,
-      toolCallCounts,
-      mcpAccessToken,
-      maxToolCallLimit,
+            // Since we don't store tool responses in the db, assumes that the tool response is the messageToAppend
+            const toolResponse = extractToolResponse(
+              advanceRequestDto.messageToAppend,
+            );
+            if (!toolResponse) {
+              const error = new Error("No tool response found");
+              Sentry.captureException(error, {
+                tags: { threadId, projectId },
+                extra: { latestMessageRole: latestMessage.role },
+              });
+              throw error;
+            }
+
+            const { originalTools, strictTools } = getToolsFromSources(
+              advanceRequestDto.availableComponents ?? [],
+              advanceRequestDto.clientTools ?? [],
+              systemTools,
+            );
+
+            // Track decision loop execution
+            const decisionLoopSpan = Sentry.startInactiveSpan({
+              name: "tambo.runDecisionLoop",
+              op: "ai.decision",
+              attributes: {
+                threadId,
+                toolCount: strictTools.length,
+                messageCount: messages.length,
+              },
+            });
+
+            const streamedResponseMessage = await tamboBackend.runDecisionLoop({
+              messages,
+              strictTools,
+              customInstructions,
+            });
+
+            decisionLoopSpan.end();
+
+            return this.handleAdvanceThreadStream(
+              projectId,
+              threadId,
+              streamedResponseMessage,
+              messages,
+              userMessage,
+              systemTools,
+              advanceRequestDto,
+              originalTools,
+              toolCallCounts,
+              mcpAccessToken,
+              maxToolCallLimit,
+            );
+          }
+
+          await updateGenerationStage(
+            db,
+            threadId,
+            GenerationStage.FETCHING_CONTEXT,
+            `Fetching data...`,
+          );
+
+          Sentry.addBreadcrumb({
+            message: "Fetching context for response generation",
+            category: "stream",
+            level: "info",
+            data: {
+              threadId,
+              forceToolChoice: !!advanceRequestDto.forceToolChoice,
+            },
+          });
+
+          const { originalTools, strictTools } = getToolsFromSources(
+            advanceRequestDto.availableComponents ?? [],
+            advanceRequestDto.clientTools ?? [],
+            systemTools,
+          );
+
+          // Track available tools
+          Sentry.setContext("availableTools", {
+            componentCount: advanceRequestDto.availableComponents?.length ?? 0,
+            clientToolCount: advanceRequestDto.clientTools?.length ?? 0,
+            systemToolCount: Object.keys(systemTools).length,
+            totalStrictTools: strictTools.length,
+          });
+
+          // Track decision loop execution with performance monitoring
+          const decisionLoopSpan = Sentry.startInactiveSpan({
+            name: "tambo.runDecisionLoop",
+            op: "ai.decision",
+            attributes: {
+              threadId,
+              toolCount: strictTools.length,
+              messageCount: messages.length,
+              forceToolChoice: !!advanceRequestDto.forceToolChoice,
+            },
+          });
+
+          const streamedResponseMessage = await tamboBackend.runDecisionLoop({
+            messages,
+            strictTools,
+            customInstructions,
+            forceToolChoice: advanceRequestDto.forceToolChoice,
+          });
+
+          decisionLoopSpan.end();
+
+          // Track successful stream generation
+          Sentry.addBreadcrumb({
+            message: "Stream generation initiated successfully",
+            category: "stream",
+            level: "info",
+            data: {
+              threadId,
+              projectId,
+            },
+          });
+
+          return this.handleAdvanceThreadStream(
+            projectId,
+            threadId,
+            streamedResponseMessage,
+            messages,
+            userMessage,
+            systemTools,
+            advanceRequestDto,
+            originalTools,
+            toolCallCounts,
+            mcpAccessToken,
+            maxToolCallLimit,
+          );
+        } catch (error) {
+          // Capture streaming generation errors with context
+          Sentry.withScope((scope) => {
+            scope.setTag("operation", "generateStreamingResponse");
+            scope.setTag("projectId", projectId);
+            scope.setTag("threadId", threadId);
+            scope.setContext("streamGenerationContext", {
+              messageCount: messages.length,
+              hasCustomInstructions: !!customInstructions,
+              toolCallCount: Object.keys(toolCallCounts).length,
+              maxToolCallLimit,
+              userMessageRole: userMessage.role,
+              latestMessageRole: messages[messages.length - 1]?.role,
+            });
+            Sentry.captureException(error);
+          });
+          throw error;
+        }
+      },
     );
   }
 
@@ -1095,215 +1413,318 @@ export class ThreadsService {
     const db = this.getDb();
     const logger = this.logger;
 
-    const thread = await this.findOne(threadId, projectId);
-    if (thread.generationStage === GenerationStage.CANCELLED) {
-      yield {
-        responseMessageDto: {
-          id: "",
-          role: MessageRole.Assistant,
-          content: [{ type: ContentPartType.Text, text: "" }],
-          componentState: {},
-          threadId: threadId,
-          createdAt: new Date(),
-        },
-        generationStage: GenerationStage.CANCELLED,
-        statusMessage: "Thread cancelled",
-        mcpAccessToken,
-      };
-      return;
-    }
+    // Start a span for the entire streaming operation
+    const span = Sentry.startInactiveSpan({
+      name: "threads.handleAdvanceStream",
+      op: "stream.process",
+      attributes: {
+        projectId,
+        threadId,
+        messageCount: threadMessages.length,
+        toolCallCount: Object.keys(toolCallCounts).length,
+      },
+    });
 
-    await updateGenerationStage(
-      db,
-      threadId,
-      GenerationStage.STREAMING_RESPONSE,
-      `Streaming response...`,
-    );
+    try {
+      // Add breadcrumb for stream start
+      Sentry.addBreadcrumb({
+        message: "Starting stream processing",
+        category: "stream",
+        level: "info",
+        data: { threadId, projectId },
+      });
 
-    const inProgressMessage = await addInProgressMessage(
-      db,
-      threadId,
-      userMessage,
-      logger,
-    );
+      const thread = await this.findOne(threadId, projectId);
+      if (thread.generationStage === GenerationStage.CANCELLED) {
+        Sentry.addBreadcrumb({
+          message: "Stream cancelled before processing",
+          category: "stream",
+          level: "warning",
+          data: { threadId },
+        });
 
-    // we hold on to the final thread message, in case we have to switch to a tool call
-    let finalThreadMessage: ThreadMessage | undefined;
-    let lastUpdateTime = 0;
-    const updateIntervalMs = 500;
-
-    const cancellationRef = { current: false };
-
-    const checkCancellationStatus = async () => {
-      try {
-        const thread = await operations.getThread(db, threadId, projectId);
-        cancellationRef.current =
-          thread?.generationStage === GenerationStage.CANCELLED;
-      } catch (error) {
-        logger.error(`Error checking thread cancellation status: ${error}`);
+        yield {
+          responseMessageDto: {
+            id: "",
+            role: MessageRole.Assistant,
+            content: [{ type: ContentPartType.Text, text: "" }],
+            componentState: {},
+            threadId: threadId,
+            createdAt: new Date(),
+          },
+          generationStage: GenerationStage.CANCELLED,
+          statusMessage: "Thread cancelled",
+          mcpAccessToken,
+        };
+        return;
       }
-    };
 
-    for await (const threadMessage of convertDecisionStreamToMessageStream(
-      stream,
-      inProgressMessage,
-    )) {
-      // Update db message on interval
-      const currentTime = Date.now();
-      if (currentTime - lastUpdateTime >= updateIntervalMs) {
-        // Fire off cancellation check asynchronously - will update cancellationRef for future iterations
-        checkCancellationStatus();
+      await updateGenerationStage(
+        db,
+        threadId,
+        GenerationStage.STREAMING_RESPONSE,
+        `Streaming response...`,
+      );
 
-        if (cancellationRef.current) {
+      const inProgressMessage = await addInProgressMessage(
+        db,
+        threadId,
+        userMessage,
+        logger,
+      );
+
+      // Track streaming metrics
+      let chunkCount = 0;
+      const streamStartTime = Date.now();
+      // we hold on to the final thread message, in case we have to switch to a tool call
+      let finalThreadMessage: ThreadMessage | undefined;
+      let lastUpdateTime = 0;
+      const updateIntervalMs = 500;
+
+      const cancellationRef = { current: false };
+
+      const checkCancellationStatus = async () => {
+        try {
+          const thread = await operations.getThread(db, threadId, projectId);
+          cancellationRef.current =
+            thread?.generationStage === GenerationStage.CANCELLED;
+
+          if (cancellationRef.current) {
+            Sentry.addBreadcrumb({
+              message: "Stream cancelled during processing",
+              category: "stream",
+              level: "warning",
+              data: { threadId, chunksProcessed: chunkCount },
+            });
+          }
+        } catch (error) {
+          logger.error(`Error checking thread cancellation status: ${error}`);
+          Sentry.captureException(error, {
+            tags: { operation: "checkCancellation", threadId },
+          });
+        }
+      };
+
+      for await (const threadMessage of convertDecisionStreamToMessageStream(
+        stream,
+        inProgressMessage,
+      )) {
+        chunkCount++;
+
+        // Update db message on interval
+        const currentTime = Date.now();
+        if (currentTime - lastUpdateTime >= updateIntervalMs) {
+          // Fire off cancellation check asynchronously - will update cancellationRef for future iterations
+          checkCancellationStatus();
+
+          if (cancellationRef.current) {
+            yield {
+              responseMessageDto: {
+                ...threadMessage,
+                content: convertContentPartToDto(threadMessage.content),
+                componentState: threadMessage.componentState ?? {},
+              },
+              generationStage: GenerationStage.CANCELLED,
+              statusMessage: "cancelled",
+              mcpAccessToken,
+            };
+            return;
+          }
+
+          await updateMessage(db, inProgressMessage.id, {
+            ...threadMessage,
+            content: convertContentPartToDto(threadMessage.content),
+          });
+          lastUpdateTime = currentTime;
+        }
+
+        // do not yield the final thread message if it is a tool call
+        // might have to switch to an internal tool call
+        if (!threadMessage.toolCallRequest) {
           yield {
             responseMessageDto: {
               ...threadMessage,
               content: convertContentPartToDto(threadMessage.content),
               componentState: threadMessage.componentState ?? {},
             },
-            generationStage: GenerationStage.CANCELLED,
-            statusMessage: "cancelled",
+            generationStage: GenerationStage.STREAMING_RESPONSE,
+            statusMessage: `Streaming response...`,
+            mcpAccessToken,
+          };
+        }
+        finalThreadMessage = threadMessage;
+      }
+
+      if (!finalThreadMessage) {
+        const error = new Error("No message found in stream");
+        Sentry.captureException(error, {
+          tags: { threadId, projectId },
+          extra: { chunkCount },
+        });
+        throw error;
+      }
+
+      // Track streaming performance
+      const streamDuration = Date.now() - streamStartTime;
+      Sentry.addBreadcrumb({
+        message: "Stream processing completed",
+        category: "stream",
+        level: "info",
+        data: {
+          threadId,
+          chunkCount,
+          durationMs: streamDuration,
+          chunksPerSecond: (chunkCount / streamDuration) * 1000,
+        },
+      });
+
+      // Initially, the call was made with a strict schema, so we need to remove non-required parameters
+      const strictToolCallRequest = finalThreadMessage.toolCallRequest;
+      const originalTool = originalTools.find(
+        (tool) => tool.function.name === strictToolCallRequest?.toolName,
+      );
+
+      const toolCallRequest = unstrictifyToolCallRequest(
+        originalTool,
+        strictToolCallRequest,
+      );
+
+      // Update the tool call to be the non-strict call
+      finalThreadMessage = {
+        ...finalThreadMessage,
+        toolCallRequest,
+      };
+
+      // Check tool call limits if we have a tool call request
+      if (toolCallRequest) {
+        Sentry.addBreadcrumb({
+          message: `Processing tool call: ${toolCallRequest.toolName}`,
+          category: "tools",
+          level: "info",
+          data: { threadId, toolName: toolCallRequest.toolName },
+        });
+
+        const validationResult = validateToolCallLimits(
+          finalThreadMessage,
+          threadMessages,
+          toolCallCounts,
+          toolCallRequest,
+          maxToolCallLimit,
+        );
+
+        if (validationResult) {
+          Sentry.captureMessage("Tool call limit reached", "warning");
+
+          // Replace the tool call request with an error message
+          const errorMessage = await this.handleToolCallLimitViolation(
+            validationResult,
+            threadId,
+            inProgressMessage.id,
+          );
+          yield {
+            responseMessageDto: errorMessage,
+            generationStage: GenerationStage.COMPLETE,
+            statusMessage: "Tool call limit reached",
             mcpAccessToken,
           };
           return;
         }
-
-        await updateMessage(db, inProgressMessage.id, {
-          ...threadMessage,
-          content: convertContentPartToDto(threadMessage.content),
-        });
-        lastUpdateTime = currentTime;
       }
 
-      // do not yield the final thread message if it is a tool call, because we
-      // might have to switch to an internal tool call
-      if (!threadMessage.toolCallRequest) {
-        yield {
-          responseMessageDto: {
-            ...threadMessage,
-            content: convertContentPartToDto(threadMessage.content),
-            componentState: threadMessage.componentState ?? {},
-          },
-          generationStage: GenerationStage.STREAMING_RESPONSE,
-          statusMessage: `Streaming response...`,
-          mcpAccessToken,
-        };
-      }
-      finalThreadMessage = threadMessage;
-    }
-    if (!finalThreadMessage) {
-      throw new Error("No message found");
-    }
-
-    // Initially, the call was made with a strict schema, so we need to remove non-required parameters
-    const strictToolCallRequest = finalThreadMessage.toolCallRequest;
-    const originalTool = originalTools.find(
-      (tool) => tool.function.name === strictToolCallRequest?.toolName,
-    );
-
-    const toolCallRequest = unstrictifyToolCallRequest(
-      originalTool,
-      strictToolCallRequest,
-    );
-
-    // Update the tool call to be the non-strict call
-    finalThreadMessage = {
-      ...finalThreadMessage,
-      toolCallRequest,
-    };
-
-    // Check tool call limits if we have a tool call request
-    if (toolCallRequest) {
-      const validationResult = validateToolCallLimits(
-        finalThreadMessage,
-        threadMessages,
-        toolCallCounts,
-        toolCallRequest,
-        maxToolCallLimit,
-      );
-      if (validationResult) {
-        // Replace the tool call request with an error message
-        const errorMessage = await this.handleToolCallLimitViolation(
-          validationResult,
+      const { resultingGenerationStage, resultingStatusMessage } =
+        await finishInProgressMessage(
+          db,
           threadId,
+          userMessage,
           inProgressMessage.id,
+          finalThreadMessage,
+          logger,
         );
-        yield {
-          responseMessageDto: errorMessage,
-          generationStage: GenerationStage.COMPLETE,
-          statusMessage: "Tool call limit reached",
+
+      const componentDecision = finalThreadMessage.component;
+      if (componentDecision && isSystemToolCall(toolCallRequest, systemTools)) {
+        // Track system tool call within stream
+        Sentry.addBreadcrumb({
+          message: `Handling system tool call in stream: ${toolCallRequest.toolName}`,
+          category: "tools.system",
+          level: "info",
+          data: { threadId, toolName: toolCallRequest.toolName },
+        });
+
+        // Yield a "final" version of the tool call request, because we need
+        // actionType to be set, but hide the toplevel tool call request because
+        // we are handling it server side
+        const finalThreadMessageDto: AdvanceThreadResponseDto = {
+          responseMessageDto: {
+            ...finalThreadMessage,
+            content: convertContentPartToDto(finalThreadMessage.content),
+            componentState: finalThreadMessage.componentState ?? {},
+            toolCallRequest: undefined,
+            tool_call_id: undefined,
+          },
+          generationStage: resultingGenerationStage,
+          statusMessage: resultingStatusMessage,
           mcpAccessToken,
         };
+        yield finalThreadMessageDto;
+
+        const toolCallId = finalThreadMessage.tool_call_id;
+
+        if (!toolCallId) {
+          console.warn(
+            `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${finalThreadMessage}, returning assistant message`,
+          );
+          Sentry.captureMessage("Missing tool call ID in stream", "warning");
+        }
+
+        // Note that this effectively consumes nonStrictToolCallRequest and finalToolCallId
+        const toolResponseMessageStream = await this.handleSystemToolCall(
+          toolCallRequest,
+          toolCallId ?? "",
+          systemTools,
+          componentDecision,
+          originalRequest,
+          projectId,
+          threadId,
+          true,
+          toolCallCounts,
+        );
+
+        for await (const chunk of toolResponseMessageStream) {
+          yield chunk;
+        }
         return;
       }
-    }
 
-    const { resultingGenerationStage, resultingStatusMessage } =
-      await finishInProgressMessage(
-        db,
-        threadId,
-        userMessage,
-        inProgressMessage.id,
-        finalThreadMessage,
-        logger,
-      );
-    const componentDecision = finalThreadMessage.component;
-    if (componentDecision && isSystemToolCall(toolCallRequest, systemTools)) {
-      // Yield a "final" version of the tool call request, because we need
-      // actionType to be set, but hide the toplevel tool call request because
-      // we are handling it server side
-      const finalThreadMessageDto: AdvanceThreadResponseDto = {
+      // We only yield the final response with the tool call request and tool call id set if we did not call a system tool
+      yield {
         responseMessageDto: {
           ...finalThreadMessage,
           content: convertContentPartToDto(finalThreadMessage.content),
           componentState: finalThreadMessage.componentState ?? {},
-          toolCallRequest: undefined,
-          tool_call_id: undefined,
         },
         generationStage: resultingGenerationStage,
         statusMessage: resultingStatusMessage,
         mcpAccessToken,
       };
-      yield finalThreadMessageDto;
-
-      const toolCallId = finalThreadMessage.tool_call_id;
-
-      if (!toolCallId) {
-        console.warn(
-          `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${finalThreadMessage}, returning assistant message`,
-        );
-      }
-      // Note that this effectively consumes nonStrictToolCallRequest and finalToolCallId
-      const toolResponseMessageStream = await this.handleSystemToolCall(
-        toolCallRequest,
-        toolCallId ?? "",
-        systemTools,
-        componentDecision,
-        originalRequest,
-        projectId,
-        threadId,
-        true,
-        toolCallCounts,
-      );
-
-      for await (const chunk of toolResponseMessageStream) {
-        yield chunk;
-      }
-      return;
+    } catch (error) {
+      // Capture streaming errors with full context
+      Sentry.withScope((scope) => {
+        scope.setTag("operation", "handleAdvanceThreadStream");
+        scope.setTag("projectId", projectId);
+        scope.setTag("threadId", threadId);
+        scope.setContext("streamContext", {
+          messageCount: threadMessages.length,
+          toolCallCount: Object.keys(toolCallCounts).length,
+          userMessageRole: userMessage.role,
+        });
+        Sentry.captureException(error);
+      });
+      throw error;
+    } finally {
+      // End the span
+      span.end();
     }
-
-    // We only yield the final response with the tool call request and tool call id set if we did not call a system tool
-
-    yield {
-      responseMessageDto: {
-        ...finalThreadMessage,
-        content: convertContentPartToDto(finalThreadMessage.content),
-        componentState: finalThreadMessage.componentState ?? {},
-      },
-      generationStage: resultingGenerationStage,
-      statusMessage: resultingStatusMessage,
-      mcpAccessToken,
-    };
   }
 
   private async ensureThread(
