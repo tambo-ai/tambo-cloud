@@ -24,7 +24,9 @@ This document describes how to run Tambo with a local PostgreSQL database using 
 
    Override any of the default values in `docker.env`.
 
-   Note that the only value which requires an override is `FALLBACK_OPENAI_API_KEY`. This is the OpenAI API key that Tambo will use when a project has been created without adding a custom API key.
+   You'll need to override `FALLBACK_OPENAI_API_KEY`. This is the OpenAI API key that Tambo will use when a project has been created without adding a custom API key.
+
+   Additionally, to enable login to the dashboard for creating projects and generating API Keys, you'll need to create a GitHub or Google OAuth app, and update the relevant variables in the `docker.env` file. Find instructions [below.](#oauth-providers-google-and-github)
 
 3. **Start the stack:**
 
@@ -49,15 +51,11 @@ This document describes how to run Tambo with a local PostgreSQL database using 
    - Tambo API: http://localhost:3211
    - PostgreSQL Database: localhost:5433
 
-6. **Enable Auth**
-
-   To enable login to the dashboard for creating projects and generating API Keys, you'll need to create a GitHub or Google OAuth app, and update variables in the `docker.env` file. Find instructions [below.](#oauth-providers-google-and-github)
-
-7. **Generate an API Key**
+6. **Generate an API Key**
 
    Login to the dashboard of your local Tambo Web app at http://localhost:3210/dashboard to create a project and an API key to make requests from an application to that project.
 
-8. **Start sending messages**
+7. **Start sending messages**
 
    Now that everything is running and you've got an API key, you can make requests to your locally running Tambo!
 
