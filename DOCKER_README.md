@@ -88,6 +88,44 @@ Key environment variables in `docker.env`:
 - `SLACK_OAUTH_TOKEN`: Slack integration token
 - `WEATHER_API_KEY`: Weather service API key
 
+## OAuth Providers (Google and GitHub)
+
+This section is for self‑hosted deployments using Docker. It explains how to configure Google and GitHub as OAuth providers for sign‑in.
+
+### Callback/Redirect URLs
+
+- Google OAuth callback path: `/api/auth/callback/google`
+- GitHub OAuth callback path: `/api/auth/callback/github`
+
+The full redirect URI is your deployment base URL plus the callback path. Examples:
+
+- `https://your-domain.com/api/auth/callback/google`
+- `https://your-domain.com/api/auth/callback/github`
+
+In general: `<base-url>/api/auth/callback/google` and `<base-url>/api/auth/callback/github`.
+
+### Environment separation (recommended)
+
+Create separate OAuth clients for local development and for production. Each environment must use its own redirect/callback URL that matches that environment’s base URL plus the correct callback path.
+
+Examples (placeholders — use values that match your setup):
+
+- Google: `<local-base-url>/api/auth/callback/google` and `<prod-base-url>/api/auth/callback/google`
+- GitHub: `<local-base-url>/api/auth/callback/github` and `<prod-base-url>/api/auth/callback/github`
+
+### Provider selection and email fallback
+
+You may configure either Google, GitHub, or both providers. If neither provider is configured, the application falls back to email login. For email login to work in a self‑hosted deployment, you must also configure your email service credentials (see the email settings noted elsewhere in this document and in `docker.env.example`).
+
+### Where to configure this in Docker
+
+Supply OAuth client credentials and related settings via your Docker deployment configuration (environment file or compose environment entries). See `docker.env.example` for the relevant variables and place your actual values in `docker.env` (or your secrets manager) when running `docker compose`.
+
+### Console setup (high‑level)
+
+- Google: Create an OAuth client in Google Cloud Console and add the exact Authorized redirect URI for Google as described above.
+- GitHub: Create an OAuth App in GitHub Developer Settings and add the exact Authorization callback URL for GitHub as described above.
+
 ## Scripts
 
 ### `tambo-start.sh`
