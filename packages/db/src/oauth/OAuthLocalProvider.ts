@@ -71,17 +71,14 @@ export class OAuthLocalProvider implements OAuthClientProvider {
     if (!this._serverUrl) {
       throw new Error("Cannot save client information without server URL");
     }
-    await this.db
-      .insert(schema.mcpOauthClients)
-      .values({
-        toolProviderUserContextId: this.toolProviderUserContextId,
-        sessionInfo: {
-          serverUrl: this._serverUrl,
-          clientInformation,
-        },
-        sessionId: this._sessionId,
-      })
-      .returning();
+    await this.db.insert(schema.mcpOauthClients).values({
+      toolProviderUserContextId: this.toolProviderUserContextId,
+      sessionInfo: {
+        serverUrl: this._serverUrl,
+        clientInformation,
+      },
+      sessionId: this._sessionId,
+    });
     this._clientInformation = clientInformation;
   }
   async codeVerifier() {
@@ -106,8 +103,7 @@ export class OAuthLocalProvider implements OAuthClientProvider {
       .set({
         codeVerifier,
       })
-      .where(eq(schema.mcpOauthClients.sessionId, this._sessionId))
-      .returning();
+      .where(eq(schema.mcpOauthClients.sessionId, this._sessionId));
   }
   get clientMetadata(): OAuthClientMetadata {
     const clientMetadata: OAuthClientMetadata = {
@@ -151,7 +147,6 @@ export class OAuthLocalProvider implements OAuthClientProvider {
       })
       .where(
         eq(schema.toolProviderUserContexts.id, this.toolProviderUserContextId),
-      )
-      .returning();
+      );
   }
 }
