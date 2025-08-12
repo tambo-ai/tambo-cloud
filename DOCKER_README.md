@@ -1,6 +1,6 @@
 # Tambo Docker Setup
 
-This document describes how to run Tambo using Docker with a PostgreSQL database.
+This document describes how to run Tambo with a local PostgreSQL database using Docker.
 
 ## Prerequisites
 
