@@ -113,6 +113,8 @@ Examples (placeholders — use values that match your setup):
 - Google: `<local-base-url>/api/auth/callback/google` and `<prod-base-url>/api/auth/callback/google`
 - GitHub: `<local-base-url>/api/auth/callback/github` and `<prod-base-url>/api/auth/callback/github`
 
+Note: Ensure your authentication library's base URL and secret are configured to match the environment. For example, set `NEXTAUTH_URL` (or `AUTH_URL`) to your `<base-url>` and `NEXTAUTH_SECRET` (or `AUTH_SECRET`). See `docker.env.example` for the exact variable names used in this project.
+
 ### Provider selection and email fallback
 
 You may configure either Google, GitHub, or both providers. If neither provider is configured, the application falls back to email login. For email login to work in a self‑hosted deployment, you must also configure your email service credentials (see the email settings noted elsewhere in this document and in `docker.env.example`).
