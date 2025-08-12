@@ -42,36 +42,27 @@ function configureSwagger(app: INestApplication) {
 function configureHelmet(app: INestApplication) {
   const config = app.get(ConfigService);
 
-  const nodeEnv = (
-    config.get<string>("NODE_ENV") ||
-    process.env.NODE_ENV ||
-    "development"
-  ).toLowerCase();
-  const deployEnv = (config.get<string>("DEPLOY_ENV") || nodeEnv).toLowerCase();
+  const nodeEnv =
+    config.get<string>("NODE_ENV") || process.env.NODE_ENV || "development";
+  const deployEnv = config.get<string>("DEPLOY_ENV") || nodeEnv;
 
   // HSTS policy: disabled by default; enable explicitly in production via ENABLE_HSTS=true
   const enableHsts =
-    (
-      config.get<string>("ENABLE_HSTS") ||
+    (config.get<string>("ENABLE_HSTS") ||
       process.env.ENABLE_HSTS ||
-      "false"
-    ).toLowerCase() === "true" && deployEnv === "production";
+      "false") === "true" && deployEnv === "production";
 
   const hstsMaxAge = Number(
     config.get<string>("HSTS_MAX_AGE") || process.env.HSTS_MAX_AGE || 15552000,
   ); // 180 days
   const hstsIncludeSubdomains =
-    (
-      config.get<string>("HSTS_INCLUDE_SUBDOMAINS") ||
+    (config.get<string>("HSTS_INCLUDE_SUBDOMAINS") ||
       process.env.HSTS_INCLUDE_SUBDOMAINS ||
-      "false"
-    ).toLowerCase() === "true";
+      "false") === "true";
   const hstsPreload =
-    (
-      config.get<string>("HSTS_PRELOAD") ||
+    (config.get<string>("HSTS_PRELOAD") ||
       process.env.HSTS_PRELOAD ||
-      "false"
-    ).toLowerCase() === "true";
+      "false") === "true";
 
   // Environment-specific CSP directives. These defaults are intentionally conservative and
   // aimed to support the Swagger UI while locking down framing and MIME sniffing risks.

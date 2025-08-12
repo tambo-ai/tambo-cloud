@@ -15,6 +15,8 @@ The CSP is applied to all responses (it is primarily relevant to HTML responses 
 
 Environment selection: `DEPLOY_ENV` (falls back to `NODE_ENV`). Supported values: `development`, `staging`, `production`.
 
+Important: Values are case‑sensitive. The service compares the raw strings exactly; for example `DEPLOY_ENV` must be `development`, `staging`, or `production` in all lowercase to match the documented environments.
+
 Default directives per environment (can be overridden by env vars listed below):
 
 | Directive         | development                            | staging/production         |
@@ -57,6 +59,14 @@ HSTS is disabled by default and only enabled when all of the following are true:
 
 1. `DEPLOY_ENV=production`
 2. `ENABLE_HSTS=true`
+
+Case‑sensitivity: The booleans are exact string checks. Use the literal `true` (lowercase). For example:
+
+```
+ENABLE_HSTS=true
+HSTS_INCLUDE_SUBDOMAINS=true   # optional
+HSTS_PRELOAD=true              # optional
+```
 
 Tunables (optional):
 
