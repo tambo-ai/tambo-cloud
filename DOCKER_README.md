@@ -16,12 +16,15 @@ This document describes how to run Tambo using Docker with a PostgreSQL database
    ./scripts/tambo-setup.sh
    ```
 
+   This will:
+   - make sure the required dependencies are installed
+   - create a `docker.env` file with default values
+
 2. **Configure environment variables:**
 
-   ```bash
-   cp docker.env.example docker.env
-   # Edit docker.env with your actual values
-   ```
+   Override any of the default values in `docker.env`.
+
+   Note that the only value which requires an override is `FALLBACK_OPENAI_API_KEY`. This is the OpenAI API key that tambo will use when a project has been created without adding a custom API key.
 
 3. **Start the stack:**
 
@@ -29,16 +32,43 @@ This document describes how to run Tambo using Docker with a PostgreSQL database
    ./scripts/tambo-start.sh
    ```
 
+   This will start the containers to run Tambo, using environment variables from your `docker.env` file.
+
+   Note that the first time you run this script it may take a few minutes.
+
 4. **Initialize the database:**
 
    ```bash
    ./scripts/init-database.sh
    ```
 
+   This will update the postgres db started in the previous step with the required schema.
+
 5. **Access your applications:**
    - Tambo Web: http://localhost:3210
    - Tambo API: http://localhost:3211
    - PostgreSQL Database: localhost:5433
+
+6. **Enable Auth**
+
+   To enable login to the dashboard for creating projects and generating API Keys, you'll need to create a GitHub or Google OAuth app, and update variables in the `docker.env` file. Find instructions [below.](#oauth-providers-google-and-github)
+
+7. **Generate an API Key**
+
+   Login to the dashboard of your local Tambo Web app at http://localhost:3210/dashboard to create a project and an API key to make requests from an application to that project.
+
+8. **Start sending messagse**
+
+   Now that everything is running and you've got an API key, you can make requests to your locally running Tambo!
+
+   You can run our template AI Chat app to test your setup: https://github.com/tambo-ai/tambo-template
+
+   Create or update the `.env.local` file at the root to include your API key and the URL of your local Tambo API:
+
+   ```
+   NEXT_PUBLIC_TAMBO_API_KEY=your-api-key
+   NEXT_PUBLIC_TAMBO_URL=http://localhost:3211
+   ```
 
 ## Services
 
@@ -141,7 +171,7 @@ You may configure either Google, GitHub, or both providers. If neither provider 
 
 Supply OAuth client credentials and related settings via your Docker deployment configuration (environment file or compose environment entries). See [docker.env.example](./docker.env.example) for the relevant variables and place your actual values in `docker.env` (or your secrets manager) when running `docker compose`.
 
-### Console setup (high‑level)
+### OAuth app setup
 
 - Google: Create an OAuth 2.0 Client ID in the Google Cloud Console Credentials page and add the exact Authorized redirect URIs as described above. Link: https://console.cloud.google.com/apis/credentials
 - GitHub: Create an OAuth App in GitHub Developer Settings → OAuth Apps and add the exact Authorization callback URL as described above. Link: https://github.com/settings/developers
