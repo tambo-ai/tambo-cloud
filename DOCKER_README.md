@@ -120,6 +120,11 @@ Key environment variables in `docker.env`:
 
 This section is for self‑hosted deployments using Docker. It explains how to configure Google and GitHub as OAuth providers for sign‑in.
 
+### OAuth app setup
+
+- Google: Create an OAuth 2.0 Client ID in the Google Cloud Console Credentials page and add the exact Authorized redirect URIs as described above. Link: https://console.cloud.google.com/apis/credentials
+- GitHub: Create an OAuth App in GitHub Developer Settings → OAuth Apps and add the exact Authorization callback URL as described above. Link: https://github.com/settings/developers
+
 ### Callback/Redirect URLs
 
 - Google OAuth callback path: `/api/auth/callback/google`
@@ -168,11 +173,6 @@ You may configure either Google, GitHub, or both providers. If neither provider 
 ### Where to configure this in Docker
 
 Supply OAuth client credentials and related settings via your Docker deployment configuration (environment file or compose environment entries). See [docker.env.example](./docker.env.example) for the relevant variables and place your actual values in `docker.env` (or your secrets manager) when running `docker compose`.
-
-### OAuth app setup
-
-- Google: Create an OAuth 2.0 Client ID in the Google Cloud Console Credentials page and add the exact Authorized redirect URIs as described above. Link: https://console.cloud.google.com/apis/credentials
-- GitHub: Create an OAuth App in GitHub Developer Settings → OAuth Apps and add the exact Authorization callback URL as described above. Link: https://github.com/settings/developers
 
 ## Scripts
 
