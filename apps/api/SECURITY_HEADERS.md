@@ -44,9 +44,11 @@ Override any directive via comma-separated env vars (set on the API process):
 Example:
 
 ```
-CSP_CONNECT_SRC='self, https://app.posthog.com'
+CSP_CONNECT_SRC="'self', https://app.posthog.com"
 DEPLOY_ENV=production
 ```
+
+CSP keywords must be single-quoted in env values: `'self'`, `'none'`, `'unsafe-inline'`, `'unsafe-eval'`, `'strict-dynamic'`, `'report-sample'`, `'unsafe-hashes'`.
 
 Notes:
 
