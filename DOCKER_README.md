@@ -24,7 +24,7 @@ This document describes how to run Tambo using Docker with a PostgreSQL database
 
    Override any of the default values in `docker.env`.
 
-   Note that the only value which requires an override is `FALLBACK_OPENAI_API_KEY`. This is the OpenAI API key that tambo will use when a project has been created without adding a custom API key.
+   Note that the only value which requires an override is `FALLBACK_OPENAI_API_KEY`. This is the OpenAI API key that Tambo will use when a project has been created without adding a custom API key.
 
 3. **Start the stack:**
 
