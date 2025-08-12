@@ -57,7 +57,7 @@ This document describes how to run Tambo with a local PostgreSQL database using 
 
    Login to the dashboard of your local Tambo Web app at http://localhost:3210/dashboard to create a project and an API key to make requests from an application to that project.
 
-8. **Start sending messagse**
+8. **Start sending messages**
 
    Now that everything is running and you've got an API key, you can make requests to your locally running Tambo!
 
