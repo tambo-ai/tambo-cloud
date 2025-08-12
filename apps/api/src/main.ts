@@ -41,32 +41,24 @@ function configureSwagger(app: INestApplication) {
 
 function configureHelmet(app: INestApplication) {
   const config = app.get(ConfigService);
+  const env = (key: string): string | undefined =>
+    config.get<string>(key) ?? process.env[key];
 
-  const nodeEnv =
-    config.get<string>("NODE_ENV") || process.env.NODE_ENV || "development";
-  const deployEnv = config.get<string>("DEPLOY_ENV") || nodeEnv;
+  const nodeEnv = env("NODE_ENV") || "development";
+  const deployEnv = env("DEPLOY_ENV") || nodeEnv;
 
   // HSTS policy: disabled by default; enable explicitly in production via ENABLE_HSTS=true
   const enableHsts =
-    (config.get<string>("ENABLE_HSTS") ||
-      process.env.ENABLE_HSTS ||
-      "false") === "true" && deployEnv === "production";
+    (env("ENABLE_HSTS") || "false") === "true" && deployEnv === "production";
 
-  const hstsMaxAge = Number(
-    config.get<string>("HSTS_MAX_AGE") || process.env.HSTS_MAX_AGE || 15552000,
-  ); // 180 days
+  const hstsMaxAge = Number(env("HSTS_MAX_AGE") || 15552000); // 180 days
   const hstsIncludeSubdomains =
-    (config.get<string>("HSTS_INCLUDE_SUBDOMAINS") ||
-      process.env.HSTS_INCLUDE_SUBDOMAINS ||
-      "false") === "true";
-  const hstsPreload =
-    (config.get<string>("HSTS_PRELOAD") ||
-      process.env.HSTS_PRELOAD ||
-      "false") === "true";
+    (env("HSTS_INCLUDE_SUBDOMAINS") || "false") === "true";
+  const hstsPreload = (env("HSTS_PRELOAD") || "false") === "true";
 
   // Environment-specific CSP directives. These defaults are intentionally conservative and
   // aimed to support the Swagger UI while locking down framing and MIME sniffing risks.
-  const cspDirectives = buildCspDirectives({ env: deployEnv, config });
+  const cspDirectives = buildCspDirectives({ deployEnv, config });
 
   app.use(
     helmet({
@@ -94,15 +86,17 @@ function configureHelmet(app: INestApplication) {
 }
 
 function buildCspDirectives({
-  env,
+  deployEnv,
   config,
 }: {
-  env: string;
+  deployEnv: string;
   config: ConfigService;
 }): Record<string, Iterable<string>> {
   // Allow overrides via env vars (comma-separated). If not set, fall back to environment defaults below.
+  const env = (key: string): string | undefined =>
+    config.get<string>(key) ?? process.env[key];
   const getList = (key: string, fallback: string[]): string[] => {
-    const raw = config.get<string>(key) || process.env[key];
+    const raw = env(key);
     if (!raw) return fallback;
     return raw
       .split(",")
@@ -119,7 +113,7 @@ function buildCspDirectives({
     "font-src": getList("CSP_FONT_SRC", ["'self'", "data:"]),
   } as const;
 
-  if (env === "development") {
+  if (deployEnv === "development") {
     return {
       ...common,
       // Support Swagger UI; allow inline styles it relies on
@@ -138,7 +132,7 @@ function buildCspDirectives({
     };
   }
 
-  if (env === "staging") {
+  if (deployEnv === "staging") {
     return {
       ...common,
       "style-src": getList("CSP_STYLE_SRC", ["'self'", "'unsafe-inline'"]),
