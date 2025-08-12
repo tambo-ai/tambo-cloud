@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  InternalServerErrorException,
   Post,
   Req,
   UnauthorizedException,
@@ -114,7 +115,9 @@ export class OAuthController {
       // Use per-project secret stored in the database for signing
       const bearerSecret = await operations.getBearerTokenSecret(db, projectId);
       if (!bearerSecret) {
-        throw new Error("Project bearer secret not found");
+        throw new InternalServerErrorException(
+          "Project bearer secret not found",
+        );
       }
       const signingKey = new TextEncoder().encode(bearerSecret);
 
@@ -170,7 +173,8 @@ export class OAuthController {
 
       if (
         error instanceof BadRequestException ||
-        error instanceof UnauthorizedException
+        error instanceof UnauthorizedException ||
+        error instanceof InternalServerErrorException
       ) {
         throw error;
       }
