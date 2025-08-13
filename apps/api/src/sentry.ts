@@ -6,7 +6,9 @@ export function initializeSentry() {
 
   // Only initialize if DSN is provided
   if (!process.env.SENTRY_DSN) {
-    console.log("Sentry DSN not provided, skipping Sentry initialization");
+    console.log(
+      "Sentry DSN not provided, skipping Sentry initialization, if you want to use Sentry, please contact us at support@tambo.co",
+    );
     return;
   }
 
@@ -15,10 +17,10 @@ export function initializeSentry() {
     environment,
 
     // Performance Monitoring
-    tracesSampleRate: 0.1,
+    tracesSampleRate: 1,
 
     // Profiling (requires tracing to be enabled)
-    profilesSampleRate: 0.1,
+    profilesSampleRate: 1,
 
     // Integrations
     integrations: [
