@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { AnimatePresence, Easing, motion } from "framer-motion";
 import { X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
+import { env } from "@/lib/env";
 
 interface TamboHackBannerProps {
   className?: string;
@@ -13,11 +14,11 @@ interface TamboHackBannerProps {
 const ease: Easing = [0.16, 1, 0.3, 1];
 const STORAGE_KEY = "tambohack_banner_dismissed_session";
 
-export function TamboHackBanner({ className }: TamboHackBannerProps) {
+export const TamboHackBanner: FC<TamboHackBannerProps> = ({ className }) => {
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
-  const tamboHackUrl = process.env.NEXT_PUBLIC_TAMBOHACK_URL || "/hack";
+  const tamboHackUrl = env.NEXT_PUBLIC_TAMBOHACK_URL || "/hack";
 
   useEffect(() => {
     try {
@@ -97,4 +98,4 @@ export function TamboHackBanner({ className }: TamboHackBannerProps) {
       )}
     </AnimatePresence>
   );
-}
+};
