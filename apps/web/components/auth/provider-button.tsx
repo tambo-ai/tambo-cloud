@@ -13,17 +13,20 @@ interface ProviderButtonProps {
     icon: string;
   };
   routeOnSuccess?: string;
+  disabled?: boolean;
 }
 
 export function ProviderButton({
   provider,
   routeOnSuccess = "/dashboard",
+  disabled = false,
 }: ProviderButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const signIn = useSignIn();
 
   const handleAuth = async () => {
+    if (disabled || isLoading) return;
     setIsLoading(true);
     try {
       await signIn(provider.id, {
@@ -50,7 +53,7 @@ export function ProviderButton({
     <Button
       variant="outline"
       onClick={handleAuth}
-      disabled={isLoading}
+      disabled={isLoading || disabled}
       className="w-full h-12 text-base font-medium transition-all hover:scale-[1.02] hover:bg-accent hover:text-accent-foreground"
     >
       {IconComponent && <IconComponent className="mr-3 h-5 w-5" />}
