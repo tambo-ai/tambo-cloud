@@ -63,7 +63,7 @@ export async function hasAcceptedLegal(
 export async function acceptLegalTerms(
   db: HydraDb,
   userId: string,
-  version: string = "v1",
+  version: string,
 ): Promise<typeof schema.tamboUsers.$inferSelect> {
   return await updateTamboUser(db, userId, {
     legalAccepted: true,

@@ -16,6 +16,7 @@ import {
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   index,
   integer,
   pgPolicy,
@@ -692,6 +693,10 @@ export const tamboUsers = pgTable(
     ),
     legalAcceptedIdx: index("idx_tambo_users_legal_accepted").on(
       table.legalAccepted,
+    ),
+    legalAcceptanceConsistent: check(
+      "chk_tambo_users_legal_consistency",
+      sql`(NOT ${table.legalAccepted}) OR (${table.legalAcceptedAt} IS NOT NULL AND ${table.legalVersion} IS NOT NULL)`,
     ),
   }),
 );
