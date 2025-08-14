@@ -34,6 +34,7 @@ COPY --from=deps /app/packages ./packages
 COPY --from=deps /app/apps/web ./apps/web
 ARG TURBO_FILTER="tambo-ai-landing-page"
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+
 ENV SKIP_ENV_VALIDATION=true
 RUN --mount=type=cache,target=/root/.npm npx turbo build --filter=${TURBO_FILTER}
 # Prune dev dependencies after successful build to keep only production deps
@@ -45,14 +46,14 @@ RUN apk add --no-cache libc6-compat curl
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
+
+# Copy pruned node_modules
 COPY --from=builder /app/node_modules ./node_modules
 # Copy complete packages and apps directories with all contents
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/web ./apps/web
-COPY --from=builder /app/apps/web/.next ./apps/web/.next
-COPY --from=builder /app/apps/web/public ./apps/web/public
-COPY --from=builder /app/apps/web/next.config.* ./apps/web/
-COPY --from=builder /app/apps/web/package.json ./apps/web/
+
+# Create and use non-root user
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nodejs \
   && chown -R nodejs:nodejs /app

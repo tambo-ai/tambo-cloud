@@ -32,9 +32,9 @@ COPY --from=deps /app/packages ./packages
 
 # Different from here forward
 COPY --from=deps /app/apps/api ./apps/api
-# Build filtered app
 ARG TURBO_FILTER="hydra-api"
 ENV NODE_OPTIONS="--experimental-require-module"
+
 ENV SKIP_ENV_VALIDATION=true
 RUN --mount=type=cache,target=/root/.npm npx turbo build --filter=${TURBO_FILTER}
 # Prune dev dependencies after successful build to keep only production deps
@@ -46,11 +46,13 @@ RUN apk add --no-cache libc6-compat curl
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
+
 # Copy pruned node_modules
 COPY --from=builder /app/node_modules ./node_modules
 # Copy complete packages and apps directories with all contents
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/api ./apps/api
+
 # Create and use non-root user
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nodejs \
