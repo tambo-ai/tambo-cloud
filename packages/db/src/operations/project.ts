@@ -120,6 +120,7 @@ export async function updateProject(
     customLlmBaseURL,
     maxInputTokens,
     maxToolCallLimit,
+    isTokenRequired,
   }: {
     name?: string;
     customInstructions?: string;
@@ -129,6 +130,7 @@ export async function updateProject(
     customLlmBaseURL?: string;
     maxInputTokens?: number;
     maxToolCallLimit?: number;
+    isTokenRequired?: boolean;
   },
 ) {
   // Create update object with only provided fields
@@ -155,6 +157,9 @@ export async function updateProject(
       throw new Error("Max tool call limit must be greater than 0");
     }
     updateData.maxToolCallLimit = maxToolCallLimit;
+  }
+  if (isTokenRequired !== undefined) {
+    updateData.isTokenRequired = isTokenRequired;
   }
 
   // Only perform update if there are fields to update
