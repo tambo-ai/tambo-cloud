@@ -9,6 +9,8 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nodejs \
   && chown -R nodejs:nodejs /app
+# Now do everything as the user
+USER nodejs
 
 # Dependencies layer: only package manifests, derived dynamically from workspaces
 FROM base AS deps
@@ -55,8 +57,7 @@ COPY --from=builder /app/apps/web ./apps/web
 
 # Create and use non-root user
 RUN addgroup --system --gid 1001 nodejs \
-  && adduser --system --uid 1001 nodejs \
-  && chown -R nodejs:nodejs /app
+  && adduser --system --uid 1001 nodejs
 USER nodejs
 
 EXPOSE 3000
