@@ -1,8 +1,4 @@
-import {
-  FunctionParameters,
-  getToolName,
-  ThreadMessage,
-} from "@tambo-ai-cloud/core";
+import { FunctionParameters, ThreadMessage } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -51,9 +47,11 @@ export async function generateThreadName(
 }
 
 function extractThreadName(response: LLMResponse) {
-  const extractedName = response.message.tool_calls?.[0]
-    ? getToolName(response.message.tool_calls[0])
-    : undefined;
+  const toolCall = response.message.tool_calls?.[0];
+  if (toolCall?.type !== "function") {
+    throw new Error("Thread name could not be generated (no tool call)");
+  }
+  const extractedName = toolCall.function.arguments;
   if (!extractedName) {
     throw new Error("Thread name could not be generated");
   }
