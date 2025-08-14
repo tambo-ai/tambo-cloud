@@ -12,9 +12,13 @@ RUN addgroup --system --gid 1001 nodejs \
 
 # Dependencies layer: only package manifests, derived dynamically from workspaces
 FROM base AS deps
-# Use BuildKit mount to read repo and copy only package manifests (root + workspaces)
+# Add workspace manifest copy helper
+COPY scripts/copy-workspace-manifests.js ./scripts/copy-workspace-manifests.js
+# Dry-run to log what would be copied, then perform the copy
 RUN --mount=type=bind,source=.,target=/src,readonly \
-  node -e "const fs=require('fs');const path=require('path');const dst=process.cwd();const src='/src';const rootPkg=JSON.parse(fs.readFileSync(path.join(src,'package.json'),'utf8'));let workspaces=rootPkg.workspaces||[];if(workspaces && workspaces.packages) workspaces=workspaces.packages;workspaces=Array.isArray(workspaces)?workspaces:[workspaces].filter(Boolean);function copyRel(rel){const from=path.join(src,rel);if(fs.existsSync(from)){const to=path.join(dst,rel);fs.mkdirSync(path.dirname(to),{recursive:true});fs.copyFileSync(from,to);}}copyRel('package.json');copyRel('package-lock.json');for(const pat of workspaces){if(!pat) continue; if(pat.includes('*')){const baseDir=pat.split('*')[0].replace(/\/$/,'');const absBase=path.join(src,baseDir);if(fs.existsSync(absBase)){for(const entry of fs.readdirSync(absBase)){const relDir=path.join(baseDir,entry);copyRel(path.join(relDir,'package.json'));copyRel(path.join(relDir,'package-lock.json'));}}}else{copyRel(path.join(pat,'package.json'));copyRel(path.join(pat,'package-lock.json'));}}"
+  node ./scripts/copy-workspace-manifests.js --dry-run --src /src --dst /app
+RUN --mount=type=bind,source=.,target=/src,readonly \
+  node ./scripts/copy-workspace-manifests.js --src /src --dst /app
 # Install all dependencies (cached by manifests only)
 # Install deps without running lifecycle scripts (postinstall, etc.)
 RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts
@@ -23,6 +27,9 @@ RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts
 FROM base AS builder
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
+# Overlay workspace node_modules into packages/ and apps/
+COPY --from=deps /app/packages ./packages
+COPY --from=deps /app/apps ./apps
 # Build filtered app
 ARG TURBO_FILTER="hydra-api"
 ENV NODE_OPTIONS="--experimental-require-module"
