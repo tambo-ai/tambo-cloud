@@ -223,6 +223,7 @@ export const projectRouter = createTRPCRouter({
           customLlmModelName: project.customLlmModelName,
           customLlmBaseURL: project.customLlmBaseURL,
           maxToolCallLimit: project.maxToolCallLimit,
+          isTokenRequired: project.isTokenRequired,
           messages: stats.messages,
           users: stats.users,
           lastMessageAt: stats.lastMessageAt,

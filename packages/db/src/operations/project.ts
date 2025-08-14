@@ -61,6 +61,7 @@ export async function createProject(
       id: project.id,
       name: project.name,
       userId,
+      isTokenRequired: project.isTokenRequired,
     };
   });
 }
