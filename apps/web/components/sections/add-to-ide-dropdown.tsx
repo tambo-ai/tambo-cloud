@@ -5,9 +5,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Code2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 export function AddToIdeDropdown() {
@@ -27,7 +30,31 @@ export function AddToIdeDropdown() {
           Add to IDE
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-auto">
+      <DropdownMenuContent
+        align="start"
+        className="w-auto bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 gap-2"
+      >
+        <DropdownMenuLabel className="text-sm font-normal leading-snug">
+          Code with our docs MCP server
+          <Link
+            href="https://www.inkeep.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-muted-foreground flex items-center gap-1"
+          >
+            Powered by
+            <Image
+              src="assets/landing/inkeep-gray-monochrome.svg"
+              alt=""
+              aria-hidden="true"
+              width={17}
+              height={17}
+              className="inline-block"
+            />
+            Inkeep
+          </Link>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleCursorClick}
           className="cursor-pointer"
