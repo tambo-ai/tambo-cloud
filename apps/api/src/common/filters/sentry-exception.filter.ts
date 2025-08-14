@@ -50,12 +50,32 @@ export class SentryExceptionFilter implements ExceptionFilter {
           body: request.body,
         });
 
-        // Add fingerprint for better grouping
-        scope.setFingerprint([
-          request.method,
-          request.route?.path || request.url,
-          exception.name || "UnknownError",
-        ]);
+        // DO NOT set custom fingerprints - let Sentry's automatic grouping handle it
+        // Sentry's algorithm analyzes stack traces, error types, and uses AI to
+        // create better groupings than simple route-based fingerprinting.
+        // See: https://docs.sentry.io/concepts/data-management/event-grouping/
+
+        // Add tags for filtering/searching in Sentry UI (doesn't affect grouping)
+        scope.setTag("http.method", request.method);
+        scope.setTag("http.status_code", status);
+        scope.setTag("http.route", request.route?.path || "unknown");
+
+        // Add user context if available (helps track affected users)
+        if ((request as any).user) {
+          scope.setUser({
+            id: (request as any).user.id,
+            email: (request as any).user.email,
+          });
+        }
+
+        // Only set custom fingerprints for specific known edge cases
+        // Example: External service connection errors that should be grouped together
+        if (exception.code === "ECONNREFUSED" && exception.port) {
+          scope.setFingerprint(["connection-refused", String(exception.port)]);
+        } else if (exception.code === "ETIMEDOUT" && exception.hostname) {
+          scope.setFingerprint(["connection-timeout", exception.hostname]);
+        }
+        // For all other errors, let Sentry's automatic fingerprinting handle it
 
         // Capture the exception
         Sentry.captureException(exception);
