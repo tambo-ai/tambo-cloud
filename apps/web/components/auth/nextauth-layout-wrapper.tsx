@@ -24,11 +24,14 @@ export const NextAuthLayoutWrapper: FC<NextAuthLayoutWrapperProps> = ({
   });
 
   useEffect(() => {
-    if (status === "loading") return;
+    if (status === "loading") return; // Still loading
 
+    // No session, redirect to login
     if (!session) {
-      router.push("/login");
+      const returnUrl = encodeURIComponent(pathname || "/dashboard");
+      router.replace(`/login?returnUrl=${returnUrl}`);
     } else if (
+      // Check if user has accepted legal
       legalStatus &&
       !legalStatus.accepted &&
       pathname !== "/legal-acceptance"
