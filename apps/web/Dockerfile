@@ -29,7 +29,9 @@ COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 # Overlay workspace node_modules into packages/ and apps/
 COPY --from=deps /app/packages ./packages
-COPY --from=deps /app/apps ./apps
+
+# Different from here forward
+COPY --from=deps /app/apps/web ./apps/web
 ARG TURBO_FILTER="tambo-ai-landing-page"
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV SKIP_ENV_VALIDATION=true
@@ -44,17 +46,13 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
-# Copy only the built Next.js output and the minimal app folder needed to run `next start`
+# Copy complete packages and apps directories with all contents
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/web ./apps/web
 COPY --from=builder /app/apps/web/.next ./apps/web/.next
 COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder /app/apps/web/next.config.* ./apps/web/
 COPY --from=builder /app/apps/web/package.json ./apps/web/
-COPY --from=builder /app/packages ./packages
-# Remove dev-only sources to slim image
-RUN find packages -type d -name 'src' -prune -exec rm -rf {} + || true \
-  && find packages -type d -name 'test' -prune -exec rm -rf {} + || true \
-  && find packages -type d -name '__tests__' -prune -exec rm -rf {} + || true \
-  && find packages -type f -name '*.ts' -exec rm -f {} + || true
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nodejs \
   && chown -R nodejs:nodejs /app

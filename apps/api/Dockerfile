@@ -29,7 +29,9 @@ COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 # Overlay workspace node_modules into packages/ and apps/
 COPY --from=deps /app/packages ./packages
-COPY --from=deps /app/apps ./apps
+
+# Different from here forward
+COPY --from=deps /app/apps/api ./apps/api
 # Build filtered app
 ARG TURBO_FILTER="hydra-api"
 ENV NODE_OPTIONS="--experimental-require-module"
@@ -46,15 +48,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 # Copy pruned node_modules
 COPY --from=builder /app/node_modules ./node_modules
-# Copy only built API output
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-# Copy minimal packages (package.json + built dist) to satisfy workspace symlinks
+# Copy complete packages and apps directories with all contents
 COPY --from=builder /app/packages ./packages
-# Remove development-only sources from packages to slim image
-RUN find packages -type d -name 'src' -prune -exec rm -rf {} + || true \
-  && find packages -type d -name 'test' -prune -exec rm -rf {} + || true \
-  && find packages -type d -name '__tests__' -prune -exec rm -rf {} + || true \
-  && find packages -type f -name '*.ts' -exec rm -f {} + || true
+COPY --from=builder /app/apps/api ./apps/api
 # Create and use non-root user
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nodejs \
