@@ -670,6 +670,11 @@ export const tamboUsers = pgTable(
       .notNull()
       .default(0),
 
+    // Legal acceptance tracking
+    legalAccepted: boolean("legal_accepted").notNull().default(false),
+    legalAcceptedAt: timestamp("legal_accepted_at", { withTimezone: true }),
+    legalVersion: text("legal_version"),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -684,6 +689,9 @@ export const tamboUsers = pgTable(
     ),
     welcomeEmailSentIdx: index("idx_tambo_users_welcome_email_sent").on(
       table.welcomeEmailSent,
+    ),
+    legalAcceptedIdx: index("idx_tambo_users_legal_accepted").on(
+      table.legalAccepted,
     ),
   }),
 );
