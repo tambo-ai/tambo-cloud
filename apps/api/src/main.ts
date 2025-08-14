@@ -36,10 +36,8 @@ async function bootstrap() {
     if (process.env.NODE_ENV === "production") {
       console.log("SIGTERM received, shutting down...");
 
-      // Flush Sentry before shutdown
-      await Sentry.close(2000);
-
-      await shutdownOpenTelemetry(sdk);
+      // Flush Sentry and shutdown OpenTelemetry in parallel
+      await Promise.all([Sentry.close(2000), shutdownOpenTelemetry(sdk)]);
     }
   });
 
@@ -53,6 +51,7 @@ async function bootstrap() {
     console.error("Uncaught Exception:", error);
     Sentry.captureException(error);
     // Give Sentry time to send the error before crashing
+    // Node's default behavior is to exit on uncaught exceptions, so we manually exit to preserve that behavior
     Sentry.close(2000).then(() => process.exit(1));
   });
 
