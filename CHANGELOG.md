@@ -1,5 +1,84 @@
 # Changelog
 
+## [0.98.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.97.0...repo-v0.98.0) (2025-08-14)
+
+
+### Features
+
+* add 'add tambo mcp to ide' button on homepage  ([#1526](https://github.com/tambo-ai/tambo-cloud/issues/1526)) ([de580a7](https://github.com/tambo-ai/tambo-cloud/commit/de580a762aa49a2da1f16acfe4aa90e87ac22009))
+
+
+### Bug Fixes
+
+* update docker setup to no longer require node ([#1525](https://github.com/tambo-ai/tambo-cloud/issues/1525)) ([684cba3](https://github.com/tambo-ai/tambo-cloud/commit/684cba3f2da652db3c701532c9caaea041c98f7e))
+
+
+### Documentation
+
+* update main readme with links to react repo and docs ([#1523](https://github.com/tambo-ai/tambo-cloud/issues/1523)) ([3addf96](https://github.com/tambo-ai/tambo-cloud/commit/3addf964f40c6c7e9320b4aabbd04c4133dfdce7))
+
+
+### Miscellaneous Chores
+
+* remove some old info ([#1520](https://github.com/tambo-ai/tambo-cloud/issues/1520)) ([5c5bdfd](https://github.com/tambo-ai/tambo-cloud/commit/5c5bdfdddf7f7cd8ab31505412d621b31be84443))
+
+## [0.97.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.96.0...repo-v0.97.0) (2025-08-13)
+
+
+### Features
+
+* show complete endpoint for openai-compatible ([#1519](https://github.com/tambo-ai/tambo-cloud/issues/1519)) ([cba3c8a](https://github.com/tambo-ai/tambo-cloud/commit/cba3c8a6fd44793bc126a61bb70eb79c56c27a53))
+
+
+### Documentation
+
+* update selfhosting instructions in docker readme ([#1517](https://github.com/tambo-ai/tambo-cloud/issues/1517)) ([176b19e](https://github.com/tambo-ai/tambo-cloud/commit/176b19e141170eebdbc1cee7c690590fa4026ca5))
+
+## [0.96.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.95.1...repo-v0.96.0) (2025-08-12)
+
+
+### Features
+
+* **api:** configure Helmet security headers (CSP/HSTS) ([#1511](https://github.com/tambo-ai/tambo-cloud/issues/1511)) ([f936452](https://github.com/tambo-ai/tambo-cloud/commit/f9364521931f848e19655d05e1e8330d5685d6c5))
+* **auth:** secure per-project secret for OAuth bearer tokens (TAM-416) ([#1515](https://github.com/tambo-ai/tambo-cloud/issues/1515)) ([290a05f](https://github.com/tambo-ai/tambo-cloud/commit/290a05f49b9da3f3a5015c4fd908a500a5f439ab))
+
+
+### Bug Fixes
+
+* **api:** stop logging message payloads in addMessage ([#1513](https://github.com/tambo-ai/tambo-cloud/issues/1513)) ([fb371b7](https://github.com/tambo-ai/tambo-cloud/commit/fb371b7148a3bfd4178363b6279e940fba27df55))
+* **auth:** pin HS256 for MCP JWT verification ([#1514](https://github.com/tambo-ai/tambo-cloud/issues/1514)) ([66f005a](https://github.com/tambo-ai/tambo-cloud/commit/66f005a73d9e25d5228e939021079a6104b3b2c5))
+* **auth:** stop logging raw API keys in ApiKeyGuard ([#1508](https://github.com/tambo-ai/tambo-cloud/issues/1508)) ([a2ebe49](https://github.com/tambo-ai/tambo-cloud/commit/a2ebe4994013796f9f766d4a8024d56799d073ed))
+* **oauth:** remove sensitive logging from  [TAM-418] ([#1510](https://github.com/tambo-ai/tambo-cloud/issues/1510)) ([2651a35](https://github.com/tambo-ai/tambo-cloud/commit/2651a35cfffe48eb47a42e84fe1cc8ab52af239b))
+* **self-hosting:** fix url in env variable formatting ([#1507](https://github.com/tambo-ai/tambo-cloud/issues/1507)) ([7b5c5b0](https://github.com/tambo-ai/tambo-cloud/commit/7b5c5b0b9e9564a103933cdaf280e55798a898b8))
+* **self-hosting:** keep database password in sync via POSTGRES_PASSWORD ([#1504](https://github.com/tambo-ai/tambo-cloud/issues/1504)) ([2c9bea4](https://github.com/tambo-ai/tambo-cloud/commit/2c9bea402c8d6041c21142812956682ac6a05b53))
+* update welcome message from hydra to tambo ([#1516](https://github.com/tambo-ai/tambo-cloud/issues/1516)) ([2425025](https://github.com/tambo-ai/tambo-cloud/commit/24250255e51dd009eb164f9d77950afc7fe89234))
+
+
+### Documentation
+
+* **self-hosting/docker:** OAuth setup for Google and GitHub (TAM-427) ([#1512](https://github.com/tambo-ai/tambo-cloud/issues/1512)) ([d27990c](https://github.com/tambo-ai/tambo-cloud/commit/d27990c54bc9f3b31e5a14a2e8a99579476c0ff9))
+
+
+### Miscellaneous Chores
+
+* **auth:** remove AdminKeyGuard and ADMIN_KEYS handling ([#1509](https://github.com/tambo-ai/tambo-cloud/issues/1509)) ([084a51e](https://github.com/tambo-ai/tambo-cloud/commit/084a51ed17d395d79ac5808fa27db7824e70dfdb))
+
+## [0.95.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.95.0...repo-v0.95.1) (2025-08-11)
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump the eslint group with 2 updates ([#1496](https://github.com/tambo-ai/tambo-cloud/issues/1496)) ([f60892e](https://github.com/tambo-ai/tambo-cloud/commit/f60892e4e3043a18774bab197d7877c17a434296))
+* **deps:** bump @tambo-ai/react from 0.43.0 to 0.43.1 in the tambo-ai group ([#1497](https://github.com/tambo-ai/tambo-cloud/issues/1497)) ([6d821b1](https://github.com/tambo-ai/tambo-cloud/commit/6d821b1a3644b9322a83d6d40ed3954ba2a317d5))
+* **deps:** bump @tanstack/react-query from 5.84.1 to 5.84.2 ([#1499](https://github.com/tambo-ai/tambo-cloud/issues/1499)) ([9b2a380](https://github.com/tambo-ai/tambo-cloud/commit/9b2a3802926f5ffe91387f0d9855f87f5b463960))
+* **deps:** bump docker/build-push-action from 5 to 6 ([#1492](https://github.com/tambo-ai/tambo-cloud/issues/1492)) ([8c72093](https://github.com/tambo-ai/tambo-cloud/commit/8c72093e1cb7d2080815fae4f2d096d89b753d60))
+* **deps:** bump js-tiktoken from 1.0.20 to 1.0.21 ([#1500](https://github.com/tambo-ai/tambo-cloud/issues/1500)) ([eb0fcc4](https://github.com/tambo-ai/tambo-cloud/commit/eb0fcc469274bcd36801753342103c28ab0243b7))
+* **deps:** bump the nestjs group with 4 updates ([#1493](https://github.com/tambo-ai/tambo-cloud/issues/1493)) ([93cc633](https://github.com/tambo-ai/tambo-cloud/commit/93cc633ade41a4a446e3860baea5e4fa9c8d2470))
+* **deps:** bump the next group with 2 updates ([#1495](https://github.com/tambo-ai/tambo-cloud/issues/1495)) ([126bee0](https://github.com/tambo-ai/tambo-cloud/commit/126bee07d93d0f3cec7294f2db6b15dacb5ce5f5))
+* **deps:** bump the small-safe-packages group with 4 updates ([#1498](https://github.com/tambo-ai/tambo-cloud/issues/1498)) ([21ac1cf](https://github.com/tambo-ai/tambo-cloud/commit/21ac1cfb634ac4a15c42b25263bfca9b8e654d0c))
+* **deps:** bump tldts from 7.0.10 to 7.0.11 ([#1501](https://github.com/tambo-ai/tambo-cloud/issues/1501)) ([27f4b94](https://github.com/tambo-ai/tambo-cloud/commit/27f4b94f5caee0f18c7a45d860837fdc8949bb4f))
+* **legal:** License with Apache 2.0 ([#1503](https://github.com/tambo-ai/tambo-cloud/issues/1503)) ([2e1627a](https://github.com/tambo-ai/tambo-cloud/commit/2e1627a09f1c91db749d582570777b9be7945078))
+
 ## [0.95.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.94.1...repo-v0.95.0) (2025-08-08)
 
 

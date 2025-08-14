@@ -2,7 +2,13 @@
 
 ## Overview
 
-This repository is a monorepo for the Tambo Cloud platform.
+This repository is a monorepo for the Tambo Cloud platform. Contribute to this repo to modify how Tambo's hosted API works, or use this repo to run Tambo locally for development or self-hosting.
+
+To build AI web applications that use Tambo's hosted API, use our React SDK: https://github.com/tambo-ai/tambo.
+
+For detailed information about what Tambo is and how it works, check out our [docs site.](https://docs.tambo.co)
+
+For a quick walkthrough of using the fundamental features of Tambo, check out [this page.](https://docs.tambo.co/getting-started/quickstart)
 
 ## Repository Structure
 
@@ -63,9 +69,7 @@ Generate or update the token in your Slack app settings, then place it in
 # Setup the Docker environment
 ./scripts/tambo-setup.sh
 
-# Configure environment variables
-cp docker.env.example docker.env
-# Edit docker.env with your actual values
+# Edit the created docker.env with your actual values
 
 # Start the stack
 ./scripts/tambo-start.sh
@@ -79,6 +83,8 @@ The setup script will:
 1. Check and install prerequisites (Docker, Docker Compose, jq)
 2. Create environment files from templates
 3. Make all scripts executable
+
+Find detailed instructions on running Tambo through Docker [here.](./DOCKER_README.md)
 
 ### Prerequisites
 

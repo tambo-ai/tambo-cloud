@@ -1,12 +1,10 @@
 # Tambo Docker Setup
 
-This document describes how to run Tambo using Docker with a PostgreSQL database.
+This document describes how to run Tambo with a local PostgreSQL database using Docker.
 
 ## Prerequisites
 
 - Docker and Docker Compose installed
-- Node.js and npm (for database initialization)
-- `jq` command-line tool (for health checks)
 
 ## Quick Start
 
@@ -16,12 +14,17 @@ This document describes how to run Tambo using Docker with a PostgreSQL database
    ./scripts/tambo-setup.sh
    ```
 
+   This will:
+   - verify Docker is available
+   - create a `docker.env` file with default values
+
 2. **Configure environment variables:**
 
-   ```bash
-   cp docker.env.example docker.env
-   # Edit docker.env with your actual values
-   ```
+   Override any of the default values in `docker.env`.
+
+   You'll need to override `FALLBACK_OPENAI_API_KEY`. This is the OpenAI API key that Tambo will use when a project has been created without adding a custom API key.
+
+   Additionally, to enable login to the dashboard for creating projects and generating API Keys, you'll need to create a GitHub or Google OAuth app, and update the relevant variables in the `docker.env` file. Find instructions [below.](#oauth-providers-google-and-github)
 
 3. **Start the stack:**
 
@@ -29,16 +32,43 @@ This document describes how to run Tambo using Docker with a PostgreSQL database
    ./scripts/tambo-start.sh
    ```
 
+   This will start the containers to run Tambo, using environment variables from your `docker.env` file.
+
+   Note that the first time you run this script it may take a few minutes.
+
 4. **Initialize the database:**
 
    ```bash
    ./scripts/init-database.sh
    ```
 
+   This script automatically detects if it's running on the host or in Docker:
+   - On the host, it delegates into the `api` container and runs there.
+   - In the container, it runs migrations directly using `DATABASE_URL` from the environment.
+
+   The script applies all Drizzle migrations to the PostgreSQL instance started earlier.
+
 5. **Access your applications:**
    - Tambo Web: http://localhost:3210
    - Tambo API: http://localhost:3211
    - PostgreSQL Database: localhost:5433
+
+6. **Generate an API Key**
+
+   Login to the dashboard of your local Tambo Web app at http://localhost:3210/dashboard to create a project and an API key to make requests from an application to that project.
+
+7. **Start sending messages**
+
+   Now that everything is running and you've got an API key, you can make requests to your locally running Tambo!
+
+   You can run our template AI Chat app to test your setup: https://github.com/tambo-ai/tambo-template
+
+   Create or update the `.env.local` file at the root to include your API key and the URL of your local Tambo API:
+
+   ```
+   NEXT_PUBLIC_TAMBO_API_KEY=your-api-key
+   NEXT_PUBLIC_TAMBO_URL=http://localhost:3211
+   ```
 
 ## Services
 
@@ -72,7 +102,7 @@ Key environment variables in `docker.env`:
 
 ### Database Connection
 
-- `DATABASE_URL`: Full database connection string
+- `DATABASE_URL`: Full database connection string. By default, this is derived from `POSTGRES_*` directly in `docker-compose.yml`. You can override it by setting `DATABASE_URL` in `docker.env`.
 
 ### API Keys
 
@@ -87,6 +117,64 @@ Key environment variables in `docker.env`:
 - `RESEND_API_KEY`: Email service API key
 - `SLACK_OAUTH_TOKEN`: Slack integration token
 - `WEATHER_API_KEY`: Weather service API key
+
+## OAuth Providers (Google and GitHub)
+
+This section is for self‑hosted deployments using Docker. It explains how to configure Google and GitHub as OAuth providers for sign‑in.
+
+### OAuth app setup
+
+- Google: Create an OAuth 2.0 Client ID in the Google Cloud Console Credentials page and add the exact Authorized redirect URIs as described above. Link: https://console.cloud.google.com/apis/credentials
+- GitHub: Create an OAuth App in GitHub Developer Settings → OAuth Apps and add the exact Authorization callback URL as described above. Link: https://github.com/settings/developers
+
+### Callback/Redirect URLs
+
+- Google OAuth callback path: `/api/auth/callback/google`
+- GitHub OAuth callback path: `/api/auth/callback/github`
+
+The full redirect URI is your deployment base URL plus the callback path. Examples:
+
+- `https://your-domain.com/api/auth/callback/google`
+- `https://your-domain.com/api/auth/callback/github`
+
+In general: `<base-url>/api/auth/callback/google` and `<base-url>/api/auth/callback/github`.
+
+Local (Docker) examples using this repo's documented ports:
+
+- `http://localhost:3210/api/auth/callback/google`
+- `http://localhost:3210/api/auth/callback/github`
+
+For production deployments, use HTTPS for all redirect URIs (for example, `https://app.example.com/api/auth/callback/google`).
+
+### Environment separation (recommended)
+
+Create separate OAuth clients for local development and for production. Each environment must use its own redirect/callback URL that matches that environment’s base URL plus the correct callback path.
+
+Examples (placeholders — use values that match your setup):
+
+- Google: `<local-base-url>/api/auth/callback/google` and `<prod-base-url>/api/auth/callback/google`
+- GitHub: `<local-base-url>/api/auth/callback/github` and `<prod-base-url>/api/auth/callback/github`
+
+Note (NextAuth v4 in this app): Set `NEXTAUTH_URL` to your exact `<base-url>` and `NEXTAUTH_SECRET` for each environment. Avoid a trailing slash in `NEXTAUTH_URL`. See [docker.env.example](./docker.env.example) for the exact variable names used here.
+
+### Environment variables and provider configuration
+
+Set the following variables (see [docker.env.example](./docker.env.example) for placement):
+
+- `NEXTAUTH_URL`
+- `NEXTAUTH_SECRET`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
+
+### Provider selection and email fallback
+
+You may configure either Google, GitHub, or both providers. If neither provider is configured, the application falls back to email login. For email login to work in a self‑hosted deployment, you must also configure your email service credentials (see the email settings noted elsewhere in this document and in [docker.env.example](./docker.env.example)).
+
+### Where to configure this in Docker
+
+Supply OAuth client credentials and related settings via your Docker deployment configuration (environment file or compose environment entries). See [docker.env.example](./docker.env.example) for the relevant variables and place your actual values in `docker.env` (or your secrets manager) when running `docker compose`.
 
 ## Scripts
 
@@ -106,6 +194,17 @@ Shows logs from all services or a specific service.
 
 Initializes the PostgreSQL database with the required schema using Drizzle migrations.
 
+Behavior:
+
+- If run on the host, it will exec into the `api` container and run itself there.
+- If run inside the container, it runs migrations directly using `npm run db:migrate`.
+
+You can also run it directly via docker compose if desired:
+
+```bash
+docker compose --env-file docker.env exec -T api sh -lc "./scripts/init-database.sh"
+```
+
 ### `tambo-setup.sh`
 
 Sets up the Docker environment for first-time use.
@@ -124,10 +223,10 @@ psql -h localhost -p 5433 -U postgres -d tambo
 
 ### Running Migrations
 
-The `init-database.sh` script automatically runs all migrations. To run migrations manually:
+To run migrations manually inside the API container:
 
 ```bash
-npm run db:migrate
+docker compose --env-file docker.env exec -T api sh -lc "npm run db:migrate"
 ```
 
 ### Backup and Restore
