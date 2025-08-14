@@ -97,75 +97,64 @@ export class ThreadsService {
     threadId: string,
     userId: string,
   ): Promise<TamboBackend> {
-    return await Sentry.startSpan(
-      {
-        name: "threads.createHydraBackend",
-        op: "threads",
-        attributes: { threadId, userId },
-      },
-      async () => {
-        const chainId = await generateChainId(threadId);
+    const chainId = await generateChainId(threadId);
 
-        const threadData = await this.getDb().query.threads.findFirst({
-          where: eq(schema.threads.id, threadId),
-          columns: { projectId: true },
-        });
+    const threadData = await this.getDb().query.threads.findFirst({
+      where: eq(schema.threads.id, threadId),
+      columns: { projectId: true },
+    });
 
-        if (!threadData?.projectId) {
-          throw new NotFoundException(
-            `Thread with ID ${threadId} not found or has no project associated.`,
-          );
-        }
+    if (!threadData?.projectId) {
+      throw new NotFoundException(
+        `Thread with ID ${threadId} not found or has no project associated.`,
+      );
+    }
 
-        const projectId = threadData.projectId;
+    const projectId = threadData.projectId;
 
-        // 1. Fetch project-specific LLM settings
-        const project = await this.projectsService.findOne(projectId);
-        if (!project) {
-          throw new NotFoundException(
-            `Project with ID ${projectId} not found.`,
-          );
-        }
+    // 1. Fetch project-specific LLM settings
+    const project = await this.projectsService.findOne(projectId);
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found.`);
+    }
 
-        // Determine the provider, model, and baseURL from project settings
-        // Provider defaults to 'openai' if not set on the project, model to 'gpt-4o'
-        const providerName = project.defaultLlmProviderName ?? "openai";
-        let modelName = project.defaultLlmModelName;
-        let customModelOverride = project.customLlmModelName;
-        const baseURL = project.customLlmBaseURL;
-        const maxInputTokens = project.maxInputTokens;
+    // Determine the provider, model, and baseURL from project settings
+    // Provider defaults to 'openai' if not set on the project, model to 'gpt-4o'
+    const providerName = project.defaultLlmProviderName ?? "openai";
+    let modelName = project.defaultLlmModelName;
+    let customModelOverride = project.customLlmModelName;
+    const baseURL = project.customLlmBaseURL;
+    const maxInputTokens = project.maxInputTokens;
 
-        if (providerName === "openai-compatible") {
-          // For openai-compatible, the customLlmModelName is the actual model name
-          modelName = project.customLlmModelName ?? DEFAULT_OPENAI_MODEL; // Fallback if customLlmModelName is null
-          customModelOverride = undefined; // No separate override for openai-compatible
-        } else if (customModelOverride) {
-          // For other providers, if customLlmModelName is set, it overrides defaultLlmModelName
-          modelName = customModelOverride;
-        } else {
-          modelName = modelName ?? DEFAULT_OPENAI_MODEL; // Fallback if no default model and no override
-        }
+    if (providerName === "openai-compatible") {
+      // For openai-compatible, the customLlmModelName is the actual model name
+      modelName = project.customLlmModelName ?? DEFAULT_OPENAI_MODEL; // Fallback if customLlmModelName is null
+      customModelOverride = undefined; // No separate override for openai-compatible
+    } else if (customModelOverride) {
+      // For other providers, if customLlmModelName is set, it overrides defaultLlmModelName
+      modelName = customModelOverride;
+    } else {
+      modelName = modelName ?? DEFAULT_OPENAI_MODEL; // Fallback if no default model and no override
+    }
 
-        // 2. Get the API key for the determined provider
-        const apiKey = await this.validateProjectAndProviderKeys(
-          projectId,
-          providerName as Provider,
-          modelName,
-        );
-        if (!apiKey && providerName !== "openai-compatible") {
-          throw new Error(
-            `Provider key required but not found for project ${projectId} and provider ${providerName}`,
-          );
-        }
-
-        return new TamboBackend(apiKey, chainId, userId, {
-          provider: providerName as Provider,
-          model: modelName,
-          baseURL: baseURL ?? undefined,
-          maxInputTokens,
-        });
-      },
+    // 2. Get the API key for the determined provider
+    const apiKey = await this.validateProjectAndProviderKeys(
+      projectId,
+      providerName as Provider,
+      modelName,
     );
+    if (!apiKey && providerName !== "openai-compatible") {
+      throw new Error(
+        `Provider key required but not found for project ${projectId} and provider ${providerName}`,
+      );
+    }
+
+    return new TamboBackend(apiKey, chainId, userId, {
+      provider: providerName as Provider,
+      model: modelName,
+      baseURL: baseURL ?? undefined,
+      maxInputTokens,
+    });
   }
 
   async createThread(
@@ -1424,6 +1413,13 @@ export class ThreadsService {
         toolCallCount: Object.keys(toolCallCounts).length,
       },
     });
+    // ttfb: time to first byte span is used to track the time it takes for the first token to be generated
+    const ttfbSpan = Sentry.startInactiveSpan({
+      name: "tambo.time_to_first_token",
+      op: "stream.ttfb",
+      attributes: { projectId, threadId },
+    });
+    let ttfbEnded = false;
 
     try {
       // Add breadcrumb for stream start
@@ -1456,6 +1452,8 @@ export class ThreadsService {
           statusMessage: "Thread cancelled",
           mcpAccessToken,
         };
+        ttfbSpan.end();
+        ttfbEnded = true;
         return;
       }
 
@@ -1510,6 +1508,10 @@ export class ThreadsService {
         inProgressMessage,
       )) {
         chunkCount++;
+        if (!ttfbEnded) {
+          ttfbSpan.end();
+          ttfbEnded = true;
+        }
 
         // Update db message on interval
         const currentTime = Date.now();
@@ -1722,6 +1724,10 @@ export class ThreadsService {
       });
       throw error;
     } finally {
+      if (!ttfbEnded) {
+        ttfbSpan.end();
+        ttfbEnded = true;
+      }
       // End the span
       span.end();
     }
