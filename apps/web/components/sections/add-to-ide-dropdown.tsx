@@ -12,12 +12,8 @@ import Link from "next/link";
 
 export function AddToIdeDropdown() {
   const handleCursorClick = () => {
-    // This will be handled by MCP in Cursor
-    window.location.href = `cursor://anysphere.cursor-deeplink/mcp/install?name=tambo-docs&config=eyJ1cmwiOiJodHRwczovL2dpdG1jcC5pby90YW1iby1haS90YW1ibyJ9`;
-  };
-  const handleVSCodeClick = () => {
-    // This will be handled by MCP in VS Code
-    window.location.href = "vscode://tambo.co/add";
+    //deeplink to install MCP in Cursor
+    window.location.href = `${process.env.NEXT_PUBLIC_CURSOR_MCP_DEEPLINK}`;
   };
 
   return (
@@ -38,11 +34,13 @@ export function AddToIdeDropdown() {
         >
           <span>Cursor</span>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={handleVSCodeClick}
-          className="cursor-pointer"
-        >
-          <span>VS Code</span>
+        <DropdownMenuItem className="cursor-pointer">
+          <Link
+            href="/docs/integrations#tab-vscode"
+            className="flex items-center justify-between"
+          >
+            <span>VS Code</span>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link
