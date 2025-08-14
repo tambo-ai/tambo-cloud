@@ -286,21 +286,8 @@ export class AISdkClient implements LLMClient {
           type: "tool" as const,
           toolName: toolChoice.custom.name,
         };
-      case "allowed_tools": {
-        const firstTool = toolChoice.allowed_tools.tools.find(
-          (tool) => tool.type === "function" && "function" in tool,
-        );
-
-        if (!firstTool) {
-          return "none";
-        }
-        const functionTool =
-          firstTool as unknown as OpenAI.Chat.Completions.ChatCompletionFunctionTool;
-        return {
-          type: "tool" as const,
-          toolName: functionTool.function.name,
-        };
-      }
+      case "allowed_tools":
+        return "auto";
       default:
         return toolChoice;
     }

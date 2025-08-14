@@ -1,4 +1,5 @@
 import {
+  FunctionParameters,
   getToolName,
   ThreadMessage,
   tryParseJsonObject,
@@ -22,9 +23,9 @@ export const suggestionsResponseTool: OpenAI.Chat.Completions.ChatCompletionTool
       description:
         "Generate suggestions for the user based on the available components and context.",
       strict: true,
-      parameters: zodToJsonSchema(SuggestionsResponseSchema) as {
-        [key: string]: unknown;
-      },
+      parameters: zodToJsonSchema(
+        SuggestionsResponseSchema,
+      ) as FunctionParameters,
     },
   };
 

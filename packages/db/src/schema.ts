@@ -26,7 +26,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
-import OpenAI from "openai";
+import type OpenAI from "openai";
 import { customJsonb } from "./drizzleUtil";
 export { authenticatedRole, authUid } from "drizzle-orm/supabase";
 
