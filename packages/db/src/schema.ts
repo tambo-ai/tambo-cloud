@@ -16,6 +16,7 @@ import {
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
 import {
+  check,
   index,
   integer,
   pgPolicy,
@@ -170,6 +171,7 @@ export const projects = pgTable(
     bearerTokenSecret: text("bearer_token_secret")
       .notNull()
       .default(sql`encode(gen_random_bytes(32), 'hex')`),
+    isTokenRequired: boolean("is_token_required").default(false).notNull(),
   }),
   (table) => {
     return [
@@ -670,6 +672,11 @@ export const tamboUsers = pgTable(
       .notNull()
       .default(0),
 
+    // Legal acceptance tracking
+    legalAccepted: boolean("legal_accepted").notNull().default(false),
+    legalAcceptedAt: timestamp("legal_accepted_at", { withTimezone: true }),
+    legalVersion: text("legal_version"),
+
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -684,6 +691,13 @@ export const tamboUsers = pgTable(
     ),
     welcomeEmailSentIdx: index("idx_tambo_users_welcome_email_sent").on(
       table.welcomeEmailSent,
+    ),
+    legalAcceptedIdx: index("idx_tambo_users_legal_accepted").on(
+      table.legalAccepted,
+    ),
+    legalAcceptanceConsistent: check(
+      "chk_tambo_users_legal_consistency",
+      sql`(NOT ${table.legalAccepted}) OR (${table.legalAcceptedAt} IS NOT NULL AND ${table.legalVersion} IS NOT NULL)`,
     ),
   }),
 );

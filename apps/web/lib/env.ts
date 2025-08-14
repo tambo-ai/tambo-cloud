@@ -63,9 +63,17 @@ export const env = createEnv({
     NEXT_PUBLIC_SMOKETEST_TAMBO_API_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_SMOKETEST_PROJECT_ID: z.string().min(1).optional(),
 
+    // TamboHack URL
+    NEXT_PUBLIC_TAMBOHACK_URL: z.string().url().optional(),
+
     // Whitelabeling vars
     NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME: z.string().min(1).optional(),
     NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_LOGO: z.string().url().optional(),
+
+    // Legal redirects
+    NEXT_PUBLIC_TERMS_URL: z.string().url().optional(),
+    NEXT_PUBLIC_PRIVACY_URL: z.string().url().optional(),
+    NEXT_PUBLIC_LICENSE_URL: z.string().url().optional(),
   },
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
@@ -96,6 +104,9 @@ export const env = createEnv({
     NEXT_PUBLIC_SMOKETEST_PROJECT_ID:
       process.env.NEXT_PUBLIC_SMOKETEST_PROJECT_ID,
 
+    // TamboHack URL
+    NEXT_PUBLIC_TAMBOHACK_URL: process.env.NEXT_PUBLIC_TAMBOHACK_URL,
+
     // Whitelabeling (falls back to non-public vars for convenience)
     NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME:
       process.env.NEXT_PUBLIC_TAMBO_WHITELABEL_ORG_NAME ??
@@ -118,6 +129,11 @@ export const env = createEnv({
     TAMBO_WHITELABEL_ORG_NAME: process.env.TAMBO_WHITELABEL_ORG_NAME,
     TAMBO_WHITELABEL_ORG_LOGO: process.env.TAMBO_WHITELABEL_ORG_LOGO,
     ALLOWED_LOGIN_DOMAIN: process.env.ALLOWED_LOGIN_DOMAIN,
+
+    // Legal redirects
+    NEXT_PUBLIC_TERMS_URL: process.env.NEXT_PUBLIC_TERMS_URL,
+    NEXT_PUBLIC_PRIVACY_URL: process.env.NEXT_PUBLIC_PRIVACY_URL,
+    NEXT_PUBLIC_LICENSE_URL: process.env.NEXT_PUBLIC_LICENSE_URL,
   },
   skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
 });
