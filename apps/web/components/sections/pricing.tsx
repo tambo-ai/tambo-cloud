@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Easing, motion } from "framer-motion";
 import { Check, ExternalLink, Github } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { FC } from "react";
 
 // Animation configuration
 const ease: Easing = [0.16, 1, 0.3, 1];
@@ -104,7 +105,7 @@ const pricingData: PricingTier[] = [
 ];
 
 // Component to render feature items with optional links
-function FeatureItem({ feature }: { feature: string | PricingFeature }) {
+const FeatureItem: FC<{ feature: string | PricingFeature }> = ({ feature }) => {
   const isObject = typeof feature === "object";
   const featureText = isObject ? feature.text : feature;
   const hasComingSoon = featureText.includes(" (coming soon)");
@@ -142,7 +143,7 @@ function FeatureItem({ feature }: { feature: string | PricingFeature }) {
       )}
     </div>
   );
-}
+};
 
 function PricingTier({
   tier,

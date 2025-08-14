@@ -86,7 +86,6 @@ function HeroTitles() {
       >
         An{" "}
         <span className="relative inline-block align-baseline">
-          <span className="absolute inset-x-0 -inset-y-1 rounded-md"></span>
           <span className="relative text-[#5C94F7]">open-source</span>
         </span>{" "}
         AI orchestration framework for your React front end.
