@@ -5,7 +5,6 @@ This document describes how to run Tambo with a local PostgreSQL database using 
 ## Prerequisites
 
 - Docker and Docker Compose installed
-  
 
 ## Quick Start
 
@@ -46,7 +45,7 @@ This document describes how to run Tambo with a local PostgreSQL database using 
    This script automatically detects if it's running on the host or in Docker:
    - On the host, it delegates into the `api` container and runs there.
    - In the container, it runs migrations directly using `DATABASE_URL` from the environment.
-   
+
    The script applies all Drizzle migrations to the PostgreSQL instance started earlier.
 
 5. **Access your applications:**
@@ -196,6 +195,7 @@ Shows logs from all services or a specific service.
 Initializes the PostgreSQL database with the required schema using Drizzle migrations.
 
 Behavior:
+
 - If run on the host, it will exec into the `api` container and run itself there.
 - If run inside the container, it runs migrations directly using `npm run db:migrate`.
 
@@ -222,6 +222,7 @@ psql -h localhost -p 5433 -U postgres -d tambo
 ```
 
 ### Running Migrations
+
 To run migrations manually inside the API container:
 
 ```bash
