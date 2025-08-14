@@ -132,7 +132,6 @@ services:
       - EMAIL_REPLY_TO_PERSONAL=${EMAIL_REPLY_TO_PERSONAL}
       - EMAIL_REPLY_TO_SUPPORT=${EMAIL_REPLY_TO_SUPPORT}
       - SENTRY_DSN=${SENTRY_DSN}
-      - SENTRY_ENABLED=${SENTRY_ENABLED}
     depends_on:
       postgres:
         condition: service_healthy
