@@ -1,7 +1,7 @@
 import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import { SseError } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StreamableHTTPError } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { OpenAI } from "openai";
+import OpenAI from "openai";
 import { MCPClient, MCPTransport } from "./MCPClient";
 
 export enum ToolProviderType {

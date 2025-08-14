@@ -29,7 +29,7 @@ import {
   type ToolSet,
 } from "ai";
 import type OpenAI from "openai";
-import z from "zod";
+import { z } from "zod";
 import { createLangfuseTelemetryConfig } from "../../config/langfuse.config";
 import type { LlmProviderConfigInfo } from "../../config/llm-config-types";
 import { llmProviderConfig } from "../../config/llm.config";
