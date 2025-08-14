@@ -1,6 +1,6 @@
 import { createPromptTemplate } from "@tambo-ai-cloud/core";
 import Ajv from "ajv";
-import draft7MetaSchema from "ajv/dist/refs/json-schema-draft-07.json";
+import draft7MetaSchema from "ajv/lib/refs/json-schema-draft-07.json";
 import { z } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
 import {
