@@ -8,7 +8,8 @@ WORKDIR /app
 # Create non-root user consistently across images
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nodejs \
-  && chown -R nodejs:nodejs /app
+  && chown -R nodejs:nodejs /app \
+  && chmod 755 /app
 # Now do everything as the user
 USER nodejs
 
