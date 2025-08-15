@@ -11,6 +11,82 @@ jiti.import("./lib/env");
 
 /** @type {import('next').NextConfig} */
 const config = {
+  redirects: () => {
+    return [
+      {
+        source: "/docs",
+        destination:
+          process.env.NEXT_PUBLIC_DOCS_URL || "https://docs.tambo.co",
+      },
+      {
+        source: "/docs/:path*",
+        destination:
+          process.env.NEXT_PUBLIC_DOCS_URL || "https://docs.tambo.co",
+      },
+      {
+        /** Got rid of the blog for now, but keeping this redirect in case we want to add it back */
+        source: "/blog",
+        destination:
+          process.env.NEXT_PUBLIC_DOCS_URL || "https://docs.tambo.co",
+      },
+      {
+        source: "/blog/:path*",
+        destination:
+          process.env.NEXT_PUBLIC_DOCS_URL || "https://docs.tambo/blog",
+      },
+      {
+        source: "/book",
+        destination: "https://cal.com/michaelmagan",
+      },
+      {
+        source: "/discord",
+        destination: "https://discord.gg/dJNvPEHth6",
+      },
+      {
+        source: "/gh",
+        destination: "https://github.com/tambo-ai/tambo",
+      },
+      {
+        source: "/hack",
+        destination: process.env.NEXT_PUBLIC_TAMBOHACK_URL,
+      },
+      {
+        source: "/issue",
+        destination: "https://github.com/tambo-ai/tambo/issues/new",
+      },
+      {
+        source: "/license",
+        destination:
+          process.env.NEXT_PUBLIC_LICENSE_URL ||
+          "https://docs.google.com/document/d/1UHvU9pKnuZ4wHRjxRk_8nqmeDK8KTmHc/edit?usp=sharing&ouid=105761745283245441798&rtpof=true&sd=true",
+      },
+      {
+        source: "/privacy",
+        destination:
+          process.env.NEXT_PUBLIC_PRIVACY_URL ||
+          "https://docs.google.com/document/d/1OFX8Y-uc7_TLDFUKxq3dYI0ozbpN8igD/edit?usp=sharing&ouid=105761745283245441798&rtpof=true&sd=true",
+      },
+      {
+        source: "/slack-waitlist",
+        destination: "/",
+      },
+      {
+        source: "/start",
+        destination:
+          "https://stackblitz.com/~/github.com/tambo-ai/tambo-template",
+      },
+      {
+        source: "/terms",
+        destination:
+          process.env.NEXT_PUBLIC_TERMS_URL ||
+          "https://docs.google.com/document/d/1GOjwt8tHx3AQ1SeZJ0rXhxuuSfRYnjLIaF02chvFqYo/edit?usp=sharing",
+      },
+      {
+        source: "/x",
+        destination: "https://x.com/tambo_ai",
+      },
+    ];
+  },
   reactStrictMode: true,
   // This lets us use `npm link` and still get hot reloading - it allows
   // ../../node_modules to be included in the list of watched files
