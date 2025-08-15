@@ -42,7 +42,6 @@ import {
 } from "./llm-client";
 import { limitTokens } from "./token-limiter";
 
-type TextCompleteParams = Parameters<typeof streamText<ToolSet, never>>[0];
 type TextStreamResponse = ReturnType<typeof streamText<ToolSet, never>>;
 
 // Common provider configuration interface
@@ -199,7 +198,7 @@ export class AISdkClient implements LLMClient {
     // Default temperature to 0 unless overridden by config
     const temperature = modelCfg?.properties.temperature;
 
-    const baseConfig: TextCompleteParams = {
+    const baseConfig = {
       model: modelInstance,
       messages: coreMessages,
       temperature: temperature ?? 0,
@@ -208,17 +207,16 @@ export class AISdkClient implements LLMClient {
         ? this.convertToolChoice(params.tool_choice)
         : undefined,
       ...(responseFormat && { responseFormat }),
-      toolCallStreaming: true,
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
       }),
     };
 
     if (params.stream) {
-      const result = streamText(baseConfig);
+      const result = streamText(baseConfig as any);
       return this.handleStreamingResponse(result);
     } else {
-      const result = await generateText(baseConfig);
+      const result = await generateText(baseConfig as any);
       return this.convertToLLMResponse(result);
     }
   }
@@ -249,13 +247,13 @@ export class AISdkClient implements LLMClient {
       const toolName = getToolName(toolDef);
       // Create a simplified tool definition compatible with AI SDK
       // We'll use a simple z.any() for parameters since converting JSON Schema to Zod is complex
+      const inputSchema =
+        toolDef.type === "function"
+          ? jsonSchema(toolDef.function.parameters ?? {})
+          : z.any();
       const aiSdkTool = tool({
-        type: "function",
         description: getToolDescription(toolDef) || "",
-        parameters:
-          toolDef.type === "function"
-            ? jsonSchema(toolDef.function.parameters ?? {})
-            : z.any(),
+        inputSchema: inputSchema as any,
       });
 
       toolSet[toolName] = aiSdkTool;
@@ -321,37 +319,24 @@ export class AISdkClient implements LLMClient {
     result: TextStreamResponse,
   ): AsyncIterableIterator<LLMResponse> {
     let accumulatedMessage = "";
-    const accumulatedToolCall: {
-      name?: string;
-      arguments: string;
-      id?: string;
-    } = { arguments: "" };
 
     for await (const delta of result.fullStream) {
       switch (delta.type) {
         case "text-delta":
-          accumulatedMessage += delta.textDelta;
+          accumulatedMessage += (delta as any).text ?? "";
           break;
-        case "tool-call-delta":
-          accumulatedToolCall.name = delta.toolName;
-          accumulatedToolCall.arguments += delta.argsTextDelta;
-          accumulatedToolCall.id = delta.toolCallId;
-          break;
+        case "text-start":
+        case "text-end":
         case "tool-call":
-          // this happens after the tool call delta, so we can ignore it - but
-          // this is the point where we know it is safe to actually call the
-          // tool, and might be a good point during streaming to initiate the
-          // tool call.
-          break;
-        case "reasoning":
-        case "reasoning-signature":
-        case "redacted-reasoning":
+        case "tool-result":
+        case "tool-error":
+        case "reasoning-start":
+        case "reasoning-end":
+        case "reasoning-delta":
         case "source":
         case "file":
-        case "tool-call-streaming-start":
-        case "step-start":
-        case "step-finish":
         case "finish":
+        case "raw":
           // Fine to ignore these, but we put them in here to make sure we don't
           // miss any new additions to the streamText API
           break;
@@ -361,62 +346,39 @@ export class AISdkClient implements LLMClient {
         default:
           warnUnknownMessageType(delta);
       }
-      let toolCallRequest:
-        | OpenAI.Chat.Completions.ChatCompletionMessageToolCall
-        | undefined;
-      if (accumulatedToolCall.name && accumulatedToolCall.arguments) {
-        toolCallRequest = {
-          function: {
-            name: accumulatedToolCall.name,
-            arguments: accumulatedToolCall.arguments,
-          },
-          id: accumulatedToolCall.id ?? "",
-          type: "function",
-        };
-      }
-
       yield {
         message: {
           content: accumulatedMessage,
           role: "assistant",
-          tool_calls: toolCallRequest ? [toolCallRequest] : undefined,
+          tool_calls: undefined,
           refusal: null,
         },
         index: 0,
         logprobs: null,
       };
     }
-
-    // If we were not streaming tool calls, this is how we would handle the
-    // tool calls at the end of the stream.
-
-    // const toolCalls = await result.toolCalls;
-    // if (toolCalls.length) {
-    //   console.log(
-    //     `found ${toolCalls.length} tool calls!`,
-    //     toolCalls[0].toolName,
-    //     toolCalls[0].args,
-    //   );
-    //   yield {
-    //     message: {
-    //       content: accumulatedMessage,
-    //       role: "assistant",
-    //       tool_calls: toolCalls.map(
-    //         (call): OpenAI.Chat.Completions.ChatCompletionMessageToolCall => ({
-    //           function: {
-    //             arguments: JSON.stringify(call.args),
-    //             name: call.toolName,
-    //           },
-    //           id: call.toolCallId,
-    //           type: "function",
-    //         }),
-    //       ),
-    //       refusal: null,
-    //     },
-    //     index: 0,
-    //     logprobs: null,
-    //   };
-    // }
+    const toolCalls = await result.toolCalls;
+    if (toolCalls.length) {
+      yield {
+        message: {
+          content: accumulatedMessage,
+          role: "assistant",
+          tool_calls: toolCalls.map(
+            (call): OpenAI.Chat.Completions.ChatCompletionMessageToolCall => ({
+              function: {
+                arguments: JSON.stringify((call as any).input ?? {}),
+                name: call.toolName,
+              },
+              id: call.toolCallId,
+              type: "function",
+            }),
+          ),
+          refusal: null,
+        },
+        index: 0,
+        logprobs: null,
+      };
+    }
   }
 
   private convertToLLMResponse(
@@ -425,7 +387,8 @@ export class AISdkClient implements LLMClient {
     const toolCalls = result.toolCalls.map((call) => ({
       function: {
         name: call.toolName,
-        arguments: JSON.stringify(call.args),
+        // AI SDK 5: tool calls now use `input`.
+        arguments: JSON.stringify((call as any).input ?? {}),
       },
       id: call.toolCallId,
       type: "function" as const,
@@ -498,7 +461,8 @@ function convertOpenAIMessageToCoreMessage(
         typeof message.content === "string"
           ? ([
               {
-                result: message.content,
+                // AI SDK 5: tool parts now use structured `output` value.
+                output: { type: "text", value: message.content },
                 toolCallId: message.tool_call_id,
                 type: "tool-result",
                 toolName: toolName,
@@ -509,7 +473,7 @@ function convertOpenAIMessageToCoreMessage(
                 // TODO: Figure out multi-tool + multi-content results - is
                 // there one content per tool call?
                 type: "tool-result",
-                result: part.text,
+                output: { type: "text", value: part.text },
                 toolCallId: message.tool_call_id,
                 toolName: toolName,
               }),
@@ -522,7 +486,8 @@ function convertOpenAIMessageToCoreMessage(
       content: message.tool_calls.map(
         (call): ToolCallPart => ({
           type: "tool-call",
-          args:
+          // AI SDK 5: `args` -> `input`.
+          input:
             call.type === "function"
               ? tryParseJson(call.function.arguments)
               : call.custom.input,
@@ -535,6 +500,6 @@ function convertOpenAIMessageToCoreMessage(
   return convertToCoreMessages([message as any])[0];
 }
 
-function warnUnknownMessageType(message: never) {
+function warnUnknownMessageType(message: unknown) {
   console.warn("Unknown message type:", message);
 }
