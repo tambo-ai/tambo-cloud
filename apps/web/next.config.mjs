@@ -1,16 +1,13 @@
 import { withSentryConfig } from "@sentry/nextjs";
-import { createMDX } from "fumadocs-mdx/next";
 import { createJiti } from "jiti";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 
 const jiti = createJiti(fileURLToPath(import.meta.url));
 
 // Import env here to validate during build. Using jiti we can import .ts files :)
 jiti.import("./lib/env");
-
-const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -57,7 +54,7 @@ const config = {
   },
 };
 
-export default withSentryConfig(withMDX(config), {
+export default withSentryConfig(config, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
