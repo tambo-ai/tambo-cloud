@@ -196,4 +196,4 @@ The landing page and dashboard are built with:
 
 ## Tambo Cloud — Architecture Overview
 
-![Tambo Cloud Architecture](./assets/tambo-cloud-architecture.drawio.png)
+![Tambo Cloud Architecture](./assets/tambo-cloud-architecture.drawio.svg)
