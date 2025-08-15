@@ -76,7 +76,10 @@ export const env = createEnv({
     // Sentry
     NEXT_PUBLIC_SENTRY_DSN: z.string().transform(allowEmptyString).optional(),
     NEXT_PUBLIC_SENTRY_ORG: z.string().transform(allowEmptyString).optional(),
-    NEXT_PUBLIC_SENTRY_PROJECT: z.string().transform(allowEmptyString).optional(),
+    NEXT_PUBLIC_SENTRY_PROJECT: z
+      .string()
+      .transform(allowEmptyString)
+      .optional(),
     // Legal redirects
     NEXT_PUBLIC_TERMS_URL: z.string().url().optional(),
     NEXT_PUBLIC_PRIVACY_URL: z.string().url().optional(),
