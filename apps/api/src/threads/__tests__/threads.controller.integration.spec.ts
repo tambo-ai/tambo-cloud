@@ -2,6 +2,8 @@ import { BadRequestException, INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { ContentPartType, MessageRole } from "@tambo-ai-cloud/core";
 import request from "supertest";
+import { HttpExceptionFilter } from "../../common/filters/http-exception.filter";
+import { SentryExceptionFilter } from "../../common/filters/sentry-exception.filter";
 import { extractContextInfo } from "../../common/utils/extract-context-info";
 import { ApiKeyGuard } from "../../projects/guards/apikey.guard";
 import { BearerTokenGuard } from "../../projects/guards/bearer-token.guard";
@@ -61,11 +63,10 @@ describe("ThreadsController - Integration Tests (HTTP Response Format)", () => {
     app = moduleFixture.createNestApplication();
 
     // Apply the same global filters as in main.ts
-    app
-      .useGlobalFilters
-      //   new HttpExceptionFilter()
-      //   new SentryExceptionFilter()
-      ();
+    app.useGlobalFilters(
+      new HttpExceptionFilter(),
+      new SentryExceptionFilter(),
+    );
 
     await app.init();
 
