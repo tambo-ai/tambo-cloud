@@ -369,11 +369,13 @@ export class ThreadsController {
     response.setHeader("Content-Type", "text/event-stream");
     response.setHeader("Cache-Control", "no-cache");
     response.setHeader("Connection", "keep-alive");
-    const { projectId, contextKey } = extractContextInfo(
-      request,
-      advanceRequestDto.contextKey,
-    );
+
     try {
+      const { projectId, contextKey } = extractContextInfo(
+        request,
+        advanceRequestDto.contextKey,
+      );
+
       const stream = await this.threadsService.advanceThread(
         projectId,
         advanceRequestDto,
@@ -387,7 +389,8 @@ export class ThreadsController {
       await this.handleAdvanceStream(response, stream);
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
-      throw error;
+      response.end();
+      return;
     }
   }
 
@@ -425,11 +428,13 @@ export class ThreadsController {
     response.setHeader("Content-Type", "text/event-stream");
     response.setHeader("Cache-Control", "no-cache");
     response.setHeader("Connection", "keep-alive");
-    const { projectId, contextKey } = extractContextInfo(
-      request,
-      advanceRequestDto.contextKey,
-    );
+
     try {
+      const { projectId, contextKey } = extractContextInfo(
+        request,
+        advanceRequestDto.contextKey,
+      );
+
       const stream = await this.threadsService.advanceThread(
         projectId,
         advanceRequestDto,
@@ -442,7 +447,8 @@ export class ThreadsController {
       await this.handleAdvanceStream(response, stream);
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
-      throw error;
+      response.end();
+      return;
     }
   }
 
