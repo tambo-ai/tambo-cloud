@@ -186,6 +186,7 @@ export const projects = pgTable(
       .default(AgentProviderType.AGUI)
       .notNull(),
     agentUrl: text("agent_url"),
+    agentName: text("agent_name"),
   }),
   (table) => {
     return [
