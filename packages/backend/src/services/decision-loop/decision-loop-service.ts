@@ -30,7 +30,7 @@ import {
 } from "../tool/tool-service";
 
 export async function* runDecisionLoop(
-  llmClient: AIProviderClient,
+  aiClient: AIProviderClient,
   messages: ThreadMessage[],
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   customInstructions: string | undefined,
@@ -63,7 +63,7 @@ export async function* runDecisionLoop(
     { role: "chat_history" as "user", content: "{chat_history}" },
   ]);
 
-  const responseStream = await llmClient.complete({
+  const responseStream = await aiClient.complete({
     messages: promptMessages,
     tools: toolsWithStandardParameters,
     promptTemplateName: "decision-loop",
