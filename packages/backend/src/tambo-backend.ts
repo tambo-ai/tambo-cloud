@@ -7,8 +7,8 @@ import OpenAI from "openai";
 import { AvailableComponent } from "./model/component-metadata";
 import { Provider } from "./model/providers";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
+import { AIProviderClient } from "./services/llm/ai-provider-client";
 import { AISdkClient } from "./services/llm/ai-sdk-client";
-import { LLMClient } from "./services/llm/llm-client";
 import { generateSuggestions } from "./services/suggestion/suggestion.service";
 import { SuggestionDecision } from "./services/suggestion/suggestion.types";
 import { generateThreadName } from "./services/thread-name/thread-name.service";
@@ -28,7 +28,7 @@ interface RunDecisionLoopParams {
 }
 
 export default class TamboBackend {
-  private llmClient: LLMClient;
+  private llmClient: AIProviderClient;
   constructor(
     apiKey: string | undefined,
     chainId: string,
