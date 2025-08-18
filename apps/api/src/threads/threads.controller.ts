@@ -390,7 +390,6 @@ export class ThreadsController {
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
       response.end();
-      throw error;
     }
   }
 
@@ -448,7 +447,6 @@ export class ThreadsController {
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
       response.end();
-      throw error;
     }
   }
 
