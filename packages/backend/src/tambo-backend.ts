@@ -89,7 +89,7 @@ export default class TamboBackend {
     stream?: boolean,
   ): Promise<SuggestionDecision | AsyncIterableIterator<SuggestionDecision>> {
     return await generateSuggestions(
-      this.llmClient,
+      this.aiClient,
       messages,
       availableComponents,
       count,
@@ -102,7 +102,7 @@ export default class TamboBackend {
     params: RunDecisionLoopParams,
   ): Promise<AsyncIterableIterator<LegacyComponentDecision>> {
     return runDecisionLoop(
-      this.llmClient,
+      this.aiClient,
       params.messages,
       params.strictTools,
       params.customInstructions,
@@ -116,7 +116,7 @@ export default class TamboBackend {
    * @returns A name for the thread
    */
   public async generateThreadName(messages: ThreadMessage[]): Promise<string> {
-    return await generateThreadName(this.llmClient, messages);
+    return await generateThreadName(this.aiClient, messages);
   }
 }
 
