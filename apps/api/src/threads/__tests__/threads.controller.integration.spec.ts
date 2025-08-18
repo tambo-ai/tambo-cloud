@@ -1,8 +1,8 @@
 import { BadRequestException, INestApplication } from "@nestjs/common";
+import { HttpAdapterHost } from "@nestjs/core";
 import { Test, TestingModule } from "@nestjs/testing";
 import { ContentPartType, MessageRole } from "@tambo-ai-cloud/core";
 import request from "supertest";
-import { HttpExceptionFilter } from "../../common/filters/http-exception.filter";
 import { SentryExceptionFilter } from "../../common/filters/sentry-exception.filter";
 import { extractContextInfo } from "../../common/utils/extract-context-info";
 import { ApiKeyGuard } from "../../projects/guards/apikey.guard";
@@ -62,11 +62,8 @@ describe("ThreadsController - Integration Tests (HTTP Response Format)", () => {
 
     app = moduleFixture.createNestApplication();
 
-    // Apply the same global filters as in main.ts
-    app.useGlobalFilters(
-      new HttpExceptionFilter(),
-      new SentryExceptionFilter(),
-    );
+    const { httpAdapter } = app.get(HttpAdapterHost);
+    app.useGlobalFilters(new SentryExceptionFilter(httpAdapter));
 
     await app.init();
 
@@ -81,34 +78,6 @@ describe("ThreadsController - Integration Tests (HTTP Response Format)", () => {
   });
 
   describe("Error Response Format", () => {
-    it("should debug the actual response format", async () => {
-      // Arrange
-      const testError = new BadRequestException("Project ID is required");
-      const requestBody = createValidAdvanceRequestDto();
-
-      mockExtractContextInfo.mockImplementation(() => {
-        throw testError;
-      });
-
-      // Act
-      const response = await request(app.getHttpServer())
-        .post("/threads/test-thread-id/advancestream")
-        .send(requestBody)
-        .expect(400);
-
-      // Debug: Log the actual response to understand what's happening
-      console.log("\n=== ACTUAL RESPONSE DEBUG ===");
-      console.log("Content-Type:", response.headers["content-type"]);
-      console.log("Status:", response.status);
-      console.log("Headers:", JSON.stringify(response.headers, null, 2));
-      console.log("Body:", response.body);
-      console.log("Text (first 500 chars):", response.text.substring(0, 500));
-      console.log("=== END DEBUG ===\n");
-
-      // For now, just verify we got a 400 - we'll fix the format based on what we see
-      expect(response.status).toBe(400);
-    });
-
     it("should return default NestJS JSON error format when extractContextInfo throws BadRequestException", async () => {
       // Arrange
       const testError = new BadRequestException("Project ID is required");
