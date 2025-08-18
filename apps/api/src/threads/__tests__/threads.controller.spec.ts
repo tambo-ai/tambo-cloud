@@ -1,11 +1,9 @@
-// Mock the ThreadsService module BEFORE any imports
 jest.mock("../threads.service", () => ({
   ThreadsService: jest.fn().mockImplementation(() => ({
     advanceThread: jest.fn(),
   })),
 }));
 
-// Mock the extractContextInfo function
 jest.mock("../../common/utils/extract-context-info");
 
 import { BadRequestException } from "@nestjs/common";
@@ -102,6 +100,39 @@ describe("ThreadsController - Stream Routes Error Propagation", () => {
       // The service should not be called when extractContextInfo fails
       expect(threadsService.advanceThread).not.toHaveBeenCalled();
     });
+
+    it("should handle errors from advanceThread and write to stream", async () => {
+      // Arrange
+      const threadId = "test-thread-id";
+      const advanceRequestDto = createValidAdvanceRequestDto();
+      const internalError = new Error("Internal service error");
+
+      mockExtractContextInfo.mockReturnValue({
+        projectId: "test-project-id",
+        contextKey: "test-context-key",
+      });
+
+      jest
+        .spyOn(threadsService, "advanceThread")
+        .mockRejectedValue(internalError);
+
+      // Act - The method should handle the error internally
+      await expect(async () => {
+        await controller.advanceThreadStream(
+          threadId,
+          mockRequest as Request,
+          advanceRequestDto,
+          mockResponse as Response,
+        );
+      }).not.toThrow(); // Should not throw, error should be caught
+
+      // Assert - Error should be written to stream response
+      expect(mockResponse.write).toHaveBeenCalledWith(
+        `error: ${internalError.message}\n\n`,
+      );
+      expect(mockResponse.end).toHaveBeenCalled();
+      expect(threadsService.advanceThread).toHaveBeenCalled();
+    });
   });
 
   describe("POST /advancestream", () => {
@@ -127,6 +158,37 @@ describe("ThreadsController - Stream Routes Error Propagation", () => {
 
       // The service should not be called when extractContextInfo fails
       expect(threadsService.advanceThread).not.toHaveBeenCalled();
+    });
+
+    it("should handle errors from advanceThread and write to stream", async () => {
+      // Arrange
+      const advanceRequestDto = createValidAdvanceRequestDto();
+      const internalError = new Error("Internal service error");
+
+      mockExtractContextInfo.mockReturnValue({
+        projectId: "test-project-id",
+        contextKey: "test-context-key",
+      });
+
+      jest
+        .spyOn(threadsService, "advanceThread")
+        .mockRejectedValue(internalError);
+
+      // Act - The method should handle the error internally
+      await expect(async () => {
+        await controller.createAndAdvanceThreadStream(
+          mockRequest as Request,
+          advanceRequestDto,
+          mockResponse as Response,
+        );
+      }).not.toThrow(); // Should not throw, error should be caught
+
+      // Assert - Error should be written to stream response
+      expect(mockResponse.write).toHaveBeenCalledWith(
+        `error: ${internalError.message}\n\n`,
+      );
+      expect(mockResponse.end).toHaveBeenCalled();
+      expect(threadsService.advanceThread).toHaveBeenCalled();
     });
   });
 });
