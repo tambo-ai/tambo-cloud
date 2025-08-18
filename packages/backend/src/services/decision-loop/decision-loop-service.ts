@@ -14,12 +14,12 @@ import { extractMessageContent } from "../../util/response-parsing";
 import { objectTemplate } from "../../util/template";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
 import {
+  AIProviderClient,
   getLLMResponseMessage,
   getLLMResponseToolCallId,
   getLLMResponseToolCallRequest,
-  LLMClient,
   LLMResponse,
-} from "../llm/llm-client";
+} from "../llm/ai-provider-client";
 import {
   addParametersToTools,
   displayMessageTool,
@@ -30,7 +30,7 @@ import {
 } from "../tool/tool-service";
 
 export async function* runDecisionLoop(
-  llmClient: LLMClient,
+  llmClient: AIProviderClient,
   messages: ThreadMessage[],
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   customInstructions: string | undefined,

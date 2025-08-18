@@ -35,11 +35,11 @@ import { llmProviderConfig } from "../../config/llm.config";
 import { Provider } from "../../model/providers";
 import { formatTemplate, ObjectTemplate } from "../../util/template";
 import {
+  AIProviderClient,
   CompleteParams,
-  LLMClient,
   LLMResponse,
   StreamingCompleteParams,
-} from "./llm-client";
+} from "./ai-provider-client";
 import { limitTokens } from "./token-limiter";
 
 type TextCompleteParams = Parameters<typeof streamText<ToolSet, never>>[0];
@@ -97,7 +97,7 @@ function getProviderFromModel(
   }
 }
 
-export class AISdkClient implements LLMClient {
+export class AISdkClient implements AIProviderClient {
   private model: string;
   private provider: Provider;
   private apiKey: string | undefined;
