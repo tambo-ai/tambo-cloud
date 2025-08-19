@@ -148,7 +148,7 @@ type RunAgentResult = Awaited<ReturnType<AbstractAgent["runAgent"]>>;
  */
 export async function* runStreamingAgent(
   agent: AbstractAgent,
-  args: Parameters<AbstractAgent["runAgent"]>,
+  args?: Parameters<AbstractAgent["runAgent"]>,
   opts?: { signal?: AbortSignal },
 ): AsyncIterableIterator<EventHandlerParams, RunAgentResult> {
   // Build the iterator first so early events are captured
@@ -158,7 +158,7 @@ export async function* runStreamingAgent(
 
   // Kick off the underlying process (non-blocking)
   // If this can throw synchronously, you might want to catch and fail the iterator.
-  const resultPromise = agent.runAgent(...args);
+  const resultPromise = agent.runAgent(...(args ?? []));
 
   // Before we return, we need to yield all the events from the agent
   // This is important because the agent may emit events after the runAgent call
