@@ -2,6 +2,12 @@ import {
   AbstractAgent,
   Message as AGUIMessage,
   EventType,
+  MessagesSnapshotEvent,
+  RunFinishedEvent,
+  TextMessageContentEvent,
+  TextMessageStartEvent,
+  ToolCallArgsEvent,
+  ToolCallStartEvent,
 } from "@ag-ui/client";
 import { MastraAgent } from "@ag-ui/mastra";
 import { MastraClient } from "@mastra/client-js";
@@ -97,47 +103,168 @@ export class AgentClient implements AIProviderClient {
     );
 
     const generator = runStreamingAgent(this.aguiAgent);
+    const currentResponse: LLMResponse = {
+      index: 0,
+      logprobs: null,
+      message: {
+        role: "assistant",
+        content: null,
+        refusal: null,
+      },
+    };
+    let currentToolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall | null =
+      null;
     for (;;) {
       const { done, value } = await generator.next();
       if (done) {
-        const _result = value;
+        const _agentRunResult = value;
         // result is the final result of the agent run, but we might have actually streamed everything already?
+        // TODO: figure out if there's a difference between this and the RUN_FINISHED event
         return;
       }
       const { event } = value;
       console.log(event);
       // here we need to yield the growing event to the caller
       switch (event.type) {
-        case EventType.RUN_STARTED:
-        case EventType.MESSAGES_SNAPSHOT:
-        case EventType.RUN_ERROR:
-        case EventType.RUN_FINISHED:
+        case EventType.MESSAGES_SNAPSHOT: {
+          // emit the last message
+          const e = event as MessagesSnapshotEvent;
+          const lastMessage = e.messages[e.messages.length - 1];
+          switch (lastMessage.role) {
+            case "assistant": {
+              currentResponse.message = {
+                content: lastMessage.content ?? null,
+                role: lastMessage.role as "assistant",
+                refusal: null,
+                tool_calls: lastMessage.toolCalls,
+              };
+              yield currentResponse;
+              break;
+            }
+            case "tool":
+            case "developer":
+            case "system":
+            case "user": {
+              // TODO: deal with 'name' (in developer, system, and user)
+              currentResponse.message = {
+                content: lastMessage.content,
+                role: lastMessage.role as "assistant",
+                refusal: null,
+              };
+              yield currentResponse;
+              break;
+            }
+            default: {
+              invalidEvent(lastMessage);
+            }
+          }
+          break;
+        }
+
+        case EventType.RUN_STARTED: {
+          // we don't support "runs" yet, but "started" may be a point to emit a message about the run
+          break;
+        }
+        case EventType.RUN_ERROR: {
+          // we don't support "runs" yet, but "error" may be a point to emit a message about the error
+          break;
+        }
+        case EventType.RUN_FINISHED: {
+          // we don't support "runs" yet, but "finished" may be a point to emit the final response
+          const e = event as RunFinishedEvent;
+
+          currentResponse.message = {
+            content:
+              typeof e.result === "string"
+                ? e.result
+                : JSON.stringify(e.result),
+            role: "assistant",
+            refusal: null,
+            tool_calls: [],
+          };
+          yield currentResponse;
+          // all done, no more events to emit
+          return;
+        }
         case EventType.STATE_SNAPSHOT:
         case EventType.STATE_DELTA:
-        case EventType.TOOL_CALL_START:
-        case EventType.TOOL_CALL_ARGS:
+        case EventType.TOOL_CALL_START: {
+          const e = event as ToolCallStartEvent;
+          currentToolCall = {
+            id: e.toolCallId,
+            type: "function",
+            function: {
+              arguments: "",
+              name: e.toolCallName,
+            },
+          };
+          currentResponse.message = {
+            content: "",
+            role: "tool" as "assistant",
+            refusal: null,
+            tool_calls: [currentToolCall],
+          };
+          yield currentResponse;
+          break;
+        }
+        case EventType.TOOL_CALL_ARGS: {
+          const e = event as ToolCallArgsEvent;
+          if (!currentToolCall) {
+            throw new Error("No tool call found");
+          }
+          currentToolCall.function.arguments += e.delta;
+          currentResponse.message = {
+            ...currentResponse.message,
+            tool_calls: [currentToolCall],
+          };
+          yield currentResponse;
+          break;
+        }
         case EventType.TOOL_CALL_END:
-        case EventType.TOOL_CALL_RESULT:
-        case EventType.TEXT_MESSAGE_START:
-        case EventType.TEXT_MESSAGE_CONTENT:
-        case EventType.TEXT_MESSAGE_END:
-        case EventType.STEP_STARTED:
-        case EventType.STEP_FINISHED:
-        case EventType.CUSTOM:
-        case EventType.RAW:
-        case EventType.TEXT_MESSAGE_CHUNK:
         case EventType.TOOL_CALL_CHUNK:
+        case EventType.TOOL_CALL_RESULT:
+        case EventType.TEXT_MESSAGE_START: {
+          const e = event as TextMessageStartEvent;
+          currentResponse.message = {
+            content: "",
+            role: e.role,
+            refusal: null,
+          };
+          yield currentResponse;
+          break;
+        }
+        case EventType.TEXT_MESSAGE_CONTENT:
+        case EventType.TEXT_MESSAGE_CHUNK: {
+          const e = event as TextMessageContentEvent;
+          currentResponse.message = {
+            ...currentResponse.message,
+            content: currentResponse.message.content + e.delta,
+          };
+          yield currentResponse;
+          break;
+        }
+        case EventType.TEXT_MESSAGE_END: {
+          // nothing to actually do here, the message should have been emitted already
+          break;
+        }
+        case EventType.STEP_STARTED:
+        case EventType.STEP_FINISHED: {
+          // We don't really support "steps" yet
+          break;
+        }
+        case EventType.CUSTOM:
+        case EventType.RAW: {
+          // this is kind of out-of-band events, not sure what to do with them yet.
+          break;
+        }
         case EventType.THINKING_START:
         case EventType.THINKING_END:
         case EventType.THINKING_TEXT_MESSAGE_CONTENT:
         case EventType.THINKING_TEXT_MESSAGE_END:
-        case EventType.THINKING_TEXT_MESSAGE_START:
-          yield {
-            logprobs: null,
-            index: 0,
-            message: {} as OpenAI.Chat.Completions.ChatCompletionMessage,
-          } satisfies LLMResponse;
+        case EventType.THINKING_TEXT_MESSAGE_START: {
+          // we don't support thinking yet
           break;
+        }
         default: {
           invalidEvent(event.type);
         }
