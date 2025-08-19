@@ -199,7 +199,6 @@ export class ThreadsService {
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,
       name: thread.name ?? undefined,
-      contextKey: thread.contextKey ?? undefined,
       metadata: thread.metadata ?? undefined,
       generationStage: thread.generationStage,
       statusMessage: thread.statusMessage ?? undefined,
@@ -260,7 +259,6 @@ export class ThreadsService {
       id: thread.id,
       createdAt: thread.createdAt,
       updatedAt: thread.updatedAt,
-      contextKey: thread.contextKey ?? undefined,
       metadata: thread.metadata ?? undefined,
       generationStage: thread.generationStage,
       statusMessage: thread.statusMessage ?? undefined,
@@ -788,7 +786,6 @@ export class ThreadsService {
       createdAt: updatedThread.createdAt,
       updatedAt: updatedThread.updatedAt,
       name: updatedThread.name ?? undefined,
-      contextKey: updatedThread.contextKey ?? undefined,
       metadata: updatedThread.metadata ?? undefined,
       generationStage: updatedThread.generationStage,
       statusMessage: updatedThread.statusMessage ?? undefined,
@@ -930,7 +927,6 @@ export class ThreadsService {
       Sentry.setContext("thread", {
         id: thread.id,
         projectId: thread.projectId,
-        contextKey: thread.contextKey,
         generationStage: thread.generationStage,
       });
 
