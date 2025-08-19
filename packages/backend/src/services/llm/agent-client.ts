@@ -1,4 +1,8 @@
-import { AbstractAgent, Message as AGUIMessage } from "@ag-ui/client";
+import {
+  AbstractAgent,
+  Message as AGUIMessage,
+  EventType,
+} from "@ag-ui/client";
 import { MastraAgent } from "@ag-ui/mastra";
 import { MastraClient } from "@mastra/client-js";
 import {
@@ -13,6 +17,7 @@ import {
   LLMResponse,
   StreamingCompleteParams,
 } from "./ai-provider-client";
+import { runStreamingAgent } from "./async-adapters";
 
 export class AgentClient implements AIProviderClient {
   private aguiAgent: AbstractAgent | undefined;
@@ -55,13 +60,13 @@ export class AgentClient implements AIProviderClient {
     params: StreamingCompleteParams | CompleteParams,
   ): Promise<LLMResponse | AsyncIterableIterator<LLMResponse>> {
     if (params.stream) {
-      return await this.streamingComplete(params);
+      return this.streamingComplete(params);
     }
     return await this.complete(params);
   }
-  async streamingComplete(
+  async *streamingComplete(
     params: StreamingCompleteParams,
-  ): Promise<AsyncIterableIterator<LLMResponse>> {
+  ): AsyncIterableIterator<LLMResponse> {
     if (!this.aguiAgent) {
       throw new Error("Agent not initialized");
     }
@@ -81,14 +86,65 @@ export class AgentClient implements AIProviderClient {
         };
       }),
     );
-    throw new Error("Method not implemented.");
+
+    const generator = runStreamingAgent(this.aguiAgent);
+    for (;;) {
+      const { done, value } = await generator.next();
+      if (done) {
+        const _result = value;
+        // result is the final result of the agent run, but we might have actually streamed everything already?
+        return;
+      }
+      const { event } = value;
+      console.log(event);
+      // here we need to yield the growing event to the caller
+      switch (event.type) {
+        case EventType.RUN_STARTED:
+        case EventType.MESSAGES_SNAPSHOT:
+        case EventType.RUN_ERROR:
+        case EventType.RUN_FINISHED:
+        case EventType.STATE_SNAPSHOT:
+        case EventType.STATE_DELTA:
+        case EventType.TOOL_CALL_START:
+        case EventType.TOOL_CALL_ARGS:
+        case EventType.TOOL_CALL_END:
+        case EventType.TOOL_CALL_RESULT:
+        case EventType.TEXT_MESSAGE_START:
+        case EventType.TEXT_MESSAGE_CONTENT:
+        case EventType.TEXT_MESSAGE_END:
+        case EventType.STEP_STARTED:
+        case EventType.STEP_FINISHED:
+        case EventType.CUSTOM:
+        case EventType.RAW:
+        case EventType.TEXT_MESSAGE_CHUNK:
+        case EventType.TOOL_CALL_CHUNK:
+        case EventType.THINKING_START:
+        case EventType.THINKING_END:
+        case EventType.THINKING_TEXT_MESSAGE_CONTENT:
+        case EventType.THINKING_TEXT_MESSAGE_END:
+        case EventType.THINKING_TEXT_MESSAGE_START:
+          yield {
+            logprobs: null,
+            index: 0,
+            message: {} as OpenAI.Chat.Completions.ChatCompletionMessage,
+          } satisfies LLMResponse;
+          break;
+        default: {
+          invalidEvent(event.type);
+        }
+      }
+    }
   }
+
   async nonStreamingComplete(_params: CompleteParams): Promise<LLMResponse> {
     if (!this.aguiAgent) {
       throw new Error("Agent not initialized");
     }
     throw new Error("Method not implemented.");
   }
+}
+function invalidEvent(eventType: never) {
+  console.error(`Invalid event type: ${eventType}`);
 }
 
 /** Hacky conversion of messages to string */
