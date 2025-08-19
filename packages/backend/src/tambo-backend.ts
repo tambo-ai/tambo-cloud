@@ -1,4 +1,6 @@
 import {
+  AgentProviderType,
+  AiProviderType,
   DEFAULT_OPENAI_MODEL,
   LegacyComponentDecision,
   ThreadMessage,
@@ -7,6 +9,7 @@ import OpenAI from "openai";
 import { AvailableComponent } from "./model/component-metadata";
 import { Provider } from "./model/providers";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
+import { AgentClient } from "./services/llm/agent-client";
 import { AISdkClient } from "./services/llm/ai-sdk-client";
 import { generateSuggestions } from "./services/suggestion/suggestion.service";
 import { SuggestionDecision } from "./services/suggestion/suggestion.types";
@@ -17,6 +20,10 @@ interface TamboBackendOptions {
   provider?: Provider;
   baseURL?: string;
   maxInputTokens?: number | null;
+  aiProviderType: AiProviderType;
+  agentType?: AgentProviderType;
+  agentName?: string;
+  agentUrl?: string;
 }
 
 /** The current model options for the TamboBackend, filled in with defaults */
@@ -38,33 +45,59 @@ export default class TamboBackend {
   private llmClient: LLMClient;
   /** The current model options for the TamboBackend, filled in with defaults */
   public readonly modelOptions: ModelOptions;
-  constructor(
+  private constructor(aiClient: AIProviderClient) {
+    this.aiClient = aiClient;
+  }
+
+  static async create(
     apiKey: string | undefined,
     chainId: string,
     userId: string,
-    options: TamboBackendOptions = {},
+    options: TamboBackendOptions = { aiProviderType: AiProviderType.LLM },
   ) {
     const {
       model = DEFAULT_OPENAI_MODEL,
       provider = "openai",
       baseURL,
       maxInputTokens,
+      aiProviderType,
+      agentType,
+      agentName,
     } = options;
-    this.modelOptions = {
-      model,
-      provider,
-      baseURL,
-      maxInputTokens,
-    };
-    this.llmClient = new AISdkClient(
-      apiKey,
-      model,
-      provider,
-      chainId,
-      userId,
-      baseURL,
-      maxInputTokens,
-    );
+    switch (aiProviderType) {
+      case AiProviderType.LLM: {
+        const modelOptions = {
+          model,
+          provider,
+          baseURL,
+          maxInputTokens,
+        };
+        this.llmClient = new AISdkClient(
+          apiKey,
+          model,
+          provider,
+          chainId,
+          userId,
+          baseURL,
+          maxInputTokens,
+        );
+        return new TamboBackend(aiClient);
+      }
+      case AiProviderType.AGENT: {
+        if (!agentType || !baseURL || !agentName) {
+          throw new Error("Agent type, URL, and name are required");
+        }
+        const aiClient = await AgentClient.create({
+          agentProviderType: agentType,
+          agentUrl: baseURL,
+          agentName,
+          chainId,
+        });
+        return new TamboBackend(aiClient);
+      }
+      default:
+        throw new Error(`Unsupported AI provider type: ${aiProviderType}`);
+    }
   }
 
   public async generateSuggestions(

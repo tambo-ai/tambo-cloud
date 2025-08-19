@@ -23,8 +23,9 @@ export class AgentClient implements AIProviderClient {
   private aguiAgent: AbstractAgent | undefined;
   chainId: string;
 
-  private constructor(chainId: string) {
+  private constructor(chainId: string, aguiAgent: AbstractAgent) {
     this.chainId = chainId;
+    this.aguiAgent = aguiAgent;
   }
   public static async create({
     agentProviderType,
@@ -37,17 +38,25 @@ export class AgentClient implements AIProviderClient {
     agentName: string;
     chainId: string;
   }) {
-    const agentClient = new AgentClient(chainId);
     switch (agentProviderType) {
-      case AgentProviderType.AGUI:
-        break;
       case AgentProviderType.MASTRA: {
         const client = new MastraClient({ baseUrl: agentUrl });
 
         const agents = await MastraAgent.getRemoteAgents({
           mastraClient: client,
         });
-        agentClient.aguiAgent = agents[agentName];
+        if (!(agentName in agents)) {
+          throw new Error(`Agent ${agentName} not found`);
+        }
+        const agent = agents[agentName];
+        const agentClient = new AgentClient(chainId, agent);
+
+        return agentClient;
+      }
+      default: {
+        throw new Error(
+          `Unsupported agent provider type: ${agentProviderType}`,
+        );
       }
     }
   }
