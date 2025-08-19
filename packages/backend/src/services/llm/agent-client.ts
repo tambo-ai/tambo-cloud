@@ -7,6 +7,7 @@ import {
   TextMessageContentEvent,
   TextMessageStartEvent,
   ToolCallArgsEvent,
+  ToolCallResultEvent,
   ToolCallStartEvent,
 } from "@ag-ui/client";
 import { MastraAgent } from "@ag-ui/mastra";
@@ -123,10 +124,11 @@ export class AgentClient implements AIProviderClient {
         return;
       }
       const { event } = value;
-      console.log(event);
+      console.log(`=== ${event.type} ===`);
       // here we need to yield the growing event to the caller
       switch (event.type) {
         case EventType.MESSAGES_SNAPSHOT: {
+          console.log("=> Emitting last message");
           // emit the last message
           const e = event as MessagesSnapshotEvent;
           const lastMessage = e.messages[e.messages.length - 1];
@@ -170,6 +172,7 @@ export class AgentClient implements AIProviderClient {
           break;
         }
         case EventType.RUN_FINISHED: {
+          console.log("=> Emitting final message");
           // we don't support "runs" yet, but "finished" may be a point to emit the final response
           const e = event as RunFinishedEvent;
 
@@ -187,8 +190,12 @@ export class AgentClient implements AIProviderClient {
           return;
         }
         case EventType.STATE_SNAPSHOT:
-        case EventType.STATE_DELTA:
+        case EventType.STATE_DELTA: {
+          console.log("=> State update");
+          break;
+        }
         case EventType.TOOL_CALL_START: {
+          console.log("=> Starting tool call");
           const e = event as ToolCallStartEvent;
           currentToolCall = {
             id: e.toolCallId,
@@ -198,21 +205,35 @@ export class AgentClient implements AIProviderClient {
               name: e.toolCallName,
             },
           };
-          currentResponse.message = {
-            content: "",
-            role: "tool" as "assistant",
-            refusal: null,
-            tool_calls: [currentToolCall],
-          };
-          yield currentResponse;
+          //   currentResponse.message = {
+          //     content: "",
+          //     role: "tool" as "assistant",
+          //     refusal: null,
+          //     tool_calls: [currentToolCall],
+          //   };
+          //   yield currentResponse;
           break;
         }
+        case EventType.TOOL_CALL_CHUNK:
         case EventType.TOOL_CALL_ARGS: {
+          console.log("=> Accumulating tool call args");
           const e = event as ToolCallArgsEvent;
           if (!currentToolCall) {
             throw new Error("No tool call found");
           }
           currentToolCall.function.arguments += e.delta;
+          //   currentResponse.message = {
+          //     ...currentResponse.message,
+          //     tool_calls: [currentToolCall],
+          //   };
+          //   yield currentResponse;
+          break;
+        }
+        case EventType.TOOL_CALL_END: {
+          console.log("=> Tool call end");
+          if (!currentToolCall) {
+            throw new Error("No tool call found");
+          }
           currentResponse.message = {
             ...currentResponse.message,
             tool_calls: [currentToolCall],
@@ -220,11 +241,21 @@ export class AgentClient implements AIProviderClient {
           yield currentResponse;
           break;
         }
-        case EventType.TOOL_CALL_END:
-        case EventType.TOOL_CALL_CHUNK:
-        case EventType.TOOL_CALL_RESULT:
+        case EventType.TOOL_CALL_RESULT: {
+          const e = event as ToolCallResultEvent;
+          console.log("=> Tool call result", `${e.content.slice(0, 10)}...`);
+          currentResponse.message = {
+            role: "tool" as "assistant",
+            content: e.content,
+            refusal: null,
+          };
+          yield currentResponse;
+          break;
+        }
         case EventType.TEXT_MESSAGE_START: {
+          console.log("=> Emitting text message update");
           const e = event as TextMessageStartEvent;
+          // start with a fresh message
           currentResponse.message = {
             content: "",
             role: e.role,
@@ -245,6 +276,7 @@ export class AgentClient implements AIProviderClient {
         }
         case EventType.TEXT_MESSAGE_END: {
           // nothing to actually do here, the message should have been emitted already
+          console.log("=> Text message end");
           break;
         }
         case EventType.STEP_STARTED:
