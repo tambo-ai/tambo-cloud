@@ -11,6 +11,7 @@ import {
 } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
+  AiProviderType,
   ComponentDecisionV2,
   ContentPartType,
   decryptProviderKey,
@@ -153,11 +154,15 @@ export class ThreadsService {
       );
     }
 
-    return new TamboBackend(apiKey, chainId, userId, {
+    return await TamboBackend.create(apiKey, chainId, userId, {
       provider: providerName as Provider,
       model: modelName,
       baseURL: baseURL ?? undefined,
       maxInputTokens,
+      aiProviderType: AiProviderType.LLM,
+      agentType: project.agentProviderType,
+      agentName: project.agentName,
+      agentUrl: project.agentUrl,
     });
   }
 
