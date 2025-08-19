@@ -552,10 +552,6 @@ export class ThreadsService {
     await operations.deleteMessage(this.getDb(), messageId);
   }
 
-  async ensureThreadByProjectId(threadId: string, projectId: string) {
-    await operations.ensureThreadByProjectId(this.getDb(), threadId, projectId);
-  }
-
   private async getMessage(
     messageId: string,
   ): Promise<schema.DBMessageWithThread> {
@@ -1841,7 +1837,12 @@ export class ThreadsService {
   ): Promise<Thread> {
     // If the threadId is provided, ensure that the thread belongs to the project
     if (threadId) {
-      await this.ensureThreadByProjectId(threadId, projectId);
+      await operations.ensureThreadByProjectId(
+        this.getDb(),
+        threadId,
+        projectId,
+        contextKey,
+      );
       // TODO: should we update contextKey?
       const thread = await this.findOne(threadId, projectId);
       return thread;
