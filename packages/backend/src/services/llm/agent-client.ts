@@ -86,7 +86,8 @@ export class AgentClient implements AIProviderClient {
     if (!this.aguiAgent) {
       throw new Error("Agent not initialized");
     }
-    this.aguiAgent.addMessages(
+
+    this.aguiAgent.setMessages(
       params.messages.map((m, msgIndex): AGUIMessage => {
         if (m.role === "function") {
           throw new Error("Function messages are not supported");
@@ -116,6 +117,8 @@ export class AgentClient implements AIProviderClient {
     let currentToolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall | null =
       null;
     for (;;) {
+      // we are doing manual iteration of the generator so we can track the "done" state at the end
+      // TODO: figure out if there's a better way to do this
       const { done, value } = await generator.next();
       if (done) {
         const _agentRunResult = value;
