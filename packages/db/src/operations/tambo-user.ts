@@ -182,3 +182,26 @@ export async function getInactiveUsersWithProjects(
 
   return users;
 }
+
+/**
+ * Get an auth user by ID and validate email matches
+ */
+export async function getAuthUserById(
+  db: HydraDb,
+  userId: string,
+): Promise<typeof schema.authUsers.$inferSelect | undefined> {
+  return await db.query.authUsers.findFirst({
+    where: eq(schema.authUsers.id, userId),
+  });
+}
+
+/**
+ * Check if welcome email was already sent to a user
+ */
+export async function hasWelcomeEmailBeenSent(
+  db: HydraDb,
+  userId: string,
+): Promise<boolean> {
+  const tamboUser = await getTamboUser(db, userId);
+  return tamboUser?.welcomeEmailSent === true;
+}

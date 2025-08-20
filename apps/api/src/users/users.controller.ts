@@ -1,11 +1,20 @@
-import { Body, Controller, HttpCode, Post } from "@nestjs/common";
-import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { EmailService } from "../common/services/email.service";
-import { CorrelationLoggerService } from "../common/services/logger.service";
-import { DATABASE } from "../common/middleware/db-transaction-middleware";
-import { Inject } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Headers,
+  HttpCode,
+  Inject,
+  Post,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { ApiHeader, ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { HydraDatabase } from "@tambo-ai-cloud/db";
 import { operations } from "@tambo-ai-cloud/db";
+import { DATABASE } from "../common/middleware/db-transaction-middleware";
+import { EmailService } from "../common/services/email.service";
+import { CorrelationLoggerService } from "../common/services/logger.service";
 
 interface SupabaseWebhookPayload {
   type: "INSERT" | "UPDATE" | "DELETE";
@@ -32,15 +41,54 @@ export class UsersController {
     private readonly db: HydraDatabase,
     private readonly emailService: EmailService,
     private readonly logger: CorrelationLoggerService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post("webhook/signup")
   @HttpCode(200)
   @ApiOperation({
     summary: "Handle new user signup webhook from Supabase",
-    description: "Triggered when a new user signs up via Supabase Auth",
+    description:
+      "Triggered when a new user signs up via Supabase Auth. Requires webhook secret for authentication.",
   })
-  async handleSignupWebhook(@Body() payload: SupabaseWebhookPayload) {
+  @ApiHeader({
+    name: "x-webhook-secret",
+    description: "Shared secret for webhook authentication",
+    required: true,
+  })
+  @ApiHeader({
+    name: "x-webhook-source",
+    description: "Source identifier for the webhook",
+    required: false,
+  })
+  async handleSignupWebhook(
+    @Body() payload: SupabaseWebhookPayload,
+    @Headers("x-webhook-secret") webhookSecret?: string,
+    @Headers("x-webhook-source") webhookSource?: string,
+  ) {
+    // Verify webhook secret
+    const expectedSecret = this.configService.get<string>("WEBHOOK_SECRET");
+    if (!expectedSecret) {
+      this.logger.error("WEBHOOK_SECRET not configured");
+      throw new UnauthorizedException("Webhook authentication not configured");
+    }
+
+    if (!webhookSecret) {
+      this.logger.warn("Missing webhook secret header");
+      throw new UnauthorizedException("Missing authentication");
+    }
+
+    if (webhookSecret !== expectedSecret) {
+      this.logger.warn("Invalid webhook secret");
+      throw new UnauthorizedException("Invalid authentication");
+    }
+
+    // Optional: verify source
+    if (webhookSource && webhookSource !== "supabase") {
+      this.logger.warn(`Unexpected webhook source: ${webhookSource}`);
+      throw new UnauthorizedException("Invalid webhook source");
+    }
+
     // Only process INSERT events on auth.users table
     if (
       payload.type !== "INSERT" ||
@@ -50,7 +98,7 @@ export class UsersController {
       this.logger.log(
         `Ignoring webhook event: ${payload.type} on ${payload.schema}.${payload.table}`,
       );
-      return { acknowledged: true };
+      return { acknowledged: true, reason: "Not a user signup event" };
     }
 
     const { record } = payload;
@@ -59,17 +107,49 @@ export class UsersController {
 
     if (!userEmail) {
       this.logger.warn(`New user ${userId} has no email address`);
-      return { acknowledged: true };
+      return { acknowledged: true, reason: "No email address" };
     }
 
-    // Extract first name from metadata
-    const metadata = record.raw_user_meta_data || {};
-    const firstName =
-      metadata.first_name ||
-      metadata.name?.split(" ")[0] ||
-      metadata.full_name?.split(" ")[0];
-
     try {
+      // Validate user exists in auth database and email matches
+      const authUser = await operations.getAuthUserById(this.db, userId);
+
+      if (!authUser) {
+        this.logger.error(`User ${userId} not found in auth database`);
+        throw new BadRequestException("User not found");
+      }
+
+      if (authUser.email !== userEmail) {
+        this.logger.error(
+          `Email mismatch for user ${userId}: expected ${authUser.email}, got ${userEmail}`,
+        );
+        throw new BadRequestException("Email mismatch");
+      }
+
+      // Check if welcome email was already sent (idempotency)
+      const alreadySent = await operations.hasWelcomeEmailBeenSent(
+        this.db,
+        userId,
+      );
+
+      if (alreadySent) {
+        this.logger.log(
+          `Welcome email already sent for user ${userId}, skipping`,
+        );
+        return {
+          acknowledged: true,
+          emailSent: false,
+          reason: "Welcome email already sent",
+        };
+      }
+
+      // Extract first name from metadata
+      const metadata = record.raw_user_meta_data || {};
+      const firstName =
+        metadata.first_name ||
+        metadata.name?.split(" ")[0] ||
+        metadata.full_name?.split(" ")[0];
+
       // Send welcome email
       const result = await this.emailService.sendWelcomeEmail(
         userEmail,
@@ -93,6 +173,14 @@ export class UsersController {
         emailSent: result.success,
       };
     } catch (error) {
+      // Don't track failures for validation errors
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+
       this.logger.error(
         `Error processing signup webhook for user ${userId}:`,
         error instanceof Error ? error.message : "Unknown error",
@@ -110,6 +198,7 @@ export class UsersController {
       return {
         acknowledged: true,
         emailSent: false,
+        error: "Failed to send email",
       };
     }
   }
