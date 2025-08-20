@@ -190,17 +190,25 @@ export class UsersController {
         error instanceof Error ? error.message : "Unknown error",
       );
 
-      // Track the failure
-      await this.db.transaction(async (tx) => {
-        await operations.trackWelcomeEmail(
-          tx,
-          userId,
-          false,
-          error instanceof Error ? error.message : "Unknown error",
+      try {
+        await this.db.transaction(async (tx) => {
+          await operations.trackWelcomeEmail(
+            tx,
+            userId,
+            false,
+            error instanceof Error ? error.message : "Unknown error",
+          );
+        });
+      } catch (trackingError) {
+        this.logger.error(
+          `Failed to track welcome email failure for user ${userId}:`,
+          trackingError instanceof Error
+            ? trackingError.message
+            : "Unknown tracking error",
         );
-      });
+      }
 
-      // Return success to prevent webhook retries for email failures
+      // Always return success to prevent webhook retries, even if tracking failed
       return {
         acknowledged: true,
         emailSent: false,
