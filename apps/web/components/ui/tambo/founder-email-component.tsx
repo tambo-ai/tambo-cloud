@@ -71,13 +71,20 @@ export const FounderEmailComponent = ({
   });
 
   useEffect(() => {
-    setEmailState({
-      subject: aiGeneratedSubject || "",
-      body: aiGeneratedBody || "",
-      usersEmail: usersEmail || "",
-      isSent: false,
-      isLoading: false,
-      error: null,
+    setEmailState((prevState) => {
+      // Only update if not currently loading and not already sent
+      if (prevState.isLoading || prevState.isSent) {
+        return prevState;
+      }
+
+      return {
+        subject: aiGeneratedSubject || "",
+        body: aiGeneratedBody || "",
+        usersEmail: usersEmail || "",
+        isSent: false,
+        isLoading: false,
+        error: null,
+      };
     });
   }, [aiGeneratedSubject, aiGeneratedBody, usersEmail]);
 
