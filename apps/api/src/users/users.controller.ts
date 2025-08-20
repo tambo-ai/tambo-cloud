@@ -12,6 +12,7 @@ import { ConfigService } from "@nestjs/config";
 import { ApiHeader, ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { HydraDatabase } from "@tambo-ai-cloud/db";
 import { operations } from "@tambo-ai-cloud/db";
+import { timingSafeEqual } from "crypto";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
@@ -36,7 +37,7 @@ interface SupabaseWebhookPayload {
 @ApiTags("Users")
 @Controller("users")
 export class UsersController {
-  private readonly webhookSecret: string;
+  private readonly webhookSecretBuffer: Buffer;
 
   constructor(
     @Inject(DATABASE)
@@ -52,7 +53,7 @@ export class UsersController {
         "WEBHOOK_SECRET is not configured. Server cannot start without webhook authentication configured.",
       );
     }
-    this.webhookSecret = secret;
+    this.webhookSecretBuffer = Buffer.from(secret);
     this.logger.log("Webhook authentication configured successfully");
   }
 
@@ -84,7 +85,12 @@ export class UsersController {
       throw new UnauthorizedException("Missing authentication");
     }
 
-    if (webhookSecret !== this.webhookSecret) {
+    const providedBuffer = Buffer.from(webhookSecret);
+    const secretsMatch =
+      providedBuffer.length === this.webhookSecretBuffer.length &&
+      timingSafeEqual(providedBuffer, this.webhookSecretBuffer);
+
+    if (!secretsMatch) {
       this.logger.warn("Invalid webhook secret");
       throw new UnauthorizedException("Invalid authentication");
     }
