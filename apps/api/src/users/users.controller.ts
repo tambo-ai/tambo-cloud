@@ -117,28 +117,18 @@ export class UsersController {
     }
 
     try {
-      // Validate user exists in auth database and email matches
-      const authUser = await operations.getAuthUserById(this.db, userId);
-
-      if (!authUser) {
-        this.logger.error(`User ${userId} not found in auth database`);
-        throw new BadRequestException("User not found");
-      }
-
-      if (authUser.email !== userEmail) {
-        this.logger.error(
-          `Email mismatch for user ${userId}: expected ${authUser.email}, got ${userEmail}`,
-        );
-        throw new BadRequestException("Email mismatch");
-      }
-
-      // Check if welcome email was already sent (idempotency)
-      const alreadySent = await operations.hasWelcomeEmailBeenSent(
+      // Perform all validation checks
+      const validation = await operations.validateUserForWelcomeEmail(
         this.db,
         userId,
+        userEmail,
       );
 
-      if (alreadySent) {
+      if (!validation.isValid) {
+        throw new BadRequestException(validation.error);
+      }
+
+      if (validation.alreadySent) {
         this.logger.log(
           `Welcome email already sent for user ${userId}, skipping`,
         );
@@ -157,26 +147,28 @@ export class UsersController {
         metadata.full_name?.split(" ")[0];
 
       // Send welcome email
-      const result = await this.emailService.sendWelcomeEmail(
+      const emailResult = await this.emailService.sendWelcomeEmail(
         userEmail,
         firstName,
       );
 
       // Track the email send
-      await operations.trackWelcomeEmail(
-        this.db,
-        userId,
-        result.success,
-        result.error,
-      );
+      await this.db.transaction(async (tx) => {
+        await operations.trackWelcomeEmail(
+          tx,
+          userId,
+          emailResult.success,
+          emailResult.error,
+        );
+      });
 
       this.logger.log(
-        `Welcome email ${result.success ? "sent" : "failed"} for user ${userId}`,
+        `Welcome email ${emailResult.success ? "sent" : "failed"} for user ${userId}`,
       );
 
       return {
         acknowledged: true,
-        emailSent: result.success,
+        emailSent: emailResult.success,
       };
     } catch (error) {
       // Don't track failures for validation errors
@@ -193,12 +185,14 @@ export class UsersController {
       );
 
       // Track the failure
-      await operations.trackWelcomeEmail(
-        this.db,
-        userId,
-        false,
-        error instanceof Error ? error.message : "Unknown error",
-      );
+      await this.db.transaction(async (tx) => {
+        await operations.trackWelcomeEmail(
+          tx,
+          userId,
+          false,
+          error instanceof Error ? error.message : "Unknown error",
+        );
+      });
 
       // Return success to prevent webhook retries for email failures
       return {

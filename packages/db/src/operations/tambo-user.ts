@@ -184,24 +184,42 @@ export async function getInactiveUsersWithProjects(
 }
 
 /**
- * Get an auth user by ID and validate email matches
+ * Validate user for welcome email and return all necessary data in one query
  */
-export async function getAuthUserById(
+export async function validateUserForWelcomeEmail(
   db: HydraDb,
   userId: string,
-): Promise<typeof schema.authUsers.$inferSelect | undefined> {
-  return await db.query.authUsers.findFirst({
-    where: eq(schema.authUsers.id, userId),
-  });
-}
+  expectedEmail: string,
+): Promise<{
+  isValid: boolean;
+  alreadySent: boolean;
+  error?: string;
+}> {
+  const result = await db
+    .select({
+      authEmail: schema.authUsers.email,
+      welcomeEmailSent: schema.tamboUsers.welcomeEmailSent,
+    })
+    .from(schema.authUsers)
+    .leftJoin(
+      schema.tamboUsers,
+      eq(schema.authUsers.id, schema.tamboUsers.userId),
+    )
+    .where(eq(schema.authUsers.id, userId))
+    .limit(1);
 
-/**
- * Check if welcome email was already sent to a user
- */
-export async function hasWelcomeEmailBeenSent(
-  db: HydraDb,
-  userId: string,
-): Promise<boolean> {
-  const tamboUser = await getTamboUser(db, userId);
-  return tamboUser?.welcomeEmailSent === true;
+  if (result.length === 0) {
+    return { isValid: false, alreadySent: false, error: "User not found" };
+  }
+
+  const [row] = result;
+
+  if (row.authEmail !== expectedEmail) {
+    return { isValid: false, alreadySent: false, error: "Email mismatch" };
+  }
+
+  return {
+    isValid: true,
+    alreadySent: row.welcomeEmailSent === true,
+  };
 }
