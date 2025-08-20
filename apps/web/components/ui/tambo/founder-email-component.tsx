@@ -62,9 +62,9 @@ export const FounderEmailComponent = ({
   usersEmail = "",
 }: FounderEmailProps) => {
   const [emailState, setEmailState] = useState<EmailState>({
-    subject: aiGeneratedSubject || "",
-    body: aiGeneratedBody || "",
-    usersEmail: usersEmail || "",
+    subject: aiGeneratedSubject,
+    body: aiGeneratedBody,
+    usersEmail: usersEmail,
     isSent: false,
     isLoading: false,
     error: null,
@@ -78,9 +78,9 @@ export const FounderEmailComponent = ({
       }
 
       return {
-        subject: aiGeneratedSubject || "",
-        body: aiGeneratedBody || "",
-        usersEmail: usersEmail || "",
+        subject: aiGeneratedSubject,
+        body: aiGeneratedBody,
+        usersEmail: usersEmail,
         isSent: false,
         isLoading: false,
         error: null,
