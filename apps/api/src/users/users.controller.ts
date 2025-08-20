@@ -36,13 +36,25 @@ interface SupabaseWebhookPayload {
 @ApiTags("Users")
 @Controller("users")
 export class UsersController {
+  private readonly webhookSecret: string;
+
   constructor(
     @Inject(DATABASE)
     private readonly db: HydraDatabase,
     private readonly emailService: EmailService,
     private readonly logger: CorrelationLoggerService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    // Validate webhook secret at startup - fail fast if not configured
+    const secret = this.configService.get<string>("WEBHOOK_SECRET");
+    if (!secret) {
+      throw new Error(
+        "WEBHOOK_SECRET is not configured. Server cannot start without webhook authentication configured.",
+      );
+    }
+    this.webhookSecret = secret;
+    this.logger.log("Webhook authentication configured successfully");
+  }
 
   @Post("webhook/signup")
   @HttpCode(200)
@@ -66,19 +78,13 @@ export class UsersController {
     @Headers("x-webhook-secret") webhookSecret?: string,
     @Headers("x-webhook-source") webhookSource?: string,
   ) {
-    // Verify webhook secret
-    const expectedSecret = this.configService.get<string>("WEBHOOK_SECRET");
-    if (!expectedSecret) {
-      this.logger.error("WEBHOOK_SECRET not configured");
-      throw new UnauthorizedException("Webhook authentication not configured");
-    }
-
+    // Verify webhook secret from client
     if (!webhookSecret) {
       this.logger.warn("Missing webhook secret header");
       throw new UnauthorizedException("Missing authentication");
     }
 
-    if (webhookSecret !== expectedSecret) {
+    if (webhookSecret !== this.webhookSecret) {
       this.logger.warn("Invalid webhook secret");
       throw new UnauthorizedException("Invalid authentication");
     }
