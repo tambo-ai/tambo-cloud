@@ -18,15 +18,15 @@ import {
   ChatCompletionMessageParam,
 } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
+import { runStreamingAgent } from "./async-adapters";
 import {
-  AIProviderClient,
   CompleteParams,
+  LLMClient,
   LLMResponse,
   StreamingCompleteParams,
-} from "./ai-provider-client";
-import { runStreamingAgent } from "./async-adapters";
+} from "./llm-client";
 
-export class AgentClient implements AIProviderClient {
+export class AgentClient implements LLMClient {
   private aguiAgent: AbstractAgent | undefined;
   chainId: string;
 
