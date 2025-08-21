@@ -10,6 +10,7 @@ import {
   ToolCallResultEvent,
   ToolCallStartEvent,
 } from "@ag-ui/client";
+import { Message, ToolCallEndEvent } from "@ag-ui/core";
 import { MastraAgent } from "@ag-ui/mastra";
 import { MastraClient } from "@mastra/client-js";
 import {
@@ -19,11 +20,17 @@ import {
 } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { runStreamingAgent } from "./async-adapters";
-import {
-  CompleteParams,
-  LLMResponse,
-  StreamingCompleteParams,
-} from "./llm-client";
+import { CompleteParams, LLMResponse } from "./llm-client";
+
+enum AgentResponseType {
+  MESSAGE = "message",
+  COMPLETE = "complete",
+}
+export interface AgentResponse {
+  type: AgentResponseType;
+  message: Message;
+  complete?: true;
+}
 
 export class AgentClient {
   private aguiAgent: AbstractAgent | undefined;
@@ -67,23 +74,10 @@ export class AgentClient {
     }
   }
 
-  async complete(
-    params: StreamingCompleteParams,
-  ): Promise<AsyncIterableIterator<LLMResponse>>;
-  async complete(params: CompleteParams): Promise<LLMResponse>;
-  async complete(
-    params: StreamingCompleteParams | CompleteParams,
-  ): Promise<LLMResponse | AsyncIterableIterator<LLMResponse>> {
-    console.log("==== Completing ...", params.stream);
-    if (params.stream) {
-      return this.streamingComplete(params);
-    }
-    console.log("==== Not streaming", params);
-    return await this.nonStreamingComplete(params);
-  }
-  async *streamingComplete(
-    params: StreamingCompleteParams,
-  ): AsyncIterableIterator<LLMResponse> {
+  async *streamRunAgent(params: {
+    messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[];
+    tools: OpenAI.Chat.Completions.ChatCompletionTool[];
+  }): AsyncIterableIterator<AgentResponse> {
     if (!this.aguiAgent) {
       throw new Error("Agent not initialized");
     }
@@ -108,15 +102,7 @@ export class AgentClient {
 
     console.log("==== Running agent");
     const generator = runStreamingAgent(this.aguiAgent);
-    const currentResponse: LLMResponse = {
-      index: 0,
-      logprobs: null,
-      message: {
-        role: "assistant",
-        content: null,
-        refusal: null,
-      },
-    };
+    let currentResponse: AgentResponse | undefined = undefined;
     let currentToolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall | null =
       null;
     for (;;) {
@@ -132,6 +118,14 @@ export class AgentClient {
         const _agentRunResult = value;
         // result is the final result of the agent run, but we might have actually streamed everything already?
         // TODO: figure out if there's a difference between this and the RUN_FINISHED event
+        yield {
+          type: AgentResponseType.COMPLETE,
+          message: {
+            id: "tambo-assistant-complete",
+            content: "",
+            role: "assistant",
+          },
+        };
         return;
       }
       const { event } = value;
@@ -145,26 +139,30 @@ export class AgentClient {
           const lastMessage = e.messages[e.messages.length - 1];
           switch (lastMessage.role) {
             case "assistant": {
-              currentResponse.message = {
-                content: lastMessage.content ?? null,
-                role: lastMessage.role as "assistant",
-                refusal: null,
-                tool_calls: lastMessage.toolCalls,
+              yield {
+                type: AgentResponseType.MESSAGE,
+                message: {
+                  content: lastMessage.content,
+                  role: lastMessage.role,
+                  id: lastMessage.id,
+                },
               };
-              yield currentResponse;
               break;
             }
-            case "tool":
+            case "tool": {
+              yield {
+                type: AgentResponseType.MESSAGE,
+                message: lastMessage,
+              };
+              break;
+            }
             case "developer":
             case "system":
             case "user": {
-              // TODO: deal with 'name' (in developer, system, and user)
-              currentResponse.message = {
-                content: lastMessage.content,
-                role: lastMessage.role as "assistant",
-                refusal: null,
+              yield {
+                type: AgentResponseType.MESSAGE,
+                message: lastMessage,
               };
-              yield currentResponse;
               break;
             }
             default: {
@@ -186,15 +184,16 @@ export class AgentClient {
           console.log("=> Emitting final message");
           // we don't support "runs" yet, but "finished" may be a point to emit the final response
           const e = event as RunFinishedEvent;
-
+          if (!currentResponse) {
+            throw new Error("No current response");
+          }
           currentResponse.message = {
+            ...currentResponse.message,
             content:
               typeof e.result === "string"
                 ? e.result
                 : JSON.stringify(e.result),
             role: "assistant",
-            refusal: null,
-            tool_calls: [],
           };
           yield currentResponse;
           // all done, no more events to emit
@@ -208,6 +207,7 @@ export class AgentClient {
         case EventType.TOOL_CALL_START: {
           console.log("=> Starting tool call");
           const e = event as ToolCallStartEvent;
+
           currentToolCall = {
             id: e.toolCallId,
             type: "function",
@@ -216,13 +216,6 @@ export class AgentClient {
               name: e.toolCallName,
             },
           };
-          //   currentResponse.message = {
-          //     content: "",
-          //     role: "tool" as "assistant",
-          //     refusal: null,
-          //     tool_calls: [currentToolCall],
-          //   };
-          //   yield currentResponse;
           break;
         }
         case EventType.TOOL_CALL_CHUNK:
@@ -232,12 +225,20 @@ export class AgentClient {
           if (!currentToolCall) {
             throw new Error("No tool call found");
           }
+
           currentToolCall.function.arguments += e.delta;
-          //   currentResponse.message = {
-          //     ...currentResponse.message,
-          //     tool_calls: [currentToolCall],
-          //   };
-          //   yield currentResponse;
+          yield {
+            type: AgentResponseType.MESSAGE,
+            message: {
+              role: "tool",
+              content: currentToolCall.function.arguments,
+              // HACK: we need to generate a message id for the tool call
+              // result, but maybe we'll actually emit this in the
+              // TOOL_CALL_RESULT event?
+              id: `message-${e.toolCallId}`,
+              toolCallId: e.toolCallId,
+            },
+          };
           break;
         }
         case EventType.TOOL_CALL_END: {
@@ -245,32 +246,49 @@ export class AgentClient {
           if (!currentToolCall) {
             throw new Error("No tool call found");
           }
-          currentResponse.message = {
-            ...currentResponse.message,
-            tool_calls: [currentToolCall],
+          const e = event as ToolCallEndEvent;
+          // TODO: would be nice to distinguish this message from the in-progress one emitted by TOOL_CALL_ARGS
+          yield {
+            type: AgentResponseType.MESSAGE,
+            message: {
+              role: "tool",
+              content: currentToolCall.function.arguments,
+              // HACK: we need to generate a message id for the tool call
+              // result, but maybe we'll actually emit this in the
+              // TOOL_CALL_RESULT event?
+              id: `message-${e.toolCallId}`,
+              toolCallId: e.toolCallId,
+            },
           };
-          yield currentResponse;
           break;
         }
         case EventType.TOOL_CALL_RESULT: {
           const e = event as ToolCallResultEvent;
           console.log("=> Tool call result", `${e.content.slice(0, 10)}...`);
-          currentResponse.message = {
-            role: "tool" as "assistant",
-            content: e.content,
-            refusal: null,
+          // this is going to look a lot like the TOOL_CALL_END event, but with a different message id,
+          // but the content is almost certainly the same
+          yield {
+            type: AgentResponseType.MESSAGE,
+            message: {
+              // TODO: this is a different message id from the one emitted by the TOOL_CALL_END event
+              id: e.messageId,
+              role: "tool",
+              content: e.content,
+              toolCallId: e.toolCallId,
+            },
           };
-          yield currentResponse;
           break;
         }
         case EventType.TEXT_MESSAGE_START: {
           console.log("=> Emitting text message update");
           const e = event as TextMessageStartEvent;
-          // start with a fresh message
-          currentResponse.message = {
-            content: "",
-            role: e.role as "assistant",
-            refusal: null,
+          currentResponse = {
+            type: AgentResponseType.MESSAGE,
+            message: {
+              id: e.messageId,
+              role: e.role,
+              content: "",
+            },
           };
           yield currentResponse;
           break;
@@ -279,15 +297,23 @@ export class AgentClient {
         case EventType.TEXT_MESSAGE_CHUNK: {
           const e = event as TextMessageContentEvent;
           console.log("=> Text message content", e.delta);
-          currentResponse.message = {
-            ...currentResponse.message,
-            content: currentResponse.message.content + e.delta,
+          if (!currentResponse) {
+            throw new Error("No current response");
+          }
+
+          const newResponse: AgentResponse = {
+            ...currentResponse,
+            message: {
+              ...currentResponse.message,
+              content: currentResponse.message.content + e.delta,
+            },
           };
+          currentResponse = newResponse;
           yield currentResponse;
           break;
         }
         case EventType.TEXT_MESSAGE_END: {
-          // nothing to actually do here, the message should have been emitted already
+          // nothing to actually do here, the message should have been emitted already?
           console.log("=> Text message end");
           break;
         }
