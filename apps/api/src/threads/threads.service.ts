@@ -22,7 +22,7 @@ import {
   ToolCallRequest,
   unstrictifyToolCallRequest,
 } from "@tambo-ai-cloud/core";
-import type { HydraDatabase } from "@tambo-ai-cloud/db";
+import type { HydraDatabase, HydraDb } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
@@ -1628,9 +1628,21 @@ export class ThreadsService {
         // Update db message on interval
         const currentTime = Date.now();
         if (currentTime - lastUpdateTime >= updateIntervalMs) {
-          const isCancelled = await checkCancellationStatus();
+          const isCancelled = await checkCancellationStatus(
+            db,
+            threadId,
+            projectId,
+            this.logger,
+          );
 
           if (isCancelled) {
+            Sentry.addBreadcrumb({
+              message: "Stream cancelled during processing",
+              category: "stream",
+              level: "warning",
+              data: { threadId, chunksProcessed: chunkCount },
+            });
+
             yield {
               responseMessageDto: {
                 ...threadMessage,
@@ -2026,3 +2038,21 @@ export class ThreadsService {
     return false;
   }
 }
+
+const checkCancellationStatus = async (
+  db: HydraDb,
+  threadId: string,
+  projectId: string,
+  logger?: CorrelationLoggerService,
+) => {
+  try {
+    const thread = await operations.getThread(db, threadId, projectId);
+    return thread?.generationStage === GenerationStage.CANCELLED;
+  } catch (error) {
+    logger?.error(`Error checking thread cancellation status: ${error}`);
+    Sentry.captureException(error, {
+      tags: { operation: "checkCancellation", threadId },
+    });
+    return false;
+  }
+};
