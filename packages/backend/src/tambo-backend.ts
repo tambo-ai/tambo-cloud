@@ -36,8 +36,10 @@ interface RunDecisionLoopParams {
 
 export default class TamboBackend {
   private llmClient: LLMClient;
-  private constructor(aiClient: LLMClient) {
+  private agentClient?: AgentClient;
+  private constructor(aiClient: LLMClient, agentClient?: AgentClient) {
     this.llmClient = aiClient;
+    this.agentClient = agentClient;
   }
 
   static async create(
@@ -57,18 +59,19 @@ export default class TamboBackend {
       agentUrl,
     } = options;
     console.log("==== Creating TamboBackend", aiProviderType);
+    const llmClient = new AISdkClient(
+      apiKey,
+      model,
+      provider,
+      chainId,
+      userId,
+      baseURL,
+      maxInputTokens,
+    );
+
     switch (aiProviderType) {
       case AiProviderType.LLM: {
-        const aiClient = new AISdkClient(
-          apiKey,
-          model,
-          provider,
-          chainId,
-          userId,
-          baseURL,
-          maxInputTokens,
-        );
-        return new TamboBackend(aiClient);
+        return new TamboBackend(llmClient);
       }
       case AiProviderType.AGENT: {
         if (!agentType || !agentUrl || !agentName) {
@@ -83,7 +86,7 @@ export default class TamboBackend {
           agentName,
           chainId,
         });
-        return new TamboBackend(aiClient);
+        return new TamboBackend(llmClient, aiClient);
       }
       default:
         throw new Error(`Unsupported AI provider type: ${aiProviderType}`);
