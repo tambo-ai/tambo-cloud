@@ -41,16 +41,14 @@ export const siteConfig = {
     github: "https://github.com/tambo-ai/tambo",
   },
   metadata: {
-    title:
-      "Add React UI components to your AI agent, assistant, copilot | tambo-ai",
+    title: "Add React UI to your AI agent/copilot | tambo-ai",
     description:
       "An open-source AI orchestration framework for your React front end.",
     icons: {
       icon: "/favicon.ico",
     },
     openGraph: {
-      title:
-        "tambo-ai - Add React UI components to your AI agent, assistant, copilot",
+      title: "Add React UI to your AI agent/copilot | tambo-ai",
       description:
         "An open-source AI orchestration framework for your React front end.",
       images: [
@@ -64,8 +62,7 @@ export const siteConfig = {
     },
     twitter: {
       card: "summary_large_image",
-      title:
-        "Add React UI components to your AI agent, assistant, copilot | tambo-ai",
+      title: "Add React UI to your AI agent/copilot | tambo-ai",
       description:
         "An open-source AI orchestration framework for your React front end.",
       images: [
