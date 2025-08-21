@@ -21,12 +21,11 @@ import OpenAI from "openai";
 import { runStreamingAgent } from "./async-adapters";
 import {
   CompleteParams,
-  LLMClient,
   LLMResponse,
   StreamingCompleteParams,
 } from "./llm-client";
 
-export class AgentClient implements LLMClient {
+export class AgentClient {
   private aguiAgent: AbstractAgent | undefined;
   chainId: string;
 
