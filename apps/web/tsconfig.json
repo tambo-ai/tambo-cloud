@@ -7,9 +7,18 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@tambo-ai-cloud/backend": ["../../packages/backend/src"],
-      "@tambo-ai-cloud/testing": ["../../packages/testing/src"]
+      "@/*": [
+        "./*"
+      ],
+      "@tambo-ai-cloud/backend": [
+        "../../packages/backend/src"
+      ],
+      "@ag-ui/mastra": [
+        "../../packages/ag-ui-mastra/src"
+      ],
+      "@tambo-ai-cloud/testing": [
+        "../../packages/testing/src"
+      ]
     }
   },
   "include": [
@@ -20,5 +29,8 @@
     ".next/types/**/*.ts",
     "types/*.d.ts"
   ],
-  "exclude": ["node_modules", ".next"]
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
 }

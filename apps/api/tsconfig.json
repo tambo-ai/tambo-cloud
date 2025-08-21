@@ -2,7 +2,12 @@
   "extends": "@tambo-ai-cloud/typescript-config/base",
   "compilerOptions": {
     "target": "es2023",
-    "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator"],
+    "lib": [
+      "es2024",
+      "ESNext.Array",
+      "ESNext.Collection",
+      "ESNext.Iterator"
+    ],
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "outDir": "./dist",
@@ -13,10 +18,21 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "paths": {
-      "@tambo-ai-cloud/backend": ["../../packages/backend/src"],
-      "@tambo-ai-cloud/core": ["../../packages/core/src"],
-      "@tambo-ai-cloud/db": ["../../packages/db/src"],
-      "@tambo-ai-cloud/testing": ["../../packages/testing/src"]
+      "@tambo-ai-cloud/backend": [
+        "../../packages/backend/src"
+      ],
+      "@tambo-ai-cloud/core": [
+        "../../packages/core/src"
+      ],
+      "@tambo-ai-cloud/db": [
+        "../../packages/db/src"
+      ],
+      "@tambo-ai-cloud/testing": [
+        "../../packages/testing/src"
+      ],
+      "@ag-ui/mastra": [
+        "../../packages/ag-ui-mastra/src"
+      ]
     }
   }
 }
