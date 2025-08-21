@@ -8,7 +8,7 @@ import OpenAI from "openai";
 import zodToJsonSchema from "zod-to-json-schema";
 import { AvailableComponent } from "../../model";
 import { buildSuggestionPrompt } from "../../prompt/suggestion-generator";
-import { AIProviderClient } from "../llm/ai-provider-client";
+import { LLMClient } from "../llm/llm-client";
 import {
   SuggestionDecision,
   SuggestionsResponseSchema,
@@ -31,7 +31,7 @@ export const suggestionsResponseTool: OpenAI.Chat.Completions.ChatCompletionTool
 
 // Public function
 export async function generateSuggestions(
-  aiClient: AIProviderClient,
+  aiClient: LLMClient,
   messages: ThreadMessage[],
   availableComponents: AvailableComponent[],
   count: number,

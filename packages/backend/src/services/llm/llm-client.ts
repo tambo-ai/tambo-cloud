@@ -57,7 +57,7 @@ interface CompleteBaseParams {
 
 export type CompleteParams = CompleteBaseParams & ResponseFormat;
 
-export interface AIProviderClient {
+export interface LLMClient {
   chainId: string;
   complete(
     params: StreamingCompleteParams,

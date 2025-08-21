@@ -11,6 +11,7 @@ import { Provider } from "./model/providers";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
 import { AgentClient } from "./services/llm/agent-client";
 import { AISdkClient } from "./services/llm/ai-sdk-client";
+import { LLMClient } from "./services/llm/llm-client";
 import { generateSuggestions } from "./services/suggestion/suggestion.service";
 import { SuggestionDecision } from "./services/suggestion/suggestion.types";
 import { generateThreadName } from "./services/thread-name/thread-name.service";

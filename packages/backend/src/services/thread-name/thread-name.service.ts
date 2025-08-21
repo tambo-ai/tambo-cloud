@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
-import { AIProviderClient, LLMResponse } from "../llm/ai-provider-client";
+import { LLMClient, LLMResponse } from "../llm/llm-client";
 
 const nameLengthLimit = 30;
 
@@ -24,7 +24,7 @@ export const threadNameTool: OpenAI.Chat.Completions.ChatCompletionTool = {
 };
 
 export async function generateThreadName(
-  aiClient: AIProviderClient,
+  aiClient: LLMClient,
   messages: ThreadMessage[],
 ) {
   const chatCompletionMessages =
