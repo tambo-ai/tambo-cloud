@@ -24,12 +24,12 @@ export const threadNameTool: OpenAI.Chat.Completions.ChatCompletionTool = {
 };
 
 export async function generateThreadName(
-  aiClient: LLMClient,
+  llmClient: LLMClient,
   messages: ThreadMessage[],
 ) {
   const chatCompletionMessages =
     threadMessagesToChatCompletionMessageParam(messages);
-  const response = await aiClient.complete({
+  const response = await llmClient.complete({
     messages: chatCompletionMessages,
     promptTemplateName: "thread-name-generation",
     promptTemplateParams: {},
