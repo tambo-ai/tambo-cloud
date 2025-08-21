@@ -11,7 +11,6 @@ import {
 } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
-  AiProviderType,
   ComponentDecisionV2,
   ContentPartType,
   decryptProviderKey,
@@ -153,13 +152,16 @@ export class ThreadsService {
         `Provider key required but not found for project ${projectId} and provider ${providerName}`,
       );
     }
+    console.log(
+      `==== Creating TamboBackend for project ${project.id} with agent info: ${project.agentProviderType} ${project.agentName} ${project.agentUrl}`,
+    );
 
     return await TamboBackend.create(apiKey, chainId, userId, {
       provider: providerName as Provider,
       model: modelName,
       baseURL: baseURL ?? undefined,
       maxInputTokens,
-      aiProviderType: AiProviderType.LLM,
+      aiProviderType: project.providerType,
       agentType: project.agentProviderType,
       agentName: project.agentName,
       agentUrl: project.agentUrl,

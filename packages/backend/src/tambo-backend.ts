@@ -63,7 +63,9 @@ export default class TamboBackend {
       aiProviderType,
       agentType,
       agentName,
+      agentUrl,
     } = options;
+    console.log("==== Creating TamboBackend", aiProviderType);
     switch (aiProviderType) {
       case AiProviderType.LLM: {
         const modelOptions = {
@@ -84,12 +86,15 @@ export default class TamboBackend {
         return new TamboBackend(aiClient);
       }
       case AiProviderType.AGENT: {
-        if (!agentType || !baseURL || !agentName) {
+        if (!agentType || !agentUrl || !agentName) {
+          console.error(
+            `Got agent type ${agentType}, agentUrl ${agentUrl}, and agentName ${agentName}`,
+          );
           throw new Error("Agent type, URL, and name are required");
         }
         const aiClient = await AgentClient.create({
           agentProviderType: agentType,
-          agentUrl: baseURL,
+          agentUrl,
           agentName,
           chainId,
         });

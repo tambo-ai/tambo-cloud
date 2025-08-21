@@ -75,10 +75,12 @@ export class AgentClient implements AIProviderClient {
   async complete(
     params: StreamingCompleteParams | CompleteParams,
   ): Promise<LLMResponse | AsyncIterableIterator<LLMResponse>> {
+    console.log("==== Completing ...", params.stream);
     if (params.stream) {
       return this.streamingComplete(params);
     }
-    return await this.complete(params);
+    console.log("==== Not streaming", params);
+    return await this.nonStreamingComplete(params);
   }
   async *streamingComplete(
     params: StreamingCompleteParams,
@@ -87,6 +89,7 @@ export class AgentClient implements AIProviderClient {
       throw new Error("Agent not initialized");
     }
 
+    console.log("==== Setting messages", params.messages.length);
     this.aguiAgent.setMessages(
       params.messages.map((m, msgIndex): AGUIMessage => {
         if (m.role === "function") {
@@ -104,6 +107,7 @@ export class AgentClient implements AIProviderClient {
       }),
     );
 
+    console.log("==== Running agent");
     const generator = runStreamingAgent(this.aguiAgent);
     const currentResponse: LLMResponse = {
       index: 0,
@@ -120,6 +124,11 @@ export class AgentClient implements AIProviderClient {
       // we are doing manual iteration of the generator so we can track the "done" state at the end
       // TODO: figure out if there's a better way to do this
       const { done, value } = await generator.next();
+      console.log(
+        "==== Generator next",
+        done,
+        `=== ${JSON.stringify(value).slice(0, 40)}... ===`,
+      );
       if (done) {
         const _agentRunResult = value;
         // result is the final result of the agent run, but we might have actually streamed everything already?
@@ -261,7 +270,7 @@ export class AgentClient implements AIProviderClient {
           // start with a fresh message
           currentResponse.message = {
             content: "",
-            role: e.role,
+            role: e.role as "assistant",
             refusal: null,
           };
           yield currentResponse;
@@ -270,6 +279,7 @@ export class AgentClient implements AIProviderClient {
         case EventType.TEXT_MESSAGE_CONTENT:
         case EventType.TEXT_MESSAGE_CHUNK: {
           const e = event as TextMessageContentEvent;
+          console.log("=> Text message content", e.delta);
           currentResponse.message = {
             ...currentResponse.message,
             content: currentResponse.message.content + e.delta,
