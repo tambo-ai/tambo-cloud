@@ -46,8 +46,10 @@ export default class TamboBackend {
   private llmClient: LLMClient;
   /** The current model options for the TamboBackend, filled in with defaults */
   public readonly modelOptions: ModelOptions;
-  private constructor(aiClient: AIProviderClient) {
+  private agentClient?: AgentClient;
+  private constructor(aiClient: AIProviderClient, agentClient?: AgentClient) {
     this.aiClient = aiClient;
+    this.agentClient = agentClient;
   }
 
   static async create(
@@ -99,7 +101,7 @@ export default class TamboBackend {
           agentName,
           chainId,
         });
-        return new TamboBackend(aiClient);
+        return new TamboBackend(llmClient, aiClient);
       }
       default:
         throw new Error(`Unsupported AI provider type: ${aiProviderType}`);
