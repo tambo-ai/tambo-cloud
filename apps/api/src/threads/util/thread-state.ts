@@ -261,7 +261,7 @@ export async function addAssistantResponse(
     return result;
   } catch (error) {
     logger?.error(
-      "Transaction failed: Adding assistant response",
+      "Transaction failed: Adding assistant response.",
       (error as Error).stack,
     );
     throw error;
