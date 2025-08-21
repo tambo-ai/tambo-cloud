@@ -8,6 +8,7 @@ import {
 import OpenAI from "openai";
 import { AvailableComponent } from "./model/component-metadata";
 import { Provider } from "./model/providers";
+import { runAgentLoop } from "./services/decision-loop/agent-loop";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
 import { AgentClient } from "./services/llm/agent-client";
 import { AISdkClient } from "./services/llm/ai-sdk-client";
@@ -47,8 +48,8 @@ export default class TamboBackend {
   /** The current model options for the TamboBackend, filled in with defaults */
   public readonly modelOptions: ModelOptions;
   private agentClient?: AgentClient;
-  private constructor(aiClient: AIProviderClient, agentClient?: AgentClient) {
-    this.aiClient = aiClient;
+  private constructor(llmClient: LLMClient, agentClient?: AgentClient) {
+    this.llmClient = llmClient;
     this.agentClient = agentClient;
   }
 
@@ -95,13 +96,13 @@ export default class TamboBackend {
           );
           throw new Error("Agent type, URL, and name are required");
         }
-        const aiClient = await AgentClient.create({
+        const agentClient = await AgentClient.create({
           agentProviderType: agentType,
           agentUrl,
           agentName,
           chainId,
         });
-        return new TamboBackend(llmClient, aiClient);
+        return new TamboBackend(llmClient, agentClient);
       }
       default:
         throw new Error(`Unsupported AI provider type: ${aiProviderType}`);
@@ -142,6 +143,13 @@ export default class TamboBackend {
   public async runDecisionLoop(
     params: RunDecisionLoopParams,
   ): Promise<AsyncIterableIterator<LegacyComponentDecision>> {
+    if (this.agentClient) {
+      return runAgentLoop(
+        this.agentClient,
+        params.messages,
+        params.strictTools,
+      );
+    }
     return runDecisionLoop(
       this.llmClient,
       params.messages,

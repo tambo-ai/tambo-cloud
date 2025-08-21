@@ -1,0 +1,44 @@
+import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
+import OpenAI from "openai";
+import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
+import { AgentClient } from "../llm/agent-client";
+
+export async function* runAgentLoop(
+  agentClient: AgentClient,
+  messages: ThreadMessage[],
+  strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
+  //   customInstructions: string | undefined,
+): AsyncIterableIterator<LegacyComponentDecision> {
+  const chatCompletionMessages =
+    threadMessagesToChatCompletionMessageParam(messages);
+  // const systemPromptArgs = customInstructions
+  //     ? { custom_instructions: customInstructions }
+  //     : {};
+
+  const stream = agentClient.streamRunAgent({
+    messages: chatCompletionMessages,
+    tools: strictTools,
+    // promptTemplateName: "decision-loop",
+    // promptTemplateParams: {
+    //   chat_history: chatCompletionMessages,
+    //   ...systemPromptArgs,
+    // },
+  });
+  let lastMessageId: string | undefined = undefined;
+  for await (const event of stream) {
+    if (event.message.id !== lastMessageId) {
+      lastMessageId = event.message.id;
+      yield {
+        message: event.message.content || "",
+        componentName: null,
+        props: null,
+        componentState: null,
+        reasoning: "",
+        statusMessage: "",
+        completionStatusMessage: "",
+        toolCallRequest: undefined,
+        toolCallId: undefined,
+      };
+    }
+  }
+}
