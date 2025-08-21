@@ -31,7 +31,7 @@ export const suggestionsResponseTool: OpenAI.Chat.Completions.ChatCompletionTool
 
 // Public function
 export async function generateSuggestions(
-  aiClient: LLMClient,
+  llmClient: LLMClient,
   messages: ThreadMessage[],
   availableComponents: AvailableComponent[],
   count: number,
@@ -49,7 +49,7 @@ export async function generateSuggestions(
   }
 
   try {
-    const response = await aiClient.complete({
+    const response = await llmClient.complete({
       messages:
         suggestionMessages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
       promptTemplateName: "suggestion-generation",
@@ -60,7 +60,7 @@ export async function generateSuggestions(
         function: { name: "generate_suggestions" },
       },
       // Make sure that the suggestions are not mixed up with other chains
-      chainId: `${aiClient.chainId}-suggestions`,
+      chainId: `${llmClient.chainId}-suggestions`,
     });
 
     // Handle tool call in the response
