@@ -26,18 +26,6 @@ const config = {
         permanent: true,
       },
       {
-        /** Got rid of the blog for now, but keeping this redirect in case we want to add it back */
-        source: "/blog",
-        destination:
-          process.env.NEXT_PUBLIC_DOCS_URL || "https://docs.tambo.co",
-        permanent: false,
-      },
-      {
-        source: "/blog/:path*",
-        destination: `${process.env.NEXT_PUBLIC_DOCS_URL || "https://docs.tambo.co"}/blog/:path*`,
-        permanent: false,
-      },
-      {
         source: "/book",
         destination: "https://cal.com/michaelmagan",
         permanent: false,

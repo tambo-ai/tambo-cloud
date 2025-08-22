@@ -75,13 +75,22 @@ export function MobileDrawer({
             Demo
           </Link>
           <Link
-            href="/mcp"
+            href="/#mcp"
             className={cn(
               buttonVariants({ variant: "ghost" }),
               "justify-start text-base w-full",
             )}
           >
             MCP
+          </Link>
+          <Link
+            href="/blog"
+            className={cn(
+              buttonVariants({ variant: "ghost" }),
+              "justify-start text-base w-full",
+            )}
+          >
+            Blog
           </Link>
           {showLogoutButton && (
             <button
