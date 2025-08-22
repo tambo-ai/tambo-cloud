@@ -1,6 +1,6 @@
 {
-  "id": "0874f71e-1965-458d-a871-29b379d0321d",
-  "prevId": "92672f54-3e83-407f-98c9-d9091f2c76d7",
+  "id": "425d5337-785d-41a1-8ad3-2f3251db68bd",
+  "prevId": "163ed31b-a940-4682-a55d-e764ac8477cf",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -66,7 +66,38 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "api_keys_project_id_idx": {
+          "name": "api_keys_project_id_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "api_keys_created_by_user_id_idx": {
+          "name": "api_keys_created_by_user_id_idx",
+          "columns": [
+            {
+              "expression": "created_by_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "api_keys_project_id_projects_id_fk": {
           "name": "api_keys_project_id_projects_id_fk",
@@ -388,7 +419,23 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "mcp_oauth_clients_tool_provider_user_context_id_idx": {
+          "name": "mcp_oauth_clients_tool_provider_user_context_id_idx",
+          "columns": [
+            {
+              "expression": "tool_provider_user_context_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "mcp_oauth_clients_tool_provider_user_context_id_tool_provider_user_contexts_id_fk": {
           "name": "mcp_oauth_clients_tool_provider_user_context_id_tool_provider_user_contexts_id_fk",
@@ -504,23 +551,7 @@
           "default": "clock_timestamp()"
         }
       },
-      "indexes": {
-        "messages_thread_id_idx": {
-          "name": "messages_thread_id_idx",
-          "columns": [
-            {
-              "expression": "thread_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "messages_thread_id_threads_id_fk": {
           "name": "messages_thread_id_threads_id_fk",
@@ -599,6 +630,21 @@
           "columns": [
             {
               "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_logs_thread_idx": {
+          "name": "project_logs_thread_idx",
+          "columns": [
+            {
+              "expression": "thread_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -947,7 +993,23 @@
           "default": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "projects_creator_id_idx": {
+          "name": "projects_creator_id_idx",
+          "columns": [
+            {
+              "expression": "creator_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "projects_creator_id_users_id_fk": {
           "name": "projects_creator_id_users_id_fk",
@@ -1069,7 +1131,23 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "provider_keys_project_id_idx": {
+          "name": "provider_keys_project_id_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "provider_keys_project_id_projects_id_fk": {
           "name": "provider_keys_project_id_projects_id_fk",
@@ -1224,23 +1302,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "suggestions_message_id_idx": {
-          "name": "suggestions_message_id_idx",
-          "columns": [
-            {
-              "expression": "message_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "suggestions_message_id_messages_id_fk": {
           "name": "suggestions_message_id_messages_id_fk",
@@ -1721,6 +1783,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "tool_provider_user_contexts_tool_provider_id_idx": {
+          "name": "tool_provider_user_contexts_tool_provider_id_idx",
+          "columns": [
+            {
+              "expression": "tool_provider_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1822,7 +1899,23 @@
           "default": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "tool_providers_project_id_idx": {
+          "name": "tool_providers_project_id_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "tool_providers_project_id_projects_id_fk": {
           "name": "tool_providers_project_id_projects_id_fk",

@@ -1,3 +1,7 @@
+DROP INDEX "messages_thread_id_idx";--> statement-breakpoint
+DROP INDEX "project_members_project_id_idx";--> statement-breakpoint
+DROP INDEX "project_members_user_id_idx";--> statement-breakpoint
+DROP INDEX "suggestions_message_id_idx";--> statement-breakpoint
 CREATE INDEX "api_keys_project_id_idx" ON "api_keys" USING btree ("project_id");--> statement-breakpoint
 CREATE INDEX "api_keys_created_by_user_id_idx" ON "api_keys" USING btree ("created_by_user_id");--> statement-breakpoint
 CREATE INDEX "mcp_oauth_clients_tool_provider_user_context_id_idx" ON "mcp_oauth_clients" USING btree ("tool_provider_user_context_id");--> statement-breakpoint

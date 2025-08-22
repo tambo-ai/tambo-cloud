@@ -1,6 +1,6 @@
 {
-  "id": "0874f71e-1965-458d-a871-29b379d0321d",
-  "prevId": "92672f54-3e83-407f-98c9-d9091f2c76d7",
+  "id": "163ed31b-a940-4682-a55d-e764ac8477cf",
+  "prevId": "0874f71e-1965-458d-a871-29b379d0321d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -700,7 +700,38 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "project_members_project_id_idx": {
+          "name": "project_members_project_id_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_members_user_id_idx": {
+          "name": "project_members_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "project_members_project_id_projects_id_fk": {
           "name": "project_members_project_id_projects_id_fk",
