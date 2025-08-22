@@ -1598,17 +1598,22 @@ export class ThreadsService {
         }
       };
 
-      const streamProcessingSpan = Sentry.startInactiveSpan({
-        name: "threads.processDecisionStream",
-        op: "stream.convert",
-        attributes: { threadId, projectId },
-      });
+      for await (const threadMessage of convertDecisionStreamToMessageStream(
+        stream,
+        initialMessage,
+      )) {
+        const chunkProcessingSpan = Sentry.startInactiveSpan({
+          name: "threads.processStreamChunk",
+          op: "stream.chunk",
+          attributes: {
+            threadId,
+            projectId,
+            chunkNumber: chunkCount + 1,
+            hasToolCall: !!threadMessage.toolCallRequest,
+          },
+        });
 
-      try {
-        for await (const threadMessage of convertDecisionStreamToMessageStream(
-          stream,
-          initialMessage,
-        )) {
+        try {
           chunkCount++;
           if (!ttfbEnded) {
             ttfbSpan.end();
@@ -1677,9 +1682,9 @@ export class ThreadsService {
             };
           }
           finalThreadMessage = threadMessage;
+        } finally {
+          chunkProcessingSpan.end();
         }
-      } finally {
-        streamProcessingSpan.end();
       }
 
       if (!finalThreadMessage) {
