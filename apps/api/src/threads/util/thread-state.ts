@@ -5,7 +5,6 @@ import {
   ToolRegistry,
 } from "@tambo-ai-cloud/backend";
 import {
-  ActionType,
   ContentPartType,
   GenerationStage,
   getToolName,
@@ -363,11 +362,13 @@ export function updateThreadMessageFromLegacyDecision(
  * Add a placeholder for an in-progress message to a thread, that will be updated later
  * with the final response.
  */
-export async function addInitialMessage(
+export async function appendNewMessageToThread(
   db: HydraDb,
   threadId: string,
   newestMessageId: string,
   logger: Logger,
+  role: MessageRole = MessageRole.Assistant,
+  initialText: string = "",
 ) {
   try {
     const message = await db.transaction(
@@ -380,11 +381,11 @@ export async function addInitialMessage(
         );
 
         return await addMessage(tx, threadId, {
-          role: MessageRole.Assistant,
+          role,
           content: [
             {
               type: ContentPartType.Text,
-              text: "",
+              text: initialText,
             },
           ],
         });

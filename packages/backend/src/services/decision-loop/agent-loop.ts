@@ -24,21 +24,18 @@ export async function* runAgentLoop(
     //   ...systemPromptArgs,
     // },
   });
-  let lastMessageId: string | undefined = undefined;
   for await (const event of stream) {
-    if (event.message.id !== lastMessageId) {
-      lastMessageId = event.message.id;
-      yield {
-        message: event.message.content || "",
-        componentName: null,
-        props: null,
-        componentState: null,
-        reasoning: "",
-        statusMessage: "",
-        completionStatusMessage: "",
-        toolCallRequest: undefined,
-        toolCallId: undefined,
-      };
-    }
+    yield {
+      id: event.message.id,
+      message: event.message.content || "",
+      componentName: null,
+      props: null,
+      componentState: null,
+      reasoning: "",
+      statusMessage: "",
+      completionStatusMessage: "",
+      toolCallRequest: undefined,
+      toolCallId: undefined,
+    };
   }
 }
