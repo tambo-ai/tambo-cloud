@@ -60,8 +60,8 @@ import {
 import { mapSuggestionToDto } from "./util/suggestions";
 import {
   addAssistantResponse,
-  addInitialMessage,
   addUserMessage,
+  appendNewMessageToThread,
   finishInProgressMessage,
   fixStreamedToolCalls,
   processThreadMessage,
@@ -1563,13 +1563,6 @@ export class ThreadsService {
         GenerationStage.STREAMING_RESPONSE,
         `Streaming response...`,
       );
-
-      const initialMessage = await addInitialMessage(
-        db,
-        threadId,
-        userMessage.id,
-        logger,
-      );
       let currentThreadMessage: ThreadMessage = initialMessage;
 
       // Track streaming metrics
@@ -1584,7 +1577,33 @@ export class ThreadsService {
         updateIntervalMs,
       );
 
+      const currentLegacyDecisionId: string | undefined = undefined;
       for await (const legacyDecision of fixStreamedToolCalls(stream)) {
+        if (
+          !currentThreadMessage ||
+          currentLegacyDecisionId !== legacyDecision.id
+        ) {
+          // Make sure the final version of the previous message is written to the db
+          if (currentThreadMessage) {
+            await updateMessage(db, currentThreadMessage.id, {
+              ...currentThreadMessage,
+              content: convertContentPartToDto(currentThreadMessage.content),
+              toolCallRequest: currentThreadMessage.toolCallRequest,
+              tool_call_id: currentThreadMessage.tool_call_id,
+              actionType: currentThreadMessage.toolCallRequest
+                ? ActionType.ToolCall
+                : undefined,
+            });
+          }
+          // time to insert a new message into the db
+          currentThreadMessage = await appendNewMessageToThread(
+            db,
+            threadId,
+            userMessage,
+            logger,
+            legacyDecision.role,
+          );
+        }
         // update in memory - we'll write to the db periodically
         currentThreadMessage = updateThreadMessageFromLegacyDecision(
           currentThreadMessage,
@@ -1694,16 +1713,20 @@ export class ThreadsService {
         return;
       }
 
-      const { resultingGenerationStage, resultingStatusMessage } =
-        await finishInProgressMessage(
-          db,
-          threadId,
-          userMessage.id,
-          initialMessage.id,
-          finalThreadMessage,
-          logger,
-        );
-
+      let resultingGenerationStage: GenerationStage =
+        GenerationStage.STREAMING_RESPONSE;
+      let resultingStatusMessage: string = `Streaming response...`;
+      if (currentThreadMessage) {
+        ({ resultingGenerationStage, resultingStatusMessage } =
+          await finishInProgressMessage(
+            db,
+            threadId,
+            userMessage,
+            currentThreadMessage.id,
+            finalThreadMessage,
+            logger,
+          ));
+      }
       const componentDecision = finalThreadMessage.component;
       if (componentDecision && isSystemToolCall(toolCallRequest, allTools)) {
         // Track system tool call within stream
