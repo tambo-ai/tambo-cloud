@@ -235,6 +235,8 @@ export const projectMembers = pgTable(
   }),
   (table) => {
     return [
+      index("project_members_project_id_idx").on(table.projectId),
+      index("project_members_user_id_idx").on(table.userId),
       pgPolicy("project_members_user_policy", {
         to: authenticatedRole,
         using: sql`${table.userId} = ${authUid}`,

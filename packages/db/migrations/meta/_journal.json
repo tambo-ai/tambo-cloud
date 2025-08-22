@@ -470,6 +470,13 @@
       "when": 1755895466233,
       "tag": "0066_classy_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1755895861615,
+      "tag": "0067_great_pestilence",
+      "breakpoints": true
     }
   ]
 }
