@@ -1,3 +1,4 @@
+import { DefaultLogger } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool, PoolClient } from "pg";
 import * as operations from "./operations";
@@ -65,10 +66,11 @@ function getDb(databaseUrl: string): HydraDatabase {
   // console.log(
   //   `Database status: ${pool.totalCount} connections (${pool.idleCount} idle)`,
   // );
-  const db = drizzle(pool, { schema });
+  const db = drizzle(pool, { schema, logger: new SentryLogger() });
   return db;
 }
 
+class SentryLogger extends DefaultLogger {}
 async function closeDb() {
   if (globalPool) {
     await globalPool.end();
