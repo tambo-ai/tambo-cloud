@@ -2,18 +2,15 @@ import * as Sentry from "@sentry/nestjs";
 import { postgresIntegration } from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 
-export function initializeSentry() {
-  const environment =
-    process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || "development";
+const environment =
+  process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || "development";
 
-  // Only initialize if DSN is provided
-  if (!process.env.SENTRY_DSN) {
-    console.log(
-      "Sentry DSN not provided, skipping Sentry initialization, if you want to use Sentry, please contact us at support@tambo.co",
-    );
-    return;
-  }
-
+// Only initialize if DSN is provided
+if (!process.env.SENTRY_DSN) {
+  console.log(
+    "Sentry DSN not provided, skipping Sentry initialization, if you want to use Sentry, please contact us at support@tambo.co",
+  );
+} else {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment,
