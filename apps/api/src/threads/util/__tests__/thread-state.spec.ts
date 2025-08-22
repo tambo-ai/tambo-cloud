@@ -14,7 +14,7 @@ import { SQL } from "drizzle-orm";
 import { PgTable, PgTransaction } from "drizzle-orm/pg-core";
 import {
   addUserMessage,
-  convertDecisionStreamToMessageStream,
+  convertLegacyDecisionStreamToMessageStream,
   finishInProgressMessage,
   updateGenerationStage,
 } from "../thread-state";
@@ -186,7 +186,7 @@ describe("Thread State", () => {
         next: jest.fn(),
       };
 
-      const messageStream = convertDecisionStreamToMessageStream(
+      const messageStream = convertLegacyDecisionStreamToMessageStream(
         stream,
         mockInProgressMessage,
       );

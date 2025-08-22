@@ -56,12 +56,13 @@ import {
 import { mapSuggestionToDto } from "./util/suggestions";
 import {
   addAssistantResponse,
-  addInitialMessage,
   addUserMessage,
-  convertDecisionStreamToMessageStream,
+  appendNewMessageToThread,
   finishInProgressMessage,
+  fixStreamedToolCalls,
   processThreadMessage,
   updateGenerationStage,
+  updateThreadMessageFromLegacyDecision,
 } from "./util/thread-state";
 import {
   callSystemTool,
@@ -1377,7 +1378,7 @@ export class ThreadsService {
           },
         });
 
-        const streamedResponseMessage = await tamboBackend.runDecisionLoop({
+        const messageStream = await tamboBackend.runDecisionLoop({
           messages,
           strictTools,
           customInstructions,
@@ -1388,7 +1389,7 @@ export class ThreadsService {
         return this.handleAdvanceThreadStream(
           projectId,
           threadId,
-          streamedResponseMessage,
+          messageStream,
           messages,
           userMessage,
           systemTools,
@@ -1573,13 +1574,7 @@ export class ThreadsService {
         GenerationStage.STREAMING_RESPONSE,
         `Streaming response...`,
       );
-
-      const initialMessage = await addInitialMessage(
-        db,
-        threadId,
-        userMessage,
-        logger,
-      );
+      let currentThreadMessage: ThreadMessage | undefined = undefined;
 
       // Track streaming metrics
       let chunkCount = 0;
@@ -1615,10 +1610,38 @@ export class ThreadsService {
         }
       };
 
-      for await (const threadMessage of convertDecisionStreamToMessageStream(
-        stream,
-        initialMessage,
-      )) {
+      const currentLegacyDecisionId: string | undefined = undefined;
+      for await (const legacyDecision of fixStreamedToolCalls(stream)) {
+        if (
+          !currentThreadMessage ||
+          currentLegacyDecisionId !== legacyDecision.id
+        ) {
+          // Make sure the final version of the previous message is written to the db
+          if (currentThreadMessage) {
+            await updateMessage(db, currentThreadMessage.id, {
+              ...currentThreadMessage,
+              content: convertContentPartToDto(currentThreadMessage.content),
+              toolCallRequest: currentThreadMessage.toolCallRequest,
+              tool_call_id: currentThreadMessage.tool_call_id,
+              actionType: currentThreadMessage.toolCallRequest
+                ? ActionType.ToolCall
+                : undefined,
+            });
+          }
+          // time to insert a new message into the db
+          currentThreadMessage = await appendNewMessageToThread(
+            db,
+            threadId,
+            userMessage,
+            logger,
+            legacyDecision.role,
+          );
+        }
+        // update in memory - we'll write to the db periodically
+        currentThreadMessage = updateThreadMessageFromLegacyDecision(
+          currentThreadMessage,
+          legacyDecision,
+        );
         chunkCount++;
         if (!ttfbEnded) {
           ttfbSpan.end();
@@ -1645,9 +1668,9 @@ export class ThreadsService {
 
             yield {
               responseMessageDto: {
-                ...threadMessage,
-                content: convertContentPartToDto(threadMessage.content),
-                componentState: threadMessage.componentState ?? {},
+                ...currentThreadMessage,
+                content: convertContentPartToDto(currentThreadMessage.content),
+                componentState: currentThreadMessage.componentState ?? {},
               },
               generationStage: GenerationStage.CANCELLED,
               statusMessage: "cancelled",
@@ -1656,28 +1679,28 @@ export class ThreadsService {
             return;
           }
 
-          await updateMessage(db, initialMessage.id, {
-            ...threadMessage,
-            content: convertContentPartToDto(threadMessage.content),
+          await updateMessage(db, currentThreadMessage.id, {
+            ...currentThreadMessage,
+            content: convertContentPartToDto(currentThreadMessage.content),
           });
           lastUpdateTime = currentTime;
         }
 
         // do not yield the final thread message if it is a tool call
         // might have to switch to an internal tool call
-        if (!threadMessage.toolCallRequest) {
+        if (!currentThreadMessage.toolCallRequest) {
           yield {
             responseMessageDto: {
-              ...threadMessage,
-              content: convertContentPartToDto(threadMessage.content),
-              componentState: threadMessage.componentState ?? {},
+              ...currentThreadMessage,
+              content: convertContentPartToDto(currentThreadMessage.content),
+              componentState: currentThreadMessage.componentState ?? {},
             },
             generationStage: GenerationStage.STREAMING_RESPONSE,
             statusMessage: `Streaming response...`,
             mcpAccessToken,
           };
         }
-        finalThreadMessage = threadMessage;
+        finalThreadMessage = currentThreadMessage;
       }
 
       if (!finalThreadMessage) {
@@ -1729,7 +1752,7 @@ export class ThreadsService {
           data: { threadId, toolName: toolCallRequest.toolName },
         });
 
-        const validationResult = validateToolCallLimits(
+        const toolLimitErrorMessage = validateToolCallLimits(
           finalThreadMessage,
           threadMessages,
           toolCallCounts,
@@ -1737,14 +1760,14 @@ export class ThreadsService {
           maxToolCallLimit,
         );
 
-        if (validationResult) {
+        if (currentThreadMessage && toolLimitErrorMessage) {
           Sentry.captureMessage("Tool call limit reached", "warning");
 
           // Replace the tool call request with an error message
           const errorMessage = await this.handleToolCallLimitViolation(
-            validationResult,
+            toolLimitErrorMessage,
             threadId,
-            initialMessage.id,
+            currentThreadMessage.id,
           );
           yield {
             responseMessageDto: errorMessage,
@@ -1756,16 +1779,20 @@ export class ThreadsService {
         }
       }
 
-      const { resultingGenerationStage, resultingStatusMessage } =
-        await finishInProgressMessage(
-          db,
-          threadId,
-          userMessage,
-          initialMessage.id,
-          finalThreadMessage,
-          logger,
-        );
-
+      let resultingGenerationStage: GenerationStage =
+        GenerationStage.STREAMING_RESPONSE;
+      let resultingStatusMessage: string = `Streaming response...`;
+      if (currentThreadMessage) {
+        ({ resultingGenerationStage, resultingStatusMessage } =
+          await finishInProgressMessage(
+            db,
+            threadId,
+            userMessage,
+            currentThreadMessage.id,
+            finalThreadMessage,
+            logger,
+          ));
+      }
       const componentDecision = finalThreadMessage.component;
       if (componentDecision && isSystemToolCall(toolCallRequest, systemTools)) {
         // Track system tool call within stream
