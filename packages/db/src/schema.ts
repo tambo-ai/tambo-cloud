@@ -396,37 +396,44 @@ export const threads = pgTable(
   },
 );
 export type DBThread = typeof threads.$inferSelect;
-export const messages = pgTable("messages", ({ text, timestamp, boolean }) => ({
-  id: text("id")
-    .primaryKey()
-    .notNull()
-    .unique()
-    .default(sql`generate_custom_id('msg_')`),
-  threadId: text("thread_id")
-    .references(() => threads.id)
-    .notNull(),
-  role: text("role", {
-    enum: Object.values<string>(MessageRole) as [MessageRole],
-  }).notNull(),
-  content:
-    customJsonb<OpenAI.Chat.Completions.ChatCompletionContentPart[]>(
-      "content",
-    ).notNull(),
-  additionalContext: customJsonb<Record<string, unknown>>("additional_context"),
-  toolCallId: text("tool_call_id"),
-  componentDecision: customJsonb<ComponentDecisionV2>("component_decision"),
-  componentState: customJsonb<Record<string, unknown>>("component_state"),
-  toolCallRequest: customJsonb<ToolCallRequest>("tool_call_request"),
-  actionType: text("action_type", {
-    enum: Object.values<string>(ActionType) as [ActionType],
+export const messages = pgTable(
+  "messages",
+  ({ text, timestamp, boolean }) => ({
+    id: text("id")
+      .primaryKey()
+      .notNull()
+      .unique()
+      .default(sql`generate_custom_id('msg_')`),
+    threadId: text("thread_id")
+      .references(() => threads.id)
+      .notNull(),
+    role: text("role", {
+      enum: Object.values<string>(MessageRole) as [MessageRole],
+    }).notNull(),
+    content:
+      customJsonb<OpenAI.Chat.Completions.ChatCompletionContentPart[]>(
+        "content",
+      ).notNull(),
+    additionalContext:
+      customJsonb<Record<string, unknown>>("additional_context"),
+    toolCallId: text("tool_call_id"),
+    componentDecision: customJsonb<ComponentDecisionV2>("component_decision"),
+    componentState: customJsonb<Record<string, unknown>>("component_state"),
+    toolCallRequest: customJsonb<ToolCallRequest>("tool_call_request"),
+    actionType: text("action_type", {
+      enum: Object.values<string>(ActionType) as [ActionType],
+    }),
+    error: text("error"),
+    metadata: customJsonb<Record<string, unknown>>("metadata"),
+    isCancelled: boolean("is_cancelled").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`clock_timestamp()`)
+      .notNull(),
   }),
-  error: text("error"),
-  metadata: customJsonb<Record<string, unknown>>("metadata"),
-  isCancelled: boolean("is_cancelled").default(false).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .default(sql`clock_timestamp()`)
-    .notNull(),
-}));
+  (table) => {
+    return [index("messages_thread_id_idx").on(table.threadId)];
+  },
+);
 
 export type DBMessage = typeof messages.$inferSelect;
 export type DBMessageWithThread = DBMessage & {
@@ -455,24 +462,30 @@ export const messageRelations = relations(messages, ({ one, many }) => ({
   suggestions: many(suggestions),
 }));
 
-export const suggestions = pgTable("suggestions", ({ text, timestamp }) => ({
-  id: text("id")
-    .primaryKey()
-    .notNull()
-    .unique()
-    .default(sql`generate_custom_id('sug_')`),
-  messageId: text("message_id")
-    .references(() => messages.id)
-    .notNull(),
-  title: text("title").notNull(),
-  detailedSuggestion: text("detailed_suggestion").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-}));
+export const suggestions = pgTable(
+  "suggestions",
+  ({ text, timestamp }) => ({
+    id: text("id")
+      .primaryKey()
+      .notNull()
+      .unique()
+      .default(sql`generate_custom_id('sug_')`),
+    messageId: text("message_id")
+      .references(() => messages.id)
+      .notNull(),
+    title: text("title").notNull(),
+    detailedSuggestion: text("detailed_suggestion").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  }),
+  (table) => {
+    return [index("suggestions_message_id_idx").on(table.messageId)];
+  },
+);
 
 export type DBSuggestion = typeof suggestions.$inferSelect;
 
