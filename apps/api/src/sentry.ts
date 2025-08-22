@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nestjs";
+import { postgresIntegration } from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 
 export function initializeSentry() {
@@ -29,10 +30,8 @@ export function initializeSentry() {
       // We exclude it so our customized Sentry.httpIntegration() below is the
       // only Http integration applied (avoids duplicate spans/breadcrumbs and
       // ensures our maxIncomingRequestBodySize setting takes effect).
-      ...defaults.filter(
-        (integration) => (integration as { name?: string }).name !== "Http",
-      ),
-      Sentry.postgresIntegration(),
+      ...defaults.filter((integration) => integration.name !== "Http"),
+      postgresIntegration(),
       // Profiling
       nodeProfilingIntegration(),
       // NestJS integrations are auto-configured by @sentry/nestjs
