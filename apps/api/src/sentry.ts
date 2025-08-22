@@ -26,14 +26,7 @@ if (!process.env.SENTRY_DSN) {
       // We exclude it so our customized Sentry.httpIntegration() below is the
       // only Http integration applied (avoids duplicate spans/breadcrumbs and
       // ensures our maxIncomingRequestBodySize setting takes effect).
-<<<<<<< HEAD
       ...defaults.filter((integration) => integration.name !== "Http"),
-=======
-      ...defaults.filter(
-        (integration) => (integration as { name?: string }).name !== "Http",
-      ),
-      Sentry.postgresIntegration(),
->>>>>>> 409d9a5b (chore(observability): monitor SQL calls with sentry)
       // Profiling
       nodeProfilingIntegration(),
       // NestJS integrations are auto-configured by @sentry/nestjs
