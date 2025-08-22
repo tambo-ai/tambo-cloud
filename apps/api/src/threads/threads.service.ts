@@ -56,7 +56,7 @@ import {
 import { mapSuggestionToDto } from "./util/suggestions";
 import {
   addAssistantResponse,
-  addInProgressMessage,
+  addInitialMessage,
   addUserMessage,
   convertDecisionStreamToMessageStream,
   finishInProgressMessage,
@@ -1560,7 +1560,7 @@ export class ThreadsService {
         `Streaming response...`,
       );
 
-      const inProgressMessage = await addInProgressMessage(
+      const initialMessage = await addInitialMessage(
         db,
         threadId,
         userMessage,
@@ -1575,15 +1575,13 @@ export class ThreadsService {
       let lastUpdateTime = 0;
       const updateIntervalMs = 500;
 
-      const cancellationRef = { current: false };
-
       const checkCancellationStatus = async () => {
         try {
           const thread = await operations.getThread(db, threadId, projectId);
-          cancellationRef.current =
+          const isCancelled =
             thread?.generationStage === GenerationStage.CANCELLED;
 
-          if (cancellationRef.current) {
+          if (isCancelled) {
             Sentry.addBreadcrumb({
               message: "Stream cancelled during processing",
               category: "stream",
@@ -1591,6 +1589,7 @@ export class ThreadsService {
               data: { threadId, chunksProcessed: chunkCount },
             });
           }
+          return isCancelled;
         } catch (error) {
           logger.error(`Error checking thread cancellation status: ${error}`);
           Sentry.captureException(error, {
@@ -1601,7 +1600,7 @@ export class ThreadsService {
 
       for await (const threadMessage of convertDecisionStreamToMessageStream(
         stream,
-        inProgressMessage,
+        initialMessage,
       )) {
         chunkCount++;
         if (!ttfbEnded) {
@@ -1612,10 +1611,9 @@ export class ThreadsService {
         // Update db message on interval
         const currentTime = Date.now();
         if (currentTime - lastUpdateTime >= updateIntervalMs) {
-          // Fire off cancellation check asynchronously - will update cancellationRef for future iterations
-          checkCancellationStatus();
+          const isCancelled = await checkCancellationStatus();
 
-          if (cancellationRef.current) {
+          if (isCancelled) {
             yield {
               responseMessageDto: {
                 ...threadMessage,
@@ -1629,7 +1627,7 @@ export class ThreadsService {
             return;
           }
 
-          await updateMessage(db, inProgressMessage.id, {
+          await updateMessage(db, initialMessage.id, {
             ...threadMessage,
             content: convertContentPartToDto(threadMessage.content),
           });
@@ -1717,7 +1715,7 @@ export class ThreadsService {
           const errorMessage = await this.handleToolCallLimitViolation(
             validationResult,
             threadId,
-            inProgressMessage.id,
+            initialMessage.id,
           );
           yield {
             responseMessageDto: errorMessage,
@@ -1734,7 +1732,7 @@ export class ThreadsService {
           db,
           threadId,
           userMessage,
-          inProgressMessage.id,
+          initialMessage.id,
           finalThreadMessage,
           logger,
         );
