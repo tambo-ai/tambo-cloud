@@ -435,19 +435,19 @@ const MessageInputToolbar = React.forwardRef<
     >
       <div className="flex items-center gap-2">
         {/* Left side - everything except submit button */}
-        {React.Children.map(children, async (child) => {
+        {React.Children.map(children, (child): React.ReactNode => {
           if (
             React.isValidElement(child) &&
             child.type === MessageInputSubmitButton
           ) {
             return null; // Don't render submit button here
           }
-          return await child;
+          return child;
         })}
       </div>
       <div className="flex items-center gap-2">
         {/* Right side - only submit button */}
-        {React.Children.map(children, (child) => {
+        {React.Children.map(children, (child): React.ReactNode => {
           if (
             React.isValidElement(child) &&
             child.type === MessageInputSubmitButton
