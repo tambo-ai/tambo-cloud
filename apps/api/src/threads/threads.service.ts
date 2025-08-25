@@ -1584,9 +1584,12 @@ export class ThreadsService {
 
       const checkCancellationStatus = async () => {
         try {
-          const thread = await operations.getThread(db, threadId, projectId);
-          const isCancelled =
-            thread?.generationStage === GenerationStage.CANCELLED;
+          const generationStage = await operations.getThreadGenerationStage(
+            db,
+            threadId,
+            projectId,
+          );
+          const isCancelled = generationStage === GenerationStage.CANCELLED;
 
           if (isCancelled) {
             Sentry.addBreadcrumb({

@@ -559,6 +559,7 @@ export const projectRouter = createTRPCRouter({
             defaultLlmModelName: true,
             customLlmModelName: true,
             customLlmBaseURL: true,
+            maxInputTokens: true,
           },
         });
         if (!currentProject)
