@@ -1594,15 +1594,16 @@ export class ThreadsService {
                 ? ActionType.ToolCall
                 : undefined,
             });
+          } else {
+            // time to insert a new message into the db
+            currentThreadMessage = await appendNewMessageToThread(
+              db,
+              threadId,
+              userMessage,
+              logger,
+              legacyDecision.role,
+            );
           }
-          // time to insert a new message into the db
-          currentThreadMessage = await appendNewMessageToThread(
-            db,
-            threadId,
-            userMessage,
-            logger,
-            legacyDecision.role,
-          );
         }
         // update in memory - we'll write to the db periodically
         currentThreadMessage = updateThreadMessageFromLegacyDecision(
