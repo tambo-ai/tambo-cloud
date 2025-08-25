@@ -69,8 +69,6 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ vars.SLACK_WEBHOOK_URL }}
   sentry-release:
     name: Create Sentry Release
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
     runs-on: ubuntu-latest
     steps:
       - name: Install Sentry CLI
