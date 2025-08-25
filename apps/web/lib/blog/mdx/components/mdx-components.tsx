@@ -113,10 +113,10 @@ export const createMDXComponents = (): MDXComponents => ({
         <Image
           src={src}
           alt={alt ?? ""}
-          className={MDX_STYLES.image}
-          width={800}
-          height={450}
-          sizes="(max-width: 768px) 100vw, 800px"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1024px"
+          className="object-cover"
+          priority
         />
         {alt && <p className={MDX_STYLES.imageCaption}>{alt}</p>}
       </div>

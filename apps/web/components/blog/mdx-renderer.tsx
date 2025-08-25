@@ -1,6 +1,6 @@
 "use client";
 
-import { createMDXComponents } from "@/lib/blog/mdx";
+import { createMDXComponents } from "@/lib/blog/mdx/components/mdx-components";
 import { cn } from "@/lib/utils";
 import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote";
 import { memo, useMemo } from "react";
