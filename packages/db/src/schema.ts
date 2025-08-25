@@ -695,9 +695,6 @@ export const tamboUsers = pgTable(
       .notNull()
       .unique()
       .references(() => authUsers.id, { onDelete: "cascade" }),
-    projectId: text("project_id").references(() => projects.id, {
-      onDelete: "cascade",
-    }),
 
     // Activity tracking
     lastActivityAt: timestamp("last_activity_at", { withTimezone: true })
