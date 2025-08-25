@@ -31,7 +31,8 @@ export const BlogPage: FC<{ posts: PostItem[] }> = ({ posts }) => {
     };
 
     posts.forEach((post) => {
-      const filterType = categoryDisplayMap[post.category] || "New";
+      const filterType =
+        categoryDisplayMap[post.category.toLowerCase()] || "New";
       counts[filterType]++;
     });
 
@@ -51,15 +52,17 @@ export const BlogPage: FC<{ posts: PostItem[] }> = ({ posts }) => {
 
     if (selectedFilter !== "All") {
       filtered = filtered.filter((post) => {
-        const filterType = categoryDisplayMap[post.category] || "New";
+        const filterType =
+          categoryDisplayMap[post.category.toLowerCase()] || "New";
         return filterType === selectedFilter;
       });
     }
 
-    const sorted = [...filtered];
-    if (sortOrder === "newest") {
-      sorted.reverse();
-    }
+    const sorted = [...filtered].sort((a, b) => {
+      const aT = new Date(a.date).getTime();
+      const bT = new Date(b.date).getTime();
+      return sortOrder === "newest" ? bT - aT : aT - bT;
+    });
 
     return sorted;
   }, [posts, searchQuery, selectedFilter, sortOrder]);
@@ -162,7 +165,8 @@ export const BlogPage: FC<{ posts: PostItem[] }> = ({ posts }) => {
         {/* Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPosts.map((post, index) => {
-            const filterType = categoryDisplayMap[post.category] || "New";
+            const filterType =
+              categoryDisplayMap[post.category.toLowerCase()] || "New";
             const gradient = gradients[index % gradients.length];
 
             return (

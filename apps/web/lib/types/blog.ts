@@ -5,6 +5,7 @@ export type PostItem = {
   title: string;
   date: string;
   category: string;
+  excerpt?: string;
 };
 
 export type BlogPostType = {
@@ -15,6 +16,8 @@ export type BlogPostType = {
   author?: string;
   featuredImage?: string;
   readingTime?: string;
+  excerpt?: string;
+  tags?: string[];
   mdxSource: MDXRemoteSerializeResult;
 };
 

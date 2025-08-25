@@ -170,11 +170,13 @@ export const createBlogMarkdownComponents = (): MDXComponents => ({
   ),
 
   ul: ({ children }) => (
-    <ul className="list-disc pl-6 mb-6 space-y-2 text-gray-700">{children}</ul>
+    <ul className="list-disc pl-6 mb-6 text-gray-700 flex flex-col gap-2">
+      {children}
+    </ul>
   ),
 
   ol: ({ children }) => (
-    <ol className="list-decimal pl-6 mb-6 space-y-2 text-gray-700">
+    <ol className="list-decimal pl-6 mb-6 text-gray-700 flex flex-col gap-2">
       {children}
     </ol>
   ),
