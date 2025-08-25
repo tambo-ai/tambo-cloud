@@ -22,7 +22,7 @@ export function BlogBadge({
       variant={variant}
       className={cn(variant === "secondary" && colorClass, className)}
     >
-      {displayName.toUpperCase()}
+      <span className="uppercase">{displayName}</span>
     </Badge>
   );
 }

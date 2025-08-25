@@ -118,7 +118,7 @@ export class PostService {
     posts: BlogPostListItem[],
     options: BlogSortOptions,
   ): BlogPostListItem[] {
-    return [...posts].sort((a, b) => {
+    return posts.toSorted((a, b) => {
       let comparison = 0;
 
       if (options.field === "date") {

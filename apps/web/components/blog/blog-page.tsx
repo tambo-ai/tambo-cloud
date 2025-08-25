@@ -58,27 +58,27 @@ export function BlogPage({ posts, featuredPosts = [] }: BlogPageProps) {
 
   // Filter and sort posts
   const filteredPosts = useMemo(() => {
-    let filtered = [...posts];
+    let result = posts;
 
     // Apply search filter
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
+      const query = searchQuery.toLocaleLowerCase();
+      result = result.filter(
         (post) =>
-          post.title.toLowerCase().includes(query) ||
-          post.excerpt.toLowerCase().includes(query) ||
-          post.category.toLowerCase().includes(query) ||
-          post.tags?.some((tag) => tag.toLowerCase().includes(query)),
+          post.title.toLocaleLowerCase().includes(query) ||
+          post.excerpt.toLocaleLowerCase().includes(query) ||
+          post.category.toLocaleLowerCase().includes(query) ||
+          post.tags?.some((tag) => tag.toLocaleLowerCase().includes(query)),
       );
     }
 
     // Apply category filter
     if (selectedCategory !== "all") {
-      filtered = filtered.filter((post) => post.category === selectedCategory);
+      result = result.filter((post) => post.category === selectedCategory);
     }
 
     // Apply sorting
-    filtered.sort((a, b) => {
+    return result.toSorted((a, b) => {
       let comparison = 0;
 
       if (sortOptions.field === "date") {
@@ -90,8 +90,6 @@ export function BlogPage({ posts, featuredPosts = [] }: BlogPageProps) {
 
       return sortOptions.order === "asc" ? comparison : -comparison;
     });
-
-    return filtered;
   }, [posts, searchQuery, selectedCategory, sortOptions]);
 
   const featuredPost = featuredPosts[0] || posts.find((post) => post.featured);
