@@ -1,7 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@source "../node_modules/streamdown/dist/index.js";
 
 html {
   scroll-behavior: smooth;

@@ -57,7 +57,7 @@ export const BlogPage: FC<{ posts: PostItem[] }> = ({ posts }) => {
     }
 
     const sorted = [...filtered];
-    if (sortOrder === "oldest") {
+    if (sortOrder === "newest") {
       sorted.reverse();
     }
 

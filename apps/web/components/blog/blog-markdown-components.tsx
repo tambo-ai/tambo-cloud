@@ -13,7 +13,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { Components } from "react-markdown";
+import type { MDXComponents } from "mdx/types";
 
 const looksLikeCode = (text: string): boolean => {
   const codeIndicators = [
@@ -140,7 +140,7 @@ const Code = ({ className, children, ...props }: CodeProps) => {
   );
 };
 
-export const createBlogMarkdownComponents = (): Components => ({
+export const createBlogMarkdownComponents = (): MDXComponents => ({
   code: Code,
 
   p: ({ children }) => (
