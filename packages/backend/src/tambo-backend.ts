@@ -59,7 +59,6 @@ export default class TamboBackend {
       agentName,
       agentUrl,
     } = options;
-    console.log("==== Creating TamboBackend", aiProviderType);
     const llmClient = new AISdkClient(
       apiKey,
       model,
