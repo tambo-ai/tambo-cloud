@@ -4,10 +4,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({
-  params: { slug },
+  params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  const { slug } = await params;
+
   try {
     const postData = await getPostData(slug);
     return {
@@ -54,7 +56,9 @@ export async function generateMetadata({
   }
 }
 
-const Post = async ({ params: { slug } }: { params: { slug: string } }) => {
+const Post = async ({ params }: { params: Promise<{ slug: string }> }) => {
+  const { slug } = await params;
+
   try {
     const postData = await getPostData(slug);
     return <BlogPost post={postData} />;

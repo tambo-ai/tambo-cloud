@@ -4,9 +4,10 @@ export type PostItem = {
   id: string;
   title: string;
   date: string;
-  dateISO?: string;
+  dateISO: string;
   category: string;
   excerpt?: string;
+  featured?: boolean;
 };
 
 export type BlogPostType = {
@@ -17,6 +18,7 @@ export type BlogPostType = {
   dateISO: string;
   author?: string;
   featuredImage?: string;
+  featured?: boolean;
   readingTime?: string;
   excerpt?: string;
   tags?: string[];

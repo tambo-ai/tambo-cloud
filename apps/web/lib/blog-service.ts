@@ -72,19 +72,28 @@ export const getSortedPosts = (): PostItem[] => {
         const fullPath = path.join(postsDirectory, fileName);
         const fileContents = fs.readFileSync(fullPath, "utf-8");
         const matterResult = matter(fileContents);
+        const rawDate = String(matterResult.data.date ?? "");
+        if (!/^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
+          throw new Error(
+            `Invalid date "${rawDate}". Use ISO format YYYY-MM-DD.`,
+          );
+        }
+        const displayDate = new Date(rawDate).toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+        const category = String(matterResult.data.category ?? "").toLowerCase();
 
         return {
           id,
           title: matterResult.data.title,
-          date: new Date(matterResult.data.date).toLocaleDateString("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          }),
-          dateISO: matterResult.data.date,
-          category: matterResult.data.category,
+          date: displayDate,
+          dateISO: rawDate,
+          category,
           excerpt:
             matterResult.data.excerpt || extractExcerpt(matterResult.content),
+          featured: matterResult.data.featured,
         };
       });
 
@@ -104,10 +113,9 @@ export const getCategorisedPosts = (): Record<string, PostItem[]> => {
   const categorisedPosts: Record<string, PostItem[]> = {};
 
   sortedPosts.forEach((post) => {
-    if (!categorisedPosts[post.category]) {
-      categorisedPosts[post.category] = [];
-    }
-    categorisedPosts[post.category].push(post);
+    const key = post.category.toLowerCase();
+    if (!categorisedPosts[key]) categorisedPosts[key] = [];
+    categorisedPosts[key].push(post);
   });
 
   return categorisedPosts;
@@ -153,6 +161,7 @@ export const getPostData = async (id: string) => {
       excerpt:
         matterResult.data.excerpt || extractExcerpt(matterResult.content),
       tags: matterResult.data.tags || [],
+      featured: matterResult.data.featured,
     };
   } catch {
     throw new Error("Post not found");

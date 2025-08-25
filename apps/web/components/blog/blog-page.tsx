@@ -59,15 +59,15 @@ export const BlogPage: FC<{ posts: PostItem[] }> = ({ posts }) => {
     }
 
     const sorted = [...filtered].sort((a, b) => {
-      const aT = new Date(a.date).getTime();
-      const bT = new Date(b.date).getTime();
+      const aT = new Date(a.dateISO ?? a.date).getTime();
+      const bT = new Date(b.dateISO ?? b.date).getTime();
       return sortOrder === "newest" ? bT - aT : aT - bT;
     });
 
     return sorted;
   }, [posts, searchQuery, selectedFilter, sortOrder]);
 
-  const featuredPost = posts[posts.length - 1];
+  const featuredPost = posts.find((post) => post.featured);
 
   const filters = ["All", "New", "Feature", "Bug Fix", "Update", "Event"];
 
