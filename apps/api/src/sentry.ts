@@ -1,17 +1,15 @@
 import * as Sentry from "@sentry/nestjs";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 
-export function initializeSentry() {
-  const environment = process.env.NODE_ENV || "development";
+const environment =
+  process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || "development";
 
-  // Only initialize if DSN is provided
-  if (!process.env.SENTRY_DSN) {
-    console.log(
-      "Sentry DSN not provided, skipping Sentry initialization, if you want to use Sentry, please contact us at support@tambo.co",
-    );
-    return;
-  }
-
+// Only initialize if DSN is provided
+if (!process.env.SENTRY_DSN) {
+  console.log(
+    "Sentry DSN not provided, skipping Sentry initialization, if you want to use Sentry, please contact us at support@tambo.co",
+  );
+} else {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment,
@@ -28,9 +26,7 @@ export function initializeSentry() {
       // We exclude it so our customized Sentry.httpIntegration() below is the
       // only Http integration applied (avoids duplicate spans/breadcrumbs and
       // ensures our maxIncomingRequestBodySize setting takes effect).
-      ...defaults.filter(
-        (integration) => (integration as { name?: string }).name !== "Http",
-      ),
+      ...defaults.filter((integration) => integration.name !== "Http"),
       // Profiling
       nodeProfilingIntegration(),
       // NestJS integrations are auto-configured by @sentry/nestjs

@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.101.5](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.101.4...repo-v0.101.5) (2025-08-23)
+
+
+### Bug Fixes
+
+* bump tambo-ai/react version and message-input to allow suggestions application ([#1613](https://github.com/tambo-ai/tambo-cloud/issues/1613)) ([980b243](https://github.com/tambo-ai/tambo-cloud/commit/980b2431e925311653eba3cccd301066893c9837))
+
+## [0.101.4](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.101.3...repo-v0.101.4) (2025-08-22)
+
+
+### Performance Improvements
+
+* **db:** Add missing indexes from supabases perf advisor ([#1610](https://github.com/tambo-ai/tambo-cloud/issues/1610)) ([fdc207e](https://github.com/tambo-ai/tambo-cloud/commit/fdc207ed26a1b60f71067c9d4e89b2a753172ec6))
+
+
+### Miscellaneous Chores
+
+* bump tsconfig for more modern compiled code in the nestjs project ([#1612](https://github.com/tambo-ai/tambo-cloud/issues/1612)) ([d9a17b3](https://github.com/tambo-ai/tambo-cloud/commit/d9a17b3d194fd70fd468f035e48d65c5aa8788e9))
+
+## [0.101.3](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.101.2...repo-v0.101.3) (2025-08-22)
+
+
+### Performance Improvements
+
+* **db:** Add some indexes to speed up some slow queries ([#1608](https://github.com/tambo-ai/tambo-cloud/issues/1608)) ([4a30cca](https://github.com/tambo-ai/tambo-cloud/commit/4a30cca89d8550c16e007cde68a6c5bbd8aae088))
+
+
+### Miscellaneous Chores
+
+* **observability:** Allow setting sentry environment by env var ([#1606](https://github.com/tambo-ai/tambo-cloud/issues/1606)) ([adc32ec](https://github.com/tambo-ai/tambo-cloud/commit/adc32ec79f977408b24795d55bc902a8c803cdc8))
+* **observability:** monitor SQL calls with sentry ([#1603](https://github.com/tambo-ai/tambo-cloud/issues/1603)) ([82dc68f](https://github.com/tambo-ai/tambo-cloud/commit/82dc68f30f164516b0a34f131724e00479691048))
+* **observability:** pull in different pg instrumentation, see if this works in nestjs ([#1607](https://github.com/tambo-ai/tambo-cloud/issues/1607)) ([04197da](https://github.com/tambo-ai/tambo-cloud/commit/04197da7d0be061f997e30f87850f2dbb829d320))
+
+## [0.101.2](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.101.1...repo-v0.101.2) (2025-08-22)
+
+
+### Bug Fixes
+
+* **cancellation:** get rid of unawaited verification task, made transactions non-deterministic ([#1600](https://github.com/tambo-ai/tambo-cloud/issues/1600)) ([6c9a6b3](https://github.com/tambo-ai/tambo-cloud/commit/6c9a6b35d2468eb39557d48a721e228601310d9a))
+
+
+### Miscellaneous Chores
+
+* **eslint:** Add rule for no-floating-promises and fix occurrances ([#1601](https://github.com/tambo-ai/tambo-cloud/issues/1601)) ([75f9bc9](https://github.com/tambo-ai/tambo-cloud/commit/75f9bc9c74c55e8c2ad2abafe38a6c384fb0c096))
+* update seo metadata ([#1597](https://github.com/tambo-ai/tambo-cloud/issues/1597)) ([e18b55a](https://github.com/tambo-ai/tambo-cloud/commit/e18b55a471b69bc7d1c66a4f8fd5aebc4b06f55c))
+
 ## [0.101.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.101.0...repo-v0.101.1) (2025-08-21)
 
 
