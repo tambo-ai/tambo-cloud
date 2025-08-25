@@ -355,10 +355,10 @@ export function updateThreadMessageFromLegacyDecision(
 export async function appendNewMessageToThread(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessage,
-  logger: Logger,
+  newestMessageId: string,
   role: MessageRole = MessageRole.Assistant,
   initialText: string = "",
+  logger?: Logger,
 ) {
   try {
     const message = await db.transaction(
@@ -366,7 +366,7 @@ export async function appendNewMessageToThread(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessage.id,
+          newestMessageId,
           false,
         );
 
@@ -387,7 +387,7 @@ export async function appendNewMessageToThread(
 
     return message;
   } catch (error) {
-    logger.error(
+    logger?.error(
       "Transaction failed: Adding in-progress message",
       (error as Error).stack,
     );
