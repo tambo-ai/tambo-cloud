@@ -154,9 +154,6 @@ export class ThreadsService {
         `Provider key required but not found for project ${projectId} and provider ${providerName}`,
       );
     }
-    console.log(
-      `==== Creating TamboBackend for project ${project.id} with agent info: ${project.agentProviderType} ${project.agentName} ${project.agentUrl}`,
-    );
 
     return await TamboBackend.create(apiKey, chainId, userId, {
       provider: providerName as Provider,
@@ -1583,12 +1580,8 @@ export class ThreadsService {
           !currentThreadMessage ||
           currentLegacyDecisionId !== legacyDecision.id
         ) {
-          console.log(
-            `===STREAM: new id - current [${currentLegacyDecisionId}] !== new [${legacyDecision.id}]`,
-          );
           // Make sure the final version of the previous message is written to the db
           if (currentThreadMessage) {
-            console.log("===== updating message", currentThreadMessage.id);
             await updateMessage(db, currentThreadMessage.id, {
               ...currentThreadMessage,
               content: convertContentPartToDto(currentThreadMessage.content),
@@ -1607,12 +1600,6 @@ export class ThreadsService {
             legacyDecision.role,
             legacyDecision.message,
             logger,
-          );
-          console.log(
-            "===== inserted new message",
-            currentThreadMessage.id,
-            currentThreadMessage.role,
-            ` (started as ${legacyDecision.role})`,
           );
 
           currentLegacyDecisionId = legacyDecision.id;
