@@ -1,4 +1,8 @@
-import { LegacyComponentDecision, ThreadMessage } from "@tambo-ai-cloud/core";
+import {
+  LegacyComponentDecision,
+  MessageRole,
+  ThreadMessage,
+} from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
 import { AgentClient } from "../llm/agent-client";
@@ -27,6 +31,7 @@ export async function* runAgentLoop(
   for await (const event of stream) {
     yield {
       id: event.message.id,
+      role: event.message.role as MessageRole,
       message: event.message.content || "",
       componentName: null,
       props: null,
