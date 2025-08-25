@@ -1,5 +1,5 @@
-import { BlogPage } from "@/components/blog/blog-page";
-import { getSortedPosts } from "@/lib/blog-service";
+import { BlogPage as BlogPageComponent } from "@/components/blog/blog-page";
+import { PostService } from "@/lib/blog/services/post-service";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -24,10 +24,12 @@ export const metadata: Metadata = {
   },
 };
 
-const Blog = () => {
-  const allPosts = getSortedPosts();
+const BlogPage = () => {
+  const postService = new PostService();
+  const allPosts = postService.getAllPosts();
+  const featuredPosts = postService.getFeaturedPosts();
 
-  return <BlogPage posts={allPosts} />;
+  return <BlogPageComponent posts={allPosts} featuredPosts={featuredPosts} />;
 };
 
-export default Blog;
+export default BlogPage;

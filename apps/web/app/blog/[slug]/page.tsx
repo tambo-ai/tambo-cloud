@@ -1,5 +1,5 @@
-import { BlogPost } from "@/components/blog/blog-post";
-import { getPostData } from "@/lib/blog-service";
+import { BlogPost as BlogPostComponent } from "@/components/blog/blog-post";
+import { PostService } from "@/lib/blog/services/post-service";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -9,30 +9,31 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const postService = new PostService();
 
   try {
-    const postData = await getPostData(slug);
+    const post = await postService.getPost(slug);
+    if (!post) throw new Error("Post not found");
+
     return {
-      title: postData.title,
-      description:
-        postData.excerpt ||
-        `Read ${postData.title} by ${postData.author || "tambo team"}`,
-      authors: postData.author ? [{ name: postData.author }] : undefined,
+      title: post.title,
+      description: post.excerpt,
+      authors: post.author ? [{ name: post.author }] : undefined,
       openGraph: {
-        title: postData.title,
+        title: post.title,
         description:
-          postData.excerpt ||
-          `Read ${postData.title} by ${postData.author || "tambo team"}`,
+          post.excerpt ||
+          `Read ${post.title} by ${post.author || "tambo team"}`,
         type: "article",
-        publishedTime: postData.dateISO,
-        authors: postData.author ? [postData.author] : undefined,
-        images: postData.featuredImage
+        publishedTime: post.dateISO,
+        authors: post.author ? [post.author] : undefined,
+        images: post.featuredImage
           ? [
               {
-                url: postData.featuredImage,
+                url: post.featuredImage,
                 width: 1200,
                 height: 630,
-                alt: postData.title,
+                alt: post.title,
               },
             ]
           : undefined,
@@ -40,11 +41,11 @@ export async function generateMetadata({
       },
       twitter: {
         card: "summary_large_image",
-        title: postData.title,
+        title: post.title,
         description:
-          postData.excerpt ||
-          `Read ${postData.title} by ${postData.author || "tambo team"}`,
-        images: postData.featuredImage ? [postData.featuredImage] : undefined,
+          post.excerpt ||
+          `Read ${post.title} by ${post.author || "tambo team"}`,
+        images: post.featuredImage ? [post.featuredImage] : undefined,
       },
       alternates: { canonical: `/blog/${slug}` },
     };
@@ -56,15 +57,20 @@ export async function generateMetadata({
   }
 }
 
-const Post = async ({ params }: { params: Promise<{ slug: string }> }) => {
+const PostPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
   const { slug } = await params;
+  const postService = new PostService();
 
   try {
-    const postData = await getPostData(slug);
-    return <BlogPost post={postData} />;
+    const post = await postService.getPost(slug);
+    if (!post) notFound();
+
+    const relatedPosts = postService.getRelatedPosts(slug);
+
+    return <BlogPostComponent post={post} relatedPosts={relatedPosts} />;
   } catch {
     notFound();
   }
 };
 
-export default Post;
+export default PostPage;
