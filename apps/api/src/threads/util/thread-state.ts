@@ -364,9 +364,9 @@ export async function appendNewMessageToThread(
   db: HydraDb,
   threadId: string,
   newestMessageId: string,
-  logger: Logger,
   role: MessageRole = MessageRole.Assistant,
   initialText: string = "",
+  logger?: Logger,
 ) {
   try {
     const message = await db.transaction(
@@ -395,7 +395,7 @@ export async function appendNewMessageToThread(
 
     return message;
   } catch (error) {
-    logger.error(
+    logger?.error(
       "Transaction failed: Adding in-progress message",
       (error as Error).stack,
     );
