@@ -129,7 +129,7 @@ export class AgentClient {
         return;
       }
       const { event } = value;
-      console.log(`=== ${event.type} ===`);
+      console.log(`\n=== ${event.type} ===`);
       // here we need to yield the growing event to the caller
       switch (event.type) {
         case EventType.MESSAGES_SNAPSHOT: {
@@ -184,18 +184,21 @@ export class AgentClient {
           console.log("=> Emitting final message");
           // we don't support "runs" yet, but "finished" may be a point to emit the final response
           const e = event as RunFinishedEvent;
+          console.log("==> final result", e.result);
           if (!currentResponse) {
-            throw new Error("No current response");
+            // throw new Error("No current response");
+            console.log("===== Run finished, but no current response");
+          } else {
+            currentResponse.message = {
+              ...currentResponse.message,
+              content:
+                typeof e.result === "string"
+                  ? e.result
+                  : JSON.stringify(e.result),
+              role: "assistant",
+            };
+            yield currentResponse;
           }
-          currentResponse.message = {
-            ...currentResponse.message,
-            content:
-              typeof e.result === "string"
-                ? e.result
-                : JSON.stringify(e.result),
-            role: "assistant",
-          };
-          yield currentResponse;
           // all done, no more events to emit
           return;
         }
@@ -216,6 +219,15 @@ export class AgentClient {
               name: e.toolCallName,
             },
           };
+          yield {
+            type: AgentResponseType.MESSAGE,
+            message: {
+              role: "assistant",
+              content: "",
+              id: `message-${e.toolCallId}`,
+              toolCalls: [currentToolCall],
+            },
+          };
           break;
         }
         case EventType.TOOL_CALL_CHUNK:
@@ -230,13 +242,13 @@ export class AgentClient {
           yield {
             type: AgentResponseType.MESSAGE,
             message: {
-              role: "tool",
+              role: "assistant",
               content: currentToolCall.function.arguments,
               // HACK: we need to generate a message id for the tool call
               // result, but maybe we'll actually emit this in the
               // TOOL_CALL_RESULT event?
               id: `message-${e.toolCallId}`,
-              toolCallId: e.toolCallId,
+              toolCalls: [currentToolCall],
             },
           };
           break;
@@ -251,13 +263,13 @@ export class AgentClient {
           yield {
             type: AgentResponseType.MESSAGE,
             message: {
-              role: "tool",
+              role: "assistant",
               content: currentToolCall.function.arguments,
               // HACK: we need to generate a message id for the tool call
               // result, but maybe we'll actually emit this in the
               // TOOL_CALL_RESULT event?
               id: `message-${e.toolCallId}`,
-              toolCallId: e.toolCallId,
+              toolCalls: [currentToolCall],
             },
           };
           break;
@@ -315,6 +327,7 @@ export class AgentClient {
         case EventType.TEXT_MESSAGE_END: {
           // nothing to actually do here, the message should have been emitted already?
           console.log("=> Text message end");
+          currentResponse = undefined;
           break;
         }
         case EventType.STEP_STARTED:
@@ -370,7 +383,10 @@ function convertMessagesToString(
   if (typeof messages === "string") {
     return messages;
   }
-  return messages.map((m) => m).join("\n");
+  return messages
+    .filter((m) => m.type === "text")
+    .map((m) => m.text)
+    .join("\n");
 }
 
 /** Hacky tool id retrieval - types seem to imply that toolCallId can't be undefined */
