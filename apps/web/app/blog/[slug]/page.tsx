@@ -2,6 +2,12 @@ import { BlogPost as BlogPostComponent } from "@/components/blog/blog-post";
 import { PostService } from "@/lib/blog/services/post-service";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
+
+const getPostCached = cache(async (slug: string) => {
+  const postService = new PostService();
+  return await postService.getPost(slug);
+});
 
 export async function generateMetadata({
   params,
@@ -9,10 +15,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const postService = new PostService();
 
   try {
-    const post = await postService.getPost(slug);
+    const post = await getPostCached(slug);
     if (!post) throw new Error("Post not found");
 
     return {
@@ -59,12 +64,12 @@ export async function generateMetadata({
 
 const PostPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
   const { slug } = await params;
-  const postService = new PostService();
 
   try {
-    const post = await postService.getPost(slug);
+    const post = await getPostCached(slug);
     if (!post) notFound();
 
+    const postService = new PostService();
     const relatedPosts = postService.getRelatedPosts(slug);
 
     return <BlogPostComponent post={post} relatedPosts={relatedPosts} />;

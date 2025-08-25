@@ -11,6 +11,8 @@ import { formatDate, validateISODate } from "../utils/date";
 import { extractExcerpt } from "../utils/excerpt";
 import { calculateReadingTime } from "../utils/reading-time";
 
+const readingTimeCache = new Map<string, string>();
+
 export class PostService {
   private repository: PostRepository;
 
@@ -35,6 +37,16 @@ export class PostService {
       },
     });
 
+    let readingTime = data.readingTime;
+    if (!readingTime) {
+      if (readingTimeCache.has(slug)) {
+        readingTime = readingTimeCache.get(slug)!;
+      } else {
+        readingTime = calculateReadingTime(content);
+        readingTimeCache.set(slug, readingTime);
+      }
+    }
+
     return {
       id: slug,
       slug,
@@ -47,7 +59,7 @@ export class PostService {
       author: data.author,
       featuredImage: data.featuredImage,
       featured: data.featured,
-      readingTime: data.readingTime || calculateReadingTime(content),
+      readingTime,
       tags: data.tags || [],
       mdxSource,
     };
