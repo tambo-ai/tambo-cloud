@@ -1577,14 +1577,18 @@ export class ThreadsService {
         updateIntervalMs,
       );
 
-      const currentLegacyDecisionId: string | undefined = undefined;
+      let currentLegacyDecisionId: string | undefined = undefined;
       for await (const legacyDecision of fixStreamedToolCalls(stream)) {
         if (
           !currentThreadMessage ||
           currentLegacyDecisionId !== legacyDecision.id
         ) {
+          console.log(
+            `===STREAM: new id - current [${currentLegacyDecisionId}] !== new [${legacyDecision.id}]`,
+          );
           // Make sure the final version of the previous message is written to the db
           if (currentThreadMessage) {
+            console.log("===== updating message", currentThreadMessage.id);
             await updateMessage(db, currentThreadMessage.id, {
               ...currentThreadMessage,
               content: convertContentPartToDto(currentThreadMessage.content),
@@ -1594,16 +1598,24 @@ export class ThreadsService {
                 ? ActionType.ToolCall
                 : undefined,
             });
-          } else {
-            // time to insert a new message into the db
-            currentThreadMessage = await appendNewMessageToThread(
-              db,
-              threadId,
-              userMessage,
-              logger,
-              legacyDecision.role,
-            );
           }
+          // time to insert a new message into the db
+          currentThreadMessage = await appendNewMessageToThread(
+            db,
+            threadId,
+            currentThreadMessage?.id ?? userMessage.id,
+            legacyDecision.role,
+            legacyDecision.message,
+            logger,
+          );
+          console.log(
+            "===== inserted new message",
+            currentThreadMessage.id,
+            currentThreadMessage.role,
+            ` (started as ${legacyDecision.role})`,
+          );
+
+          currentLegacyDecisionId = legacyDecision.id;
         }
         // update in memory - we'll write to the db periodically
         currentThreadMessage = updateThreadMessageFromLegacyDecision(
