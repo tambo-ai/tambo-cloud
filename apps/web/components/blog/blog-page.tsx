@@ -13,13 +13,9 @@ import {
 import { categoryDisplayMap, type PostItem } from "@/lib/types/blog";
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { FC, useMemo, useState } from "react";
 
-interface BlogPageProps {
-  posts: PostItem[];
-}
-
-const BlogPage = ({ posts }: BlogPageProps) => {
+export const BlogPage: FC<{ posts: PostItem[] }> = ({ posts }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [sortOrder, setSortOrder] = useState("newest");
@@ -208,5 +204,3 @@ const BlogPage = ({ posts }: BlogPageProps) => {
     </div>
   );
 };
-
-export default BlogPage;

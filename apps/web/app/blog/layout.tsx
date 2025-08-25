@@ -1,5 +1,3 @@
-"use client";
-
 import { Footer } from "@/components/sections/footer";
 import { BlogHeader } from "@/components/sections/blog-header";
 import { TamboHackBanner } from "@/components/sections/tambohack-banner";

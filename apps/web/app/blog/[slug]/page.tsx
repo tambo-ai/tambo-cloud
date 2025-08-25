@@ -1,4 +1,4 @@
-import BlogPost from "@/components/blog/blog-post";
+import { BlogPost } from "@/components/blog/blog-post";
 import { getPostData } from "@/lib/blog-service";
 import { notFound } from "next/navigation";
 

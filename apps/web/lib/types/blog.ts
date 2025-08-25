@@ -7,7 +7,7 @@ export type PostItem = {
   category: string;
 };
 
-export type BlogPost = {
+export type BlogPostType = {
   id: string;
   title: string;
   category: string;

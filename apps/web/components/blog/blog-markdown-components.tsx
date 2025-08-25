@@ -6,14 +6,14 @@ import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { Check, Copy } from "lucide-react";
 import Image from "next/image";
-import { useDeferredValue, useMemo, useState } from "react";
+import {
+  ComponentPropsWithoutRef,
+  ReactNode,
+  useDeferredValue,
+  useMemo,
+  useState,
+} from "react";
 import type { Components } from "react-markdown";
-
-/**
- * Blog-specific Markdown Components
- *
- * Enhanced version of the base markdown components with blog-specific styling
- */
 
 const looksLikeCode = (text: string): boolean => {
   const codeIndicators = [
@@ -67,7 +67,7 @@ const CodeHeader = ({
 };
 
 // Helper function to extract text content from MDX children
-const getTextContent = (children: any): string => {
+const getTextContent = (children: ReactNode): string => {
   if (typeof children === "string") {
     return children;
   }
@@ -76,14 +76,19 @@ const getTextContent = (children: any): string => {
     return children.map(getTextContent).join("");
   }
 
-  if (children && typeof children === "object" && children.props) {
+  if (children && typeof children === "object" && "props" in children) {
     return getTextContent(children.props.children);
   }
 
   return String(children || "");
 };
 
-const Code = ({ className, children, ...props }: any) => {
+type CodeProps = ComponentPropsWithoutRef<"code"> & {
+  className?: string;
+  children?: ReactNode;
+};
+
+const Code = ({ className, children, ...props }: CodeProps) => {
   const match = /language-(\w+)/.exec(className ?? "");
   const content = getTextContent(children).replace(/\n$/, "");
   const deferredContent = useDeferredValue(content);
@@ -213,20 +218,22 @@ export const createBlogMarkdownComponents = (): Components => ({
     </td>
   ),
 
-  // Enhanced image handling for blog posts
-  img: ({ src, alt }) => (
-    <div className="my-8">
-      <Image
-        src={src ?? ""}
-        alt={alt ?? ""}
-        className="w-full rounded-lg shadow-lg"
-        width={800}
-        height={450}
-        sizes="(max-width: 768px) 100vw, 800px"
-      />
-      {alt && (
-        <p className="text-center text-sm text-gray-500 mt-2 italic">{alt}</p>
-      )}
-    </div>
-  ),
+  img: ({ src, alt }) => {
+    if (!src) return null;
+    return (
+      <div className="my-8">
+        <Image
+          src={src}
+          alt={alt ?? ""}
+          className="w-full rounded-lg shadow-lg"
+          width={800}
+          height={450}
+          sizes="(max-width: 768px) 100vw, 800px"
+        />
+        {alt && (
+          <p className="text-center text-sm text-gray-500 mt-2 italic">{alt}</p>
+        )}
+      </div>
+    );
+  },
 });

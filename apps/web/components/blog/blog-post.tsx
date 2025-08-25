@@ -2,19 +2,17 @@
 
 import { MDXRenderer } from "@/components/blog/mdx-renderer";
 import { Badge } from "@/components/ui/badge";
-import { categoryDisplayMap, type BlogPost } from "@/lib/types/blog";
+import { categoryDisplayMap, type BlogPostType } from "@/lib/types/blog";
 import { ArrowLeft } from "lucide-react";
+import type { MDXRemoteSerializeResult } from "next-mdx-remote";
 import Image from "next/image";
 import Link from "next/link";
+import { FC } from "react";
 
-interface BlogPostProps {
-  post: BlogPost;
-}
-
-const BlogPost = ({ post }: BlogPostProps) => {
+export const BlogPost: FC<{ post: BlogPostType }> = ({ post }) => {
   const categoryDisplay = categoryDisplayMap[post.category] || "New";
 
-  const calculateReadingTime = (mdxSource: any) => {
+  const calculateReadingTime = (mdxSource: MDXRemoteSerializeResult) => {
     // Rough estimation based on compiled content
     const wordsPerMinute = 200;
     const contentString = JSON.stringify(mdxSource);
@@ -79,5 +77,3 @@ const BlogPost = ({ post }: BlogPostProps) => {
     </div>
   );
 };
-
-export default BlogPost;

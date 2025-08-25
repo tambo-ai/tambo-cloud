@@ -1,4 +1,4 @@
-import BlogPage from "@/components/blog/blog-page";
+import { BlogPage } from "@/components/blog/blog-page";
 import { getSortedPosts } from "@/lib/blog-service";
 
 const Blog = () => {

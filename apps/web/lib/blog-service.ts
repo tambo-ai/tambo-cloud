@@ -1,10 +1,8 @@
 import fs from "fs";
 import matter from "gray-matter";
-import moment from "moment";
 import path from "path";
 import type { PostItem } from "@/lib/types/blog";
 import { serialize } from "next-mdx-remote/serialize";
-import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 
 const postsDirectory = path.join(process.cwd(), "posts");
@@ -31,12 +29,11 @@ export const getSortedPosts = (): PostItem[] => {
       });
 
       return allPostsData.sort((a, b) => {
-        const format = "DD-MM-YYYY";
-        const dateOne = moment(a.date, format);
-        const dateTwo = moment(b.date, format);
-        if (dateOne.isBefore(dateTwo)) {
+        const dateOne = new Date(a.date);
+        const dateTwo = new Date(b.date);
+        if (dateOne < dateTwo) {
           return -1;
-        } else if (dateTwo.isAfter(dateOne)) {
+        } else if (dateOne > dateTwo) {
           return 1;
         } else {
           return 0;
@@ -73,7 +70,7 @@ export const getPostData = async (id: string) => {
     const mdxSource = await serialize(matterResult.content, {
       mdxOptions: {
         remarkPlugins: [remarkGfm],
-        rehypePlugins: [rehypeHighlight],
+        rehypePlugins: [],
       },
     });
 
@@ -82,9 +79,11 @@ export const getPostData = async (id: string) => {
       mdxSource,
       title: matterResult.data.title,
       category: matterResult.data.category,
-      date: moment(matterResult.data.date, "DD-MM-YYYY").format(
-        "MMMM Do, YYYY",
-      ),
+      date: new Date(matterResult.data.date).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
       author: matterResult.data.author,
       featuredImage: matterResult.data.featuredImage,
       readingTime: matterResult.data.readingTime,
