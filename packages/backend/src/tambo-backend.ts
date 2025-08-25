@@ -69,25 +69,19 @@ export default class TamboBackend {
       agentName,
       agentUrl,
     } = options;
-    console.log("==== Creating TamboBackend", aiProviderType);
+    const llmClient = new AISdkClient(
+      apiKey,
+      model,
+      provider,
+      chainId,
+      userId,
+      baseURL,
+      maxInputTokens,
+    );
+
     switch (aiProviderType) {
       case AiProviderType.LLM: {
-        const modelOptions = {
-          model,
-          provider,
-          baseURL,
-          maxInputTokens,
-        };
-        this.llmClient = new AISdkClient(
-          apiKey,
-          model,
-          provider,
-          chainId,
-          userId,
-          baseURL,
-          maxInputTokens,
-        );
-        return new TamboBackend(aiClient);
+        return new TamboBackend(llmClient);
       }
       case AiProviderType.AGENT: {
         if (!agentType || !agentUrl || !agentName) {
