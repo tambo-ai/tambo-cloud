@@ -4,15 +4,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({
-  params,
+  params: { slug },
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const { slug } = await params;
-
   try {
     const postData = await getPostData(slug);
-
     return {
       title: postData.title,
       description:
@@ -25,7 +22,7 @@ export async function generateMetadata({
           postData.excerpt ||
           `Read ${postData.title} by ${postData.author || "tambo team"}`,
         type: "article",
-        publishedTime: new Date(postData.date).toISOString(),
+        publishedTime: postData.dateISO,
         authors: postData.author ? [postData.author] : undefined,
         images: postData.featuredImage
           ? [
@@ -47,9 +44,7 @@ export async function generateMetadata({
           `Read ${postData.title} by ${postData.author || "tambo team"}`,
         images: postData.featuredImage ? [postData.featuredImage] : undefined,
       },
-      alternates: {
-        canonical: `/blog/${slug}`,
-      },
+      alternates: { canonical: `/blog/${slug}` },
     };
   } catch {
     return {
@@ -59,13 +54,11 @@ export async function generateMetadata({
   }
 }
 
-const Post = async ({ params }: { params: { slug: string } }) => {
-  const { slug } = await params;
-
+const Post = async ({ params: { slug } }: { params: { slug: string } }) => {
   try {
     const postData = await getPostData(slug);
     return <BlogPost post={postData} />;
-  } catch (_error) {
+  } catch {
     notFound();
   }
 };

@@ -81,23 +81,16 @@ export const getSortedPosts = (): PostItem[] => {
             day: "numeric",
             year: "numeric",
           }),
+          dateISO: matterResult.data.date,
           category: matterResult.data.category,
           excerpt:
             matterResult.data.excerpt || extractExcerpt(matterResult.content),
         };
       });
 
-      return allPostsData.sort((a, b) => {
-        const dateOne = new Date(a.date);
-        const dateTwo = new Date(b.date);
-        if (dateOne < dateTwo) {
-          return -1;
-        } else if (dateOne > dateTwo) {
-          return 1;
-        } else {
-          return 0;
-        }
-      });
+      return allPostsData.sort(
+        (a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime(),
+      );
     }
 
     return [];
@@ -153,6 +146,7 @@ export const getPostData = async (id: string) => {
       title: matterResult.data.title,
       category: rawCategory,
       date: formattedDate,
+      dateISO: rawDate,
       author: matterResult.data.author,
       featuredImage: matterResult.data.featuredImage,
       readingTime: matterResult.data.readingTime || calculatedReadingTime,

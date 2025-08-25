@@ -32,8 +32,8 @@ export const BlogPost: FC<{ post: BlogPostType }> = ({ post }) => {
         url: "/logo/icon/Octo-Icon.png",
       },
     },
-    datePublished: new Date(post.date).toISOString(),
-    dateModified: new Date(post.date).toISOString(),
+    datePublished: post.dateISO,
+    dateModified: post.dateISO,
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": `https://tambo.co/blog/${post.id}`,

@@ -4,6 +4,7 @@ export type PostItem = {
   id: string;
   title: string;
   date: string;
+  dateISO?: string;
   category: string;
   excerpt?: string;
 };
@@ -13,6 +14,7 @@ export type BlogPostType = {
   title: string;
   category: string;
   date: string;
+  dateISO: string;
   author?: string;
   featuredImage?: string;
   readingTime?: string;
