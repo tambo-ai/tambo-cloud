@@ -133,7 +133,7 @@ export const projects = pgTable(
       .notNull()
       .unique()
       .default(sql`generate_custom_id('p_')`),
-    /** Deprecated: Last time a project was used with a legacy id was 2025-04-28 20:33:58.371+00 */
+    /** @deprecated - Last time a project was used with a legacy id was 2025-04-28 20:33:58.371+00 */
     deprecated_legacyId: text("legacy_id").unique(),
     name: text("name").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
