@@ -460,7 +460,14 @@ export class ThreadsService {
         );
 
         // Check for first message email with the newly created usage
-        await this.checkAndSendFirstMessageEmail(projectId, newUsage);
+        await Sentry.startSpan(
+          {
+            name: "threads.checkAndSendFirstMessageEmail",
+            attributes: { projectId },
+          },
+          async () =>
+            await this.checkAndSendFirstMessageEmail(projectId, newUsage),
+        );
         return;
       }
 
