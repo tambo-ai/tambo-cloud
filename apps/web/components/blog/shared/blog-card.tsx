@@ -1,5 +1,3 @@
-"use client";
-
 import { BlogPostListItem } from "@/lib/blog/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";

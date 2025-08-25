@@ -1,5 +1,3 @@
-"use client";
-
 import { Badge } from "@/components/ui/badge";
 import { CATEGORY_COLORS, CATEGORY_DISPLAY_MAP } from "@/lib/blog/constants";
 import type { BlogCategory } from "@/lib/blog/types";

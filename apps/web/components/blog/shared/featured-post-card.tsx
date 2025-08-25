@@ -1,5 +1,3 @@
-"use client";
-
 import type { BlogPostListItem } from "@/lib/blog/types";
 import Link from "next/link";
 import { BlogBadge } from "./blog-badge";

@@ -1,5 +1,3 @@
-"use client";
-
 import { MDXRenderer } from "@/components/blog/mdx-renderer";
 import type { BlogPost, BlogPostListItem } from "@/lib/blog/types";
 import { ArrowLeft, Calendar, Clock, User } from "lucide-react";
