@@ -121,7 +121,7 @@ export function MobileDashboardNavigation() {
 
         <div className="px-6 flex flex-col gap-2">
           <a
-            href="/docs"
+            href={process.env.NEXT_PUBLIC_DOCS_URL || "/docs"}
             className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-accent transition-colors cursor-pointer"
           >
             <BookOpen className="h-4 w-4" />

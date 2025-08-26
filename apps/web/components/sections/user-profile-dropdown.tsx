@@ -75,7 +75,10 @@ export function UserProfileDropdown({ user }: UserProfileDropdownProps) {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem asChild>
-          <a href="/docs" className="flex items-center cursor-pointer">
+          <a
+            href={process.env.NEXT_PUBLIC_DOCS_URL || "/docs"}
+            className="flex items-center cursor-pointer"
+          >
             <BookOpen className="mr-2 h-4 w-4" />
             Docs
           </a>

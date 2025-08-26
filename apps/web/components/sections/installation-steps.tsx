@@ -76,7 +76,7 @@ export function InstallationSteps() {
             transition={{ duration: 0.8, delay: 0.2, ease }}
           >
             <a
-              href={`/docs/getting-started/quickstart${
+              href={`${process.env.NEXT_PUBLIC_DOCS_URL || "/docs"}/getting-started/quickstart${
                 activeTab === "template" ? "#template" : "#existing-app"
               }`}
               className="inline-flex items-center px-6 py-3 bg-primary hover:bg-primary/80 text-black rounded-lg font-sans text-sm font-medium transition-colors"
