@@ -1560,7 +1560,7 @@ export class ThreadsService {
         GenerationStage.STREAMING_RESPONSE,
         `Streaming response...`,
       );
-      let currentThreadMessage: ThreadMessage = initialMessage;
+      let currentThreadMessage: ThreadMessage | undefined = undefined;
 
       // Track streaming metrics
       let chunkCount = 0;
