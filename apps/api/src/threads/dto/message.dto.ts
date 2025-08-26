@@ -86,7 +86,7 @@ export class ThreadMessageDto {
   @ApiProperty({
     deprecated: true,
     description:
-      "No longerse the role and the presence of tool calls to determine the action type",
+      "Deprecated: use the role and the presence of tool calls to determine the action type",
   })
   actionType?: ActionType;
 
