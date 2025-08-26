@@ -5,6 +5,7 @@ import { BlogSearch } from "@/components/blog/list/blog-search";
 import { BlogSort } from "@/components/blog/list/blog-sort";
 import { BlogCard } from "@/components/blog/shared/blog-card";
 import { FeaturedPostCard } from "@/components/blog/shared/featured-post-card";
+import { GRADIENTS } from "@/lib/blog/constants";
 import type {
   BlogCategory,
   BlogPostListItem,
@@ -16,15 +17,6 @@ interface BlogPageProps {
   posts: BlogPostListItem[];
   featuredPosts?: BlogPostListItem[];
 }
-
-const GRADIENTS = [
-  "bg-gradient-to-br from-emerald-300 via-cyan-300 to-blue-400",
-  "bg-gradient-to-br from-pink-300 via-rose-300 to-emerald-300",
-  "bg-gradient-to-br from-blue-400 via-indigo-300 to-pink-300",
-  "bg-gradient-to-br from-yellow-300 via-lime-300 to-emerald-300",
-  "bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-400",
-  "bg-gradient-to-br from-emerald-400 via-teal-300 to-pink-300",
-];
 
 export function BlogPage({ posts, featuredPosts = [] }: BlogPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -142,6 +134,7 @@ export function BlogPage({ posts, featuredPosts = [] }: BlogPageProps) {
             <BlogCard
               key={post.id}
               post={post}
+              backgroundImage={"/tambo-bg.png"}
               gradient={GRADIENTS[index % GRADIENTS.length]}
             />
           ))}

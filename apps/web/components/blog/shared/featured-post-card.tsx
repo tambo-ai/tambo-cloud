@@ -10,6 +10,20 @@ export function FeaturedPostCard({ post }: FeaturedPostCardProps) {
   return (
     <Link href={`/blog/posts/${post.slug}`}>
       <article className="relative overflow-hidden rounded-2xl h-64 bg-gradient-to-br from-emerald-300 via-cyan-300 to-blue-300 p-8 hover:shadow-xl transition-shadow cursor-pointer">
+        {/* Background SVG image on the right */}
+        <div className="absolute right-0 top-0 h-full w-1/2 opacity-40">
+          <div
+            className="h-full w-full"
+            style={{
+              backgroundImage:
+                "url('/assets/landing/drawings/OCTO-TRANSPARENT-8.svg')",
+              backgroundSize: "contain",
+              backgroundPosition: "right center",
+              backgroundRepeat: "no-repeat",
+            }}
+          />
+        </div>
+
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-4">
             <BlogBadge

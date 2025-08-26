@@ -20,4 +20,11 @@ export const CATEGORY_COLORS: Record<BlogCategory, string> = {
   announcement: "bg-gray-100 text-gray-800",
 };
 
-export const WORDS_PER_MINUTE = 200;
+export const GRADIENTS = [
+  "bg-gradient-to-br from-emerald-300/80 via-cyan-300/80 to-blue-400/80",
+  "bg-gradient-to-br from-pink-300/80 via-rose-300/80 to-emerald-300/80",
+  "bg-gradient-to-br from-blue-400/80 via-indigo-300/80 to-pink-300/80",
+  "bg-gradient-to-br from-yellow-300/80 via-lime-300/80 to-emerald-300/80",
+  "bg-gradient-to-br from-teal-400/80 via-cyan-400/80 to-blue-400/80",
+  "bg-gradient-to-br from-emerald-400/80 via-teal-300/80 to-pink-300/80",
+];
