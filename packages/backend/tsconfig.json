@@ -1,13 +1,15 @@
 {
   "extends": "@tambo-ai-cloud/typescript-config/base",
   "compilerOptions": {
-    "rootDir": "./src",
     "declaration": true,
     "outDir": "./dist",
     "esModuleInterop": true,
-    "moduleResolution": "node",
-    "module": "CommonJS",
-    "sourceMap": true
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "sourceMap": true,
+    "paths": {
+      "@ag-ui/mastra": ["../../packages/ag-ui-mastra/src"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "./dist", "./docs"]
