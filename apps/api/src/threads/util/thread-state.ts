@@ -345,6 +345,10 @@ export function updateThreadMessageFromLegacyDecision(
     component: chunk,
     // do NOT set the toolCallRequest or tool_call_id here, we will set them in the final response
   };
+  if (chunk.toolCallRequest) {
+    currentThreadMessage.toolCallRequest = chunk.toolCallRequest;
+    currentThreadMessage.tool_call_id = chunk.toolCallId;
+  }
   return currentThreadMessage;
 }
 
