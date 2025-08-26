@@ -79,7 +79,7 @@ export async function getPosts(): Promise<BlogPost[]> {
         featured: item.frontMatter.featured,
       },
     }))
-    .sort(
+    .toSorted(
       (a, b) =>
         new Date(b.frontMatter.date).getTime() -
         new Date(a.frontMatter.date).getTime(),
