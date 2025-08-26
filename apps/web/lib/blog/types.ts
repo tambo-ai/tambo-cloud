@@ -14,6 +14,7 @@ export interface BlogPostListItem {
   slug: string;
   title: string;
   category: BlogCategory;
+  description?: string;
   date: string;
   featured?: boolean;
   author?: string;

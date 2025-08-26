@@ -84,8 +84,35 @@ export function BlogPage({ posts, featuredPosts = [] }: BlogPageProps) {
 
   const featuredPost = featuredPosts[0] || posts.find((post) => post.featured);
 
+  const blogListSchema = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "tambo Blog",
+    description:
+      "Latest updates, tutorials, and insights about tambo - the AI orchestration framework for React frontends.",
+    url: "/blog",
+    blogPost: posts.map((post) => ({
+      "@type": "BlogPosting",
+      headline: post.title,
+      description: post.description,
+      author: {
+        "@type": "Person",
+        name: post.author || "tambo team",
+      },
+      datePublished: post.date,
+      url: `/blog/posts/${post.slug}`,
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(blogListSchema),
+        }}
+      />
+
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <header className="text-center mb-12">

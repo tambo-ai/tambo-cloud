@@ -2,10 +2,15 @@ import { Footer } from "@/components/sections/footer";
 import { TamboHackBanner } from "@/components/sections/tambohack-banner";
 import { ReactNode } from "react";
 import { BlogHeader } from "../../components/blog/blog-header";
+import { Metadata } from "next";
 
-export const metadata = {
-  title: "Tambo Blog",
-  description: "Insights and updates from the Tambo team",
+export const metadata: Metadata = {
+  title: {
+    template: "%s | tambo blog",
+    default: "blog",
+  },
+  description:
+    "Latest updates, tutorials, and insights about tambo - the AI orchestration framework for React frontends.",
 };
 
 interface BlogLayoutProps {
