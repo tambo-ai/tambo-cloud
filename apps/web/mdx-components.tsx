@@ -1,93 +1,160 @@
 import { cn } from "@/lib/utils";
 import type { MDXComponents } from "mdx/types";
+import Image from "next/image";
+import { useMDXComponents as useNextraMDXComponents } from "nextra/mdx-components";
+import { BlogPost } from "./components/blog/blog-post";
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
+  const nextraComponents = useNextraMDXComponents();
   return {
+    BlogPost,
+    ...nextraComponents,
+
     h1: ({ className, ...props }) => (
       <h1
-        className={cn("font-heading text-4xl font-bold mt-8 mb-4", className)}
+        className={cn("text-center font-bold text-5xl mb-6 mt-12", className)}
         {...props}
       />
     ),
+
     h2: ({ className, ...props }) => (
       <h2
-        className={cn("font-heading text-3xl font-bold mt-8 mb-3", className)}
+        className={cn(
+          "text-3xl font-bold tracking-tight text-gray-900 mt-10 mb-4 border-b border-gray-200 pb-2",
+          className,
+        )}
         {...props}
       />
     ),
+
     h3: ({ className, ...props }) => (
       <h3
         className={cn(
-          "font-heading text-2xl font-semibold mt-6 mb-2",
+          "text-2xl font-semibold tracking-tight text-gray-900 mt-8 mb-3",
           className,
         )}
         {...props}
       />
     ),
+
+    h4: ({ className, ...props }) => (
+      <h4
+        className={cn(
+          "text-xl font-semibold tracking-tight text-gray-900 mt-6 mb-2",
+          className,
+        )}
+        {...props}
+      />
+    ),
+
+    h5: ({ className, ...props }) => (
+      <h5
+        className={cn(
+          "text-lg font-semibold tracking-tight text-gray-900 mt-4 mb-2",
+          className,
+        )}
+        {...props}
+      />
+    ),
+
+    h6: ({ className, ...props }) => (
+      <h6
+        className={cn(
+          "text-base font-semibold tracking-tight text-gray-900 mt-4 mb-2",
+          className,
+        )}
+        {...props}
+      />
+    ),
+
     p: ({ className, ...props }) => (
       <p
         className={cn(
-          "font-sans leading-7 text-gray-700 dark:text-gray-300 my-4",
+          "font-sans leading-7 text-gray-700 my-4 [&:not(:first-child)]:mt-6 text-justify",
           className,
         )}
         {...props}
       />
     ),
+
     a: ({ className, ...props }) => (
       <a
         className={cn(
-          "text-blue-600 dark:text-blue-400 font-medium hover:underline",
+          "font-medium rounded hover:bg-blue-50 underline transition-colors inline-flex items-center",
           className,
         )}
         {...props}
       />
     ),
+
     ul: ({ className, ...props }) => (
-      <ul className={cn("list-disc pl-6 my-4", className)} {...props} />
+      <ul
+        className={cn("list-disc pl-6 my-6 space-y-2 text-gray-700", className)}
+        {...props}
+      />
     ),
     ol: ({ className, ...props }) => (
-      <ol className={cn("list-decimal pl-6 my-4", className)} {...props} />
+      <ol
+        className={cn(
+          "list-decimal pl-6 my-6 space-y-2 text-gray-700",
+          className,
+        )}
+        {...props}
+      />
     ),
     li: ({ className, ...props }) => (
-      <li className={cn("my-1", className)} {...props} />
+      <li
+        className={cn("leading-7 [&>ul]:my-2 [&>ol]:my-2", className)}
+        {...props}
+      />
     ),
+
     code: ({ className, ...props }) => (
       <code
         className={cn(
-          "font-mono text-sm px-1 py-0.5 rounded bg-gray-100",
+          "font-mono text-sm px-2 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-200",
           className,
         )}
         {...props}
       />
     ),
+
     pre: ({ className, ...props }) => (
       <pre
         className={cn(
-          "rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 p-4 overflow-x-auto",
+          "rounded-lg border border-gray-200 bg-gray-50 p-4 overflow-x-auto my-6 text-sm font-mono",
+          "[&>code]:bg-transparent [&>code]:border-none [&>code]:p-0",
           className,
         )}
         {...props}
       />
     ),
+
     blockquote: ({ className, ...props }) => (
       <blockquote
         className={cn(
-          "border-l-4 border-gray-200 dark:border-gray-700 pl-4 italic my-4 text-gray-700",
+          "border-l-4 border-blue-500 pl-6 pr-4 py-2 my-6 italic text-gray-700 bg-blue-50/50 rounded-r-lg",
           className,
         )}
         {...props}
       />
     ),
+
     table: ({ className, ...props }) => (
-      <table
-        className={cn("w-full text-left border-collapse my-6", className)}
-        {...props}
-      />
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table
+          className={cn("w-full text-left border-collapse text-sm", className)}
+          {...props}
+        />
+      </div>
+    ),
+    thead: ({ className, ...props }) => (
+      <thead className={cn("bg-gray-100", className)} {...props} />
     ),
     th: ({ className, ...props }) => (
       <th
         className={cn(
-          "border border-gray-200 dark:border-gray-700 px-3 py-2 bg-gray-100",
+          "border-b border-r border-gray-200 px-4 py-3 font-semibold text-gray-900 text-left bg-gray-100",
           className,
         )}
         {...props}
@@ -95,13 +162,124 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ),
     td: ({ className, ...props }) => (
       <td
-        className={cn("border border-gray-200 px-3 py-2", className)}
+        className={cn(
+          "border-b border-r border-gray-200 px-4 py-3 text-gray-700 bg-white",
+          className,
+        )}
         {...props}
       />
     ),
+
     hr: ({ className, ...props }) => (
-      <hr className={cn("my-8 border-gray-200", className)} {...props} />
+      <hr
+        className={cn(
+          "my-8 border-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent",
+          className,
+        )}
+        {...props}
+      />
     ),
+
+    img: ({ className, src, alt, width, height, ...props }) => (
+      <Image
+        width={width ? parseInt(width as string, 10) : 800}
+        height={height ? parseInt(height as string, 10) : 800}
+        src={src || ""}
+        alt={alt || ""}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
+        className={cn(
+          "rounded-lg max-w-full h-auto my-6 shadow-lg border border-gray-200",
+          className,
+        )}
+        style={{
+          width: width ? `${width}px` : "auto",
+          height: height ? `${height}px` : "auto",
+        }}
+        {...props}
+      />
+    ),
+
+    strong: ({ className, ...props }) => (
+      <strong className={cn("font-bold text-gray-900", className)} {...props} />
+    ),
+
+    em: ({ className, ...props }) => (
+      <em className={cn("italic text-gray-700", className)} {...props} />
+    ),
+
+    del: ({ className, ...props }) => (
+      <del className={cn("line-through text-gray-500", className)} {...props} />
+    ),
+
+    mark: ({ className, ...props }) => (
+      <mark
+        className={cn(
+          "bg-yellow-200 px-1 py-0.5 rounded text-gray-900",
+          className,
+        )}
+        {...props}
+      />
+    ),
+
+    kbd: ({ className, ...props }) => (
+      <kbd
+        className={cn(
+          "font-mono text-xs px-2 py-1 rounded bg-gray-100 border border-gray-300 shadow-sm",
+          className,
+        )}
+        {...props}
+      />
+    ),
+
+    var: ({ className, ...props }) => (
+      <var
+        className={cn("font-mono text-sm italic text-blue-600", className)}
+        {...props}
+      />
+    ),
+
+    dl: ({ className, ...props }) => (
+      <dl className={cn("my-6 space-y-4", className)} {...props} />
+    ),
+    dt: ({ className, ...props }) => (
+      <dt className={cn("font-semibold text-gray-900", className)} {...props} />
+    ),
+    dd: ({ className, ...props }) => (
+      <dd className={cn("ml-4 text-gray-700", className)} {...props} />
+    ),
+
+    details: ({ className, ...props }) => (
+      <details
+        className={cn(
+          "my-6 border border-gray-200 rounded-lg p-4 bg-gray-50",
+          className,
+        )}
+        {...props}
+      />
+    ),
+    summary: ({ className, ...props }) => (
+      <summary
+        className={cn(
+          "font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors",
+          className,
+        )}
+        {...props}
+      />
+    ),
+
+    figure: ({ className, ...props }) => (
+      <figure className={cn("my-6", className)} {...props} />
+    ),
+    figcaption: ({ className, ...props }) => (
+      <figcaption
+        className={cn(
+          "text-sm text-gray-600 text-center mt-2 italic font-sans",
+          className,
+        )}
+        {...props}
+      />
+    ),
+
     ...components,
   };
 }

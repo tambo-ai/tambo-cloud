@@ -4,9 +4,9 @@ import nextra from "nextra";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
+import remarkGfm from "remark-gfm";
 
 const jiti = createJiti(fileURLToPath(import.meta.url));
 

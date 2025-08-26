@@ -38,22 +38,13 @@ export function BlogHeader({
           {/* Dashboard button - visible on all screen sizes */}
           <div className="flex items-center">
             <Link
-              href="/blog"
+              href="/dashboard"
               className={cn(
                 buttonVariants({ variant: "default" }),
                 "h-9 rounded-md group tracking-tight font-medium text-sm",
               )}
             >
-              Blog
-            </Link>
-            <Link
-              href="/blog/posts"
-              className={cn(
-                buttonVariants({ variant: "default" }),
-                "h-9 rounded-md group tracking-tight font-medium text-sm",
-              )}
-            >
-              All Posts
+              Dashboard
             </Link>
           </div>
         </div>

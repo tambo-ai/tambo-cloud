@@ -1,10 +1,7 @@
-import { ReactNode } from "react";
-import { BlogHeader } from "./components/header";
 import { Footer } from "@/components/sections/footer";
-
-// Import styles
-import "../globals.css";
-import "./blog.css";
+import { TamboHackBanner } from "@/components/sections/tambohack-banner";
+import { ReactNode } from "react";
+import { BlogHeader } from "../../components/blog/blog-header";
 
 export const metadata = {
   title: "Tambo Blog",
@@ -17,16 +14,19 @@ interface BlogLayoutProps {
 
 export default function BlogLayout({ children }: BlogLayoutProps) {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <BlogHeader />
-
-        {/* Main Content */}
-        <main className="min-h-[60vh]">{children}</main>
-
-        {/* Footer */}
-        <Footer />
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <TamboHackBanner />
+      <BlogHeader />
+      <main className="flex-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {children}
+        </div>
+      </main>
+      <footer className="mt-auto">
+        <div className="mx-auto w-full max-w-7xl">
+          <Footer />
+        </div>
+      </footer>
     </div>
   );
 }
