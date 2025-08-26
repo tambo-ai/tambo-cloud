@@ -5,6 +5,7 @@ import {
   ToolRegistry,
 } from "@tambo-ai-cloud/backend";
 import {
+  ActionType,
   ContentPartType,
   GenerationStage,
   getToolName,
