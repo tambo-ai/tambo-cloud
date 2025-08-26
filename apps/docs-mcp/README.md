@@ -1,5 +1,7 @@
-### Docs MCP deployable placeholder
+### Docs MCP local server
 
 We recommend using our managed MCP endpoint at `mcp.tambo.co`.
 
-If you prefer to host your own MCP (e.g., fork `inkeep/mcp-for-vercel` and deploy on Vercel under your domain), follow the guidance in `devdocs/mcp-vercel.md`. Our client-side code will work even if analytics and error logging are not configured; when the related env vars are omitted, those integrations remain disabled.
+To run the vendored MCP server locally for development, see `devdocs/mcp-vercel.md`.
+
+The server runs without analytics/error logging when the relevant env vars are not set.

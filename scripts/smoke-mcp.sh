@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TARGET_URL="https://mcp.tambo.co"
+TARGET_URL="http://localhost:3000/tambo"
 
 echo "[smoke] Hitting $TARGET_URL ..."
 
@@ -12,11 +12,7 @@ if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 500 ]]; then
   exit 1
 fi
 
-# Verify it is served via Vercel (header heuristic)
-HEADERS=$(curl -sI "$TARGET_URL")
-echo "$HEADERS" | grep -iE "x-vercel-id|server: vercel" >/dev/null || {
-  echo "[smoke] Warning: Could not confirm Vercel headers. Continuing."
-}
+# Local dev smoke test only; no platform headers required
 
 echo "[smoke] OK: $TARGET_URL responded with $HTTP_CODE"
 exit 0

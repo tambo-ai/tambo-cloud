@@ -1,19 +1,44 @@
-### MCP server on Vercel (recommended: use `mcp.tambo.co`)
+### Self-hosting an MCP server locally (recommended default: use `mcp.tambo.co`)
 
-We recommend using our managed MCP endpoint at `mcp.tambo.co`. It provides a stable, branded entry point for client apps.
-
-If you prefer to self-host (e.g., use your own domain or customize the template), you can fork and deploy the Inkeep template. Our clients operate gracefully if analytics/error logging are not configured; those integrations are optional.
+We recommend using our managed MCP endpoint at `mcp.tambo.co`. If you prefer to run an MCP server locally for development, follow these steps.
 
 Code in this repo (vendored from the Inkeep template) lives at: `apps/docs-mcp`.
 
-## 1) Project setup (Vercel)
+## 1) Prerequisites
 
-- Fork the Inkeep template: `inkeep/mcp-for-vercel`.
-- Import the fork into Vercel as a new project. Root of the repo should be used (per template defaults).
-- Set framework preset as recommended by the template (Node/Edge function; Vercel auto-detects).
+- Node.js 22+
+- npm 10+
+- A terminal with network access
 
-## 2) Environment variables (Vercel → Settings → Environment Variables)
+## 2) Environment variables
 
-Add only the variables required by the template you deploy. If you enable analytics or error logging, add their env vars as needed. If these are omitted, the MCP still runs (observability will simply be disabled).
+Create a `.env.local` in `apps/docs-mcp` with:
 
-Reference: `https://docs.inkeep.com/mcp/vercel-deployment`.
+```
+INKEEP_API_KEY=your_inkeep_api_key
+INKEEP_API_BASE_URL=https://api.inkeep.com/v1
+DATABASE_URL=postgres://user:pass@host:5432/dbname  # optional; omit if you don't want usage logging
+SENTRY_DSN=                                         # optional
+SENTRY_ENVIRONMENT=development                      # optional
+```
+
+Notes:
+
+- If `DATABASE_URL` is omitted, anonymous usage logging is skipped.
+- If Sentry envs are omitted, error reporting is disabled.
+
+## 3) Install and run locally
+
+From the repo root:
+
+```
+npm install
+npm run dev --filter=docs-mcp
+```
+
+This starts a local Next.js server that exposes the MCP transport route at `/[transport]`.
+
+## 4) Test locally
+
+- Hit the server in a browser or via curl to confirm it starts.
+- Point your MCP-compatible client at the local URL and select the desired transport.
