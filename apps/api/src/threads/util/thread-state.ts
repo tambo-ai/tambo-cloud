@@ -5,6 +5,7 @@ import {
   TamboBackend,
 } from "@tambo-ai-cloud/backend";
 import {
+  ActionType,
   ContentPartType,
   GenerationStage,
   getToolName,
@@ -348,6 +349,7 @@ export function updateThreadMessageFromLegacyDecision(
   if (chunk.toolCallRequest) {
     currentThreadMessage.toolCallRequest = chunk.toolCallRequest;
     currentThreadMessage.tool_call_id = chunk.toolCallId;
+    currentThreadMessage.actionType = ActionType.ToolCall;
   }
   return currentThreadMessage;
 }
