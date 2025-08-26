@@ -14,9 +14,9 @@ import { SQL } from "drizzle-orm";
 import { PgTable, PgTransaction } from "drizzle-orm/pg-core";
 import {
   addUserMessage,
-  convertDecisionStreamToMessageStream,
   finishInProgressMessage,
   updateGenerationStage,
+  updateThreadMessageFromLegacyDecision,
 } from "../thread-state";
 
 const schema = jest.requireActual("@tambo-ai-cloud/db").schema;
@@ -151,17 +151,15 @@ describe("Thread State", () => {
     });
   });
 
-  describe("convertDecisionStreamToMessageStream", () => {
+  describe("updateThreadMessageFromLegacyDecision", () => {
     it("should convert decision stream to message stream", async () => {
-      const mockDecisions: LegacyComponentDecision[] = [
-        {
-          message: "Test message",
-          componentName: "test-component",
-          props: {},
-          componentState: {},
-          reasoning: "test reasoning",
-        },
-      ];
+      const mockDecision: LegacyComponentDecision = {
+        message: "Test message",
+        componentName: "test-component",
+        props: {},
+        componentState: {},
+        reasoning: "test reasoning",
+      };
 
       const mockInProgressMessage: ThreadMessage = {
         id: "msg-1",
@@ -177,28 +175,13 @@ describe("Thread State", () => {
         componentState: {},
       };
 
-      const stream: AsyncIterableIterator<LegacyComponentDecision> = {
-        async *[Symbol.asyncIterator]() {
-          for (const decision of mockDecisions) {
-            yield decision;
-          }
-        },
-        next: jest.fn(),
-      };
-
-      const messageStream = convertDecisionStreamToMessageStream(
-        stream,
+      const threadMessage = updateThreadMessageFromLegacyDecision(
         mockInProgressMessage,
+        mockDecision,
       );
 
-      const messages: ThreadMessage[] = [];
-      for await (const message of messageStream) {
-        messages.push(message);
-      }
-
-      expect(messages.length).toBe(2); // One for the stream chunk, one for final message
-      expect(messages[0].content[0].type).toBe(ContentPartType.Text);
-      expect((messages[0].content[0] as any).text).toBe("Test message");
+      expect(threadMessage.content[0].type).toBe(ContentPartType.Text);
+      expect((threadMessage.content[0] as any).text).toBe("Test message");
     });
   });
 

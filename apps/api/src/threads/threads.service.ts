@@ -58,10 +58,11 @@ import {
   addAssistantResponse,
   addInitialMessage,
   addUserMessage,
-  convertDecisionStreamToMessageStream,
   finishInProgressMessage,
+  fixStreamedToolCalls,
   processThreadMessage,
   updateGenerationStage,
+  updateThreadMessageFromLegacyDecision,
 } from "./util/thread-state";
 import {
   callSystemTool,
@@ -1573,6 +1574,7 @@ export class ThreadsService {
         userMessage,
         logger,
       );
+      let currentThreadMessage: ThreadMessage = initialMessage;
 
       // Track streaming metrics
       let chunkCount = 0;
@@ -1582,10 +1584,12 @@ export class ThreadsService {
       let lastUpdateTime = 0;
       const updateIntervalMs = 500;
 
-      for await (const threadMessage of convertDecisionStreamToMessageStream(
-        stream,
-        initialMessage,
-      )) {
+      for await (const legacyDecision of fixStreamedToolCalls(stream)) {
+        // update in memory - we'll write to the db periodically
+        currentThreadMessage = updateThreadMessageFromLegacyDecision(
+          currentThreadMessage,
+          legacyDecision,
+        );
         chunkCount++;
         if (!ttfbEnded) {
           ttfbSpan.end();
@@ -1606,9 +1610,9 @@ export class ThreadsService {
           if (isCancelled) {
             yield {
               responseMessageDto: {
-                ...threadMessage,
-                content: convertContentPartToDto(threadMessage.content),
-                componentState: threadMessage.componentState ?? {},
+                ...currentThreadMessage,
+                content: convertContentPartToDto(currentThreadMessage.content),
+                componentState: currentThreadMessage.componentState ?? {},
               },
               generationStage: GenerationStage.CANCELLED,
               statusMessage: "cancelled",
@@ -1618,27 +1622,27 @@ export class ThreadsService {
           }
 
           await updateMessage(db, initialMessage.id, {
-            ...threadMessage,
-            content: convertContentPartToDto(threadMessage.content),
+            ...currentThreadMessage,
+            content: convertContentPartToDto(currentThreadMessage.content),
           });
           lastUpdateTime = currentTime;
         }
 
         // do not yield the final thread message if it is a tool call
         // might have to switch to an internal tool call
-        if (!threadMessage.toolCallRequest) {
+        if (!currentThreadMessage.toolCallRequest) {
           yield {
             responseMessageDto: {
-              ...threadMessage,
-              content: convertContentPartToDto(threadMessage.content),
-              componentState: threadMessage.componentState ?? {},
+              ...currentThreadMessage,
+              content: convertContentPartToDto(currentThreadMessage.content),
+              componentState: currentThreadMessage.componentState ?? {},
             },
             generationStage: GenerationStage.STREAMING_RESPONSE,
             statusMessage: `Streaming response...`,
             mcpAccessToken,
           };
         }
-        finalThreadMessage = threadMessage;
+        finalThreadMessage = currentThreadMessage;
       }
 
       if (!finalThreadMessage) {
