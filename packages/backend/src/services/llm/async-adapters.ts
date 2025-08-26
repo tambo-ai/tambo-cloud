@@ -1,21 +1,23 @@
 import { AbstractAgent } from "@ag-ui/client";
 
-export type AgentSubcriber = AbstractAgent["subscribers"][number];
-type EventHandlerParams = Parameters<NonNullable<AgentSubcriber["onEvent"]>>[0];
+export type AgentSubscriber = AbstractAgent["subscribers"][number];
+type EventHandlerParams = Parameters<
+  NonNullable<AgentSubscriber["onEvent"]>
+>[0];
 
 /**
  * Generic queue-backed AsyncIterator you can push values into.
  * Call `finish()` to end the stream, or `fail(err)` to error it.
  */
-function createPushAsyncIterator() {
-  type Resolver = (r: IteratorResult<EventHandlerParams>) => void;
+function createPushAsyncIterator<T>() {
+  type Resolver = (r: IteratorResult<T>) => void;
 
-  const queue: EventHandlerParams[] = [];
+  const queue: T[] = [];
   const waiters: Resolver[] = [];
   let done = false;
   let failed: unknown | null = null;
 
-  function push(v: EventHandlerParams) {
+  function push(v: T) {
     if (done || failed !== null) return;
     if (waiters.length) {
       const resolve = waiters.shift()!;
@@ -46,7 +48,7 @@ function createPushAsyncIterator() {
     }
   }
 
-  async function next(): Promise<IteratorResult<EventHandlerParams>> {
+  async function next(): Promise<IteratorResult<T>> {
     if (failed !== null) {
       // Throw on pull to propagate the error to the consumer `for await`
       const err = failed;
@@ -58,13 +60,13 @@ function createPushAsyncIterator() {
     }
     if (done) return { value: undefined, done: true };
 
-    const promise = new Promise<IteratorResult<EventHandlerParams>>((resolve) =>
+    const promise = new Promise<IteratorResult<T>>((resolve) =>
       waiters.push(resolve),
     );
     return await promise;
   }
 
-  async function return_(): Promise<IteratorResult<EventHandlerParams>> {
+  async function return_(): Promise<IteratorResult<T>> {
     finish();
     return await Promise.resolve({ value: undefined, done: true });
   }
@@ -83,7 +85,7 @@ function createPushAsyncIterator() {
       [Symbol.asyncIterator]() {
         return this;
       },
-    } satisfies AsyncIterableIterator<EventHandlerParams>,
+    } satisfies AsyncIterableIterator<T>,
   };
 }
 
@@ -93,10 +95,11 @@ function createPushAsyncIterator() {
  * - The `subscribe` function must return an `unsubscribe()` cleanup.
  */
 function eventsToAsyncIterator(
-  subscribe: (agentSubcriber: AgentSubcriber) => { unsubscribe: () => void },
+  subscribe: (agentSubcriber: AgentSubscriber) => { unsubscribe: () => void },
   opts?: { signal?: AbortSignal },
 ): AsyncIterableIterator<EventHandlerParams> {
-  const { push, finish, fail, iterator } = createPushAsyncIterator();
+  const { push, finish, fail, iterator } =
+    createPushAsyncIterator<EventHandlerParams>();
 
   const { unsubscribe } = subscribe({
     onEvent(params) {
