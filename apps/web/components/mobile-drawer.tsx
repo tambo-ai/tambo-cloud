@@ -95,7 +95,7 @@ export function MobileDrawer({
           )}
         </div>
         <DrawerFooter>
-          <Link
+          <a
             href="/docs"
             className={cn(
               buttonVariants({ variant: "default" }),
@@ -103,7 +103,7 @@ export function MobileDrawer({
             )}
           >
             Docs
-          </Link>
+          </a>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
