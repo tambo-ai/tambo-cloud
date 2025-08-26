@@ -3,6 +3,32 @@ import type { MDXComponents } from "mdx/types";
 import Image from "next/image";
 import { BlogPost } from "./components/blog/blog-post";
 
+/**
+ * MDX Components Configuration
+ *
+ * This function is automatically consumed by Nextra.
+ *
+ * Nextra automatically detects and utilizes this function to customize the rendering
+ * of MDX content across the application.
+ *
+ * This function does not need to be imported explicitly elsewhere in the codebase.
+ * Nextra automatically recognizes and applies it during the MDX compilation process.
+ *
+ * You can also add custom components to this function to use them in the MDX files.
+ *
+ * @example
+ * ```tsx
+ * export function useMDXComponents(components: MDXComponents): MDXComponents {
+ *   return {
+ *     ...components,
+ *     MyCustomComponent,
+ *   };
+ * }
+ * ```
+ *
+ * @param components - Additional MDX components to merge
+ * @returns Enhanced MDX components with custom styling
+ */
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
     BlogPost,
