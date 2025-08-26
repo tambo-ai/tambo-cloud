@@ -18,7 +18,7 @@ export function BlogHeader({
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 h-[var(--header-height)] backdrop-blur",
+        "sticky top-0 z-50 h-[var(--header-height)] backdrop-blur border-b border-border/20",
         bgOpacity,
       )}
     >
@@ -49,7 +49,6 @@ export function BlogHeader({
           </div>
         </div>
       </div>
-      <hr className="absolute bottom-0 w-full border-border/20" />
     </header>
   );
 }

@@ -177,24 +177,27 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       />
     ),
 
-    img: ({ className, src, alt, width, height, ...props }) => (
-      <Image
-        width={width ? parseInt(width as string, 10) : 800}
-        height={height ? parseInt(height as string, 10) : 800}
-        src={src || ""}
-        alt={alt || ""}
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
-        className={cn(
-          "rounded-lg max-w-full h-auto my-6 shadow-lg border border-gray-200 mx-auto",
-          className,
-        )}
-        style={{
-          width: width ? `${width}px` : "auto",
-          height: height ? `${height}px` : "auto",
-        }}
-        {...props}
-      />
-    ),
+    img: ({ className, src, alt, width, height, ...props }) => {
+      if (!src) return null;
+
+      const w = typeof width === "string" ? parseInt(width, 10) : width;
+      const h = typeof height === "string" ? parseInt(height, 10) : height;
+
+      return (
+        <Image
+          src={src}
+          alt={alt || ""}
+          width={w ?? 800}
+          height={h ?? 800}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
+          className={cn(
+            "rounded-lg max-w-full h-auto my-6 shadow-lg border border-gray-200 mx-auto",
+            className,
+          )}
+          {...props}
+        />
+      );
+    },
 
     strong: ({ className, ...props }) => (
       <strong className={cn("font-bold text-gray-900", className)} {...props} />

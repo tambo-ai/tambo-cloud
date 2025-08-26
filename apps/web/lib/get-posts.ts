@@ -62,16 +62,19 @@ export async function getPosts(): Promise<BlogPost[]> {
     route: "/blog/posts",
   });
 
-  // Filter and transform the posts with proper typing
   const posts = directories
-    .filter((item: any) => item.name !== "index" && item.frontMatter)
-    .map((item: any) => ({
+    .filter(
+      (item: { name?: string; frontMatter?: unknown }): item is BlogPost => {
+        return item.name !== "index" && !!(item as any).frontMatter;
+      },
+    )
+    .map((item) => ({
       name: item.name,
       route: item.route,
-      content: item.content || "",
+      content: (item as any).content || "",
       frontMatter: {
-        title: item.frontMatter.title || "",
-        date: item.frontMatter.date || new Date().toISOString(),
+        title: item.frontMatter.title ?? "",
+        date: item.frontMatter.date ?? new Date().toISOString(),
         description: item.frontMatter.description,
         tags: item.frontMatter.tags,
         author: item.frontMatter.author,
@@ -102,7 +105,6 @@ export async function getPostListItems(): Promise<BlogPostListItem[]> {
       title: post.frontMatter.title,
       category,
       date: post.frontMatter.date,
-      dateISO: post.frontMatter.date,
       featured: post.frontMatter.featured,
       author: post.frontMatter.author,
       tags: post.frontMatter.tags || [],

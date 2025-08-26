@@ -73,8 +73,7 @@ export function BlogPage({ posts, featuredPosts = [] }: BlogPageProps) {
       let comparison = 0;
 
       if (sortOptions.field === "date") {
-        comparison =
-          new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime();
+        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
       } else if (sortOptions.field === "title") {
         comparison = a.title.localeCompare(b.title);
       }
