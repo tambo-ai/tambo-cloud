@@ -1612,53 +1612,89 @@ export class ThreadsService {
         stream,
         initialMessage,
       )) {
-        chunkCount++;
-        if (!ttfbEnded) {
-          ttfbSpan.end();
-          ttfbEnded = true;
-        }
+        const chunkProcessingSpan = Sentry.startInactiveSpan({
+          name: "threads.processStreamChunk",
+          op: "stream.chunk",
+          attributes: {
+            threadId,
+            projectId,
+            chunkNumber: chunkCount + 1,
+            hasToolCall: !!threadMessage.toolCallRequest,
+          },
+        });
 
-        // Update db message on interval
-        const currentTime = Date.now();
-        if (currentTime - lastUpdateTime >= updateIntervalMs) {
-          const isCancelled = await checkCancellationStatus();
+        try {
+          chunkCount++;
+          if (!ttfbEnded) {
+            ttfbSpan.end();
+            ttfbEnded = true;
+          }
 
-          if (isCancelled) {
+          // Update db message on interval
+          const currentTime = Date.now();
+          if (currentTime - lastUpdateTime >= updateIntervalMs) {
+            const isCancelled = await Sentry.startSpan(
+              {
+                name: "threads.checkCancellation",
+                op: "db.query",
+                attributes: { threadId, projectId },
+              },
+              async () => await checkCancellationStatus(),
+            );
+
+            if (isCancelled) {
+              yield {
+                responseMessageDto: {
+                  ...threadMessage,
+                  content: convertContentPartToDto(threadMessage.content),
+                  componentState: threadMessage.componentState ?? {},
+                },
+                generationStage: GenerationStage.CANCELLED,
+                statusMessage: "cancelled",
+                mcpAccessToken,
+              };
+              return;
+            }
+
+            await Sentry.startSpan(
+              {
+                name: "threads.updateMessage",
+                op: "db.update",
+                attributes: {
+                  threadId,
+                  projectId,
+                  messageId: initialMessage.id,
+                  chunkCount,
+                },
+              },
+              async () =>
+                await updateMessage(db, initialMessage.id, {
+                  ...threadMessage,
+                  content: convertContentPartToDto(threadMessage.content),
+                }),
+            );
+
+            lastUpdateTime = currentTime;
+          }
+
+          // do not yield the final thread message if it is a tool call
+          // might have to switch to an internal tool call
+          if (!threadMessage.toolCallRequest) {
             yield {
               responseMessageDto: {
                 ...threadMessage,
                 content: convertContentPartToDto(threadMessage.content),
                 componentState: threadMessage.componentState ?? {},
               },
-              generationStage: GenerationStage.CANCELLED,
-              statusMessage: "cancelled",
+              generationStage: GenerationStage.STREAMING_RESPONSE,
+              statusMessage: `Streaming response...`,
               mcpAccessToken,
             };
-            return;
           }
-
-          await updateMessage(db, initialMessage.id, {
-            ...threadMessage,
-            content: convertContentPartToDto(threadMessage.content),
-          });
-          lastUpdateTime = currentTime;
+          finalThreadMessage = threadMessage;
+        } finally {
+          chunkProcessingSpan.end();
         }
-
-        // do not yield the final thread message if it is a tool call
-        // might have to switch to an internal tool call
-        if (!threadMessage.toolCallRequest) {
-          yield {
-            responseMessageDto: {
-              ...threadMessage,
-              content: convertContentPartToDto(threadMessage.content),
-              componentState: threadMessage.componentState ?? {},
-            },
-            generationStage: GenerationStage.STREAMING_RESPONSE,
-            statusMessage: `Streaming response...`,
-            mcpAccessToken,
-          };
-        }
-        finalThreadMessage = threadMessage;
       }
 
       if (!finalThreadMessage) {
