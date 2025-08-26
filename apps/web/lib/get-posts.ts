@@ -9,7 +9,7 @@ export interface BlogFrontMatter {
   description?: string;
   tags?: string[];
   author?: string;
-  category?: string;
+  category?: BlogCategory;
   featured?: boolean;
 }
 
@@ -34,8 +34,8 @@ function determineCategory(frontMatter: BlogFrontMatter): BlogCategory {
       "tutorial",
       "announcement",
     ];
-    if (validCategories.includes(frontMatter.category as BlogCategory)) {
-      return frontMatter.category as BlogCategory;
+    if (validCategories.includes(frontMatter.category)) {
+      return frontMatter.category;
     }
   }
 
