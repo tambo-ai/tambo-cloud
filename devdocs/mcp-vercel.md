@@ -1,6 +1,8 @@
-### MCP server on Vercel (`mcp.tambo.co`)
+### MCP server on Vercel (recommended: use `mcp.tambo.co`)
 
-This guide documents how we deploy the Inkeep MCP server to Vercel and attach the custom domain `mcp.tambo.co`, with basic observability via PostHog and Sentry.
+We recommend using our managed MCP endpoint at `mcp.tambo.co`. It provides a stable, branded entry point for client apps.
+
+If you prefer to self-host (e.g., use your own domain or customize the template), you can fork and deploy the Inkeep template. Our clients operate gracefully if analytics/error logging are not configured; those integrations are optional.
 
 ## 1) Project setup (Vercel)
 
@@ -10,42 +12,19 @@ This guide documents how we deploy the Inkeep MCP server to Vercel and attach th
 
 ## 2) Environment variables (Vercel → Settings → Environment Variables)
 
-Add the following. Use Production/Preview as appropriate.
+Add only the variables required by the template you deploy. If you enable analytics or error logging, add their env vars as needed. If these are omitted, the MCP still runs (observability will simply be disabled).
 
-- POSTHOG_KEY: your PostHog Project API key
-- POSTHOG_HOST: PostHog host (e.g. https://app.posthog.com)
-- SENTRY_DSN: Sentry DSN for the MCP service
-- SENTRY_ENVIRONMENT: production
-- NODE_ENV: production
+Reference: `https://docs.inkeep.com/mcp/vercel-deployment`.
 
-If the Inkeep template requires additional variables, add those as documented in `https://docs.inkeep.com/mcp/vercel-deployment`.
+## 3) Optional: Analytics (PostHog)
 
-## 3) PostHog integration (in the fork)
+- If desired, add PostHog to your forked deployment and set `POSTHOG_KEY` and `POSTHOG_HOST`.
+- If not configured, analytics are skipped.
 
-- Install server SDK in the forked repo:
-  - npm i posthog-node
-- Initialize once at module load (e.g., in the server entry or a small `telemetry.ts`):
-  - const posthog = new PostHog(process.env.POSTHOG_KEY!, { host: process.env.POSTHOG_HOST });
-- Track minimal events:
-  - conversation_started, conversation_completed
-  - tool_invoked (properties: toolName, durationMs, success)
-- Ensure the client is flushed before function exit when needed (await posthog.shutdown()).
+## 4) Optional: Error logging (Sentry)
 
-Environment variables used:
-
-- POSTHOG_KEY
-- POSTHOG_HOST (e.g. https://app.posthog.com)
-
-## 4) Sentry integration (in the fork)
-
-- Install: npm i @sentry/node @sentry/profiling-node
-- Initialize early in the server code:
-  - Sentry.init({ dsn: process.env.SENTRY_DSN, environment: process.env.SENTRY_ENVIRONMENT, tracesSampleRate: 1.0 });
-    Environment variables used:
-- SENTRY_DSN
-- SENTRY_ENVIRONMENT (e.g. production)
-- Wrap the request handler to capture exceptions (Sentry.captureException(err)).
-- For Vercel edge/func handlers, ensure the init happens outside the handler for cold starts.
+- If desired, add Sentry to your forked deployment and set `SENTRY_DSN` (and optionally `SENTRY_ENVIRONMENT`).
+- If not configured, errors won't be reported to Sentry, but the server will continue to function.
 
 ## 5) Custom domain: `mcp.tambo.co`
 
@@ -63,69 +42,15 @@ Notes:
 - From this repo, run: `npm run smoke:mcp` (script calls `scripts/smoke-mcp.sh`).
 - The script checks basic reachability of `https://mcp.tambo.co` and verifies Vercel headers.
 
-## 7) Observability check
+## 7) Observability check (optional)
 
-- Trigger a minimal request to generate an event:
-  - Confirm PostHog events appear under the project (e.g., tool_invoked) with host `mcp.tambo.co`.
-  - Trigger an intentional error on a test route (if available) to confirm Sentry receives it.
+- If you enabled analytics or Sentry, trigger a few requests to confirm events and errors are being collected.
 
 ## 8) Updating
 
 - Any changes to the MCP server (forked template) should be made in that fork and will deploy via Vercel.
 - Do not commit secrets here; all sensitive config lives in Vercel env vars.
 
-## Appendix: Minimal code snippets (to add in the fork)
+## Appendix
 
-```ts
-// telemetry.ts (in the forked inkeep/mcp-for-vercel project)
-import * as Sentry from "@sentry/node";
-import { PostHog } from "posthog-node";
-
-export const posthog = process.env.POSTHOG_KEY
-  ? new PostHog(process.env.POSTHOG_KEY, { host: process.env.POSTHOG_HOST })
-  : undefined;
-
-export function initSentry() {
-  if (!process.env.SENTRY_DSN) return;
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV,
-    tracesSampleRate: 1,
-  });
-}
-
-export function trackEvent(name: string, properties?: Record<string, unknown>) {
-  if (!posthog) return;
-  posthog.capture({
-    distinctId: "mcp-server",
-    event: name,
-    properties,
-  });
-}
-```
-
-```ts
-// in your request handler
-import * as Sentry from "@sentry/node";
-import { initSentry, posthog, trackEvent } from "./telemetry";
-
-initSentry();
-
-export default async function handler(req: Request): Promise<Response> {
-  const start = Date.now();
-  try {
-    trackEvent("conversation_started");
-    // ... actual MCP handling ...
-    trackEvent("conversation_completed", { durationMs: Date.now() - start });
-    return new Response("ok");
-  } catch (err) {
-    Sentry.captureException(err);
-    trackEvent("error", {
-      message: err instanceof Error ? err.message : String(err),
-    });
-    return new Response("error", { status: 500 });
-  } finally {
-    await posthog?.shutdownAsync?.();
-  }
-}
-```
+- The Inkeep template evolves; always check their docs for the latest required env vars and handlers.
