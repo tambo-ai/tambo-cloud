@@ -1,0 +1,97 @@
+/* Blog-specific styles */
+
+/* Navigation styling */
+.nextra-nav-link {
+  @apply px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors;
+}
+
+.nextra-nav-link.active {
+  @apply bg-gray-100 dark:bg-gray-800 font-semibold text-gray-900 dark:text-gray-100;
+}
+
+/* Tag styling */
+.nextra-tag {
+  @apply inline-block px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors;
+}
+
+/* Post card styling */
+.post-card {
+  @apply border-b border-gray-200 dark:border-gray-700 pb-6 mb-6 last:border-b-0;
+}
+
+.post-card-title {
+  @apply text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100;
+}
+
+.post-card-description {
+  @apply text-gray-600 dark:text-gray-400 mb-3 line-clamp-2;
+}
+
+.post-card-meta {
+  @apply text-sm text-gray-500 dark:text-gray-500 flex items-center gap-4;
+}
+
+/* Reading time and metadata */
+.blog-meta {
+  @apply flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700;
+}
+
+.reading-time {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+/* Theme switch button */
+.theme-switch {
+  @apply p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors;
+}
+
+/* Code blocks (rehype-pretty-code) */
+[data-rehype-pretty-code-title] {
+  @apply inline-block px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-t-lg border border-b-0 border-gray-200 dark:border-gray-700;
+}
+
+[data-rehype-pretty-code-fragment] > pre {
+  @apply rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4 overflow-x-auto;
+}
+
+[data-rehype-pretty-code-fragment] code {
+  @apply font-mono text-sm;
+}
+
+[data-rehype-pretty-code-fragment] [data-line] {
+  @apply block px-4 -mx-4;
+}
+
+[data-rehype-pretty-code-fragment] [data-highlighted-line] {
+  @apply bg-yellow-50 dark:bg-yellow-900/20;
+}
+
+[data-rehype-pretty-code-fragment] [data-chars-id] {
+  @apply rounded px-1 py-0.5 bg-yellow-100/60 dark:bg-yellow-900/30;
+}
+
+/* Line numbers when `showLineNumbers` is used */
+pre[data-line-numbers] code {
+  counter-reset: line;
+}
+pre[data-line-numbers] [data-line]::before {
+  counter-increment: line;
+  content: counter(line);
+  @apply mr-4 inline-block w-6 text-right text-gray-400 select-none;
+}
+
+/* Tables */
+table {
+  @apply w-full text-left border-collapse my-6;
+}
+th {
+  @apply border border-gray-200 dark:border-gray-700 px-3 py-2 bg-gray-100 dark:bg-gray-800;
+}
+td {
+  @apply border border-gray-200 dark:border-gray-700 px-3 py-2;
+}
+
+/* Blockquotes */
+blockquote {
+  @apply border-l-4 border-gray-200 dark:border-gray-700 pl-4 italic my-4 text-gray-700 dark:text-gray-300;
+}

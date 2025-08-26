@@ -1,0 +1,322 @@
+---
+title: Getting Started with AI Agents in Tambo
+date: 2025/01/02
+description: Learn the fundamentals of building AI agents with Tambo - from basic concepts to your first deployment
+tags: [tutorial, ai-agents, getting-started, development]
+author: Tambo Team
+---
+
+# Getting Started with AI Agents in Tambo
+
+Building AI agents has never been easier. In this comprehensive guide, we'll walk through the fundamental concepts and help you build your first agent with Tambo.
+
+## What Are AI Agents?
+
+AI agents are autonomous programs that can:
+
+- **Understand** natural language instructions
+- **Plan** multi-step solutions to complex problems
+- **Execute** actions using tools and APIs
+- **Learn** from interactions and improve over time
+
+## Prerequisites
+
+Before we begin, make sure you have:
+
+- Node.js 18+ installed
+- A Tambo account (sign up at [tambo.ai](https://tambo.ai))
+- Basic JavaScript/TypeScript knowledge
+
+## Setting Up Your First Agent
+
+### Step 1: Installation
+
+First, install the Tambo SDK:
+
+```bash
+npm install @tambo-ai/sdk
+# or
+yarn add @tambo-ai/sdk
+# or
+pnpm add @tambo-ai/sdk
+```
+
+### Step 2: Create Your Agent
+
+Here's a simple agent that can help with code reviews:
+
+```typescript showLineNumbers {10-15,20-24}
+import { TamboAgent, Tool } from "@tambo-ai/sdk";
+
+// Define a custom tool
+const codeAnalyzer: Tool = {
+  name: "analyzeCode",
+  description: "Analyzes code for potential issues",
+  parameters: {
+    code: { type: "string", required: true },
+    language: { type: "string", required: true },
+  },
+  execute: async ({ code, language }) => {
+    // Your analysis logic here
+    return {
+      issues: [],
+      suggestions: [],
+    };
+  },
+};
+
+// Create the agent
+const reviewAgent = new TamboAgent({
+  name: "CodeReviewer",
+  instructions: `You are an expert code reviewer. 
+    Analyze code for best practices, potential bugs, 
+    and suggest improvements.`,
+  tools: [codeAnalyzer],
+  model: "gpt-4",
+});
+```
+
+### Step 3: Use Your Agent
+
+```typescript
+const code = `
+function fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+`;
+
+const review = await reviewAgent.execute({
+  task: "Review this JavaScript code",
+  context: { code },
+});
+
+console.log(review);
+```
+
+## Advanced Features
+
+### Memory and Context
+
+Agents can maintain conversation history and context:
+
+```typescript showLineNumbers {3-6}
+const agent = new TamboAgent({
+  name: "ContextAwareAgent",
+  memory: {
+    type: "conversation",
+    maxMessages: 50,
+  },
+});
+
+// The agent remembers previous interactions
+await agent.chat("My name is Alice");
+await agent.chat("What's my name?"); // Agent knows it's Alice
+```
+
+### Tool Chaining
+
+Agents can use multiple tools in sequence:
+
+```typescript
+const searchTool = {
+  name: "search",
+  execute: async (query) => {
+    // Search implementation
+  },
+};
+
+const summarizeTool = {
+  name: "summarize",
+  execute: async (text) => {
+    // Summarization logic
+  },
+};
+
+const emailTool = {
+  name: "sendEmail",
+  execute: async (content) => {
+    // Email sending logic
+  },
+};
+
+const researchAgent = new TamboAgent({
+  name: "Researcher",
+  tools: [searchTool, summarizeTool, emailTool],
+  instructions: `Research topics, summarize findings, 
+    and send reports via email`,
+});
+
+await researchAgent.execute({
+  task: "Research AI trends and email me a summary",
+});
+```
+
+## Best Practices
+
+### 1. Clear Instructions
+
+Be specific about what your agent should do:
+
+```typescript
+// Good ✅
+const instructions = `You are a Python tutor. Help users learn Python 
+  by explaining concepts clearly, providing examples, and 
+  suggesting exercises. Focus on beginners.`;
+
+// Too vague ❌
+const instructions = `You help with coding`;
+```
+
+### 2. Error Handling
+
+Always implement proper error handling:
+
+```typescript showLineNumbers {2-8}
+try {
+  const result = await agent.execute(task);
+  return result;
+} catch (error) {
+  console.error("Agent execution failed:", error);
+  // Implement fallback logic
+  return { error: "Failed to process request" };
+}
+```
+
+### 3. Tool Design
+
+Design tools that are focused and reusable:
+
+```typescript
+// Good: Single responsibility ✅
+const fetchWeatherTool = {
+  name: "fetchWeather",
+  execute: async ({ location }) => {
+    // Fetch weather for location
+  },
+};
+
+// Bad: Doing too much ❌
+const superTool = {
+  name: "doEverything",
+  execute: async ({ action, ...params }) => {
+    // Handles weather, email, database, etc.
+  },
+};
+```
+
+## Common Use Cases
+
+Here's a quick overview of popular agent types:
+
+| Use Case             | Description                         | Key Tools                        |
+| -------------------- | ----------------------------------- | -------------------------------- |
+| **Customer Support** | Answer questions, create tickets    | Knowledge base, ticketing system |
+| **Data Analysis**    | Analyze datasets, generate insights | SQL queries, visualization       |
+| **DevOps**           | Monitor systems, handle deployments | Metrics APIs, deployment tools   |
+| **Content Creation** | Write articles, generate reports    | Research tools, templates        |
+
+## Debugging and Monitoring
+
+Use Tambo's built-in observability:
+
+```typescript showLineNumbers {3-7,10-16}
+const agent = new TamboAgent({
+  name: "MonitoredAgent",
+  debug: true, // Enable debug logging
+  telemetry: {
+    enabled: true,
+    endpoint: "https://your-telemetry-endpoint",
+  },
+});
+
+// Track agent performance
+agent.on("execution:start", (event) => {
+  console.log("Starting:", event);
+});
+
+agent.on("execution:complete", (event) => {
+  console.log("Completed:", event);
+});
+```
+
+## Performance Tips
+
+### 1. Optimize Token Usage
+
+```typescript
+// Use concise instructions
+const efficient = "Summarize in 100 words";
+const inefficient =
+  "Please provide a summary that is approximately 100 words long";
+```
+
+### 2. Cache Responses
+
+```typescript
+const cache = new Map();
+
+async function getCachedResponse(query) {
+  if (cache.has(query)) {
+    return cache.get(query);
+  }
+
+  const response = await agent.execute(query);
+  cache.set(query, response);
+  return response;
+}
+```
+
+### 3. Batch Operations
+
+```typescript
+// Process multiple items at once
+const results = await Promise.all(items.map((item) => agent.process(item)));
+```
+
+## Next Steps
+
+Now that you understand the basics:
+
+1. **Explore More Tools**: Check our [tool library](https://docs.tambo.ai/tools)
+2. **Join the Community**: Share your agents on [Discord](https://discord.gg/dJNvPEHth6)
+3. **Advanced Patterns**: Learn about [multi-agent systems](https://docs.tambo.ai/advanced/multi-agent)
+4. **Deploy to Production**: Scale your agents with [Tambo Cloud](https://tambo.ai/cloud)
+
+## Quick Reference
+
+Here are the most commonly used agent methods:
+
+```typescript
+// Create an agent
+const agent = new TamboAgent(config);
+
+// Execute a task
+await agent.execute(task);
+
+// Chat conversation
+await agent.chat(message);
+
+// Add a tool
+agent.addTool(tool);
+
+// Get agent status
+agent.getStatus();
+
+// Clear memory
+agent.clearMemory();
+```
+
+## Resources
+
+- 📚 [Full Documentation](https://docs.tambo.ai)
+- 💻 [GitHub Examples](https://github.com/tambo-ai/examples)
+- 🎥 [Video Tutorials](https://youtube.com/@tambo-ai)
+- 💬 [Community Forum](https://discord.gg/dJNvPEHth6)
+- 📧 [Support Email](mailto:support@tambo.ai)
+
+---
+
+Ready to build something amazing? [Start your free trial](https://tambo.ai/signup) and join thousands of developers building with Tambo!
+
+_Found this helpful? Share it with your team and follow us on [Twitter](https://x.com/tambo_ai) for more tutorials!_

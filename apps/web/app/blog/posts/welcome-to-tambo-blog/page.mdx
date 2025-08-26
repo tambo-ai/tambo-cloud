@@ -1,0 +1,143 @@
+---
+title: Welcome to the Tambo Blog
+date: 2025/01/03
+description: Introducing the Tambo blog - your source for AI agent insights, development tips, and platform updates
+tags: [announcement, tambo, ai-agents]
+author: Tambo Team
+---
+
+# Welcome to the Tambo Blog
+
+We're excited to launch the Tambo blog! This is where we'll share insights about AI agents, development best practices, and the latest updates from our platform.
+
+## What to Expect
+
+Our blog will cover a variety of topics including:
+
+- **AI Agent Development**: Best practices and patterns for building intelligent agents
+- **Platform Updates**: New features and improvements to the Tambo platform
+- **Technical Deep Dives**: Under-the-hood looks at how Tambo works
+- **Community Highlights**: Showcasing what our community is building
+- **Industry Insights**: Trends and developments in the AI agent ecosystem
+
+## Featured Capabilities
+
+Tambo makes it easy to build and deploy AI agents with:
+
+### 🤖 Agent Framework
+
+Build sophisticated AI agents that can reason, plan, and execute complex tasks.
+
+```javascript
+// Example: Creating a simple Tambo agent
+const agent = new TamboAgent({
+  name: "MyAssistant",
+  capabilities: ["code-analysis", "task-planning"],
+  model: "gpt-4",
+});
+
+await agent.execute("Help me refactor this code");
+```
+
+### 🔧 Tool Integration
+
+Connect your agents to any API or service with our flexible tool system.
+
+### 📊 Observability
+
+Monitor and debug your agents with comprehensive logging and analytics.
+
+## Code Example
+
+Here's a quick example of how easy it is to create an agent with Tambo:
+
+```typescript showLineNumbers {4-7,12}
+import { createAgent } from "@tambo-ai/sdk";
+
+const myAgent = createAgent({
+  instructions: "You are a helpful coding assistant",
+  tools: [
+    {
+      name: "searchDocs",
+      description: "Search technical documentation",
+      execute: async (query: string) => {
+        // Your search implementation
+        return searchResults;
+      },
+    },
+  ],
+});
+
+// Use the agent
+const response = await myAgent.chat("How do I implement authentication?");
+console.log(response);
+```
+
+## Advanced Features
+
+### Real-time Collaboration
+
+> "Tambo's real-time collaboration features have transformed how our team works with AI agents. We can now iterate and improve our agents together, in real-time."
+>
+> — _Sarah Chen, Lead Developer at TechCorp_
+
+### Performance Metrics
+
+| Metric        | Value   | Improvement |
+| ------------- | ------- | ----------- |
+| Response Time | 120ms   | -45%        |
+| Accuracy      | 94.5%   | +12%        |
+| Token Usage   | 850 avg | -30%        |
+| Success Rate  | 98.2%   | +8%         |
+
+### Architecture Overview
+
+Our platform is built on a modern, scalable architecture:
+
+1. **Frontend**: Next.js 15 with TypeScript
+2. **Backend**: NestJS with PostgreSQL
+3. **AI Layer**: Multiple LLM providers
+4. **Infrastructure**: Kubernetes on AWS
+
+## Getting Started
+
+To get started with Tambo, follow these simple steps:
+
+1. **Sign up** for a free account at [tambo.ai](https://tambo.ai)
+2. **Create** your first project
+3. **Deploy** your agent with one click
+
+```bash
+# Install the Tambo CLI
+npm install -g @tambo-ai/cli
+
+# Initialize a new project
+tambo init my-agent
+
+# Deploy to production
+tambo deploy
+```
+
+## Join Our Community
+
+Connect with fellow developers and the Tambo team:
+
+- 🌟 [Star us on GitHub](https://github.com/tambo-ai/tambo)
+- 💬 [Join our Discord](https://discord.gg/dJNvPEHth6)
+- 🐦 [Follow us on X](https://x.com/tambo_ai)
+- 📚 [Read the Documentation](https://docs.tambo.ai)
+
+## What's Next?
+
+Stay tuned for upcoming posts where we'll dive deep into:
+
+1. **Building your first AI agent with Tambo** - A complete tutorial
+2. **Advanced agent patterns and architectures** - Best practices
+3. **Integrating Tambo with your existing workflow** - Seamless adoption
+4. **Performance optimization tips** - Make your agents faster
+
+---
+
+We're just getting started, and we can't wait to share more with you! Subscribe to our [RSS feed](/blog/rss.xml) to stay updated.
+
+_Have questions or topics you'd like us to cover? Reach out to us on [Discord](https://discord.gg/dJNvPEHth6) or [Twitter](https://x.com/tambo_ai)._
