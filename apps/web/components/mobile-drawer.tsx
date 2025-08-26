@@ -66,15 +66,6 @@ export function MobileDrawer({
             Pricing
           </Link>
           <Link
-            href="/#demo"
-            className={cn(
-              buttonVariants({ variant: "ghost" }),
-              "justify-start text-base w-full",
-            )}
-          >
-            Demo
-          </Link>
-          <Link
             href="/#mcp"
             className={cn(
               buttonVariants({ variant: "ghost" }),
