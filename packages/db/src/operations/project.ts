@@ -100,7 +100,7 @@ export async function getProjectWithKeys(db: HydraDb, id: string) {
   });
 }
 
-export async function getProjectApiKey(
+export async function getProjectApiKeyId(
   db: HydraDb,
   projectId: string,
   hashedApiKey: string,

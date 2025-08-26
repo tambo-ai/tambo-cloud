@@ -81,8 +81,8 @@ export class ProjectsService {
     };
   }
 
-  async getProjectApiKey(projectId: string, hashedApiKey: string) {
-    const apiKeyId = await operations.getProjectApiKey(
+  async getProjectApiKeyId(projectId: string, hashedApiKey: string) {
+    const apiKeyId = await operations.getProjectApiKeyId(
       this.getDb(),
       projectId,
       hashedApiKey,

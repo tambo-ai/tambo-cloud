@@ -77,7 +77,7 @@ export class ApiKeyGuard implements CanActivate {
     try {
       const hashedKey = hashKey(encryptedKey);
 
-      const apiKeyId = await this.projectsService.getProjectApiKey(
+      const apiKeyId = await this.projectsService.getProjectApiKeyId(
         projectId,
         hashedKey,
       );
