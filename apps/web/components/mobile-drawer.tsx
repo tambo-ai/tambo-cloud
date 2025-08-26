@@ -75,7 +75,7 @@ export function MobileDrawer({
             Demo
           </Link>
           <Link
-            href="/mcp"
+            href="/#mcp"
             className={cn(
               buttonVariants({ variant: "ghost" }),
               "justify-start text-base w-full",

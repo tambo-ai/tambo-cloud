@@ -49,7 +49,7 @@ export function HeaderActions({
         Docs
       </Link>
       <Link
-        href="/mcp"
+        href="/#mcp"
         className={cn(
           buttonVariants({ variant: "link" }),
           "h-9 rounded-md group tracking-tight font-medium",
