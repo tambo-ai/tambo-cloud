@@ -13,6 +13,7 @@
     "clean": "rm -rf .next dist coverage"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.5.0",
     "@inkeep/inkeep-analytics": "0.2.4-alpha.27",
     "@vercel/mcp-adapter": "0.8.2",
     "next": "^15.5.0",

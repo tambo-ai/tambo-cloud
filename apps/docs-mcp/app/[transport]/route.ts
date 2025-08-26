@@ -3,6 +3,8 @@ import { OpenAI } from "openai";
 import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
 import { InkeepAnalytics } from "@inkeep/inkeep-analytics";
+import * as Sentry from "@sentry/nextjs";
+import { getDb, operations } from "@tambo-ai-cloud/db";
 import type {
   CreateOpenAIConversation,
   Messages,
@@ -57,10 +59,21 @@ async function logToInkeepAnalytics({
   }
 }
 
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN,
+  enabled:
+    Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN) ||
+    Boolean(process.env.SENTRY_DSN),
+  environment:
+    process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT ||
+    process.env.SENTRY_ENVIRONMENT ||
+    process.env.NODE_ENV,
+});
+
 const handler = createMcpHandler(
   async (server) => {
-    const INKEEP_PRODUCT_SLUG = "inkeep";
-    const INKEEP_PRODUCT_NAME = "Inkeep";
+    const INKEEP_PRODUCT_SLUG = "tambo";
+    const INKEEP_PRODUCT_NAME = "Tambo";
 
     const qaToolName = `ask-question-about-${INKEEP_PRODUCT_SLUG}`;
     const qaToolDescription = `Use this tool to ask a question about ${INKEEP_PRODUCT_NAME} to an AI Support Agent that is knowledgeable about ${INKEEP_PRODUCT_NAME}.`;
@@ -100,10 +113,23 @@ const handler = createMcpHandler(
                 { role: "assistant", content: qaResponse },
               ],
             });
+            // anonymous usage log
+            try {
+              const db = getDb(process.env.DATABASE_URL!);
+              await operations.logMcpUsage(db, {
+                transport: "http",
+                toolName: qaToolName,
+                query: question,
+                response: qaResponse,
+              });
+            } catch (_e) {
+              // ignore DB errors in edge runtime or missing envs
+            }
             return { content: [{ type: "text" as const, text: qaResponse }] };
           }
           return { content: [] };
         } catch (error) {
+          Sentry.captureException(error);
           console.error("Error getting QA response:", error);
           return { content: [] };
         }
@@ -148,6 +174,17 @@ const handler = createMcpHandler(
                 { role: "assistant", content: links },
               ],
             });
+            try {
+              const db = getDb(process.env.DATABASE_URL!);
+              await operations.logMcpUsage(db, {
+                transport: "http",
+                toolName: ragToolName,
+                query,
+                response: JSON.stringify(parsedResponse),
+              });
+            } catch {
+              // ignore DB errors in edge runtime or missing envs
+            }
             return {
               content: [
                 { type: "text" as const, text: JSON.stringify(parsedResponse) },
@@ -156,6 +193,7 @@ const handler = createMcpHandler(
           }
           return { content: [] };
         } catch (error) {
+          Sentry.captureException(error);
           console.error("Error retrieving product docs:", error);
           return { content: [] };
         }
