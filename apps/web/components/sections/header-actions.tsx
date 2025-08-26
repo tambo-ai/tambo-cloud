@@ -49,13 +49,22 @@ export function HeaderActions({
         Docs
       </Link>
       <Link
-        href="/mcp"
+        href="/#mcp"
         className={cn(
           buttonVariants({ variant: "link" }),
           "h-9 rounded-md group tracking-tight font-medium",
         )}
       >
         MCP
+      </Link>
+      <Link
+        href="/blog"
+        className={cn(
+          buttonVariants({ variant: "link" }),
+          "h-9 rounded-md group tracking-tight font-medium",
+        )}
+      >
+        Blog
       </Link>
       <GitHubLink href={siteConfig.links.github} text="Github" />
       {showDiscordButton && (

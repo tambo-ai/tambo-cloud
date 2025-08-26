@@ -4,6 +4,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Force scrollbar to always be visible to prevent layout shift */
+  overflow-y: scroll;
 }
 
 /* *=========== Default theme =========== */
