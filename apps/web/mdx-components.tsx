@@ -1,14 +1,11 @@
 import { cn } from "@/lib/utils";
 import type { MDXComponents } from "mdx/types";
 import Image from "next/image";
-import { useMDXComponents as useNextraMDXComponents } from "nextra/mdx-components";
 import { BlogPost } from "./components/blog/blog-post";
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
-  const nextraComponents = useNextraMDXComponents();
   return {
     BlogPost,
-    ...nextraComponents,
 
     h1: ({ className, ...props }) => (
       <h1
@@ -188,7 +185,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         alt={alt || ""}
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
         className={cn(
-          "rounded-lg max-w-full h-auto my-6 shadow-lg border border-gray-200",
+          "rounded-lg max-w-full h-auto my-6 shadow-lg border border-gray-200 mx-auto",
           className,
         )}
         style={{
