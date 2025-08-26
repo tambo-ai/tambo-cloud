@@ -3,11 +3,11 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
 
 const STORAGE_KEY = "tambohack_banner_dismissed_session";
 
-export const TamboHackBanner = () => {
+export const TamboHackBanner: FC = () => {
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
