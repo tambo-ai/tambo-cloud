@@ -2033,5 +2033,7 @@ const checkCancellationStatus = async (
     Sentry.captureException(error, {
       tags: { operation: "checkCancellation", threadId },
     });
+    // we assume that the thread is not cancelled if we cannot check the status
+    return false;
   }
 };
