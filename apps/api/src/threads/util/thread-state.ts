@@ -344,7 +344,9 @@ export function updateThreadMessageFromLegacyDecision(
       },
     ],
     component: chunk,
-    // do NOT set the toolCallRequest or tool_call_id here, we will set them in the final response
+    // If the chunk includes a tool call, propagate it onto the thread message.
+    // Intermediate chunks from fixStreamedToolCalls will not include tool calls; only
+    // final/synthesized chunks carry tool call metadata.
   };
   if (chunk.toolCallRequest) {
     currentThreadMessage.toolCallRequest = chunk.toolCallRequest;
