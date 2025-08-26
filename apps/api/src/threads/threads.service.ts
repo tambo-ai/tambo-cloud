@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as Sentry from "@sentry/nestjs";
 import {
@@ -22,7 +22,7 @@ import {
   ToolCallRequest,
   unstrictifyToolCallRequest,
 } from "@tambo-ai-cloud/core";
-import type { HydraDatabase } from "@tambo-ai-cloud/db";
+import type { HydraDatabase, HydraDb } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
@@ -1582,32 +1582,6 @@ export class ThreadsService {
       let lastUpdateTime = 0;
       const updateIntervalMs = 500;
 
-      const checkCancellationStatus = async () => {
-        try {
-          const generationStage = await operations.getThreadGenerationStage(
-            db,
-            threadId,
-            projectId,
-          );
-          const isCancelled = generationStage === GenerationStage.CANCELLED;
-
-          if (isCancelled) {
-            Sentry.addBreadcrumb({
-              message: "Stream cancelled during processing",
-              category: "stream",
-              level: "warning",
-              data: { threadId, chunksProcessed: chunkCount },
-            });
-          }
-          return isCancelled;
-        } catch (error) {
-          logger.error(`Error checking thread cancellation status: ${error}`);
-          Sentry.captureException(error, {
-            tags: { operation: "checkCancellation", threadId },
-          });
-        }
-      };
-
       for await (const threadMessage of convertDecisionStreamToMessageStream(
         stream,
         initialMessage,
@@ -1621,7 +1595,13 @@ export class ThreadsService {
         // Update db message on interval
         const currentTime = Date.now();
         if (currentTime - lastUpdateTime >= updateIntervalMs) {
-          const isCancelled = await checkCancellationStatus();
+          const isCancelled = await checkCancellationStatus(
+            db,
+            threadId,
+            projectId,
+            chunkCount,
+            logger,
+          );
 
           if (isCancelled) {
             yield {
@@ -2019,3 +1999,35 @@ export class ThreadsService {
     return false;
   }
 }
+
+const checkCancellationStatus = async (
+  db: HydraDb,
+  threadId: string,
+  projectId: string,
+  chunkCount: number,
+  logger?: Logger,
+) => {
+  try {
+    const generationStage = await operations.getThreadGenerationStage(
+      db,
+      threadId,
+      projectId,
+    );
+    const isCancelled = generationStage === GenerationStage.CANCELLED;
+
+    if (isCancelled) {
+      Sentry.addBreadcrumb({
+        message: "Stream cancelled during processing",
+        category: "stream",
+        level: "warning",
+        data: { threadId, chunksProcessed: chunkCount },
+      });
+    }
+    return isCancelled;
+  } catch (error) {
+    logger?.error(`Error checking thread cancellation status: ${error}`);
+    Sentry.captureException(error, {
+      tags: { operation: "checkCancellation", threadId },
+    });
+  }
+};
