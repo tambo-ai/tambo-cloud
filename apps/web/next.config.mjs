@@ -30,6 +30,11 @@ const config = {
         permanent: true,
       },
       {
+        source: "/blog/posts",
+        destination: "/blog",
+        permanent: true,
+      },
+      {
         source: "/book",
         destination: "https://cal.com/michaelmagan",
         permanent: false,
