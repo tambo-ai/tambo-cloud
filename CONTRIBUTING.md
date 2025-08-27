@@ -5,7 +5,7 @@ Thanks for contributing. This guide covers workflow, review requirements, and do
 ## Quick Links
 
 - API changes live here in this repo: `tambo-cloud`
-- React SDK: `https://github.com/tambo-ai/tambo`
+- React SDK and UI components repo: `https://github.com/tambo-ai/tambo`
 - Getting started with local dev: [`GETTING_STARTED.md`](./GETTING_STARTED.md)
 - Release and SDK process: [`RELEASING.md`](./RELEASING.md)
 
@@ -61,13 +61,13 @@ Helpful references:
 - Meta organization rules: see `meta.json` conventions.
 - Authoring style and structure: follow internal documentation rules.
 
-## Component Library and Showcase (Required when updating components)
+## React SDK and Component Showcase
 
-If you change or add components in the library:
+For anything related to the React SDK or component showcase, please follow the contributing guide in the SDK repo:
 
-- Update the public showcase site (`ui.tambo.co`) to include or reflect your changes.
-- If the showcase CTA or content in the website needs updating, adjust `apps/web/components/sections/showcase.tsx` accordingly.
-- Include a short video demo in your PR (see above).
+- `https://github.com/tambo-ai/tambo` → see that repository’s `CONTRIBUTING.md`.
+
+Use this repo (`tambo-cloud`) for API changes only; do not edit SDK or showcase guidance here.
 
 ## Lint, Types, and Tests (Required)
 
@@ -127,7 +127,6 @@ When using AI tools to assist development:
 - [ ] Linked API changes (if applicable) and no manual SDK edits
 - [ ] Short video included for visual changes
 - [ ] Docs updated and linked
-- [ ] Showcase updated (if component changes)
 - [ ] Lint, types, and tests are green
 
 Thanks for helping make Tambo better.
