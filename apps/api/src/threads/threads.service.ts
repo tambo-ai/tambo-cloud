@@ -2031,7 +2031,7 @@ const checkCancellationStatus = async (
       tags: { operation: "checkCancellation", threadId },
     });
     // we assume that the thread is not cancelled if we cannot check the status
-    return null;
+    return false;
   }
 };
 
