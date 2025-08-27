@@ -1,0 +1,129 @@
+---
+title: "Building our assistant with tambo + Inkeep MCP Server"
+date: "2025-08-26"
+description: "How we integrated tambo with Inkeep's MCP server to create an intelligent, documentation-aware assistant that provides interactive support directly on our platform."
+tags: ["mcp", "ai", "documentation", "support", "integration"]
+author: "Akhilesh Rangani"
+category: "update"
+featured: false
+---
+
+<BlogPost title="Building our assistant with tambo + Inkeep MCP Server">
+
+![TamboHack: $10k in Grants & Prizes](/assets/blog//tambo.gif)
+
+# Building our assistant with Tambo + Inkeep MCP Server
+
+At tambo, we like to use our own stuff. When we needed a smarter way for people to get help on our platform, we didn't want a casual chatbot where people would just get stuck in a loop of automated responses—so we just wired up our tambo chat with Inkeep's tambo docs MCP server. The result: a doc-aware AI assistant that lives right on our landing page and dashboard.
+
+## The Problem
+
+People needed a simple way to:
+
+- figure out project configs
+- generate/manage API keys
+- set up LLM providers + instructions
+- add MCP servers
+- handle OAuth/security stuff
+
+Instead of long docs or clunky search, we thought: why not just chat with the platform?
+
+## The Fix: tambo + Inkeep MCP
+
+We mashed two things together:
+
+- **tambo** → our generative UI framework that returns React components you can actually use alongside text.
+- **Inkeep MCP Server** → a docs MCP server for tambo that makes sure the assistant actually knows our docs and gives relevant answers.
+
+## Meet `ChatWithTambo`
+
+We built a custom tambo chat instance using our own ui components for our platform.
+
+### Components
+
+Users don't just get text—they can actually click/use stuff in chat:
+
+```typescript
+export const tamboRegisteredComponents = [
+  { name: "ProjectTable", component: ProjectTable },
+  { name: "APIKeyList", component: APIKeyList },
+  { name: "AvailableMcpServers", component: AvailableMcpServers },
+  // ...more
+];
+```
+
+### Tools
+
+The AI can trigger real actions, not just show info:
+
+```typescript
+registerTool({
+  name: "generateProjectApiKey",
+  tool: async (projectId, name) => {
+    // Generate a new API key for the project
+    const result = await generateApiKey(projectId, name);
+
+    // Refresh the UI to show the new key
+    await refreshApiKeys(projectId);
+
+    return result;
+  },
+});
+```
+
+## How It Plays Out
+
+Say you ask: _"How do I create an API key?"_
+
+1. Chat gets your question
+2. MCP server pulls the right doc info
+3. AI mixes docs + your real project data
+4. Generates an interactive `APIKeyList` component
+5. You click, done—API key created right in chat
+
+## The Setup
+
+**Server-Side (Inkeep MCP Server):**
+
+- Runs independently on Inkeep's infrastructure
+- Registed on the tambo dashboard on the server side
+
+**Client-Side (Your Tambo App):**
+
+- Components and tools are registered locally
+- They are then passed to tambo using `TamboProvider`
+
+The setup is surprisingly simple - you just wrap your app with the providers. tambo handles all the communication between your local tools and the remote MCP server automatically.
+
+## UX Stuff
+
+- Floating chat bubble (full-screen on mobile, panel on desktop)
+- Keyboard shortcuts for power users
+- Handles auth flows without breaking a sweat
+- Smart suggestions: "getting started" for newbies, project-specific tips for logged-in users
+
+## What Changed
+
+**For users:** faster answers, interactive help, less confusion.
+
+**For us:** fewer tickets, more self-service, better analytics.
+
+**For the platform:** real showcase of what tambo can do.
+
+## What We Learned
+
+- Server-side MCP > client-side for speed + security
+- Docs + interactive components = killer combo
+- Auth context makes the chat way more useful
+- Tools matter as much as answers—people want to _do_ things
+
+## Try It
+
+Hit [tambo.co](https://tambo.co) and click the little chat bubble in the corner. It's live.
+Wanna roll your own? Start with our [docs](https://docs.tambo.co)!
+
+---
+
+_Questions about tambo? Reach out to the team or join our [discord](https://tambo.co/discord). We're always here to help._
+
+</BlogPost>
