@@ -1036,6 +1036,7 @@ export class ThreadsService {
         db,
         thread.id,
         threadMessageDtoToThreadMessage(messages),
+        userMessage,
         advanceRequestDto,
         tamboBackend,
         systemTools,
@@ -1343,9 +1344,7 @@ export class ThreadsService {
         });
 
         // Since we don't store tool responses in the db, assumes that the tool response is the messageToAppend
-        const toolResponse = extractToolResponse(
-          advanceRequestDto.messageToAppend,
-        );
+        const toolResponse = extractToolResponse(userMessage);
         if (!toolResponse) {
           const error = new Error("No tool response found");
           Sentry.captureException(error, {
