@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nestjs";
 import {
   generateChainId,
   getToolsFromSources,
+  ModelOptions,
   Provider,
   SystemTools,
   TamboBackend,
@@ -1371,7 +1372,7 @@ export class ThreadsService {
           },
         });
 
-        const streamedResponseMessage = await tamboBackend.runDecisionLoop({
+        const messageStream = await tamboBackend.runDecisionLoop({
           messages,
           strictTools,
           customInstructions,
@@ -1382,7 +1383,7 @@ export class ThreadsService {
         return this.handleAdvanceThreadStream(
           projectId,
           threadId,
-          streamedResponseMessage,
+          messageStream,
           messages,
           userMessage,
           systemTools,
@@ -1391,6 +1392,7 @@ export class ThreadsService {
           toolCallCounts,
           mcpAccessToken,
           maxToolCallLimit,
+          tamboBackend.modelOptions,
         );
       }
 
@@ -1469,6 +1471,7 @@ export class ThreadsService {
         toolCallCounts,
         mcpAccessToken,
         maxToolCallLimit,
+        tamboBackend.modelOptions,
       );
     } catch (error) {
       // Capture streaming generation errors with context
@@ -1502,6 +1505,7 @@ export class ThreadsService {
     toolCallCounts: Record<string, number>,
     mcpAccessToken: string,
     maxToolCallLimit: number,
+    modelOptions: ModelOptions,
   ): AsyncIterableIterator<AdvanceThreadResponseDto> {
     const db = this.getDb();
     const logger = this.logger;
@@ -1521,7 +1525,12 @@ export class ThreadsService {
     const ttfbSpan = Sentry.startInactiveSpan({
       name: "tambo.time_to_first_token",
       op: "stream.ttfb",
-      attributes: { projectId, threadId },
+      attributes: {
+        projectId,
+        threadId,
+        model: modelOptions.model,
+        provider: modelOptions.provider,
+      },
     });
     let ttfbEnded = false;
 
