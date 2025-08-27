@@ -937,7 +937,7 @@ export class ThreadsService {
 
       // Check if we should ignore this request due to cancellation
       const shouldIgnore = await this.shouldIgnoreCancelledToolResponse(
-        advanceRequestDto,
+        advanceRequestDto.messageToAppend,
         thread,
       );
       if (shouldIgnore) {
@@ -1230,6 +1230,7 @@ export class ThreadsService {
         toolCallRequest,
       );
 
+      // This effectively recurses back into the decision loop with the tool response
       return await this.advanceThread(
         projectId,
         messageWithToolResponse,
@@ -1998,12 +1999,11 @@ export class ThreadsService {
   }
 
   private async shouldIgnoreCancelledToolResponse(
-    advanceRequestDto: AdvanceThreadDto,
+    userMessage: MessageRequest,
     thread: Thread,
   ): Promise<boolean> {
     if (
-      advanceRequestDto.messageToAppend.actionType ===
-        ActionType.ToolResponse &&
+      userMessage.actionType === ActionType.ToolResponse &&
       thread.generationStage === GenerationStage.CANCELLED
     ) {
       return true;
