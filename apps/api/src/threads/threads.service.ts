@@ -2005,8 +2005,6 @@ const checkCancellationStatus = async (
   threadId: string,
   projectId: string,
   chunkCount: number,
-  currentThreadMessage: ThreadMessage,
-  mcpAccessToken: string,
   logger?: Logger,
 ) => {
   try {
@@ -2062,8 +2060,6 @@ async function syncThreadStatus(
         threadId,
         projectId,
         chunkCount,
-        currentThreadMessage,
-        mcpAccessToken,
         logger,
       );
 
