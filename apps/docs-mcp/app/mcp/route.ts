@@ -59,17 +59,6 @@ async function logToInkeepAnalytics({
   }
 }
 
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN,
-  enabled:
-    Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN) ||
-    Boolean(process.env.SENTRY_DSN),
-  environment:
-    process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT ||
-    process.env.SENTRY_ENVIRONMENT ||
-    process.env.NODE_ENV,
-});
-
 const handler = createMcpHandler(
   async (server) => {
     const INKEEP_PRODUCT_SLUG = "tambo";
@@ -98,41 +87,55 @@ const handler = createMcpHandler(
         openWorldHint: true,
       },
       async ({ question }: { question: string }) => {
-        try {
-          const qaModel = "inkeep-qa-expert";
-          const response = await openai.chat.completions.create({
-            model: qaModel,
-            messages: [{ role: "user", content: question }],
-          });
-          const qaResponse = response.choices[0].message.content;
-          if (qaResponse) {
-            await logToInkeepAnalytics({
-              properties: { tool: qaToolName },
-              messagesToLogToAnalytics: [
-                { role: "user", content: question },
-                { role: "assistant", content: qaResponse },
-              ],
-            });
-            // anonymous usage log
+        return await Sentry.startSpan(
+          {
+            name: "inkeep-qa-request",
+            op: "ai.chat_completions",
+            attributes: {
+              "ai.model": "inkeep-qa-expert",
+              "ai.prompt.tokens": question.length,
+            },
+          },
+          async () => {
             try {
-              const db = getDb(process.env.DATABASE_URL!);
-              await operations.logMcpUsage(db, {
-                transport: "http",
-                toolName: qaToolName,
-                query: question,
-                response: qaResponse,
+              const qaModel = "inkeep-qa-expert";
+              const response = await openai.chat.completions.create({
+                model: qaModel,
+                messages: [{ role: "user", content: question }],
               });
-            } catch (_e) {
-              // ignore DB errors in edge runtime or missing envs
+              const qaResponse = response.choices[0].message.content;
+              if (qaResponse) {
+                await logToInkeepAnalytics({
+                  properties: { tool: qaToolName },
+                  messagesToLogToAnalytics: [
+                    { role: "user", content: question },
+                    { role: "assistant", content: qaResponse },
+                  ],
+                });
+                // anonymous usage log
+                try {
+                  const db = getDb(process.env.DATABASE_URL!);
+                  await operations.logMcpUsage(db, {
+                    transport: "http",
+                    toolName: qaToolName,
+                    query: question,
+                    response: qaResponse,
+                  });
+                } catch (_e) {
+                  // ignore DB errors in edge runtime or missing envs
+                }
+                return {
+                  content: [{ type: "text" as const, text: qaResponse }],
+                };
+              }
+              return { content: [] };
+            } catch (error) {
+              Sentry.captureException(error);
+              console.error("Error getting QA response:", error);
+              return { content: [] };
             }
-            return { content: [{ type: "text" as const, text: qaResponse }] };
-          }
-          return { content: [] };
-        } catch (error) {
-          Sentry.captureException(error);
-          console.error("Error getting QA response:", error);
-          return { content: [] };
-        }
+          },
+        );
       },
     );
 
@@ -150,53 +153,68 @@ const handler = createMcpHandler(
         openWorldHint: true,
       },
       async ({ query }: { query: string }) => {
-        try {
-          const ragModel = "inkeep-rag";
-          const response = await openai.chat.completions.parse({
-            model: ragModel,
-            messages: [{ role: "user", content: query }],
-            response_format: zodResponseFormat(
-              InkeepRAGResponseSchema,
-              "InkeepRAGResponseSchema",
-            ),
-          });
-          const parsedResponse = response.choices[0].message.parsed;
-          if (parsedResponse) {
-            const links =
-              parsedResponse.content
-                .filter((x) => x.url)
-                .map((x) => `- [${x.title || x.url}](${x.url})`)
-                .join("\n") || "";
-            await logToInkeepAnalytics({
-              properties: { tool: ragToolName },
-              messagesToLogToAnalytics: [
-                { role: "user", content: query },
-                { role: "assistant", content: links },
-              ],
-            });
+        return await Sentry.startSpan(
+          {
+            name: "inkeep-rag-search",
+            op: "ai.chat_completions.parse",
+            attributes: {
+              "ai.model": "inkeep-rag",
+              "ai.prompt.tokens": query.length,
+            },
+          },
+          async () => {
             try {
-              const db = getDb(process.env.DATABASE_URL!);
-              await operations.logMcpUsage(db, {
-                transport: "http",
-                toolName: ragToolName,
-                query,
-                response: JSON.stringify(parsedResponse),
+              const ragModel = "inkeep-rag";
+              const response = await openai.chat.completions.parse({
+                model: ragModel,
+                messages: [{ role: "user", content: query }],
+                response_format: zodResponseFormat(
+                  InkeepRAGResponseSchema,
+                  "InkeepRAGResponseSchema",
+                ),
               });
-            } catch {
-              // ignore DB errors in edge runtime or missing envs
+              const parsedResponse = response.choices[0].message.parsed;
+              if (parsedResponse) {
+                const links =
+                  parsedResponse.content
+                    .filter((x) => x.url)
+                    .map((x) => `- [${x.title || x.url}](${x.url})`)
+                    .join("\n") || "";
+                await logToInkeepAnalytics({
+                  properties: { tool: ragToolName },
+                  messagesToLogToAnalytics: [
+                    { role: "user", content: query },
+                    { role: "assistant", content: links },
+                  ],
+                });
+                try {
+                  const db = getDb(process.env.DATABASE_URL!);
+                  await operations.logMcpUsage(db, {
+                    transport: "http",
+                    toolName: ragToolName,
+                    query,
+                    response: JSON.stringify(parsedResponse),
+                  });
+                } catch {
+                  // ignore DB errors in edge runtime or missing envs
+                }
+                return {
+                  content: [
+                    {
+                      type: "text" as const,
+                      text: JSON.stringify(parsedResponse),
+                    },
+                  ],
+                };
+              }
+              return { content: [] };
+            } catch (error) {
+              Sentry.captureException(error);
+              console.error("Error retrieving product docs:", error);
+              return { content: [] };
             }
-            return {
-              content: [
-                { type: "text" as const, text: JSON.stringify(parsedResponse) },
-              ],
-            };
-          }
-          return { content: [] };
-        } catch (error) {
-          Sentry.captureException(error);
-          console.error("Error retrieving product docs:", error);
-          return { content: [] };
-        }
+          },
+        );
       },
     );
   },
