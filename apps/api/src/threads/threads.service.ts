@@ -1590,8 +1590,12 @@ export class ThreadsService {
       const streamStartTime = Date.now();
       // we hold on to the final thread message, in case we have to switch to a tool call
       let finalThreadMessage: ThreadMessage | undefined;
-      let lastUpdateTime = 0;
+
       const updateIntervalMs = 500;
+      const throttledSyncThreadStatus = throttle(
+        syncThreadStatus,
+        updateIntervalMs,
+      );
 
       for await (const legacyDecision of fixStreamedToolCalls(stream)) {
         // update in memory - we'll write to the db periodically
@@ -1605,36 +1609,19 @@ export class ThreadsService {
           ttfbEnded = true;
         }
 
-        // Update db message on interval
-        const currentTime = Date.now();
-        if (currentTime - lastUpdateTime >= updateIntervalMs) {
-          const isCancelled = await checkCancellationStatus(
-            db,
-            threadId,
-            projectId,
-            chunkCount,
-            logger,
-          );
-
-          if (isCancelled) {
-            yield {
-              responseMessageDto: {
-                ...currentThreadMessage,
-                content: convertContentPartToDto(currentThreadMessage.content),
-                componentState: currentThreadMessage.componentState ?? {},
-              },
-              generationStage: GenerationStage.CANCELLED,
-              statusMessage: "cancelled",
-              mcpAccessToken,
-            };
-            return;
-          }
-
-          await updateMessage(db, initialMessage.id, {
-            ...currentThreadMessage,
-            content: convertContentPartToDto(currentThreadMessage.content),
-          });
-          lastUpdateTime = currentTime;
+        const cancelledMessage = await throttledSyncThreadStatus(
+          db,
+          threadId,
+          initialMessage.id,
+          projectId,
+          chunkCount,
+          currentThreadMessage,
+          mcpAccessToken,
+          logger,
+        );
+        if (cancelledMessage) {
+          yield cancelledMessage;
+          return;
         }
 
         // do not yield the final thread message if it is a tool call
@@ -2017,6 +2004,8 @@ const checkCancellationStatus = async (
   threadId: string,
   projectId: string,
   chunkCount: number,
+  currentThreadMessage: ThreadMessage,
+  mcpAccessToken: string,
   logger?: Logger,
 ) => {
   try {
@@ -2027,14 +2016,15 @@ const checkCancellationStatus = async (
     );
     const isCancelled = generationStage === GenerationStage.CANCELLED;
 
-    if (isCancelled) {
-      Sentry.addBreadcrumb({
-        message: "Stream cancelled during processing",
-        category: "stream",
-        level: "warning",
-        data: { threadId, chunksProcessed: chunkCount },
-      });
+    if (!isCancelled) {
+      return null;
     }
+    Sentry.addBreadcrumb({
+      message: "Stream cancelled during processing",
+      category: "stream",
+      level: "warning",
+      data: { threadId, chunksProcessed: chunkCount },
+    });
     return isCancelled;
   } catch (error) {
     logger?.error(`Error checking thread cancellation status: ${error}`);
@@ -2042,6 +2032,78 @@ const checkCancellationStatus = async (
       tags: { operation: "checkCancellation", threadId },
     });
     // we assume that the thread is not cancelled if we cannot check the status
-    return false;
+    return null;
   }
 };
+
+async function syncThreadStatus(
+  db: HydraDatabase,
+  threadId: string,
+  messageId: string,
+  projectId: string,
+  chunkCount: number,
+  currentThreadMessage: ThreadMessage,
+  mcpAccessToken: string,
+  logger?: Logger,
+): Promise<AdvanceThreadResponseDto | undefined> {
+  return await Sentry.startSpan(
+    {
+      name: "syncThreadStatus",
+      op: "stream.syncThreadStatus",
+      attributes: {
+        threadId,
+      },
+    },
+    async () => {
+      // Update db message on interval
+      const isCancelled = await checkCancellationStatus(
+        db,
+        threadId,
+        projectId,
+        chunkCount,
+        currentThreadMessage,
+        mcpAccessToken,
+        logger,
+      );
+
+      if (isCancelled) {
+        return {
+          responseMessageDto: {
+            ...currentThreadMessage,
+            content: convertContentPartToDto(currentThreadMessage.content),
+            componentState: currentThreadMessage.componentState ?? {},
+          },
+          generationStage: GenerationStage.CANCELLED,
+          statusMessage: "cancelled",
+          mcpAccessToken,
+        };
+      }
+
+      await updateMessage(db, messageId, {
+        ...currentThreadMessage,
+        content: convertContentPartToDto(currentThreadMessage.content),
+      });
+    },
+  );
+}
+
+/**
+ * Throttles a function to be called at most once every `updateIntervalMs` milliseconds.
+ * @param callback - The function to throttle.
+ * @param updateIntervalMs - The minimum time between function calls.
+ * @returns A throttled function that will call the original function at most once every `updateIntervalMs` milliseconds.
+ */
+function throttle<FN extends (...args: any[]) => Promise<any>>(
+  callback: FN,
+  updateIntervalMs: number,
+): (...args: Parameters<FN>) => Promise<ReturnType<FN> | undefined> {
+  let lastUpdateTime = Date.now();
+  return async (...args: any[]) => {
+    const currentTime = Date.now();
+    if (currentTime - lastUpdateTime >= updateIntervalMs) {
+      const result = await callback(...args);
+      lastUpdateTime = currentTime;
+      return result;
+    }
+  };
+}
