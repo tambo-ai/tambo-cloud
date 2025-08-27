@@ -97,18 +97,9 @@ npm test
 - Link related issues or discussions.
 - Add screenshots or videos for UI changes.
 
-## AI Assistant Usage and Internal AI Docs (Follow Required)
+## AI Assistant Usage
 
-When using AI tools to assist development:
-
-- Follow our internal AI guidelines. Start with these references in the repo:
-  - `.charlie/instructions/general.md`
-  - `.charlie/instructions/react.md`
-  - `.charlie/instructions/typescript.md`
-  - `.charlie/instructions/architecture.md`
-- Also align with our team usage guides for editors and models:
-  - Cursor: `https://docs.cursor.com/`
-  - Claude: `https://docs.anthropic.com/claude`
+Refer to the README for AI assistant usage and links: [README](./README.md)
 
 ## Security and Secrets
 
