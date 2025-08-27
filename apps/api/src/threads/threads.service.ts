@@ -1618,7 +1618,7 @@ export class ThreadsService {
         const cancelledMessage = await throttledSyncThreadStatus(
           db,
           threadId,
-          initialMessage.id,
+          currentThreadMessage.id,
           projectId,
           chunkCount,
           currentThreadMessage,
