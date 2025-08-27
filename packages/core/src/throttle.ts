@@ -4,12 +4,14 @@
  * @param updateIntervalMs - The minimum time between function calls.
  * @returns A throttled function that will call the original function at most once every `updateIntervalMs` milliseconds.
  */
-export function throttle<T extends never[], R>(
-  callback: (...args: T) => Promise<R>,
+export function throttle<FN extends (...args: never[]) => Promise<any>>(
+  callback: FN,
   updateIntervalMs: number,
-): (...args: T) => Promise<R | undefined> {
+): (...args: Parameters<FN>) => Promise<ReturnType<FN> | undefined> {
   let lastUpdateTime = 0;
-  return async (...args: T): Promise<R | undefined> => {
+  return async (
+    ...args: Parameters<FN>
+  ): Promise<ReturnType<FN> | undefined> => {
     const currentTime = Date.now();
     if (currentTime - lastUpdateTime >= updateIntervalMs) {
       const result = await callback(...args);
