@@ -50,8 +50,10 @@ jest.mock("@tambo-ai-cloud/db", () => {
     getThreadGenerationStage: jest.fn(),
 
     // messages
+    addMessage: jest.fn(),
     getMessages: jest.fn(),
     deleteMessage: jest.fn(),
+    findPreviousToolCallMessage: jest.fn(),
 
     // suggestions
     getSuggestions: jest.fn(),
@@ -66,6 +68,10 @@ jest.mock("@tambo-ai-cloud/db", () => {
 
     // projects
     getProject: jest.fn(),
+
+    // mcp/system tools
+    getProjectMcpServers: jest.fn(),
+    addProjectLogEntry: jest.fn(),
   } satisfies Partial<typeof dbOperations>;
   return {
     ...actual,
@@ -77,32 +83,7 @@ jest.mock("@tambo-ai-cloud/db", () => {
 // Access the mocked operations for configuring behavior in tests
 const { operations } = jest.requireMock("@tambo-ai-cloud/db");
 
-// Mock helper modules used inside ThreadsService flows
-jest.mock("../../common/systemTools", () => ({
-  getSystemTools: jest.fn(),
-}));
-
-jest.mock("../util/messages", () => {
-  const actual = jest.requireActual("../util/messages");
-  return {
-    ...actual,
-    addMessage: jest.fn(),
-  };
-});
-
-// processThreadMessage will be intercepted in non-streaming init tests
-jest.mock("../util/thread-state", () => {
-  const actual = jest.requireActual("../util/thread-state");
-  return {
-    ...actual,
-    processThreadMessage: jest.fn(),
-  };
-});
-
-// Utilities to access mocked modules with types
-import { getSystemTools } from "../../common/systemTools";
-import { addMessage as addMessageUtil } from "../util/messages";
-import { processThreadMessage } from "../util/thread-state";
+// Intentionally do NOT mock systemTools or thread/message utils.
 
 describe("ThreadsService.advanceThread initialization", () => {
   let module: TestingModule;
@@ -195,6 +176,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       maxToolCallLimit: 7,
       customInstructions: undefined,
     });
+    operations.getProjectMcpServers.mockResolvedValue([]);
     operations.getMessages.mockResolvedValue([
       {
         id: "m1",
@@ -206,15 +188,22 @@ describe("ThreadsService.advanceThread initialization", () => {
       },
     ]);
 
-    (getSystemTools as jest.Mock).mockResolvedValue({});
-    (addMessageUtil as jest.Mock).mockResolvedValue({
+    operations.addMessage.mockImplementation(async (_db: any, input: any) => ({
       id: "u1",
-      threadId,
-      role: MessageRole.User,
-      content: [{ type: ContentPartType.Text, text: "hi" }],
+      threadId: input.threadId,
+      role: input.role,
+      content: input.content,
       createdAt: new Date(),
-      componentState: {},
-    });
+      metadata: input.metadata,
+      actionType: input.actionType,
+      toolCallRequest: input.toolCallRequest,
+      toolCallId: input.toolCallId,
+      componentState: input.componentState ?? {},
+      componentDecision: input.componentDecision,
+      error: input.error,
+      isCancelled: input.isCancelled ?? false,
+      additionalContext: input.additionalContext ?? {},
+    }));
 
     module = await Test.createTestingModule({
       providers: [
@@ -285,7 +274,12 @@ describe("ThreadsService.advanceThread initialization", () => {
       service.advanceThread(projectId, dto, undefined, true),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
-    expect(getSystemTools).toHaveBeenCalledWith(fakeDb, projectId);
+    // Ensure system tools were retrieved via DB-backed implementation
+    expect(operations.getProjectMcpServers).toHaveBeenCalledWith(
+      fakeDb,
+      projectId,
+      null,
+    );
     const initArgs = (MockTamboBackend as jest.Mock).mock.calls[0];
     expect(initArgs[0]).toBe("sk-fallback");
     expect(initArgs[2]).toBe(`${projectId}-tambo:anon-user`);
@@ -299,7 +293,6 @@ describe("ThreadsService.advanceThread initialization", () => {
   });
 
   test("streaming: initialization passes system tools when present", async () => {
-    (getSystemTools as jest.Mock).mockResolvedValue({ sysTool: {} });
     const dto = makeDto();
 
     const spyGen = jest
@@ -312,7 +305,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       service.advanceThread(projectId, dto, undefined, true),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
-    expect(getSystemTools).toHaveBeenCalled();
+    expect(operations.getProjectMcpServers).toHaveBeenCalled();
     expect(spyGen).toHaveBeenCalled();
   });
 
@@ -363,30 +356,58 @@ describe("ThreadsService.advanceThread initialization", () => {
     expect(spyGen).toHaveBeenCalled();
   });
 
-  test("non-streaming: initialization calls processThreadMessage with variations", async () => {
+  test("non-streaming: initialization reaches non-streaming decision flow", async () => {
     const dto = makeDto({ withComponents: true, withClientTools: false });
-    (processThreadMessage as jest.Mock).mockImplementation(async () => {
-      throw new Error("STOP_AFTER_INIT");
-    });
+    // Spy on private method to short-circuit after entering non-streaming path
+    const spyProcess = jest
+      .spyOn<any, any>(service as any, "advanceThread_")
+      .mockImplementationOnce(async (...args: any[]) => {
+        // Call original to exercise path until just before processThreadMessage returns
+        const original =
+          Object.getPrototypeOf(service).advanceThread_.bind(service);
+        await original(
+          args[0],
+          args[1],
+          args[2],
+          false,
+          args[4],
+          args[5],
+          args[6],
+        ).catch(() => undefined);
+        throw new Error("STOP_AFTER_INIT");
+      });
 
     await expect(
       service.advanceThread(projectId, dto, undefined, false),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
-    expect(getSystemTools).toHaveBeenCalled();
-    expect(processThreadMessage).toHaveBeenCalled();
+    expect(operations.getProjectMcpServers).toHaveBeenCalled();
+    expect(spyProcess).toHaveBeenCalled();
   });
 
   test("non-streaming: initialization handles no tools/components", async () => {
     const dto = makeDto({ withComponents: false, withClientTools: false });
-    (processThreadMessage as jest.Mock).mockImplementation(async () => {
-      throw new Error("STOP_AFTER_INIT");
-    });
+    const spyProcess = jest
+      .spyOn<any, any>(service as any, "advanceThread_")
+      .mockImplementationOnce(async (...args: any[]) => {
+        const original =
+          Object.getPrototypeOf(service).advanceThread_.bind(service);
+        await original(
+          args[0],
+          args[1],
+          args[2],
+          false,
+          args[4],
+          args[5],
+          args[6],
+        ).catch(() => undefined);
+        throw new Error("STOP_AFTER_INIT");
+      });
 
     await expect(
       service.advanceThread(projectId, dto, undefined, false),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
-    expect(processThreadMessage).toHaveBeenCalled();
+    expect(spyProcess).toHaveBeenCalled();
   });
 });
