@@ -1,5 +1,5 @@
 {
-  "extends": "@tambo-ai-cloud/typescript-config/base.json",
+  "extends": "@tambo-ai-cloud/typescript-config/base",
   "compilerOptions": {
     "outDir": "./dist",
     "module": "ESNext",
