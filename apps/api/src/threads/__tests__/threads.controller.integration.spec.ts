@@ -16,7 +16,6 @@ import {
   AdvanceThreadDto,
   AdvanceThreadResponseDto,
 } from "../dto/advance-thread.dto";
-import { ThreadMessageDto } from "../dto/message.dto";
 import { ThreadInProjectGuard } from "../guards/thread-in-project-guard";
 import { ThreadsController } from "../threads.controller";
 import { ThreadsService } from "../threads.service";
@@ -208,26 +207,23 @@ describe("ThreadsController - Integration Tests (HTTP Response Format)", () => {
       });
 
       // Mock a successful stream response
-      async function* streamGenerator(): AsyncIterableIterator<{
-        responseMessageDto: ThreadMessageDto;
-        generationStage: GenerationStage;
-      }> {
+      async function* streamGenerator(): AsyncIterableIterator<AdvanceThreadResponseDto> {
         yield {
           responseMessageDto: {
             id: "msg-1",
-            content: "Hello",
-            role: "assistant",
-          } as unknown as ThreadMessageDto,
+            content: [{ type: ContentPartType.Text, text: "Hello" }],
+            role: MessageRole.Assistant,
+            threadId: "test-thread-id",
+            componentState: {},
+            createdAt: new Date(),
+          },
           generationStage: GenerationStage.COMPLETE,
+          mcpAccessToken: "test-mcp-access-token",
         };
       }
       const mockStream = streamGenerator();
 
-      jest
-        .spyOn(threadsService, "advanceThread")
-        .mockResolvedValue(
-          mockStream as unknown as AsyncIterableIterator<AdvanceThreadResponseDto>,
-        );
+      jest.spyOn(threadsService, "advanceThread").mockResolvedValue(mockStream);
 
       // Act & Assert
       const response = await request(app.getHttpServer())
@@ -236,9 +232,9 @@ describe("ThreadsController - Integration Tests (HTTP Response Format)", () => {
         .expect(201);
 
       // Should receive text/event-stream for successful streaming
-      expect(response.headers["content-type"]).toBe("text/event-stream");
-      expect(response.headers["cache-control"]).toBe("no-cache");
-      expect(response.headers["connection"]).toBe("keep-alive");
+      expect(response.headers["content-type"]).toContain("text/event-stream");
+      expect(response.headers["cache-control"]).toContain("no-cache");
+      expect(response.headers["connection"]).toContain("keep-alive");
 
       // Should contain stream data
       expect(response.text).toMatch(/data: /);

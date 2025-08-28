@@ -1,5 +1,6 @@
 import { ConfigService } from "@nestjs/config";
 import { Test, TestingModule } from "@nestjs/testing";
+import { type TamboBackend } from "@tambo-ai-cloud/backend";
 import {
   AgentProviderType,
   AiProviderType,
@@ -38,7 +39,11 @@ jest.mock("@tambo-ai-cloud/backend", () => {
 });
 
 const { __mock: backendMock } = jest.requireMock("@tambo-ai-cloud/backend");
-const { MockTamboBackend } = backendMock;
+const {
+  MockTamboBackend,
+}: {
+  MockTamboBackend: jest.Mocked<typeof TamboBackend>;
+} = backendMock;
 
 // Mock DB operations used by the service
 jest.mock("@tambo-ai-cloud/db", () => {
@@ -107,7 +112,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     role: MessageRole.User,
     content: [{ type: ContentPartType.Text, text: "hi" }],
     componentState: {},
-  } as any;
+  };
 
   const makeDto = (opts?: {
     withComponents?: boolean;
@@ -137,7 +142,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     forceToolChoice: opts?.forceToolChoice,
   });
 
-  const fakeDb: any = {
+  const fakeDb = {
     transaction: async (fn: any) => fn(fakeDb),
     query: {
       threads: {
@@ -150,15 +155,19 @@ describe("ThreadsService.advanceThread initialization", () => {
     },
   };
 
+  const prevFallbackOpenaiApiKey = process.env.FALLBACK_OPENAI_API_KEY;
   beforeAll(() => {
     process.env.FALLBACK_OPENAI_API_KEY = "sk-fallback";
+  });
+  afterAll(() => {
+    process.env.FALLBACK_OPENAI_API_KEY = prevFallbackOpenaiApiKey;
   });
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
     // Re-seed DB thread lookup after clearing mocks
-    (fakeDb.query.threads.findFirst as jest.Mock).mockResolvedValue({
+    jest.mocked(fakeDb.query.threads.findFirst).mockResolvedValue({
       id: threadId,
       projectId,
       generationStage: GenerationStage.COMPLETE,
@@ -273,7 +282,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     const dto = makeDto({ withComponents: false, withClientTools: false });
 
     const spyGen = jest
-      .spyOn<any, any>(service as any, "generateStreamingResponse")
+      .spyOn<any, any>(service, "generateStreamingResponse")
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
       });
@@ -288,7 +297,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       projectId,
       null,
     );
-    const initArgs = (MockTamboBackend as jest.Mock).mock.calls[0];
+    const initArgs = jest.mocked(MockTamboBackend).mock.calls[0];
     expect(initArgs[0]).toBe("sk-fallback");
     expect(initArgs[2]).toBe(`${projectId}-tambo:anon-user`);
     expect(initArgs[3]).toEqual(
@@ -304,7 +313,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     const dto = makeDto();
 
     const spyGen = jest
-      .spyOn<any, any>(service as any, "generateStreamingResponse")
+      .spyOn<any, any>(service, "generateStreamingResponse")
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
       });
@@ -320,7 +329,7 @@ describe("ThreadsService.advanceThread initialization", () => {
   test("streaming: initialization with client tools and components", async () => {
     const dto = makeDto({ withComponents: true, withClientTools: true });
     const spyGen = jest
-      .spyOn<any, any>(service as any, "generateStreamingResponse")
+      .spyOn<any, any>(service, "generateStreamingResponse")
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
       });
@@ -336,7 +345,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     const dto = makeDto();
     const contextKey = "ctx_123";
     const spyGen = jest
-      .spyOn<any, any>(service as any, "generateStreamingResponse")
+      .spyOn<any, any>(service, "generateStreamingResponse")
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
       });
@@ -353,7 +362,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
-    const initArgs2 = (MockTamboBackend as jest.Mock).mock.calls[0];
+    const initArgs2 = jest.mocked(MockTamboBackend).mock.calls[0];
     expect(initArgs2[2]).toBe(`${projectId}-${contextKey}`);
     expect(initArgs2[3]).toEqual(expect.any(Object));
     expect(authService.generateMcpAccessToken).toHaveBeenCalledWith(
@@ -368,7 +377,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     const dto = makeDto({ withComponents: true, withClientTools: false });
     // Spy on private method to short-circuit after entering non-streaming path
     const spyProcess = jest
-      .spyOn<any, any>(service as any, "advanceThread_")
+      .spyOn<any, any>(service, "advanceThread_")
       .mockImplementationOnce(async (...args: any[]) => {
         // Call original to exercise path until just before processThreadMessage returns
         const original =
@@ -396,7 +405,7 @@ describe("ThreadsService.advanceThread initialization", () => {
   test("non-streaming: initialization handles no tools/components", async () => {
     const dto = makeDto({ withComponents: false, withClientTools: false });
     const spyProcess = jest
-      .spyOn<any, any>(service as any, "advanceThread_")
+      .spyOn<any, any>(service, "advanceThread_")
       .mockImplementationOnce(async (...args: any[]) => {
         const original =
           Object.getPrototypeOf(service).advanceThread_.bind(service);
