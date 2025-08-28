@@ -1,5 +1,65 @@
 # Changelog
 
+## [0.103.2](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.103.1...repo-v0.103.2) (2025-08-27)
+
+
+### Bug Fixes
+
+* **sentry:** add nested options for llm.model, etc ([#1664](https://github.com/tambo-ai/tambo-cloud/issues/1664)) ([0250d5f](https://github.com/tambo-ai/tambo-cloud/commit/0250d5fe193e0eea09a345197d84a8d3e157c676))
+
+
+### Miscellaneous Chores
+
+* create tambo getting started and contributing guides ([#1661](https://github.com/tambo-ai/tambo-cloud/issues/1661)) ([d990738](https://github.com/tambo-ai/tambo-cloud/commit/d990738c3784d7b26b501849fbcc45b910aa6249))
+
+
+### Code Refactoring
+
+* **threads:** Cleanup/generalize some thread handling to make agent integration smoother ([#1662](https://github.com/tambo-ai/tambo-cloud/issues/1662)) ([017bf8c](https://github.com/tambo-ai/tambo-cloud/commit/017bf8c3dfad7985f0c73c93fe3738678d27fa12))
+
+## [0.103.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.103.0...repo-v0.103.1) (2025-08-26)
+
+
+### Bug Fixes
+
+* avoid prefetching errors ([#1659](https://github.com/tambo-ai/tambo-cloud/issues/1659)) ([8976b88](https://github.com/tambo-ai/tambo-cloud/commit/8976b8843f967b84ba9244049910f0dcf700619e))
+
+
+### Miscellaneous Chores
+
+* Update header link and redirect to mcp section ([#1652](https://github.com/tambo-ai/tambo-cloud/issues/1652)) ([0295929](https://github.com/tambo-ai/tambo-cloud/commit/02959299b230c53c610fb13486a1a546184f228c))
+
+## [0.103.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.102.1...repo-v0.103.0) (2025-08-26)
+
+
+### Features
+
+* **agents:** add types and db schema for agent support ([#1656](https://github.com/tambo-ai/tambo-cloud/issues/1656)) ([df2dd00](https://github.com/tambo-ai/tambo-cloud/commit/df2dd0021ec1e83b4df79b26bb41b3ad17faba88))
+
+
+### Code Refactoring
+
+* **agents:** Start to generalize thread updating, by separating concerns ([#1646](https://github.com/tambo-ai/tambo-cloud/issues/1646)) ([8f670a8](https://github.com/tambo-ai/tambo-cloud/commit/8f670a8bfb225201041977031cd5f0a20f3a570b))
+
+## [0.102.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.102.0...repo-v0.102.1) (2025-08-26)
+
+
+### Bug Fixes
+
+* tambohack banner closing issue ([#1653](https://github.com/tambo-ai/tambo-cloud/issues/1653)) ([49c7f09](https://github.com/tambo-ai/tambo-cloud/commit/49c7f09eb9b91a6fcb03414738fa74b982822a1a))
+
+## [0.102.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.101.9...repo-v0.102.0) (2025-08-26)
+
+
+### Features
+
+* add blog with nextra ([#1647](https://github.com/tambo-ai/tambo-cloud/issues/1647)) ([9102fa4](https://github.com/tambo-ai/tambo-cloud/commit/9102fa45af04186111e3b0e2819f622708d8ec49))
+
+
+### Miscellaneous Chores
+
+* fix dashboard demo layout ([#1651](https://github.com/tambo-ai/tambo-cloud/issues/1651)) ([86e3004](https://github.com/tambo-ai/tambo-cloud/commit/86e3004d2a0576aabeca4e292a068c782be020c2))
+
 ## [0.101.9](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.101.8...repo-v0.101.9) (2025-08-26)
 
 
