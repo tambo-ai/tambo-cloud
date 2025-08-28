@@ -6,19 +6,10 @@
     "moduleResolution": "Bundler",
     "module": "ESNext",
     "paths": {
-      "@tambo-ai-cloud/testing": [
-        "../testing/src"
-      ],
-      "@ag-ui/mastra": [
-        "../../packages/ag-ui-mastra/src"
-      ]
+      "@tambo-ai-cloud/testing": ["../testing/src"],
+      "@ag-ui/mastra": ["../../packages/ag-ui-mastra/src"]
     }
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
 }
