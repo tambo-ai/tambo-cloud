@@ -43,7 +43,7 @@ interface RunDecisionLoopParams {
   forceToolChoice?: string;
 }
 
-export interface ITamboBackend {
+export interface TamboBackend {
   generateSuggestions(
     messages: ThreadMessage[],
     count: number,
@@ -70,11 +70,11 @@ export async function createTamboBackend(
   chainId: string,
   userId: string,
   options: TamboBackendOptions = { aiProviderType: AiProviderType.LLM },
-): Promise<ITamboBackend> {
-  return await TamboBackend.create(apiKey, chainId, userId, options);
+): Promise<TamboBackend> {
+  return await AgenticTamboBackend.create(apiKey, chainId, userId, options);
 }
 
-class TamboBackend implements ITamboBackend {
+class AgenticTamboBackend implements TamboBackend {
   private llmClient: LLMClient;
   /** The current model options for the TamboBackend, filled in with defaults */
   public readonly modelOptions: ModelOptions;
@@ -124,7 +124,7 @@ class TamboBackend implements ITamboBackend {
 
     switch (aiProviderType) {
       case AiProviderType.LLM: {
-        return new TamboBackend(modelOptions, llmClient);
+        return new AgenticTamboBackend(modelOptions, llmClient);
       }
       case AiProviderType.AGENT: {
         if (!agentType || !agentUrl || !agentName) {
@@ -139,7 +139,7 @@ class TamboBackend implements ITamboBackend {
           agentName,
           chainId,
         });
-        return new TamboBackend(modelOptions, llmClient, agentClient);
+        return new AgenticTamboBackend(modelOptions, llmClient, agentClient);
       }
       default:
         throw new Error(`Unsupported AI provider type: ${aiProviderType}`);
