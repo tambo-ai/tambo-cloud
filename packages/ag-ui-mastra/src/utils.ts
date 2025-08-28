@@ -1,9 +1,17 @@
 import type { Message } from "@ag-ui/client";
 import { AbstractAgent } from "@ag-ui/client";
-import { MastraClient } from "@mastra/client-js";
-import type { CoreMessage, Mastra } from "@mastra/core";
+import {
+  CopilotRuntime,
+  copilotRuntimeNodeHttpEndpoint,
+  CopilotServiceAdapter,
+  ExperimentalEmptyAdapter,
+} from "@copilotkit/runtime";
+import type { CoreMessage } from "@mastra/core";
+import { registerApiRoute } from "@mastra/core/server";
+import type { Mastra } from "@mastra/core";
 import { Agent as LocalMastraAgent } from "@mastra/core/agent";
 import { RuntimeContext } from "@mastra/core/runtime-context";
+import { MastraClient } from "@mastra/client-js";
 import { MastraAgent } from "./mastra";
 
 export function convertAGUIMessagesToMastra(messages: Message[]): CoreMessage[] {
