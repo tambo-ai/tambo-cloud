@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useTamboComponentState } from "@tambo-ai/react";
 import { z } from "zod";
 import { Button } from "../button";
 import { Input } from "../input";
@@ -12,23 +12,23 @@ export const FounderEmailProps = z
     aiGeneratedSubject: z
       .string()
       .describe(
-        "By default, generate the subject of the email, example: Hello from your demo app.",
+        "By default, generate the subject of the email, example: Hello from your demo app."
       ),
     aiGeneratedBody: z
       .string()
       .describe(
-        "By default, generate the body of the email, example: I generated this email using your demo app.",
+        "By default, generate the body of the email, example: I generated this email using your demo app."
       ),
-    usersEmail: z
+    aiGeneratedUsersEmail: z
       .string()
       .optional()
       .default("")
       .describe(
-        "The user's email address. Do not include the user's email address unless they provide it. Do Not Make Up An Email Address.",
+        "The user's email address. Do not include the user's email address unless they provide it. Do Not Make Up An Email Address."
       ),
   })
   .describe(
-    "Write a genz style email. Example content: hey i'm testing your app on your demo page and want to learn more.",
+    "Write a genz style email. Example content: hey i'm testing your app on your demo page and want to learn more."
   );
 
 type FounderEmailProps = z.infer<typeof FounderEmailProps>;
@@ -47,99 +47,44 @@ interface ValidationError {
   };
 }
 
-interface EmailState {
-  subject: string;
-  body: string;
-  usersEmail: string;
-  isSent: boolean;
-  isLoading: boolean;
-  error: ValidationError | null;
-}
-
 export const FounderEmailComponent = ({
   aiGeneratedSubject = "",
   aiGeneratedBody = "",
-  usersEmail = "",
+  aiGeneratedUsersEmail = "",
 }: FounderEmailProps) => {
-  const [emailState, setEmailState] = useState<EmailState>({
-    subject: aiGeneratedSubject,
-    body: aiGeneratedBody,
-    usersEmail: usersEmail,
-    isSent: false,
-    isLoading: false,
-    error: null,
-  });
-
-  useEffect(() => {
-    setEmailState((prevState) => {
-      // Only update if not currently loading and not already sent
-      if (prevState.isLoading || prevState.isSent) {
-        return prevState;
-      }
-
-      return {
-        subject: aiGeneratedSubject,
-        body: aiGeneratedBody,
-        usersEmail: usersEmail,
-        isSent: false,
-        isLoading: false,
-        error: null,
-      };
-    });
-  }, [aiGeneratedSubject, aiGeneratedBody, usersEmail]);
-
-  // Update the Tambo state when input changes
-  const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newSubject = e.target.value;
-
-    // Update the Tambo state (this is persisted)
-    if (emailState) {
-      setEmailState({
-        ...emailState,
-        subject: newSubject,
-      });
-    }
-  };
-
-  const handleBodyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newBody = e.target.value;
-    // Update the Tambo state (this is persisted)
-    if (emailState) {
-      setEmailState({
-        ...emailState,
-        body: newBody,
-      });
-    }
-  };
-
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newEmail = e.target.value;
-    if (emailState) {
-      setEmailState({
-        ...emailState,
-        usersEmail: newEmail,
-      });
-    }
-  };
+  const [subject, setSubject] = useTamboComponentState(
+    "emailSubject",
+    "",
+    aiGeneratedSubject
+  );
+  const [body, setBody] = useTamboComponentState(
+    "emailBody",
+    "",
+    aiGeneratedBody
+  );
+  const [usersEmail, setUsersEmail] = useTamboComponentState(
+    "usersEmail",
+    "",
+    aiGeneratedUsersEmail
+  );
+  const [isSent, setIsSent] = useTamboComponentState("isSent", false);
+  const [isLoading, setIsLoading] = useTamboComponentState("isLoading", false);
+  const [error, setError] = useTamboComponentState<ValidationError | null>(
+    "error",
+    null
+  );
 
   // Handle sending the email
   const handleSendEmail = async () => {
-    if (!emailState) return;
-
     try {
       // Validate the email data before sending
       const validatedData = sendEmailSchema.parse({
-        subject: emailState.subject,
-        body: emailState.body,
-        usersEmail: emailState.usersEmail,
+        subject: subject,
+        body: body,
+        usersEmail: usersEmail,
       });
 
-      // Update state to show loading
-      setEmailState({
-        ...emailState,
-        isLoading: true,
-        error: null,
-      });
+      setIsLoading(true);
 
       // Here you would integrate with Resend API
       const response = await fetch("/api/send-founder-email", {
@@ -161,11 +106,8 @@ export const FounderEmailComponent = ({
       }
 
       // Update state to show success
-      setEmailState({
-        ...emailState,
-        isSent: true,
-        isLoading: false,
-      });
+      setIsSent(true);
+      setIsLoading(false);
     } catch (error) {
       // Update state to show error
       const validationError: ValidationError = {
@@ -175,18 +117,10 @@ export const FounderEmailComponent = ({
         details: (error as ValidationError).details || {},
       };
 
-      setEmailState({
-        ...emailState,
-        isLoading: false,
-        error: validationError,
-      });
+      setError(validationError);
+      setIsLoading(false);
     }
   };
-
-  // If the state hasn't loaded yet, show a loading state
-  if (!emailState) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div
@@ -195,7 +129,7 @@ export const FounderEmailComponent = ({
     >
       <h2 className="text-lg font-semibold mb-3">Email the Founders</h2>
 
-      {emailState.isSent ? (
+      {isSent ? (
         <div className="bg-green-50 p-3 rounded-md text-green-700 mb-3">
           <p className="font-medium text-sm">Email sent successfully!</p>
           <p className="text-xs mt-1">
@@ -211,9 +145,9 @@ export const FounderEmailComponent = ({
             </label>
             <Input
               id="subject"
-              value={emailState?.subject || ""}
-              onChange={handleSubjectChange}
-              disabled={emailState?.isLoading}
+              value={subject || ""}
+              onChange={(e) => setSubject(e.target.value)}
+              disabled={isLoading}
               className="w-full text-sm"
             />
           </div>
@@ -224,10 +158,10 @@ export const FounderEmailComponent = ({
             </label>
             <Textarea
               id="body"
-              value={emailState?.body || ""}
-              onChange={handleBodyChange}
+              value={body || ""}
+              onChange={(e) => setBody(e.target.value)}
               rows={2}
-              disabled={emailState?.isLoading}
+              disabled={isLoading}
               className="w-full text-sm"
             />
           </div>
@@ -238,16 +172,16 @@ export const FounderEmailComponent = ({
             <Input
               id="email"
               type="email"
-              value={emailState?.usersEmail || ""}
-              onChange={handleEmailChange}
+              value={usersEmail || ""}
+              onChange={(e) => setUsersEmail(e.target.value)}
               placeholder="Enter your email address"
-              disabled={emailState?.isLoading}
+              disabled={isLoading}
               className="w-full text-sm"
               required
             />
           </div>
 
-          {emailState.error && (
+          {error && (
             <div className="bg-red-50 p-3 rounded-md text-red-700">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
@@ -268,20 +202,20 @@ export const FounderEmailComponent = ({
                     Email Invalid
                   </h3>
                   <div className="mt-1 text-xs text-red-700">
-                    {emailState.error.details?.reason ? (
+                    {error.details?.reason ? (
                       <p>
-                        {emailState.error.details.reason === "smtp"
+                        {error.details.reason === "smtp"
                           ? "We couldn't verify if this email can receive messages. Please double-check the address."
-                          : emailState.error.details.reason === "disposable"
+                          : error.details.reason === "disposable"
                             ? "Please use your regular email address instead of a temporary one."
-                            : emailState.error.details.reason === "typo"
+                            : error.details.reason === "typo"
                               ? "There might be a typo in your email address. Please check the spelling."
-                              : emailState.error.details.reason === "mx"
+                              : error.details.reason === "mx"
                                 ? "The email domain appears to be invalid or cannot receive emails."
-                                : emailState.error.message}
+                                : error.message}
                       </p>
                     ) : (
-                      <p>{emailState.error.message}</p>
+                      <p>{error.message}</p>
                     )}
                   </div>
                 </div>
@@ -292,12 +226,10 @@ export const FounderEmailComponent = ({
           <Button
             type="button"
             onClick={handleSendEmail}
-            disabled={
-              emailState.isLoading || !emailState.subject || !emailState.body
-            }
+            disabled={isLoading || !subject || !body}
             className="w-full text-sm"
           >
-            {emailState.isLoading ? "Sending..." : "Send Email to Founders"}
+            {isLoading ? "Sending..." : "Send Email to Founders"}
           </Button>
         </form>
       )}
