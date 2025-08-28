@@ -100,7 +100,7 @@ export class ThreadsService {
     return this.db;
   }
 
-  private async createHydraBackendForThread(
+  private async createTamboBackendForThread(
     threadId: string,
     userId: string,
   ): Promise<ITamboBackend> {
@@ -659,7 +659,7 @@ export class ThreadsService {
       });
 
       const threadMessages = await this.getMessages(message.threadId);
-      const tamboBackend = await this.createHydraBackendForThread(
+      const tamboBackend = await this.createTamboBackendForThread(
         message.threadId,
         contextKey,
       );
@@ -775,7 +775,7 @@ export class ThreadsService {
       throw new NotFoundException("No messages found for thread");
     }
 
-    const tamboBackend = await this.createHydraBackendForThread(
+    const tamboBackend = await this.createTamboBackendForThread(
       threadId,
       `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
     );
@@ -975,7 +975,7 @@ export class ThreadsService {
       );
 
       // Use the shared method to create the TamboBackend instance
-      const tamboBackend = await this.createHydraBackendForThread(
+      const tamboBackend = await this.createTamboBackendForThread(
         thread.id,
         `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
       );
