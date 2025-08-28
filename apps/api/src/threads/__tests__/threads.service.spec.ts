@@ -14,6 +14,11 @@ import { AuthService } from "../../common/services/auth.service";
 import { EmailService } from "../../common/services/email.service";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 import { ProjectsService } from "../../projects/projects.service";
+import {
+  createMockDBMessage,
+  createMockDBProject,
+  createMockDBThread,
+} from "../../test/factories";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { ThreadsService } from "../threads.service";
 
@@ -160,17 +165,9 @@ describe("ThreadsService.advanceThread initialization", () => {
     });
 
     // Default operations behavior
-    operations.createThread.mockResolvedValue({
-      id: threadId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      projectId,
-      name: null,
-      generationStage: GenerationStage.COMPLETE,
-      statusMessage: null,
-      contextKey: null,
-      metadata: null,
-    });
+    operations.createThread.mockResolvedValue(
+      createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
+    );
     operations.getProjectMessageUsage.mockResolvedValue({
       messageCount: 2,
       hasApiKey: true,
@@ -180,51 +177,23 @@ describe("ThreadsService.advanceThread initialization", () => {
       updatedAt: new Date(),
       projectId,
     });
-    operations.getProject.mockResolvedValue({
-      maxToolCallLimit: 7,
-      customInstructions: null,
-      agentName: null,
-      agentProviderType: AgentProviderType.MASTRA,
-      agentUrl: null,
-      bearerTokenSecret: "secret",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      name: "My Project",
-      deprecated_legacyId: null,
-      deprecated_mcpEnabled: false,
-      deprecatedComposioEnabled: false,
-      members: [],
-      creatorId: "user_1",
-      defaultLlmProviderName: "openai",
-      defaultLlmModelName: "gpt-4.1-2025-04-14",
-      customLlmModelName: null,
-      customLlmBaseURL: null,
-      isTokenRequired: false,
-      id: projectId,
-      maxInputTokens: null,
-      oauthValidationMode: OAuthValidationMode.NONE,
-      oauthSecretKeyEncrypted: null,
-      oauthPublicKey: null,
-      providerType: AiProviderType.LLM,
-    });
+    operations.getProject.mockResolvedValue(
+      createMockDBProject(projectId, {
+        name: "My Project",
+        agentProviderType: AgentProviderType.MASTRA,
+        defaultLlmProviderName: "openai",
+        defaultLlmModelName: "gpt-4.1-2025-04-14",
+        oauthValidationMode: OAuthValidationMode.NONE,
+        providerType: AiProviderType.LLM,
+        maxToolCallLimit: 7,
+        creatorId: "user_1",
+      }),
+    );
     operations.getProjectMcpServers.mockResolvedValue([]);
     operations.getMessages.mockResolvedValue([
-      {
-        id: "m1",
-        threadId,
-        role: MessageRole.User,
-        content: [{ type: ContentPartType.Text, text: "hi" }],
-        createdAt: new Date(),
-        componentState: {},
-        actionType: null,
-        additionalContext: {},
-        toolCallId: null,
-        componentDecision: null,
-        error: null,
-        isCancelled: false,
-        metadata: null,
-        toolCallRequest: null,
-      },
+      createMockDBMessage("m1", threadId, MessageRole.User, [
+        { type: "text", text: "hi" },
+      ]),
     ]);
 
     operations.addMessage.mockImplementation(async (_db: any, input: any) => ({
