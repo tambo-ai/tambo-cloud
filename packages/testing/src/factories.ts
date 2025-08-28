@@ -11,6 +11,9 @@ import {
 import { schema } from "@tambo-ai-cloud/db";
 import type { OpenAI } from "openai";
 
+const defaultOpenAITextContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
+  [{ type: "text", text: "hi" }];
+
 export type ProjectWithMembers = schema.DBProject & {
   members: schema.DBProjectMember[];
 };
@@ -78,9 +81,7 @@ export function createMockDBMessage(
   id: string,
   threadId: string,
   role: MessageRole = MessageRole.User,
-  content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
-    { type: ContentPartType.Text, text: "hi" } as any,
-  ],
+  content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = defaultOpenAITextContent,
   overrides: Partial<schema.DBMessage> = {},
 ): schema.DBMessage {
   const now = new Date();

@@ -9,16 +9,16 @@ import {
   OAuthValidationMode,
 } from "@tambo-ai-cloud/core";
 import { type operations as dbOperations } from "@tambo-ai-cloud/db";
+import {
+  createMockDBMessage,
+  createMockDBProject,
+  createMockDBThread,
+} from "@tambo-ai-cloud/testing";
 import { DATABASE } from "../../common/middleware/db-transaction-middleware";
 import { AuthService } from "../../common/services/auth.service";
 import { EmailService } from "../../common/services/email.service";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 import { ProjectsService } from "../../projects/projects.service";
-import {
-  createMockDBMessage,
-  createMockDBProject,
-  createMockDBThread,
-} from "../../test/factories";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { ThreadsService } from "../threads.service";
 
