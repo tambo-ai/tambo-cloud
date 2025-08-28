@@ -82,11 +82,13 @@ jest.mock("../../common/systemTools", () => ({
   getSystemTools: jest.fn(),
 }));
 
-jest.mock("../util/messages", () => ({
-  addMessage: jest.fn(),
-  updateMessage: jest.fn(),
-  threadMessageDtoToThreadMessage: (m: any) => m,
-}));
+jest.mock("../util/messages", () => {
+  const actual = jest.requireActual("../util/messages");
+  return {
+    ...actual,
+    addMessage: jest.fn(),
+  };
+});
 
 // processThreadMessage will be intercepted in non-streaming init tests
 jest.mock("../util/thread-state", () => {
