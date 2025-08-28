@@ -351,7 +351,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     const dto = makeDto();
     // Ensure backend instance is properly returned for this test
     jest
-      .spyOn<any, any>(service as any, "createHydraBackendForThread")
+      .spyOn<any, any>(service as any, "createTamboBackendForThread")
       .mockResolvedValue({
         runDecisionLoop: __testRunDecisionLoop__,
         generateSuggestions: jest.fn(),
@@ -466,7 +466,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     });
     // Ensure backend instance is properly returned for this test
     jest
-      .spyOn<any, any>(service as any, "createHydraBackendForThread")
+      .spyOn<any, any>(service as any, "createTamboBackendForThread")
       .mockResolvedValue({
         runDecisionLoop: __testRunDecisionLoop__,
         generateSuggestions: jest.fn(),
