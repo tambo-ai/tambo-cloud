@@ -7,7 +7,7 @@ echo "[smoke] Hitting $TARGET_URL ..."
 
 # Fetch headers and body status
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET_URL")
-if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 500 ]]; then
+if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 300 ]]; then
   echo "[smoke] Unexpected HTTP status: $HTTP_CODE"
   exit 1
 fi
