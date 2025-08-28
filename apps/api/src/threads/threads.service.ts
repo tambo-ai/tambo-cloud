@@ -2,12 +2,13 @@ import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as Sentry from "@sentry/nestjs";
 import {
+  createTamboBackend,
   generateChainId,
   getToolsFromSources,
+  ITamboBackend,
   McpToolRegistry,
   ModelOptions,
   Provider,
-  TamboBackend,
   ToolRegistry,
 } from "@tambo-ai-cloud/backend";
 import {
@@ -102,7 +103,7 @@ export class ThreadsService {
   private async createHydraBackendForThread(
     threadId: string,
     userId: string,
-  ): Promise<TamboBackend> {
+  ): Promise<ITamboBackend> {
     const chainId = await generateChainId(threadId);
 
     const threadData = await this.getDb().query.threads.findFirst({
@@ -155,7 +156,7 @@ export class ThreadsService {
       );
     }
 
-    return await TamboBackend.create(apiKey, chainId, userId, {
+    return await createTamboBackend(apiKey, chainId, userId, {
       provider: providerName as Provider,
       model: modelName,
       baseURL: baseURL ?? undefined,
@@ -1241,7 +1242,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     db: HydraDatabase,
-    tamboBackend: TamboBackend,
+    tamboBackend: ITamboBackend,
     messages: ThreadMessage[],
     userMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
@@ -1285,7 +1286,7 @@ export class ThreadsService {
     projectId: string,
     threadId: string,
     db: HydraDatabase,
-    tamboBackend: TamboBackend,
+    tamboBackend: ITamboBackend,
     messages: ThreadMessage[],
     userMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,

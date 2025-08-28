@@ -1,6 +1,6 @@
 import { ConfigService } from "@nestjs/config";
 import { Test, TestingModule } from "@nestjs/testing";
-import { type TamboBackend } from "@tambo-ai-cloud/backend";
+import { createTamboBackend } from "@tambo-ai-cloud/backend";
 import {
   AgentProviderType,
   AiProviderType,
@@ -27,23 +27,29 @@ import { ThreadsService } from "../threads.service";
 jest.mock("@tambo-ai-cloud/backend", () => {
   const actual = jest.requireActual("@tambo-ai-cloud/backend");
   const mockRunDecisionLoop = jest.fn();
-  const MockTamboBackend = jest.fn().mockImplementation(() => ({
+  const createTamboBackend = jest.fn().mockResolvedValue({
     runDecisionLoop: mockRunDecisionLoop,
-  }));
+    generateSuggestions: jest.fn(),
+    generateThreadName: jest.fn(),
+    modelOptions: {
+      provider: "openai",
+      model: "gpt-4.1-2025-04-14",
+      baseURL: undefined,
+      maxInputTokens: undefined,
+    },
+  });
   return {
     ...actual,
-    TamboBackend: MockTamboBackend,
+    createTamboBackend,
     generateChainId: jest.fn().mockResolvedValue("chain-1"),
-    __mock: { MockTamboBackend, mockRunDecisionLoop },
   };
 });
 
-const { __mock: backendMock } = jest.requireMock("@tambo-ai-cloud/backend");
 const {
-  MockTamboBackend,
+  createTamboBackend: mockedCreateTamboBackend,
 }: {
-  MockTamboBackend: jest.Mocked<typeof TamboBackend>;
-} = backendMock;
+  createTamboBackend: jest.MockedFunction<typeof createTamboBackend>;
+} = jest.requireMock("@tambo-ai-cloud/backend");
 
 // Mock DB operations used by the service
 jest.mock("@tambo-ai-cloud/db", () => {
@@ -297,7 +303,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       projectId,
       null,
     );
-    const initArgs = jest.mocked(MockTamboBackend).mock.calls[0];
+    const initArgs = mockedCreateTamboBackend.mock.calls[0];
     expect(initArgs[0]).toBe("sk-fallback");
     expect(initArgs[2]).toBe(`${projectId}-tambo:anon-user`);
     expect(initArgs[3]).toEqual(
@@ -362,7 +368,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
-    const initArgs2 = jest.mocked(MockTamboBackend).mock.calls[0];
+    const initArgs2 = mockedCreateTamboBackend.mock.calls[0];
     expect(initArgs2[2]).toBe(`${projectId}-${contextKey}`);
     expect(initArgs2[3]).toEqual(expect.any(Object));
     expect(authService.generateMcpAccessToken).toHaveBeenCalledWith(
