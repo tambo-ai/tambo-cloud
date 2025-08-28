@@ -11,6 +11,6 @@ export type * from "./systemTools";
 export {
   createTamboBackend,
   generateChainId,
-  type ITamboBackend,
+  type TamboBackend as ITamboBackend,
   type ModelOptions,
 } from "./tambo-backend";
