@@ -12,23 +12,23 @@ export const FounderEmailProps = z
     aiGeneratedSubject: z
       .string()
       .describe(
-        "By default, generate the subject of the email, example: Hello from your demo app."
+        "By default, generate the subject of the email, example: Hello from your demo app.",
       ),
     aiGeneratedBody: z
       .string()
       .describe(
-        "By default, generate the body of the email, example: I generated this email using your demo app."
+        "By default, generate the body of the email, example: I generated this email using your demo app.",
       ),
     aiGeneratedUsersEmail: z
       .string()
       .optional()
       .default("")
       .describe(
-        "The user's email address. Do not include the user's email address unless they provide it. Do Not Make Up An Email Address."
+        "The user's email address. Do not include the user's email address unless they provide it. Do Not Make Up An Email Address.",
       ),
   })
   .describe(
-    "Write a genz style email. Example content: hey i'm testing your app on your demo page and want to learn more."
+    "Write a genz style email. Example content: hey i'm testing your app on your demo page and want to learn more.",
   );
 
 type FounderEmailProps = z.infer<typeof FounderEmailProps>;
@@ -39,14 +39,6 @@ const sendEmailSchema = z.object({
   usersEmail: z.string().email("Please enter a valid email address"),
 });
 
-interface ValidationError {
-  message: string;
-  details?: {
-    reason?: string;
-    technical_details?: Record<string, any>;
-  };
-}
-
 export const FounderEmailComponent = ({
   aiGeneratedSubject = "",
   aiGeneratedBody = "",
@@ -55,29 +47,63 @@ export const FounderEmailComponent = ({
   const [subject, setSubject] = useTamboComponentState(
     "emailSubject",
     "",
-    aiGeneratedSubject
+    aiGeneratedSubject,
   );
   const [body, setBody] = useTamboComponentState(
     "emailBody",
     "",
-    aiGeneratedBody
+    aiGeneratedBody,
   );
   const [usersEmail, setUsersEmail] = useTamboComponentState(
     "usersEmail",
     "",
-    aiGeneratedUsersEmail
+    aiGeneratedUsersEmail,
   );
   const [isSent, setIsSent] = useTamboComponentState("isSent", false);
   const [isLoading, setIsLoading] = useTamboComponentState("isLoading", false);
-  const [error, setError] = useTamboComponentState<ValidationError | null>(
+  const [error, setError] = useTamboComponentState<string | null>(
     "error",
-    null
+    null,
   );
 
-  // Handle sending the email
+  const getErrorMessage = (errorResponse: any): string => {
+    if (errorResponse?.name === "ZodError" || errorResponse?.issues) {
+      return (
+        errorResponse.issues?.[0]?.message ||
+        "Please check your input and try again."
+      );
+    }
+
+    if (errorResponse?.details?.reason) {
+      switch (errorResponse.details.reason) {
+        case "smtp":
+          return "We couldn't verify if this email can receive messages. Please double-check the address.";
+        case "disposable":
+          return "Please use your regular email address instead of a temporary one.";
+        case "typo":
+          return "There might be a typo in your email address. Please check the spelling.";
+        case "mx":
+          return "The email domain appears to be invalid or cannot receive emails.";
+        default:
+          return errorResponse.message || "Failed to send email";
+      }
+    }
+
+    return (
+      errorResponse?.message ||
+      (errorResponse instanceof Error
+        ? errorResponse.message
+        : "Failed to send email")
+    );
+  };
+
   const handleSendEmail = async () => {
     try {
-      // Validate the email data before sending
+      if (!usersEmail) {
+        setError("Please enter your email address");
+        return;
+      }
+
       const validatedData = sendEmailSchema.parse({
         subject: subject,
         body: body,
@@ -86,7 +112,6 @@ export const FounderEmailComponent = ({
 
       setIsLoading(true);
 
-      // Here you would integrate with Resend API
       const response = await fetch("/api/send-founder-email", {
         method: "POST",
         headers: {
@@ -98,26 +123,15 @@ export const FounderEmailComponent = ({
       const data = await response.json();
 
       if (!response.ok) {
-        const validationError: ValidationError = {
-          message: data.message || data.error || "Failed to send email",
-          details: data.details || {},
-        };
-        throw validationError;
+        const errorMessage = getErrorMessage(data);
+        throw new Error(errorMessage);
       }
 
-      // Update state to show success
       setIsSent(true);
       setIsLoading(false);
     } catch (error) {
-      // Update state to show error
-      const validationError: ValidationError = {
-        message:
-          (error as ValidationError).message ||
-          (error instanceof Error ? error.message : "Failed to send email"),
-        details: (error as ValidationError).details || {},
-      };
-
-      setError(validationError);
+      const errorMessage = getErrorMessage(error);
+      setError(errorMessage);
       setIsLoading(false);
     }
   };
@@ -197,26 +211,9 @@ export const FounderEmailComponent = ({
                     />
                   </svg>
                 </div>
-                <div className="ml-2">
-                  <h3 className="text-xs font-medium text-red-800">
-                    Email Invalid
-                  </h3>
-                  <div className="mt-1 text-xs text-red-700">
-                    {error.details?.reason ? (
-                      <p>
-                        {error.details.reason === "smtp"
-                          ? "We couldn't verify if this email can receive messages. Please double-check the address."
-                          : error.details.reason === "disposable"
-                            ? "Please use your regular email address instead of a temporary one."
-                            : error.details.reason === "typo"
-                              ? "There might be a typo in your email address. Please check the spelling."
-                              : error.details.reason === "mx"
-                                ? "The email domain appears to be invalid or cannot receive emails."
-                                : error.message}
-                      </p>
-                    ) : (
-                      <p>{error.message}</p>
-                    )}
+                <div className="pl-2">
+                  <div className="text-xs text-red-700">
+                    <p>{error}</p>
                   </div>
                 </div>
               </div>
