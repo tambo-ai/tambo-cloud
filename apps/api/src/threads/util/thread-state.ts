@@ -1,8 +1,8 @@
 import { Logger } from "@nestjs/common";
 import {
   getToolsFromSources,
+  ITamboBackend,
   SystemTools,
-  TamboBackend,
 } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
@@ -104,7 +104,7 @@ export async function processThreadMessage(
   messages: ThreadMessage[],
   userMessage: ThreadMessage,
   advanceRequestDto: AdvanceThreadDto,
-  tamboBackend: TamboBackend,
+  tamboBackend: ITamboBackend,
   systemTools: SystemTools,
   customInstructions: string | undefined,
 ): Promise<LegacyComponentDecision> {

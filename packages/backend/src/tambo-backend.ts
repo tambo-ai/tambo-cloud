@@ -43,7 +43,38 @@ interface RunDecisionLoopParams {
   forceToolChoice?: string;
 }
 
-export default class TamboBackend {
+export interface ITamboBackend {
+  generateSuggestions(
+    messages: ThreadMessage[],
+    count: number,
+    availableComponents: AvailableComponent[],
+    threadId: string,
+    stream: true,
+  ): Promise<AsyncIterableIterator<SuggestionDecision>>;
+  generateSuggestions(
+    messages: ThreadMessage[],
+    count: number,
+    availableComponents: AvailableComponent[],
+    threadId: string,
+    stream?: false | undefined,
+  ): Promise<SuggestionDecision>;
+  runDecisionLoop: (
+    params: RunDecisionLoopParams,
+  ) => Promise<AsyncIterableIterator<LegacyComponentDecision>>;
+  generateThreadName: (messages: ThreadMessage[]) => Promise<string>;
+
+  readonly modelOptions: ModelOptions;
+}
+export async function createTamboBackend(
+  apiKey: string | undefined,
+  chainId: string,
+  userId: string,
+  options: TamboBackendOptions = { aiProviderType: AiProviderType.LLM },
+): Promise<ITamboBackend> {
+  return await TamboBackend.create(apiKey, chainId, userId, options);
+}
+
+class TamboBackend implements ITamboBackend {
   private llmClient: LLMClient;
   /** The current model options for the TamboBackend, filled in with defaults */
   public readonly modelOptions: ModelOptions;
