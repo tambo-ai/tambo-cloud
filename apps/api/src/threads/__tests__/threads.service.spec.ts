@@ -1,9 +1,12 @@
 import { ConfigService } from "@nestjs/config";
 import { Test, TestingModule } from "@nestjs/testing";
 import {
+  AgentProviderType,
+  AiProviderType,
   ContentPartType,
   GenerationStage,
   MessageRole,
+  OAuthValidationMode,
 } from "@tambo-ai-cloud/core";
 import { type operations as dbOperations } from "@tambo-ai-cloud/db";
 import { DATABASE } from "../../common/middleware/db-transaction-middleware";
@@ -81,7 +84,8 @@ jest.mock("@tambo-ai-cloud/db", () => {
 });
 
 // Access the mocked operations for configuring behavior in tests
-const { operations } = jest.requireMock("@tambo-ai-cloud/db");
+const { operations }: { operations: jest.Mocked<typeof dbOperations> } =
+  jest.requireMock("@tambo-ai-cloud/db");
 
 // Intentionally do NOT mock systemTools or thread/message utils.
 
@@ -171,10 +175,37 @@ describe("ThreadsService.advanceThread initialization", () => {
       messageCount: 2,
       hasApiKey: true,
       firstMessageSentAt: new Date(),
+      createdAt: new Date(),
+      notificationSentAt: null,
+      updatedAt: new Date(),
+      projectId,
     });
     operations.getProject.mockResolvedValue({
       maxToolCallLimit: 7,
-      customInstructions: undefined,
+      customInstructions: null,
+      agentName: null,
+      agentProviderType: AgentProviderType.MASTRA,
+      agentUrl: null,
+      bearerTokenSecret: "secret",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      name: "My Project",
+      deprecated_legacyId: null,
+      deprecated_mcpEnabled: false,
+      deprecatedComposioEnabled: false,
+      members: [],
+      creatorId: "user_1",
+      defaultLlmProviderName: "openai",
+      defaultLlmModelName: "gpt-4.1-2025-04-14",
+      customLlmModelName: null,
+      customLlmBaseURL: null,
+      isTokenRequired: false,
+      id: projectId,
+      maxInputTokens: null,
+      oauthValidationMode: OAuthValidationMode.NONE,
+      oauthSecretKeyEncrypted: null,
+      oauthPublicKey: null,
+      providerType: AiProviderType.LLM,
     });
     operations.getProjectMcpServers.mockResolvedValue([]);
     operations.getMessages.mockResolvedValue([
@@ -185,6 +216,14 @@ describe("ThreadsService.advanceThread initialization", () => {
         content: [{ type: ContentPartType.Text, text: "hi" }],
         createdAt: new Date(),
         componentState: {},
+        actionType: null,
+        additionalContext: {},
+        toolCallId: null,
+        componentDecision: null,
+        error: null,
+        isCancelled: false,
+        metadata: null,
+        toolCallRequest: null,
       },
     ]);
 
