@@ -1,4 +1,4 @@
-import { createMcpHandler } from "@vercel/mcp-adapter";
+import { createMcpHandler } from "mcp-handler";
 import { OpenAI } from "openai";
 import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod.mjs";
@@ -222,4 +222,23 @@ const handler = createMcpHandler(
   { basePath: "", verboseLogs: true, maxDuration: 300 },
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+export { handler as DELETE, handler as POST };
+
+// GET handler for health checks and discovery
+export async function GET() {
+  return new Response(
+    JSON.stringify({
+      name: "Tambo MCP Server",
+      version: "1.0.0",
+      description: "MCP server for Tambo documentation and support",
+      supportedMethods: ["POST", "DELETE"],
+      mcpProtocolVersion: "2025-03-26",
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+}
