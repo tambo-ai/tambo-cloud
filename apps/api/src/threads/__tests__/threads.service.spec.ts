@@ -26,9 +26,19 @@ import { ThreadsService } from "../threads.service";
 // Mock backend pieces (TamboBackend and helpers)
 jest.mock("@tambo-ai-cloud/backend", () => {
   const actual = jest.requireActual("@tambo-ai-cloud/backend");
-  const mockRunDecisionLoop = jest.fn();
+  const makeStream = () => ({
+    async *[Symbol.asyncIterator]() {
+      yield {
+        id: "dec1",
+        role: MessageRole.Assistant,
+        message: "hello",
+        componentState: {},
+      } as any;
+    },
+  });
+  const __testRunDecisionLoop__ = jest.fn().mockReturnValue(makeStream());
   const createTamboBackend = jest.fn().mockResolvedValue({
-    runDecisionLoop: mockRunDecisionLoop,
+    runDecisionLoop: __testRunDecisionLoop__,
     generateSuggestions: jest.fn(),
     generateThreadName: jest.fn(),
     modelOptions: {
@@ -42,6 +52,7 @@ jest.mock("@tambo-ai-cloud/backend", () => {
     ...actual,
     createTamboBackend,
     generateChainId: jest.fn().mockResolvedValue("chain-1"),
+    __testRunDecisionLoop__,
   };
 });
 
@@ -50,6 +61,9 @@ const {
 }: {
   createTamboBackend: jest.MockedFunction<typeof createTamboBackend>;
 } = jest.requireMock("@tambo-ai-cloud/backend");
+
+const { __testRunDecisionLoop__ }: { __testRunDecisionLoop__: jest.Mock } =
+  jest.requireMock("@tambo-ai-cloud/backend");
 
 // Mock DB operations used by the service
 jest.mock("@tambo-ai-cloud/db", () => {
@@ -287,7 +301,7 @@ describe("ThreadsService.advanceThread initialization", () => {
   test("streaming: initialization calls generateStreamingResponse with no tools/components", async () => {
     const dto = makeDto({ withComponents: false, withClientTools: false });
 
-    const spyGen = jest
+    const generateStreamingResponse = jest
       .spyOn<any, any>(service, "generateStreamingResponse")
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
@@ -312,13 +326,14 @@ describe("ThreadsService.advanceThread initialization", () => {
         model: "gpt-4.1-2025-04-14",
       }),
     );
-    expect(spyGen).toHaveBeenCalled();
+    // generateStreamingResponse was invoked
+    expect(generateStreamingResponse).toHaveBeenCalled();
   });
 
   test("streaming: initialization passes system tools when present", async () => {
     const dto = makeDto();
 
-    const spyGen = jest
+    const generateStreamingResponse = jest
       .spyOn<any, any>(service, "generateStreamingResponse")
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
@@ -329,12 +344,47 @@ describe("ThreadsService.advanceThread initialization", () => {
     ).rejects.toThrow("STOP_AFTER_INIT");
 
     expect(operations.getProjectMcpServers).toHaveBeenCalled();
-    expect(spyGen).toHaveBeenCalled();
+    expect(generateStreamingResponse).toHaveBeenCalled();
+  });
+
+  test("streaming: calls backend.runDecisionLoop with strictTools, messages, customInstructions", async () => {
+    const dto = makeDto();
+    // Ensure backend instance is properly returned for this test
+    jest
+      .spyOn<any, any>(service as any, "createHydraBackendForThread")
+      .mockResolvedValue({
+        runDecisionLoop: __testRunDecisionLoop__,
+        generateSuggestions: jest.fn(),
+        generateThreadName: jest.fn(),
+        modelOptions: {
+          provider: "openai",
+          model: "gpt-4.1-2025-04-14",
+          baseURL: undefined,
+          maxInputTokens: undefined,
+        },
+      } as any);
+    __testRunDecisionLoop__.mockImplementationOnce(() => {
+      throw new Error("STOP_AFTER_INIT");
+    });
+
+    await expect(
+      service.advanceThread(projectId, dto, undefined, true),
+    ).rejects.toThrow("STOP_AFTER_INIT");
+
+    expect(__testRunDecisionLoop__).toHaveBeenCalledTimes(1);
+    const callArg = __testRunDecisionLoop__.mock.calls[0][0];
+    expect(callArg).toEqual(
+      expect.objectContaining({
+        messages: expect.any(Array),
+        strictTools: expect.any(Array),
+        customInstructions: undefined,
+      }),
+    );
   });
 
   test("streaming: initialization with client tools and components", async () => {
     const dto = makeDto({ withComponents: true, withClientTools: true });
-    const spyGen = jest
+    const generateStreamingResponse = jest
       .spyOn<any, any>(service, "generateStreamingResponse")
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
@@ -344,13 +394,13 @@ describe("ThreadsService.advanceThread initialization", () => {
       service.advanceThread(projectId, dto, undefined, true),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
-    expect(spyGen).toHaveBeenCalled();
+    expect(generateStreamingResponse).toHaveBeenCalled();
   });
 
   test("streaming: initialization uses contextKey in backend user id and token", async () => {
     const dto = makeDto();
     const contextKey = "ctx_123";
-    const spyGen = jest
+    const generateStreamingResponse = jest
       .spyOn<any, any>(service, "generateStreamingResponse")
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
@@ -376,13 +426,13 @@ describe("ThreadsService.advanceThread initialization", () => {
       threadId,
       contextKey,
     );
-    expect(spyGen).toHaveBeenCalled();
+    expect(generateStreamingResponse).toHaveBeenCalled();
   });
 
   test("non-streaming: initialization reaches non-streaming decision flow", async () => {
     const dto = makeDto({ withComponents: true, withClientTools: false });
     // Spy on private method to short-circuit after entering non-streaming path
-    const spyProcess = jest
+    const advanceThread = jest
       .spyOn<any, any>(service, "advanceThread_")
       .mockImplementationOnce(async (...args: any[]) => {
         // Call original to exercise path until just before processThreadMessage returns
@@ -405,12 +455,52 @@ describe("ThreadsService.advanceThread initialization", () => {
     ).rejects.toThrow("STOP_AFTER_INIT");
 
     expect(operations.getProjectMcpServers).toHaveBeenCalled();
-    expect(spyProcess).toHaveBeenCalled();
+    expect(advanceThread).toHaveBeenCalled();
+  });
+
+  test("non-streaming: calls backend.runDecisionLoop with forceToolChoice when provided", async () => {
+    const dto = makeDto({
+      withComponents: true,
+      withClientTools: true,
+      forceToolChoice: "someTool",
+    });
+    // Ensure backend instance is properly returned for this test
+    jest
+      .spyOn<any, any>(service as any, "createHydraBackendForThread")
+      .mockResolvedValue({
+        runDecisionLoop: __testRunDecisionLoop__,
+        generateSuggestions: jest.fn(),
+        generateThreadName: jest.fn(),
+        modelOptions: {
+          provider: "openai",
+          model: "gpt-4.1-2025-04-14",
+          baseURL: undefined,
+          maxInputTokens: undefined,
+        },
+      } as any);
+    __testRunDecisionLoop__.mockImplementationOnce(() => {
+      throw new Error("STOP_AFTER_INIT");
+    });
+
+    await expect(
+      service.advanceThread(projectId, dto, undefined, false),
+    ).rejects.toThrow("STOP_AFTER_INIT");
+
+    expect(__testRunDecisionLoop__).toHaveBeenCalledTimes(1);
+    const callArg = __testRunDecisionLoop__.mock.calls[0][0];
+    expect(callArg).toEqual(
+      expect.objectContaining({
+        messages: expect.any(Array),
+        strictTools: expect.any(Array),
+        customInstructions: undefined,
+        forceToolChoice: "someTool",
+      }),
+    );
   });
 
   test("non-streaming: initialization handles no tools/components", async () => {
     const dto = makeDto({ withComponents: false, withClientTools: false });
-    const spyProcess = jest
+    const advanceThread = jest
       .spyOn<any, any>(service, "advanceThread_")
       .mockImplementationOnce(async (...args: any[]) => {
         const original =
@@ -431,6 +521,6 @@ describe("ThreadsService.advanceThread initialization", () => {
       service.advanceThread(projectId, dto, undefined, false),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
-    expect(spyProcess).toHaveBeenCalled();
+    expect(advanceThread).toHaveBeenCalled();
   });
 });
