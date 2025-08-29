@@ -1,4 +1,4 @@
-import { ActionType, GenerationStage, MessageRole } from "@tambo-ai-cloud/core";
+import { GenerationStage, MessageRole } from "@tambo-ai-cloud/core";
 import {
   and,
   count,
@@ -93,9 +93,9 @@ export async function getThreadForProjectId(
       messages: {
         where: includeInternal
           ? undefined
-          : or(
-              isNull(schema.messages.actionType),
-              eq(schema.messages.actionType, ActionType.ToolCall),
+          : and(
+              eq(schema.messages.role, MessageRole.Assistant),
+              isNotNull(schema.messages.toolCallRequest),
             ),
         orderBy: (messages, { asc }) => [asc(messages.createdAt)],
         with: {
