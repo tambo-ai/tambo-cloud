@@ -262,8 +262,8 @@ function getToolStatusMessage(
   }
 
   const toolCallMessage = isLoading
-    ? `Calling ${message.toolCallRequest?.toolName ?? "tool"}`
-    : `Called ${message.toolCallRequest?.toolName ?? "tool"}`;
+    ? `Calling ${message.toolCallRequest.toolName}`
+    : `Called ${message.toolCallRequest.toolName}`;
   const toolStatusMessage = isLoading
     ? message.component?.statusMessage
     : message.component?.completionStatusMessage;
