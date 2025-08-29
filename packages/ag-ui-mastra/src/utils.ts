@@ -1,25 +1,21 @@
 import type { Message } from "@ag-ui/client";
 import { AbstractAgent } from "@ag-ui/client";
-import {
-  CopilotRuntime,
-  copilotRuntimeNodeHttpEndpoint,
-  CopilotServiceAdapter,
-  ExperimentalEmptyAdapter,
-} from "@copilotkit/runtime";
-import type { CoreMessage } from "@mastra/core";
-import { registerApiRoute } from "@mastra/core/server";
-import type { Mastra } from "@mastra/core";
+import { MastraClient } from "@mastra/client-js";
+import type { CoreMessage, Mastra } from "@mastra/core";
 import { Agent as LocalMastraAgent } from "@mastra/core/agent";
 import { RuntimeContext } from "@mastra/core/runtime-context";
-import { MastraClient } from "@mastra/client-js";
 import { MastraAgent } from "./mastra";
 
-export function convertAGUIMessagesToMastra(messages: Message[]): CoreMessage[] {
+export function convertAGUIMessagesToMastra(
+  messages: Message[],
+): CoreMessage[] {
   const result: CoreMessage[] = [];
 
   for (const message of messages) {
     if (message.role === "assistant") {
-      const parts: any[] = message.content ? [{ type: "text", text: message.content }] : [];
+      const parts: any[] = message.content
+        ? [{ type: "text", text: message.content }]
+        : [];
       for (const toolCall of message.toolCalls ?? []) {
         parts.push({
           type: "tool-call",
@@ -171,7 +167,12 @@ export interface GetNetworkOptions {
   runtimeContext?: RuntimeContext;
 }
 
-export function getNetwork({ mastra, networkId, resourceId, runtimeContext }: GetNetworkOptions) {
+export function getNetwork({
+  mastra,
+  networkId,
+  resourceId,
+  runtimeContext,
+}: GetNetworkOptions) {
   const network = mastra.getNetwork(networkId);
   if (!network) {
     throw new Error(`Network ${networkId} not found`);
