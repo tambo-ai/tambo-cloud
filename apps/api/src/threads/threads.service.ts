@@ -1382,6 +1382,8 @@ export class ThreadsService {
         );
       }
 
+      // From this point forward, we are not handling tool calls
+      // so we can update the generation stage to fetching context
       await updateGenerationStage(
         db,
         threadId,
@@ -1424,7 +1426,7 @@ export class ThreadsService {
         },
       });
 
-      const streamedResponseMessage = await tamboBackend.runDecisionLoop({
+      const streamedResponseMessages = await tamboBackend.runDecisionLoop({
         messages,
         strictTools,
         customInstructions,
@@ -1447,7 +1449,7 @@ export class ThreadsService {
       return this.handleAdvanceThreadStream(
         projectId,
         threadId,
-        streamedResponseMessage,
+        streamedResponseMessages,
         messages,
         userMessage,
         allTools,
