@@ -11,6 +11,7 @@ import {
   ToolCallStartEvent,
 } from "@ag-ui/client";
 import { Message, ToolCallEndEvent } from "@ag-ui/core";
+import { CrewAIAgent } from "@ag-ui/crewai";
 import { MastraAgent } from "@ag-ui/mastra";
 import { MastraClient } from "@mastra/client-js";
 import {
@@ -65,6 +66,13 @@ export class AgentClient {
         const agentClient = new AgentClient(chainId, agent);
 
         return agentClient;
+      }
+      case AgentProviderType.CREWAI: {
+        const agent = new CrewAIAgent({
+          url: agentUrl,
+          agentId: agentName,
+        });
+        return new AgentClient(chainId, agent as unknown as AbstractAgent);
       }
       default: {
         throw new Error(
