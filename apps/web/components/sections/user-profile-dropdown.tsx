@@ -12,7 +12,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { siteConfig } from "@/lib/config";
 import { track } from "@vercel/analytics";
-import { BookOpen, Bug, Calendar, LogOut, MessageSquare } from "lucide-react";
+import {
+  BookOpen,
+  Bug,
+  Calendar,
+  Crown,
+  LogOut,
+  MessageSquare,
+} from "lucide-react";
 import { signOut } from "next-auth/react";
 
 interface UserProfileDropdownProps {
@@ -105,6 +112,13 @@ export function UserProfileDropdown({ user }: UserProfileDropdownProps) {
           >
             <Bug className="mr-2 h-4 w-4" />
             Create Issue
+          </a>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <a href="/pricing" className="flex items-center cursor-pointer">
+            <Crown className="mr-2 h-4 w-4" />
+            Pro Plan
           </a>
         </DropdownMenuItem>
 
