@@ -23,6 +23,7 @@ import { Suspense } from "react";
 import { authOptions } from "../lib/auth";
 import "./globals.css";
 import { PHProvider, PostHogPageview } from "./providers";
+import { AutumnProvider } from "autumn-js/react";
 
 export const metadata: Metadata = {
   title: {
@@ -71,42 +72,44 @@ export default async function RootLayout({
         <PreloadResources />
       </head>
       <TamboProviderWrapper>
-        <Suspense>
-          <PostHogPageview />
-        </Suspense>
-        <Suspense>
-          <WebVitalsReporter />
-        </Suspense>
-        <TRPCReactProvider>
-          <PHProvider>
-            <body
-              className={cn(
-                "min-h-screen bg-background antialiased w-full mx-auto scroll-smooth font-sans flex flex-col snap-y snap-proximity",
-              )}
-            >
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="light"
-                enableSystem={false}
-                forcedTheme="light"
+        <AutumnProvider>
+          <Suspense>
+            <PostHogPageview />
+          </Suspense>
+          <Suspense>
+            <WebVitalsReporter />
+          </Suspense>
+          <TRPCReactProvider>
+            <PHProvider>
+              <body
+                className={cn(
+                  "min-h-screen bg-background antialiased w-full mx-auto scroll-smooth font-sans flex flex-col snap-y snap-proximity",
+                )}
               >
-                <NextAuthProvider session={session}>
-                  {children}
-                  <ComponentsThemeProvider defaultTheme="light">
-                    <MessageThreadCollapsible
-                      className="z-50"
-                      defaultOpen={false}
-                    />
-                  </ComponentsThemeProvider>
-                  <TailwindIndicator />
-                </NextAuthProvider>
-              </ThemeProvider>
-              <Toaster />
-              <Analytics />
-              <Schema jsonLd={[websiteSchema, organizationSchema]} />
-            </body>
-          </PHProvider>
-        </TRPCReactProvider>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="light"
+                  enableSystem={false}
+                  forcedTheme="light"
+                >
+                  <NextAuthProvider session={session}>
+                    {children}
+                    <ComponentsThemeProvider defaultTheme="light">
+                      <MessageThreadCollapsible
+                        className="z-50"
+                        defaultOpen={false}
+                      />
+                    </ComponentsThemeProvider>
+                    <TailwindIndicator />
+                  </NextAuthProvider>
+                </ThemeProvider>
+                <Toaster />
+                <Analytics />
+                <Schema jsonLd={[websiteSchema, organizationSchema]} />
+              </body>
+            </PHProvider>
+          </TRPCReactProvider>
+        </AutumnProvider>
       </TamboProviderWrapper>
     </html>
   );
