@@ -6,7 +6,7 @@ import {
   eq,
   ilike,
   inArray,
-  isNotNull,
+  isNull,
   ne,
   or,
   sql,
@@ -93,9 +93,9 @@ export async function getThreadForProjectId(
       messages: {
         where: includeInternal
           ? undefined
-          : and(
-              eq(schema.messages.role, MessageRole.Assistant),
-              isNotNull(schema.messages.toolCallRequest),
+          : or(
+              ne(schema.messages.role, MessageRole.Assistant),
+              isNull(schema.messages.toolCallRequest),
             ),
         orderBy: (messages, { asc }) => [asc(messages.createdAt)],
         with: {
