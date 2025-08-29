@@ -256,8 +256,10 @@ export async function getMessages(
           eq(schema.messages.threadId, threadId),
           or(
             isNull(schema.messages.role),
-            eq(schema.messages.role, MessageRole.Assistant),
-            isNotNull(schema.messages.toolCallRequest),
+            and(
+              eq(schema.messages.role, MessageRole.Assistant),
+              isNotNull(schema.messages.toolCallRequest),
+            ),
           ),
         ),
     orderBy: (messages, { asc }) => [asc(messages.createdAt)],
