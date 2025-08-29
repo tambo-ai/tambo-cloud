@@ -115,7 +115,7 @@ const Message = React.forwardRef<HTMLDivElement, MessageProps>(
     );
 
     // Don't render tool response messages as they're shown in tool call dropdowns
-    if (message.actionType === "tool_response") {
+    if (message.role === "tool") {
       return null;
     }
     return (
@@ -288,10 +288,10 @@ const ToolcallInfo = React.forwardRef<HTMLDivElement, ToolcallInfoProps>(
       if (currentMessageIndex === -1) return null;
       for (let i = currentMessageIndex + 1; i < thread.messages.length; i++) {
         const nextMessage = thread.messages[i];
-        if (nextMessage.actionType === "tool_response") {
+        if (nextMessage.role === "tool") {
           return nextMessage;
         }
-        if (nextMessage.actionType === "tool_call") {
+        if (nextMessage.role === "assistant" && nextMessage.toolCallRequest) {
           break;
         }
       }
