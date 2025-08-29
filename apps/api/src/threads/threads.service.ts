@@ -1518,6 +1518,7 @@ export class ThreadsService {
       },
     });
     let ttfbEnded = false;
+    let previousMessageId: string = userMessage.id;
 
     try {
       // Add breadcrumb for stream start
@@ -1593,6 +1594,11 @@ export class ThreadsService {
                 : undefined,
             });
           }
+          console.log(
+            "==== appending new message after",
+            currentThreadMessage?.id,
+          );
+          previousMessageId = currentThreadMessage?.id ?? userMessage.id;
           // time to insert a new message into the db
           currentThreadMessage = await appendNewMessageToThread(
             db,
@@ -1722,7 +1728,7 @@ export class ThreadsService {
           await finishInProgressMessage(
             db,
             threadId,
-            userMessage.id,
+            previousMessageId,
             currentThreadMessage.id,
             finalThreadMessage,
             logger,
