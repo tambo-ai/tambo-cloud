@@ -1,4 +1,4 @@
-import { ActionType, GenerationStage } from "@tambo-ai-cloud/core";
+import { ActionType, GenerationStage, MessageRole } from "@tambo-ai-cloud/core";
 import {
   and,
   count,
@@ -6,6 +6,7 @@ import {
   eq,
   ilike,
   inArray,
+  isNotNull,
   isNull,
   or,
   sql,
@@ -254,8 +255,9 @@ export async function getMessages(
       : and(
           eq(schema.messages.threadId, threadId),
           or(
-            isNull(schema.messages.actionType),
-            eq(schema.messages.actionType, ActionType.ToolCall),
+            isNull(schema.messages.role),
+            eq(schema.messages.role, MessageRole.Assistant),
+            isNotNull(schema.messages.toolCallRequest),
           ),
         ),
     orderBy: (messages, { asc }) => [asc(messages.createdAt)],
