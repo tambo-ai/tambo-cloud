@@ -7,7 +7,6 @@ import {
   ilike,
   inArray,
   isNotNull,
-  isNull,
   ne,
   or,
   sql,
@@ -255,11 +254,7 @@ export async function getMessages(
       ? eq(schema.messages.threadId, threadId)
       : and(
           eq(schema.messages.threadId, threadId),
-          or(
-            isNull(schema.messages.role),
-            ne(schema.messages.role, MessageRole.Assistant),
-            isNull(schema.messages.toolCallRequest),
-          ),
+          ne(schema.messages.role, MessageRole.Tool),
         ),
     orderBy: (messages, { asc }) => [asc(messages.createdAt)],
   });
