@@ -366,7 +366,7 @@ export function updateThreadMessageFromLegacyDecision(
 export async function addInitialMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessage,
+  addedUserMessageId: string,
   logger: Logger,
 ) {
   try {
@@ -375,7 +375,7 @@ export async function addInitialMessage(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessage.id,
+          addedUserMessageId,
           false,
         );
 

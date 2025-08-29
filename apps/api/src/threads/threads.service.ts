@@ -1560,7 +1560,7 @@ export class ThreadsService {
       const initialMessage = await addInitialMessage(
         db,
         threadId,
-        userMessage,
+        userMessage.id,
         logger,
       );
       let currentThreadMessage: ThreadMessage = initialMessage;
