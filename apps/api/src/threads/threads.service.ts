@@ -1051,7 +1051,7 @@ export class ThreadsService {
       } = await addAssistantResponse(
         db,
         thread.id,
-        userMessage,
+        userMessage.id,
         responseMessage,
         this.logger,
       );
@@ -1581,7 +1581,7 @@ export class ThreadsService {
       const initialMessage = await addInitialMessage(
         db,
         threadId,
-        userMessage,
+        userMessage.id,
         logger,
       );
       let currentThreadMessage: ThreadMessage = initialMessage;
@@ -1722,7 +1722,7 @@ export class ThreadsService {
         await finishInProgressMessage(
           db,
           threadId,
-          userMessage,
+          userMessage.id,
           initialMessage.id,
           finalThreadMessage,
           logger,
