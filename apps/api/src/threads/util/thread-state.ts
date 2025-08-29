@@ -214,7 +214,7 @@ function isThreadProcessing(generationStage: GenerationStage) {
 export async function addAssistantResponse(
   db: HydraDatabase,
   threadId: string,
-  addedUserMessageId: string,
+  newestMessageId: string,
   responseMessage: LegacyComponentDecision,
   logger?: Logger,
 ): Promise<{
@@ -228,7 +228,7 @@ export async function addAssistantResponse(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessageId,
+          newestMessageId,
           false,
         );
 
@@ -366,7 +366,7 @@ export function updateThreadMessageFromLegacyDecision(
 export async function addInitialMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessageId: string,
+  newestMessageId: string,
   logger: Logger,
 ) {
   try {
@@ -375,7 +375,7 @@ export async function addInitialMessage(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessageId,
+          newestMessageId,
           false,
         );
 
@@ -410,7 +410,7 @@ export async function addInitialMessage(
 export async function finishInProgressMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessageId: string,
+  newestMessageId: string,
   inProgressMessageId: string,
   finalThreadMessage: ThreadMessage,
   logger?: Logger,
@@ -424,7 +424,7 @@ export async function finishInProgressMessage(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessageId,
+          newestMessageId,
           true,
         );
 
