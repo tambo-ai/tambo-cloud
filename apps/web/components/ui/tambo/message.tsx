@@ -256,7 +256,10 @@ function getToolStatusMessage(
   message: TamboThreadMessage,
   isLoading: boolean | undefined,
 ) {
-  if (message.role !== "assistant" || !message.toolCallRequest) return null;
+  // ignore non-tool messages
+  if (message.role !== "assistant" || !message.toolCallRequest) {
+    return null;
+  }
 
   const toolCallMessage = isLoading
     ? `Calling ${message.toolCallRequest?.toolName ?? "tool"}`
