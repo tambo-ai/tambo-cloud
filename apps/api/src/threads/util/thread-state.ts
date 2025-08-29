@@ -351,9 +351,9 @@ export function updateThreadMessageFromLegacyDecision(
     // Intermediate chunks from fixStreamedToolCalls will not include tool calls; only
     // final/synthesized chunks carry tool call metadata.
   };
+  currentThreadMessage.tool_call_id = chunk.toolCallId;
   if (chunk.toolCallRequest) {
     currentThreadMessage.toolCallRequest = chunk.toolCallRequest;
-    currentThreadMessage.tool_call_id = chunk.toolCallId;
     currentThreadMessage.actionType = ActionType.ToolCall;
   }
   return currentThreadMessage;

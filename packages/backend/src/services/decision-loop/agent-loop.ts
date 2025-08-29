@@ -1,7 +1,9 @@
+import { Message } from "@ag-ui/core";
 import {
   LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
+  ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
@@ -29,18 +31,51 @@ export async function* runAgentLoop(
     // },
   });
   for await (const event of stream) {
+    const { message } = event;
+    const toolCallId =
+      message.role === "assistant"
+        ? message.toolCalls?.[0]?.id
+        : message.role === "tool"
+          ? message.toolCallId
+          : undefined;
+    const toolCallRequest = getToolCallRequest(message);
     yield {
-      id: event.message.id,
-      role: event.message.role as MessageRole,
-      message: event.message.content || "",
+      id: message.id,
+      role: message.role as MessageRole,
+      message: message.content || "",
       componentName: null,
       props: null,
       componentState: null,
       reasoning: "",
       statusMessage: "",
       completionStatusMessage: "",
-      toolCallRequest: undefined,
-      toolCallId: undefined,
+      toolCallRequest: toolCallRequest,
+      toolCallId: toolCallId,
     };
+  }
+}
+function getToolCallRequest(message: Message): ToolCallRequest | undefined {
+  if (message.role !== "assistant" || !message.toolCalls?.length) {
+    return;
+  }
+  const toolCall = message.toolCalls[0];
+  try {
+    const parameters: Record<string, unknown> = JSON.parse(
+      toolCall.function.arguments ?? "{}",
+    );
+    return {
+      toolName: toolCall.function.name,
+      parameters: Object.entries(parameters).map(([key, value]) => ({
+        parameterName: key,
+        parameterValue: value,
+      })),
+    };
+  } catch (e) {
+    console.warn(
+      `Error parsing tool call arguments for tool '${toolCall.function.name}'`,
+      e,
+      toolCall.function.arguments,
+    );
+    return;
   }
 }
