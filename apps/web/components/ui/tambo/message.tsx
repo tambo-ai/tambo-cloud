@@ -256,8 +256,7 @@ function getToolStatusMessage(
   message: TamboThreadMessage,
   isLoading: boolean | undefined,
 ) {
-  const isToolCall = message.actionType === "tool_call";
-  if (!isToolCall) return null;
+  if (message.role !== "assistant" || !message.toolCallRequest) return null;
 
   const toolCallMessage = isLoading
     ? `Calling ${message.toolCallRequest?.toolName ?? "tool"}`
@@ -298,7 +297,7 @@ const ToolcallInfo = React.forwardRef<HTMLDivElement, ToolcallInfoProps>(
       return null;
     }, [message, thread?.messages]);
 
-    if (message.actionType !== "tool_call") {
+    if (message.role !== "assistant" || !message.toolCallRequest) {
       return null;
     }
 
