@@ -8,6 +8,7 @@ import {
   inArray,
   isNotNull,
   isNull,
+  ne,
   or,
   sql,
 } from "drizzle-orm";
@@ -256,10 +257,8 @@ export async function getMessages(
           eq(schema.messages.threadId, threadId),
           or(
             isNull(schema.messages.role),
-            and(
-              eq(schema.messages.role, MessageRole.Assistant),
-              isNotNull(schema.messages.toolCallRequest),
-            ),
+            ne(schema.messages.role, MessageRole.Assistant),
+            isNull(schema.messages.toolCallRequest),
           ),
         ),
     orderBy: (messages, { asc }) => [asc(messages.createdAt)],
