@@ -1730,7 +1730,7 @@ export class ThreadsService {
           await finishInProgressMessage(
             db,
             threadId,
-            userMessage,
+            userMessage.id,
             currentThreadMessage.id,
             finalThreadMessage,
             logger,
