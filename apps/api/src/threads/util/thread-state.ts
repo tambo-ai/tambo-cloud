@@ -1,8 +1,8 @@
 import { Logger } from "@nestjs/common";
 import {
   getToolsFromSources,
+  ITamboBackend,
   SystemTools,
-  TamboBackend,
 } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
@@ -104,7 +104,7 @@ export async function processThreadMessage(
   messages: ThreadMessage[],
   userMessage: ThreadMessage,
   advanceRequestDto: AdvanceThreadDto,
-  tamboBackend: TamboBackend,
+  tamboBackend: ITamboBackend,
   systemTools: SystemTools,
   customInstructions: string | undefined,
 ): Promise<LegacyComponentDecision> {
@@ -215,7 +215,7 @@ function isThreadProcessing(generationStage: GenerationStage) {
 export async function addAssistantResponse(
   db: HydraDatabase,
   threadId: string,
-  addedUserMessage: ThreadMessage,
+  newestMessageId: string,
   responseMessage: LegacyComponentDecision,
   logger?: Logger,
 ): Promise<{
@@ -229,7 +229,7 @@ export async function addAssistantResponse(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessage.id,
+          newestMessageId,
           false,
         );
 
@@ -361,11 +361,13 @@ export function updateThreadMessageFromLegacyDecision(
  * Add a placeholder for an in-progress message to a thread, that will be updated later
  * with the final response.
  */
-export async function addInitialMessage(
+export async function appendNewMessageToThread(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessage,
-  logger: Logger,
+  newestMessageId: string,
+  role: MessageRole = MessageRole.Assistant,
+  initialText: string = "",
+  logger?: Logger,
 ) {
   try {
     const message = await db.transaction(
@@ -373,16 +375,16 @@ export async function addInitialMessage(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessage.id,
+          newestMessageId,
           false,
         );
 
         return await addMessage(tx, threadId, {
-          role: MessageRole.Assistant,
+          role,
           content: [
             {
               type: ContentPartType.Text,
-              text: "",
+              text: initialText,
             },
           ],
         });
@@ -394,7 +396,7 @@ export async function addInitialMessage(
 
     return message;
   } catch (error) {
-    logger.error(
+    logger?.error(
       "Transaction failed: Adding in-progress message",
       (error as Error).stack,
     );
@@ -408,7 +410,7 @@ export async function addInitialMessage(
 export async function finishInProgressMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessage,
+  newestMessageId: string,
   inProgressMessageId: string,
   finalThreadMessage: ThreadMessage,
   logger?: Logger,
@@ -422,7 +424,7 @@ export async function finishInProgressMessage(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessage.id,
+          newestMessageId,
           true,
         );
 
