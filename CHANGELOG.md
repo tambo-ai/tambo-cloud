@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.103.3](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.103.2...repo-v0.103.3) (2025-08-29)
+
+
+### Documentation
+
+* a few more hydra-&gt;tambo things I missed ([#1668](https://github.com/tambo-ai/tambo-cloud/issues/1668)) ([c53fc05](https://github.com/tambo-ai/tambo-cloud/commit/c53fc05efc6ca1e683815ac5c7d85909b6238ed2))
+* Do some really basic formatting and linking alignment ([#1667](https://github.com/tambo-ai/tambo-cloud/issues/1667)) ([1a735e7](https://github.com/tambo-ai/tambo-cloud/commit/1a735e73bf191567235a3659b5989859cf939ce9))
+
+
+### Code Refactoring
+
+* deprecate actionType for consistency ([#1670](https://github.com/tambo-ai/tambo-cloud/issues/1670)) ([3fbb9f7](https://github.com/tambo-ai/tambo-cloud/commit/3fbb9f72ce3fe3c838bb8318c54f893b7ca97104))
+
+
+### Tests
+
+* **api:** Add thread service test and mock object factories for generalized testing ([#1665](https://github.com/tambo-ai/tambo-cloud/issues/1665)) ([4b9335c](https://github.com/tambo-ai/tambo-cloud/commit/4b9335c0990161027456ba072812dba49a392f00))
+
 ## [0.103.2](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.103.1...repo-v0.103.2) (2025-08-27)
 
 
