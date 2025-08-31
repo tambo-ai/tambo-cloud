@@ -35,7 +35,7 @@ import {
 } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
 import {
   MultiComponentReturnSetting,
-  MultiComponentReturnSettingPropsSchema,
+  MultiComponentReturnSettingTamboPropsSchema,
 } from "@/components/dashboard-components/project-details/multi-component-return-setting";
 import {
   ProjectTable,
@@ -130,6 +130,6 @@ export const tamboRegisteredComponents = [
     description:
       "Toggle to allow returning multiple UI components per assistant response (Beta). Shows a warning that changes must be saved. Supports pre-toggle via requestedEnabled prop when invoked from chat, but requires Save to apply.",
     component: MultiComponentReturnSetting,
-    propsSchema: MultiComponentReturnSettingPropsSchema,
+    propsSchema: MultiComponentReturnSettingTamboPropsSchema,
   },
 ];

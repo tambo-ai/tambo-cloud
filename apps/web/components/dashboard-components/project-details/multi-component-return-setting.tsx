@@ -17,23 +17,29 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
-export const MultiComponentReturnSettingPropsSchema = z.object({
-  project: z.object({
-    id: z.string(),
-    allowMultipleUiComponents: z.boolean().optional(),
-  }),
-  requestedEnabled: z.boolean().optional(),
-  onEdited: z.function().args().returns(z.void()).optional(),
+// Minimal props schema for Tambo registration only (no functions)
+export const MultiComponentReturnSettingTamboPropsSchema = z.object({
+  projectId: z.string().describe("Project to update"),
+  requestedEnabled: z
+    .boolean()
+    .optional()
+    .describe("The desired value to pre-toggle in the UI"),
 });
 
 interface MultiComponentReturnSettingProps {
-  project: { id: string; allowMultipleUiComponents?: boolean };
+  // Full props when used inside the settings page
+  project?: { id: string; allowMultipleUiComponents?: boolean };
+  // Minimal props when invoked from Tambo
+  projectId?: string;
+  // Desired new value to pre-toggle
   requestedEnabled?: boolean;
+  // Local-only callback for settings page refresh
   onEdited?: () => void;
 }
 
 export function MultiComponentReturnSetting({
   project,
+  projectId,
   requestedEnabled,
   onEdited,
 }: MultiComponentReturnSettingProps) {
@@ -44,23 +50,33 @@ export function MultiComponentReturnSetting({
   const { mutateAsync: updateProject, isPending: isUpdating } =
     api.project.updateProject.useMutation();
 
+  // If only projectId is provided (from Tambo), fetch the project
+  const { data: userProjects } = api.project.getUserProjects.useQuery(
+    undefined,
+    { enabled: !!projectId },
+  );
+  const fetchedProject = useMemo(
+    () => userProjects?.find((p) => p.id === projectId),
+    [userProjects, projectId],
+  );
+
+  const effectiveProject = project ?? fetchedProject;
+
   // Initialize local state from server value, allow a non-persistent requested prop to pre-toggle UI
   useEffect(() => {
-    const serverValue = Boolean(project?.allowMultipleUiComponents);
+    const serverValue = Boolean(effectiveProject?.allowMultipleUiComponents);
     setLocalEnabled(
       typeof requestedEnabled === "boolean" ? requestedEnabled : serverValue,
     );
-  }, [project?.allowMultipleUiComponents, requestedEnabled]);
+  }, [effectiveProject?.allowMultipleUiComponents, requestedEnabled]);
 
-  const showUnsavedWarning = useMemo(() => {
-    const serverValue = Boolean(project?.allowMultipleUiComponents);
-    return localEnabled !== serverValue;
-  }, [project?.allowMultipleUiComponents, localEnabled]);
+  const serverValue = Boolean(effectiveProject?.allowMultipleUiComponents);
+  const showUnsavedWarning = useMemo(() => localEnabled !== serverValue, [serverValue, localEnabled]);
 
   const handleSave = async () => {
     try {
       await updateProject({
-        projectId: project.id,
+        projectId: (effectiveProject?.id ?? projectId)!,
         allowMultipleUiComponents: localEnabled,
       });
       toast({
@@ -79,9 +95,11 @@ export function MultiComponentReturnSetting({
   };
 
   const handleCancel = () => {
-    setLocalEnabled(Boolean(project?.allowMultipleUiComponents));
+    setLocalEnabled(serverValue);
     setIsEditing(false);
   };
+
+  const alreadyEnabled = serverValue === true;
 
   return (
     <Card>
@@ -98,6 +116,32 @@ export function MultiComponentReturnSetting({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Requested vs Current summary (shows when requestedEnabled is provided) */}
+        {typeof requestedEnabled === "boolean" && (
+          <div className="text-xs rounded-md border bg-muted/40 p-3">
+            <div className="font-medium mb-1">Preview of change</div>
+            <div className="flex items-center gap-4">
+              <span>
+                Requested: <strong>{requestedEnabled ? "On" : "Off"}</strong>
+              </span>
+              <span>
+                Current: <strong>{serverValue ? "On" : "Off"}</strong>
+              </span>
+            </div>
+          </div>
+        )}
+
+        {alreadyEnabled && (
+          <Alert className="border-green-200 bg-green-50">
+            <AlertTitle className="text-green-900">
+              Multiple messages are already enabled.
+            </AlertTitle>
+            <AlertDescription className="text-green-900/80">
+              You can turn this off here if you want to revert to a single component per response.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <div className="text-sm font-medium">Multiple components</div>
