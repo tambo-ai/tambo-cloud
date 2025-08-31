@@ -48,6 +48,7 @@ export async function createProject(
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
+        // default for new projects is false via schema default; do not set here unless overriding
       })
       .returning();
 
@@ -131,6 +132,7 @@ export async function updateProject(
     maxInputTokens,
     maxToolCallLimit,
     isTokenRequired,
+    enableMultiComponentUI,
   }: {
     name?: string;
     customInstructions?: string;
@@ -141,6 +143,7 @@ export async function updateProject(
     maxInputTokens?: number;
     maxToolCallLimit?: number;
     isTokenRequired?: boolean;
+    enableMultiComponentUI?: boolean;
   },
 ) {
   // Create update object with only provided fields
@@ -170,6 +173,9 @@ export async function updateProject(
   }
   if (isTokenRequired !== undefined) {
     updateData.isTokenRequired = isTokenRequired;
+  }
+  if (enableMultiComponentUI !== undefined) {
+    updateData.enableMultiComponentUI = enableMultiComponentUI;
   }
 
   // Only perform update if there are fields to update

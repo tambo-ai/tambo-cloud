@@ -498,6 +498,13 @@
       "when": 1756239711441,
       "tag": "0070_real_white_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1756616810650,
+      "tag": "0071_lovely_zombie",
+      "breakpoints": true
     }
   ]
 }

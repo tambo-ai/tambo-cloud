@@ -187,6 +187,10 @@ export const projects = pgTable(
       .notNull(),
     agentUrl: text("agent_url"),
     agentName: text("agent_name"),
+    // Beta: allow multiple UI components per assistant response
+    enableMultiComponentUI: boolean("enable_multi_component_ui")
+      .default(false)
+      .notNull(),
   }),
   (table) => {
     return [

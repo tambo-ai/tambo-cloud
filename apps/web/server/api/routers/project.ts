@@ -224,6 +224,7 @@ export const projectRouter = createTRPCRouter({
           customLlmBaseURL: project.customLlmBaseURL,
           maxToolCallLimit: project.maxToolCallLimit,
           isTokenRequired: project.isTokenRequired,
+          enableMultiComponentUI: project.enableMultiComponentUI,
           messages: stats.messages,
           users: stats.users,
           lastMessageAt: stats.lastMessageAt,
@@ -353,6 +354,7 @@ export const projectRouter = createTRPCRouter({
           customLlmModelName: true,
           customLlmBaseURL: true,
           maxInputTokens: true,
+          enableMultiComponentUI: true,
         },
       });
 
@@ -368,6 +370,7 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: project.customLlmModelName ?? null,
         customLlmBaseURL: project.customLlmBaseURL ?? null,
         maxInputTokens: project.maxInputTokens ?? null,
+        enableMultiComponentUI: project.enableMultiComponentUI ?? false,
       };
     }),
 
@@ -384,6 +387,7 @@ export const projectRouter = createTRPCRouter({
         maxInputTokens: z.number().nullable().optional(),
         maxToolCallLimit: z.number().optional(),
         isTokenRequired: z.boolean().optional(),
+        enableMultiComponentUI: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -398,6 +402,7 @@ export const projectRouter = createTRPCRouter({
         maxInputTokens,
         maxToolCallLimit,
         isTokenRequired,
+        enableMultiComponentUI,
       } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
@@ -425,6 +430,7 @@ export const projectRouter = createTRPCRouter({
           maxInputTokens === null ? undefined : (maxInputTokens ?? undefined),
         maxToolCallLimit,
         isTokenRequired,
+        enableMultiComponentUI,
       });
 
       if (!updatedProject) {
@@ -442,6 +448,7 @@ export const projectRouter = createTRPCRouter({
         customLlmBaseURL: updatedProject.customLlmBaseURL,
         maxInputTokens: updatedProject.maxInputTokens,
         maxToolCallLimit: updatedProject.maxToolCallLimit,
+        enableMultiComponentUI: updatedProject.enableMultiComponentUI,
       };
     }),
 
