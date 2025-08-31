@@ -33,6 +33,7 @@ interface RunDecisionLoopParams {
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[];
   customInstructions: string | undefined;
   forceToolChoice?: string;
+  allowMultipleUIComponents?: boolean;
 }
 
 export default class TamboBackend {
@@ -108,6 +109,7 @@ export default class TamboBackend {
       params.strictTools,
       params.customInstructions,
       params.forceToolChoice,
+      params.allowMultipleUIComponents,
     );
   }
 

@@ -2,6 +2,7 @@ import { createPromptTemplate } from "@tambo-ai-cloud/core";
 
 export function generateDecisionLoopPrompt(
   customInstructions: string | undefined,
+  allowMultipleUIComponents: boolean = false,
 ) {
   return createPromptTemplate(
     `
@@ -11,7 +12,7 @@ Your goal is to use a combination of tools and UI components to help the user ac
 
 Tools are divided into two categories:
 - UI tools: These tools display UI components on the user's screen, and begin with 'show_component_'
-  such as 'show_component_Graph'. You may call a UI tool once per user message.
+  such as 'show_component_Graph'. {ui_tool_rule}
 - Informational tools: These tools request data or perform an action. All other tools are informational tools.
 
 You may call any number of informational tools to gather data to answer the user's question, and
@@ -30,6 +31,9 @@ then call the 'show_component_Weather' tool to pass the weather information to t
 
 {custom_instructions}`,
     {
+      ui_tool_rule: allowMultipleUIComponents
+        ? `You may call multiple distinct UI tools in a single user message when it improves the response. Avoid redundant or duplicative components.`
+        : `You may call a UI tool once per user message.`,
       custom_instructions: customInstructions
         ? `In addition to the above, please also follow these additional instructions:
 ${customInstructions}

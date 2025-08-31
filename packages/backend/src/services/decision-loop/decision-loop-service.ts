@@ -34,6 +34,7 @@ export async function* runDecisionLoop(
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   customInstructions: string | undefined,
   forceToolChoice?: string,
+  allowMultipleUIComponents?: boolean,
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const componentTools = strictTools.filter((tool) =>
     getToolName(tool).startsWith(UI_TOOLNAME_PREFIX),
@@ -54,7 +55,10 @@ export async function* runDecisionLoop(
   }
 
   const { template: systemPrompt, args: systemPromptArgs } =
-    generateDecisionLoopPrompt(customInstructions);
+    generateDecisionLoopPrompt(
+      customInstructions,
+      allowMultipleUIComponents ?? false,
+    );
   const chatCompletionMessages =
     threadMessagesToChatCompletionMessageParam(messages);
   const promptMessages = objectTemplate<ChatCompletionMessageParam[]>([

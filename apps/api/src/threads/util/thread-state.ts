@@ -141,6 +141,7 @@ export async function processThreadMessage(
     messages,
     strictTools,
     customInstructions,
+    allowMultipleUIComponents: false,
     forceToolChoice:
       latestMessage.role === MessageRole.User
         ? advanceRequestDto.forceToolChoice

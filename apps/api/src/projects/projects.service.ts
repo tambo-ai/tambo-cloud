@@ -59,6 +59,7 @@ export class ProjectsService {
       customInstructions: project.customInstructions ?? undefined,
       maxInputTokens: project.maxInputTokens ?? undefined,
       isTokenRequired: project.isTokenRequired,
+      enableMultiComponentUI: project.enableMultiComponentUI,
     }));
   }
 
@@ -78,6 +79,7 @@ export class ProjectsService {
       customInstructions: project.customInstructions ?? undefined,
       maxInputTokens: project.maxInputTokens ?? undefined,
       isTokenRequired: project.isTokenRequired,
+      enableMultiComponentUI: project.enableMultiComponentUI,
     };
   }
 

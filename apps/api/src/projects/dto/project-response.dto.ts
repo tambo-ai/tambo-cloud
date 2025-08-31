@@ -17,6 +17,7 @@ export class ProjectResponse {
   customInstructions?: string;
   maxInputTokens?: number | null;
   isTokenRequired!: boolean;
+  enableMultiComponentUI?: boolean;
 }
 
 export class SimpleProjectResponse {
