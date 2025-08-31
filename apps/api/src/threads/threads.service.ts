@@ -472,36 +472,30 @@ export class ThreadsService {
         return;
       }
 
+      // Get project owner once for both email and user tracking
+      const projectOwner = await this.getDb().query.projectMembers.findFirst({
+        where: eq(schema.projectMembers.projectId, projectId),
+        with: {
+          user: true,
+        },
+      });
+
+      const userId = projectOwner?.user.id;
+      const ownerEmail = projectOwner?.user.email;
+
       if (!usage.hasApiKey && usage.messageCount >= FREE_MESSAGE_LIMIT) {
         // Only send email if we haven't sent one before
-        if (!usage.notificationSentAt) {
-          // Get project owner's email from auth.users
-          const projectOwner =
-            await this.getDb().query.projectMembers.findFirst({
-              where: eq(schema.projectMembers.projectId, projectId),
-              with: {
-                user: true,
-              },
-            });
+        if (!usage.notificationSentAt && ownerEmail) {
+          await this.emailService.sendMessageLimitNotification(
+            projectId,
+            ownerEmail,
+            project.name,
+          );
 
-          const ownerEmail = projectOwner?.user.email;
-
-          if (ownerEmail) {
-            await this.emailService.sendMessageLimitNotification(
-              projectId,
-              ownerEmail,
-              project.name,
-            );
-
-            // Update the notification sent timestamp
-            await operations.updateProjectMessageUsage(
-              this.getDb(),
-              projectId,
-              {
-                notificationSentAt: new Date(),
-              },
-            );
-          }
+          // Update the notification sent timestamp
+          await operations.updateProjectMessageUsage(this.getDb(), projectId, {
+            notificationSentAt: new Date(),
+          });
         }
 
         // Track rate limit hit
@@ -510,10 +504,17 @@ export class ThreadsService {
         throw new FreeLimitReachedError();
       }
 
-      // Only increment message count if using fallback key
-      if (usingFallbackKey) {
-        await operations.incrementMessageCount(this.getDb(), projectId);
-      }
+      // Increment message counts in transaction
+      await this.getDb().transaction(async (tx) => {
+        // Always increment user message count for pricing
+        if (userId) {
+          await operations.incrementUserMessageCount(tx, userId);
+        }
+        // Only increment project message count if using fallback key
+        if (usingFallbackKey) {
+          await operations.incrementProjectMessageCount(tx, projectId);
+        }
+      });
 
       // Check for first message email
       await this.checkAndSendFirstMessageEmail(projectId, usage);
@@ -529,6 +530,12 @@ export class ThreadsService {
     threadId: string,
     messageDto: MessageRequest,
   ): Promise<ThreadMessage> {
+    // Count user message for pricing
+    const userId = await operations.getUserIdFromThread(this.getDb(), threadId);
+    if (userId) {
+      await operations.incrementUserMessageCount(this.getDb(), userId);
+    }
+
     return await addMessage(this.getDb(), threadId, messageDto);
   }
 

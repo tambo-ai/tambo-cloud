@@ -102,11 +102,18 @@ export const sessions = authSchema.table(
 );
 
 // Relations for user schema tables
-export const userSchemaUserRelations = relations(authUsers, ({ many }) => ({
-  identities: many(identities),
-  sessions: many(sessions),
-  projects: many(projectMembers),
-}));
+export const userSchemaUserRelations = relations(
+  authUsers,
+  ({ many, one }) => ({
+    identities: many(identities),
+    sessions: many(sessions),
+    projects: many(projectMembers),
+    messageUsage: one(userMessageUsage, {
+      fields: [authUsers.id],
+      references: [userMessageUsage.userId],
+    }),
+  }),
+);
 
 export const userSchemaIdentityRelations = relations(identities, ({ one }) => ({
   user: one(authUsers, {
@@ -365,6 +372,22 @@ export const projectMessageUsage = pgTable(
     firstMessageSentAt: timestamp("first_message_sent_at"),
   }),
 );
+
+export const userMessageUsage = pgTable(
+  "user_message_usage",
+  ({ uuid, timestamp, integer }) => ({
+    userId: uuid("user_id")
+      .references(() => authUsers.id, { onDelete: "cascade" })
+      .primaryKey()
+      .notNull(),
+    messageCount: integer("message_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  }),
+  (table) => [index("user_message_usage_user_id_idx").on(table.userId)],
+);
+
+export type DBUserMessageUsage = typeof userMessageUsage.$inferSelect;
 
 export const projectRelations = relations(projects, ({ many, one }) => ({
   members: many(projectMembers),

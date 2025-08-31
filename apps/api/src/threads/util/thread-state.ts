@@ -376,6 +376,12 @@ export async function addInitialMessage(
           false,
         );
 
+        // Count AI response for pricing
+        const userId = await operations.getUserIdFromThread(tx, threadId);
+        if (userId) {
+          await operations.incrementUserMessageCount(tx, userId);
+        }
+
         return await addMessage(tx, threadId, {
           role: MessageRole.Assistant,
           content: [

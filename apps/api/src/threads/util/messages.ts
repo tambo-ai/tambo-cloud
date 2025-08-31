@@ -148,6 +148,12 @@ export async function addAssistantMessageToThread(
   component: LegacyComponentDecision,
   threadId: string,
 ) {
+  // Count AI response for pricing
+  const userId = await operations.getUserIdFromThread(db, threadId);
+  if (userId) {
+    await operations.incrementUserMessageCount(db, userId);
+  }
+
   const serializedMessage: ComponentDecisionV2 = {
     message: component.message,
     componentName: component.componentName,

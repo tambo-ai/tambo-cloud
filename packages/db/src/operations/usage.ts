@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
 
@@ -8,7 +8,10 @@ export async function getProjectMessageUsage(db: HydraDb, projectId: string) {
   });
 }
 
-export async function incrementMessageCount(db: HydraDb, projectId: string) {
+export async function incrementProjectMessageCount(
+  db: HydraDb,
+  projectId: string,
+) {
   const usage = await getProjectMessageUsage(db, projectId);
 
   if (usage) {
@@ -90,4 +93,46 @@ export async function hasUserReceivedFirstMessageEmail(
   }
 
   return false;
+}
+
+export async function getUserMessageUsage(db: HydraDb, userId: string) {
+  return await db.query.userMessageUsage.findFirst({
+    where: eq(schema.userMessageUsage.userId, userId),
+  });
+}
+
+export async function incrementUserMessageCount(db: HydraDb, userId: string) {
+  const [result] = await db
+    .insert(schema.userMessageUsage)
+    .values({
+      userId,
+      messageCount: 1,
+    })
+    .onConflictDoUpdate({
+      target: schema.userMessageUsage.userId,
+      set: {
+        messageCount: sql`${schema.userMessageUsage.messageCount} + 1`,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+  return result;
+}
+
+export async function getUserIdFromThread(
+  db: HydraDb,
+  threadId: string,
+): Promise<string | null> {
+  const thread = await db.query.threads.findFirst({
+    where: eq(schema.threads.id, threadId),
+    with: {
+      project: {
+        with: {
+          creator: true,
+        },
+      },
+    },
+  });
+
+  return thread?.project.creator?.id ?? null;
 }
