@@ -23,7 +23,8 @@ export const CustomInstructionsEditorSchema = z.object({
     .describe("Custom instructions for the AI assistant."),
 });
 
-export const CustomInstructionsEditorProps = z.object({
+// Base props schema used for LLM-driven rendering (excludes UI-only controls)
+export const CustomInstructionsEditorLLMPropsSchema = z.object({
   project: CustomInstructionsEditorSchema.optional().describe(
     "The project to edit custom instructions for.",
   ),
@@ -37,19 +38,25 @@ export const CustomInstructionsEditorProps = z.object({
     ),
 });
 
+// Extended component props schema for UI-only props (not passed to LLM)
+export const CustomInstructionsEditorComponentPropsSchema =
+  CustomInstructionsEditorLLMPropsSchema.extend({
+    editMode: z.boolean().optional().describe("When true, start in edit mode."),
+  });
+
 interface CustomInstructionsEditorProps {
   project?: { id: string; name: string; customInstructions?: string | null };
   onEdited?: () => void;
   /** If true, starts in editing mode (used in chat context) */
-  startEditing?: boolean;
+  editMode?: boolean;
 }
 
 export function CustomInstructionsEditor({
   project,
   onEdited,
-  startEditing,
+  editMode,
 }: CustomInstructionsEditorProps) {
-  const [isEditing, setIsEditing] = useState(!!startEditing);
+  const [isEditing, setIsEditing] = useState(!!editMode);
   const [customInstructions, setCustomInstructions] = useState(
     project?.customInstructions || "",
   );

@@ -11,7 +11,7 @@ import {
 } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import {
   CustomInstructionsEditor,
-  CustomInstructionsEditorProps,
+  CustomInstructionsEditorLLMPropsSchema,
 } from "@/components/dashboard-components/project-details/custom-instructions-editor";
 import {
   DailyMessagesChart,
@@ -31,7 +31,7 @@ import {
 } from "@/components/dashboard-components/project-details/provider-key-section";
 import {
   ToolCallLimitEditor,
-  ToolCallLimitEditorPropsSchema,
+  ToolCallLimitEditorLLMPropsSchema,
 } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
 import {
   ProjectTable,
@@ -46,23 +46,23 @@ import { z } from "zod";
 
 // Wrappers to start in edit mode only when rendered via chat context
 const ChatCustomInstructionsEditor = (
-  props: z.infer<typeof CustomInstructionsEditorProps>,
+  props: z.infer<typeof CustomInstructionsEditorLLMPropsSchema>,
 ) =>
   React.createElement(CustomInstructionsEditor as any, {
     ...props,
-    startEditing: true,
+    editMode: true,
   });
 
 const ChatToolCallLimitEditor = (
-  props: z.infer<typeof ToolCallLimitEditorPropsSchema>,
+  props: z.infer<typeof ToolCallLimitEditorLLMPropsSchema>,
 ) =>
   // ToolCallLimitEditorPropsSchema describes the shape; cast to any to forward as props
   // since zod schema type is not exactly the React props type
   // Consumers (chat) will pass the correct props per schema
-   
+
   React.createElement(ToolCallLimitEditor as any, {
     ...(props as any),
-    startEditing: true,
+    editMode: true,
   });
 
 export const tamboRegisteredComponents = [
@@ -99,7 +99,7 @@ export const tamboRegisteredComponents = [
     description:
       "Allows users to create and edit custom instructions that are automatically included in every AI conversation for their project. Features inline editing with save/cancel functionality, preview mode, and handles empty states. Use when users want to set project-wide AI behavior guidelines, context, or specific instructions that should apply to all interactions.",
     component: ChatCustomInstructionsEditor,
-    propsSchema: CustomInstructionsEditorProps,
+    propsSchema: CustomInstructionsEditorLLMPropsSchema,
   },
   {
     name: "AvailableMcpServers",
@@ -141,6 +141,6 @@ export const tamboRegisteredComponents = [
     description:
       "Manages the maximum number of tool calls allowed per AI response to prevent infinite loops and control resource usage. Features inline editing with save/cancel functionality, input validation, and animated state transitions. Shows current limit prominently with explanatory text about behavior when limits are reached. Use when users need to configure or modify their project's tool call limits for performance and cost control.",
     component: ChatToolCallLimitEditor,
-    propsSchema: ToolCallLimitEditorPropsSchema,
+    propsSchema: ToolCallLimitEditorLLMPropsSchema,
   },
 ];
