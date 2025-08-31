@@ -10,6 +10,7 @@ import { CustomInstructionsEditor } from "@/components/dashboard-components/proj
 import { OAuthSettings } from "@/components/dashboard-components/project-details/oauth-settings";
 import { ProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
 import { ToolCallLimitEditor } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
+import { MultiComponentReturnSetting } from "@/components/dashboard-components/project-details/multi-component-return-setting";
 import { SettingsPageSkeleton } from "@/components/skeletons/settings-skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -57,6 +58,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
   const oauthSettingsRef = useRef<HTMLDivElement>(null);
   const mcpServersRef = useRef<HTMLDivElement>(null);
   const toolCallLimitRef = useRef<HTMLDivElement>(null);
+  const agentSettingsRef = useRef<HTMLDivElement>(null);
 
   // Add a ref for the scrollable container
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -151,6 +153,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
       "oauth-settings": oauthSettingsRef,
       "mcp-servers": mcpServersRef,
       "tool-call-limit": toolCallLimitRef,
+      "agent-settings": agentSettingsRef,
     };
 
     // Get the target element and the scroll container
@@ -367,6 +370,20 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             <Button
               variant="ghost"
               className={`w-full justify-start gap-2 rounded-full ${
+                activeSection === "agent-settings"
+                  ? "bg-accent"
+                  : "hover:bg-accent"
+              }`}
+              onClick={() => {
+                scrollToSection("agent-settings");
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              Agent Settings
+            </Button>
+            <Button
+              variant="ghost"
+              className={`w-full justify-start gap-2 rounded-full ${
                 activeSection === "oauth-settings"
                   ? "bg-accent"
                   : "hover:bg-accent"
@@ -443,6 +460,17 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             <Button
               variant="ghost"
               className={`justify-start gap-2 rounded-full text-sm ${
+                activeSection === "agent-settings"
+                  ? "bg-accent"
+                  : "hover:bg-accent"
+              }`}
+              onClick={() => scrollToSection("agent-settings")}
+            >
+              Agent Settings
+            </Button>
+            <Button
+              variant="ghost"
+              className={`justify-start gap-2 rounded-full text-sm ${
                 activeSection === "oauth-settings"
                   ? "bg-accent"
                   : "hover:bg-accent"
@@ -481,6 +509,13 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
 
             <div ref={toolCallLimitRef} className="p-2">
               <ToolCallLimitEditor
+                project={project}
+                onEdited={handleRefreshProject}
+              />
+            </div>
+
+            <div ref={agentSettingsRef} className="p-2">
+              <MultiComponentReturnSetting
                 project={project}
                 onEdited={handleRefreshProject}
               />

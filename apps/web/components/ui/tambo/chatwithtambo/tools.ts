@@ -300,6 +300,30 @@ export const updateProjectLlmSettingsSchema = z
     }),
   );
 
+/** agent settings management */
+export const fetchAgentSettingsSchema = z
+  .function()
+  .args(z.string().describe("The project ID to fetch agent settings for"))
+  .returns(
+    z.object({
+      allowMultipleUiComponents: z.boolean(),
+    }),
+  );
+
+export const updateAgentSettingsSchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID to update"),
+    z
+      .object({ allowMultipleUiComponents: z.boolean() })
+      .describe("Agent settings to update"),
+  )
+  .returns(
+    z.object({
+      allowMultipleUiComponents: z.boolean(),
+    }),
+  );
+
 /** mcp server management */
 
 /**
@@ -505,6 +529,43 @@ export function useTamboManagementTools() {
         return await trpcClient.user.getUser.query();
       },
       toolSchema: fetchCurrentUserSchema,
+    });
+
+    // agent settings
+    registerTool({
+      name: "fetchAgentSettings",
+      description: "Fetches agent settings for a project.",
+      tool: async (projectId: string) => {
+        const project = await trpcClient.project.getUserProjects.query();
+        const match = project.find((p) => p.id === projectId);
+        return {
+          allowMultipleUiComponents: Boolean(
+            match?.allowMultipleUiComponents,
+          ),
+        };
+      },
+      toolSchema: fetchAgentSettingsSchema,
+    });
+
+    registerTool({
+      name: "updateAgentSettings",
+      description: "Updates agent settings for a project.",
+      tool: async (
+        projectId: string,
+        settings: { allowMultipleUiComponents: boolean },
+      ) => {
+        const result = await trpcClient.project.updateProject.mutate({
+          projectId,
+          allowMultipleUiComponents: settings.allowMultipleUiComponents,
+        });
+        await utils.project.getUserProjects.invalidate();
+        return {
+          allowMultipleUiComponents: Boolean(
+            result.allowMultipleUiComponents,
+          ),
+        };
+      },
+      toolSchema: updateAgentSettingsSchema,
     });
 
     /* project management */

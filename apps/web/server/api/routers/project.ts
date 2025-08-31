@@ -223,6 +223,7 @@ export const projectRouter = createTRPCRouter({
           customLlmModelName: project.customLlmModelName,
           customLlmBaseURL: project.customLlmBaseURL,
           maxToolCallLimit: project.maxToolCallLimit,
+          allowMultipleUiComponents: project.allowMultipleUiComponents,
           isTokenRequired: project.isTokenRequired,
           messages: stats.messages,
           users: stats.users,
@@ -383,6 +384,7 @@ export const projectRouter = createTRPCRouter({
         customLlmBaseURL: z.string().nullable().optional(),
         maxInputTokens: z.number().nullable().optional(),
         maxToolCallLimit: z.number().optional(),
+        allowMultipleUiComponents: z.boolean().optional(),
         isTokenRequired: z.boolean().optional(),
       }),
     )
@@ -397,6 +399,7 @@ export const projectRouter = createTRPCRouter({
         customLlmBaseURL,
         maxInputTokens,
         maxToolCallLimit,
+        allowMultipleUiComponents,
         isTokenRequired,
       } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
@@ -424,6 +427,7 @@ export const projectRouter = createTRPCRouter({
         maxInputTokens:
           maxInputTokens === null ? undefined : (maxInputTokens ?? undefined),
         maxToolCallLimit,
+        allowMultipleUiComponents,
         isTokenRequired,
       });
 
@@ -442,6 +446,7 @@ export const projectRouter = createTRPCRouter({
         customLlmBaseURL: updatedProject.customLlmBaseURL,
         maxInputTokens: updatedProject.maxInputTokens,
         maxToolCallLimit: updatedProject.maxToolCallLimit,
+        allowMultipleUiComponents: updatedProject.allowMultipleUiComponents,
       };
     }),
 

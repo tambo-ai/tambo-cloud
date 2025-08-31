@@ -34,6 +34,10 @@ import {
   ToolCallLimitEditorPropsSchema,
 } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
 import {
+  MultiComponentReturnSetting,
+  MultiComponentReturnSettingPropsSchema,
+} from "@/components/dashboard-components/project-details/multi-component-return-setting";
+import {
   ProjectTable,
   ProjectTableProps,
 } from "@/components/dashboard-components/project-table";
@@ -120,5 +124,12 @@ export const tamboRegisteredComponents = [
       "Manages the maximum number of tool calls allowed per AI response to prevent infinite loops and control resource usage. Features inline editing with save/cancel functionality, input validation, and animated state transitions. Shows current limit prominently with explanatory text about behavior when limits are reached. Use when users need to configure or modify their project's tool call limits for performance and cost control.",
     component: ToolCallLimitEditor,
     propsSchema: ToolCallLimitEditorPropsSchema,
+  },
+  {
+    name: "MultiComponentReturnSetting",
+    description:
+      "Toggle to allow returning multiple UI components per assistant response (Beta). Shows a warning that changes must be saved. Supports pre-toggle via requestedEnabled prop when invoked from chat, but requires Save to apply.",
+    component: MultiComponentReturnSetting,
+    propsSchema: MultiComponentReturnSettingPropsSchema,
   },
 ];

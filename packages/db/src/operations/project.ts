@@ -130,6 +130,7 @@ export async function updateProject(
     customLlmBaseURL,
     maxInputTokens,
     maxToolCallLimit,
+    allowMultipleUiComponents,
     isTokenRequired,
   }: {
     name?: string;
@@ -140,6 +141,7 @@ export async function updateProject(
     customLlmBaseURL?: string;
     maxInputTokens?: number;
     maxToolCallLimit?: number;
+    allowMultipleUiComponents?: boolean;
     isTokenRequired?: boolean;
   },
 ) {
@@ -167,6 +169,9 @@ export async function updateProject(
       throw new Error("Max tool call limit must be greater than 0");
     }
     updateData.maxToolCallLimit = maxToolCallLimit;
+  }
+  if (allowMultipleUiComponents !== undefined) {
+    updateData.allowMultipleUiComponents = allowMultipleUiComponents;
   }
   if (isTokenRequired !== undefined) {
     updateData.isTokenRequired = isTokenRequired;

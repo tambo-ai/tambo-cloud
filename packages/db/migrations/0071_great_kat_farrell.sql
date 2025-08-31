@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "allow_multiple_ui_components" boolean DEFAULT false NOT NULL;
