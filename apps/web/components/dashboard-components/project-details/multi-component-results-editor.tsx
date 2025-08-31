@@ -130,8 +130,10 @@ export function MultiComponentResultsEditor({
           </Badge>
         </div>
         <CardDescription className="text-sm font-sans text-foreground max-w-md">
-          Allow the assistant to return multiple UI components in a single
-          response. This feature is experimental and may change.
+          Allow the assistant to continue the same turn after showing a
+          component: it may generate more messages, call tools, and, if helpful,
+          show additional UI components sequentially. It will not place multiple
+          components in a single message.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -149,7 +151,7 @@ export function MultiComponentResultsEditor({
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="enableMulti">
-                      Enable multiple component results
+                      Enable continued responses after a component (Beta)
                     </Label>
                     <p className="text-xs text-muted-foreground max-w-md">
                       Changes take effect only after clicking Save.

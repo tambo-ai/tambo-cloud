@@ -32,8 +32,8 @@ then call the 'show_component_Weather' tool to pass the weather information to t
 {custom_instructions}`,
     {
       ui_tool_rule: allowMultipleUIComponents
-        ? `You may call multiple distinct UI tools in a single user message when it improves the response. Avoid redundant or duplicative components.`
-        : `You may call a UI tool once per user message.`,
+        ? `After displaying a component, you may continue the same turn: generate additional assistant messages, call tools, and, if helpful, display additional UI components sequentially. Do NOT include multiple UI tool calls inside a single message.`
+        : `You may call a UI tool once per user message, then finish the turn.`,
       custom_instructions: customInstructions
         ? `In addition to the above, please also follow these additional instructions:
 ${customInstructions}
