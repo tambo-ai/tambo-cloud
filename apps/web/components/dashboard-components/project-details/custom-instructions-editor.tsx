@@ -46,7 +46,7 @@ export function CustomInstructionsEditor({
   project,
   onEdited,
 }: CustomInstructionsEditorProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [customInstructions, setCustomInstructions] = useState(
     project?.customInstructions || "",
   );

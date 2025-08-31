@@ -48,7 +48,7 @@ export function ToolCallLimitEditor({
   onEdited,
 }: ToolCallLimitEditorProps) {
   const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true);
   const [maxToolCallLimit, setMaxToolCallLimit] = useState("");
 
   const { mutateAsync: updateProject, isPending: isUpdating } =
