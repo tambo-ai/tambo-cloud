@@ -1034,12 +1034,11 @@ export class ThreadsService {
       }
 
       // Loop to allow multiple assistant messages/components in one user advance
-      const maxAssistantSteps = 5;
-      let steps = 0;
       let localMessages = threadMessageDtoToThreadMessage(messages);
       let lastReturn: AdvanceThreadResponseDto | undefined;
-      while (steps < maxAssistantSteps) {
-        steps++;
+      // Continue until the generation stage reaches COMPLETE; rely on stage transitions to stop
+      let shouldContinue = true;
+      while (shouldContinue) {
         const responseMessage = await processThreadMessage(
           db,
           thread.id,
@@ -1123,11 +1122,12 @@ export class ThreadsService {
 
         // Decide whether to continue: if generation is COMPLETE, stop; otherwise continue
         if (resultingGenerationStage === GenerationStage.COMPLETE) {
-          break;
+          shouldContinue = false;
+        } else {
+          // Refresh local message history (including the assistant message we just wrote)
+          const updated = await this.getMessages(thread.id, true);
+          localMessages = threadMessageDtoToThreadMessage(updated);
         }
-        // Refresh local message history (including the assistant message we just wrote)
-        const updated = await this.getMessages(thread.id, true);
-        localMessages = threadMessageDtoToThreadMessage(updated);
       }
       return lastReturn!;
     } catch (error) {
