@@ -1120,6 +1120,11 @@ export class ThreadsService {
           mcpAccessToken,
         };
 
+        // If this is a client-handled tool call (non-system), stop here and return to client
+        if (toolCallRequest) {
+          return lastReturn;
+        }
+
         // Decide whether to continue: if generation is COMPLETE, stop; otherwise continue
         if (resultingGenerationStage === GenerationStage.COMPLETE) {
           shouldContinue = false;
