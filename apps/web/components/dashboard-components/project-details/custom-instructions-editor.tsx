@@ -40,13 +40,16 @@ export const CustomInstructionsEditorProps = z.object({
 interface CustomInstructionsEditorProps {
   project?: { id: string; name: string; customInstructions?: string | null };
   onEdited?: () => void;
+  /** If true, starts in editing mode (used in chat context) */
+  startEditing?: boolean;
 }
 
 export function CustomInstructionsEditor({
   project,
   onEdited,
+  startEditing,
 }: CustomInstructionsEditorProps) {
-  const [isEditing, setIsEditing] = useState(true);
+  const [isEditing, setIsEditing] = useState(!!startEditing);
   const [customInstructions, setCustomInstructions] = useState(
     project?.customInstructions || "",
   );

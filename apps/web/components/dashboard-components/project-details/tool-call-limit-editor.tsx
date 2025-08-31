@@ -41,14 +41,17 @@ interface ToolCallLimitEditorProps {
     maxToolCallLimit: number;
   };
   onEdited?: () => void;
+  /** If true, starts in editing mode (used in chat context) */
+  startEditing?: boolean;
 }
 
 export function ToolCallLimitEditor({
   project,
   onEdited,
+  startEditing,
 }: ToolCallLimitEditorProps) {
   const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(true);
+  const [isEditing, setIsEditing] = useState(!!startEditing);
   const [maxToolCallLimit, setMaxToolCallLimit] = useState("");
 
   const { mutateAsync: updateProject, isPending: isUpdating } =
