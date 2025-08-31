@@ -1033,85 +1033,103 @@ export class ThreadsService {
         );
       }
 
-      const responseMessage = await processThreadMessage(
-        db,
-        thread.id,
-        threadMessageDtoToThreadMessage(messages),
-        userMessage,
-        advanceRequestDto,
-        tamboBackend,
-        systemTools,
-        customInstructions,
-      );
-
-      const {
-        responseMessageDto,
-        resultingGenerationStage,
-        resultingStatusMessage,
-      } = await addAssistantResponse(
-        db,
-        thread.id,
-        userMessage,
-        responseMessage,
-        this.logger,
-      );
-
-      const toolCallRequest = responseMessage.toolCallRequest;
-
-      // Check tool call limits if we have a tool call request
-      if (toolCallRequest) {
-        const validationResult = validateToolCallLimits(
-          responseMessageDto,
-          threadMessageDtoToThreadMessage(messages),
-          toolCallCounts,
-          toolCallRequest,
-          project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
-        );
-        if (validationResult) {
-          // Replace the tool call request with an error message
-          const errorMessage = await this.handleToolCallLimitViolation(
-            validationResult,
-            thread.id,
-            responseMessageDto.id,
-          );
-          return {
-            responseMessageDto: errorMessage,
-            generationStage: GenerationStage.COMPLETE,
-            statusMessage: "Tool call limit reached",
-            mcpAccessToken,
-          };
-        }
-      }
-
-      if (isSystemToolCall(toolCallRequest, systemTools)) {
-        if (!responseMessage.toolCallId) {
-          console.warn(
-            `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
-          );
-        }
-        return await this.handleSystemToolCall(
-          toolCallRequest,
-          responseMessage.toolCallId ?? "",
-          systemTools,
-          responseMessage,
-          advanceRequestDto,
-          projectId,
+      // Loop to allow multiple assistant messages/components in one user advance
+      const maxAssistantSteps = 5;
+      let steps = 0;
+      let localMessages = threadMessageDtoToThreadMessage(messages);
+      let lastReturn: AdvanceThreadResponseDto | undefined;
+      while (steps < maxAssistantSteps) {
+        steps++;
+        const responseMessage = await processThreadMessage(
+          db,
           thread.id,
-          false,
-          toolCallCounts,
+          localMessages,
+          userMessage,
+          advanceRequestDto,
+          tamboBackend,
+          systemTools,
+          customInstructions,
         );
-      }
 
-      return {
-        responseMessageDto: {
-          ...responseMessageDto,
-          content: convertContentPartToDto(responseMessageDto.content),
-          componentState: responseMessageDto.componentState ?? {},
-        },
-        generationStage: resultingGenerationStage,
-        statusMessage: resultingStatusMessage,
-        mcpAccessToken,
-      };
+        const {
+          responseMessageDto,
+          resultingGenerationStage,
+          resultingStatusMessage,
+        } = await addAssistantResponse(
+          db,
+          thread.id,
+          userMessage,
+          responseMessage,
+          this.logger,
+        );
+
+        const toolCallRequest = responseMessage.toolCallRequest;
+
+        // Check tool call limits if we have a tool call request
+        if (toolCallRequest) {
+          const validationResult = validateToolCallLimits(
+            responseMessageDto,
+            localMessages,
+            toolCallCounts,
+            toolCallRequest,
+            project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
+          );
+          if (validationResult) {
+            // Replace the tool call request with an error message
+            const errorMessage = await this.handleToolCallLimitViolation(
+              validationResult,
+              thread.id,
+              responseMessageDto.id,
+            );
+            return {
+              responseMessageDto: errorMessage,
+              generationStage: GenerationStage.COMPLETE,
+              statusMessage: "Tool call limit reached",
+              mcpAccessToken,
+            };
+          }
+        }
+
+        if (isSystemToolCall(toolCallRequest, systemTools)) {
+          if (!responseMessage.toolCallId) {
+            console.warn(
+              `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
+            );
+          }
+          return await this.handleSystemToolCall(
+            toolCallRequest,
+            responseMessage.toolCallId ?? "",
+            systemTools,
+            responseMessage,
+            advanceRequestDto,
+            projectId,
+            thread.id,
+            false,
+            toolCallCounts,
+          );
+        }
+
+        // Return this assistant message to client
+        lastReturn = {
+          responseMessageDto: {
+            ...responseMessageDto,
+            content: convertContentPartToDto(responseMessageDto.content),
+            componentState: responseMessageDto.componentState ?? {},
+          },
+          generationStage: resultingGenerationStage,
+          statusMessage: resultingStatusMessage,
+          mcpAccessToken,
+        };
+
+        // Decide whether to continue: if generation is COMPLETE, stop; otherwise continue
+        if (resultingGenerationStage === GenerationStage.COMPLETE) {
+          break;
+        }
+        // Refresh local message history (including the assistant message we just wrote)
+        const updated = await this.getMessages(thread.id, true);
+        localMessages = threadMessageDtoToThreadMessage(updated);
+      }
+      return lastReturn!;
     } catch (error) {
       // Capture any errors with full context
       Sentry.withScope((scope) => {

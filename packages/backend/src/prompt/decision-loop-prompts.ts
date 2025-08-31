@@ -2,7 +2,6 @@ import { createPromptTemplate } from "@tambo-ai-cloud/core";
 
 export function generateDecisionLoopPrompt(
   customInstructions: string | undefined,
-  allowMultipleUiComponents: boolean = false,
 ) {
   return createPromptTemplate(
     `
@@ -12,13 +11,15 @@ Your goal is to use a combination of tools and UI components to help the user ac
 
 Tools are divided into two categories:
 - UI tools: These tools display UI components on the user's screen, and begin with 'show_component_'
-  such as 'show_component_Graph'. ${allowMultipleUiComponents ? "You may present multiple UI components across consecutive assistant messages when helpful." : "You may call a UI tool once per user message."}
+  such as 'show_component_Graph'. Do not return multiple UI components in a single assistant message. If more UI is helpful, continue with additional assistant messages (one component per message).
 - Informational tools: These tools request data or perform an action. All other tools are informational tools.
 
 You may call any number of informational tools to gather data to answer the user's question, and
 then call a UI tool to display the information on the user's screen. You should transform any 
 informational tool responses into the format of the UI tool call, so that the UI tool can display 
 the information correctly.
+
+After you show a UI component, if there is more useful work to do (e.g., additional tool calls or follow-up components), continue with another assistant message rather than stopping early.
 
 For example, imagine these tools are available:
 - 'get_weather': Returns the weather in a city
