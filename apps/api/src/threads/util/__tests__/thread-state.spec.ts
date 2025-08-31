@@ -324,6 +324,52 @@ describe("Thread State", () => {
     });
   });
 
+  describe("multi-message continuation", () => {
+    it("continues after a UI tool call to produce a follow-up assistant message", async () => {
+      // This is a behavioral test at util layer; we simulate two decisions
+      // First decision includes a UI tool call; second has no tool (wrap-up)
+      const first: LegacyComponentDecision = {
+        id: "d1",
+        role: MessageRole.Assistant,
+        componentName: "Graph",
+        props: {},
+        message: "Showing first chart",
+        toolCallRequest: {
+          toolName: "show_component_Graph",
+          parameters: [],
+        },
+        toolCallId: "tc1",
+        componentState: {},
+        reasoning: "",
+      } as any;
+
+      const second: LegacyComponentDecision = {
+        id: "d2",
+        role: MessageRole.Assistant,
+        componentName: "Graph",
+        props: {},
+        message: "Follow-up",
+        componentState: {},
+        reasoning: "",
+      } as any;
+
+      async function* makeStream() {
+        yield first;
+        yield second;
+      }
+
+      const collected = [] as LegacyComponentDecision[];
+      for await (const c of fixStreamedToolCalls(makeStream() as any)) {
+        collected.push(c);
+      }
+
+      // We expect both chunks to be emitted, with the first one withholding toolCall until the end
+      expect(collected.length).toBe(3);
+      // 0: first without tool call, 1: second without tool call, 2: final synthesized with first tool call
+      expect(collected[2].toolCallRequest?.toolName).toBe("show_component_Graph");
+    });
+  });
+
   describe("finishInProgressMessage", () => {
     it("should update message and generation stage", async () => {
       const now = new Date();
