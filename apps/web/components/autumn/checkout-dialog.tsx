@@ -326,6 +326,7 @@ const PrepaidItem = ({
       const { data, error } = await checkout({
         productId: checkoutResult.product.id,
         options: newOptions,
+        successUrl: `${window.location.origin}/dashboard/billing`,
       });
 
       if (error) {

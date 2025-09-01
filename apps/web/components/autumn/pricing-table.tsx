@@ -99,6 +99,7 @@ export default function PricingTable({
                       await checkout({
                         productId: product.id,
                         dialog: CheckoutDialog,
+                        successUrl: `${window.location.origin}/dashboard/billing`,
                       });
                     } else if (product.display?.button_url) {
                       window.open(product.display?.button_url, "_blank");

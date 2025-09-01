@@ -16,11 +16,12 @@ import {
   BookOpen,
   Bug,
   Calendar,
-  Crown,
+  CreditCard,
   LogOut,
   MessageSquare,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 
 interface UserProfileDropdownProps {
   user:
@@ -116,10 +117,13 @@ export function UserProfileDropdown({ user }: UserProfileDropdownProps) {
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
-          <a href="/pricing" className="flex items-center cursor-pointer">
-            <Crown className="mr-2 h-4 w-4" />
-            Pro Plan
-          </a>
+          <Link
+            href="/dashboard/billing"
+            className="flex items-center cursor-pointer"
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            Billing & Usage
+          </Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem asChild>
