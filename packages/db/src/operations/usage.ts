@@ -12,28 +12,21 @@ export async function incrementProjectMessageCount(
   db: HydraDb,
   projectId: string,
 ) {
-  const usage = await getProjectMessageUsage(db, projectId);
-
-  if (usage) {
-    const [updated] = await db
-      .update(schema.projectMessageUsage)
-      .set({
-        messageCount: usage.messageCount + 1,
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.projectMessageUsage.projectId, projectId))
-      .returning();
-    return updated;
-  }
-
-  const [created] = await db
+  const [result] = await db
     .insert(schema.projectMessageUsage)
     .values({
       projectId,
       messageCount: 1,
     })
+    .onConflictDoUpdate({
+      target: schema.projectMessageUsage.projectId,
+      set: {
+        messageCount: sql`${schema.projectMessageUsage.messageCount} + 1`,
+        updatedAt: new Date(),
+      },
+    })
     .returning();
-  return created;
+  return result;
 }
 
 export async function updateProjectMessageUsage(
