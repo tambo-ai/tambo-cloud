@@ -1121,7 +1121,10 @@ export class ThreadsService {
         };
 
         // If this is a client-handled tool call (non-system), stop here and return to client
-        if (toolCallRequest) return lastReturn;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (toolCallRequest) {
+          return lastReturn;
+        }
 
         // Decide whether to continue: if generation is COMPLETE, stop; otherwise continue
         if (resultingGenerationStage === GenerationStage.COMPLETE) {
