@@ -96,7 +96,7 @@ export class MessageLimitReachedError extends HttpException {
         type: "https://problems-registry.smartbear.com/payment-required",
         status: HttpStatus.PAYMENT_REQUIRED,
         title: "Message Limit Reached",
-        detail: `You have reached your message limit (${usage}/${limit}). Please upgrade your plan to continue.`,
+        detail: `You have reached your message limit (${usage}/${limit}). Please contact your provider or, if you are the developer, upgrade your plan to continue.`,
         code: "MESSAGE_LIMIT_REACHED",
         details: {
           limit,

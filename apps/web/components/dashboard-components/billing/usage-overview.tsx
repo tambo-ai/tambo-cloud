@@ -235,14 +235,16 @@ function StatusAlert({
               <>
                 You&apos;re approaching your {messagesLimit.toLocaleString()}{" "}
                 message allowance. Only {messagesBalance.toLocaleString()}{" "}
-                messages remaining.
+                message{messagesBalance !== 1 ? "s" : ""} remaining.
               </>
             )}
             {type === "at-limit" && (
               <>
                 You have used {usage.toLocaleString()} of your{" "}
-                {messagesLimit.toLocaleString()} message allowance. Usage-based
-                pricing will be applied from now on.
+                {messagesLimit.toLocaleString()} message allowance.
+                {!isFreePlan &&
+                  " Usage-based pricing will be applied from now on."}
+                {isFreePlan && " Upgrade your plan to get more messages."}
               </>
             )}
             {type === "good" && (
@@ -415,7 +417,8 @@ function FeatureUsageCard({
               >
                 {!isInOverage && (
                   <>
-                    ⚠️ {(limit - usage).toLocaleString()} {unit} remaining
+                    ⚠️ {(limit - usage).toLocaleString()} message
+                    {limit - usage !== 1 ? "s" : ""} remaining
                   </>
                 )}
                 {isInOverage && (
@@ -518,6 +521,7 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
           type="at-limit"
           usage={metrics.usage}
           messagesLimit={metrics.messagesLimit || FALLBACK_MESSAGE_LIMIT}
+          isFreePlan={isFreePlan}
         />
       )}
 
