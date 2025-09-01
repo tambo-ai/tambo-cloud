@@ -13,6 +13,7 @@ import {
   schema,
 } from "@tambo-ai-cloud/db";
 import { and, eq } from "drizzle-orm";
+import type { AutumnService } from "../../common/services/autumn.service";
 import { MessageRequest, ThreadMessageDto } from "../dto/message.dto";
 import {
   convertContentDtoToContentPart,
@@ -147,11 +148,17 @@ export async function addAssistantMessageToThread(
   db: HydraDb,
   component: LegacyComponentDecision,
   threadId: string,
+  autumnService?: AutumnService,
 ) {
   // Count AI response for pricing
   const userId = await operations.getUserIdFromThread(db, threadId);
   if (userId) {
     await operations.incrementUserMessageCount(db, userId);
+
+    // Track usage in Autumn if enabled
+    if (autumnService?.isEnabled()) {
+      await autumnService.trackMessageUsage(userId);
+    }
   }
 
   const serializedMessage: ComponentDecisionV2 = {

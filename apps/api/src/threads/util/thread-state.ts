@@ -18,6 +18,7 @@ import {
 import { HydraDatabase, HydraDb, operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
+import type { AutumnService } from "../../common/services/autumn.service";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { MessageRequest } from "../dto/message.dto";
 import { convertContentPartToDto } from "./content";
@@ -217,6 +218,7 @@ export async function addAssistantResponse(
   addedUserMessage: ThreadMessage,
   responseMessage: LegacyComponentDecision,
   logger?: Logger,
+  autumnService?: AutumnService,
 ): Promise<{
   responseMessageDto: ThreadMessage;
   resultingGenerationStage: GenerationStage;
@@ -236,6 +238,7 @@ export async function addAssistantResponse(
           tx,
           responseMessage,
           threadId,
+          autumnService,
         );
 
         const resultingGenerationStage = responseMessage.toolCallRequest
@@ -365,6 +368,7 @@ export async function addInitialMessage(
   threadId: string,
   addedUserMessage: ThreadMessage,
   logger: Logger,
+  autumnService?: AutumnService,
 ) {
   try {
     const message = await db.transaction(
@@ -380,6 +384,11 @@ export async function addInitialMessage(
         const userId = await operations.getUserIdFromThread(tx, threadId);
         if (userId) {
           await operations.incrementUserMessageCount(tx, userId);
+
+          // Track usage in Autumn if enabled
+          if (autumnService?.isEnabled()) {
+            await autumnService.trackMessageUsage(userId);
+          }
         }
 
         return await addMessage(tx, threadId, {

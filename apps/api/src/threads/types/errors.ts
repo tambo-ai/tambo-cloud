@@ -80,3 +80,31 @@ export class FreeLimitReachedError extends HttpException {
     );
   }
 }
+
+export class MessageLimitReachedError extends HttpException {
+  constructor(options?: {
+    limit?: number;
+    usage?: number;
+    settingsUrl?: string;
+  }) {
+    const limit = options?.limit ?? 0;
+    const usage = options?.usage ?? 0;
+    const settingsUrl = options?.settingsUrl ?? "https://tambo.co/dashboard";
+
+    super(
+      {
+        type: "https://problems-registry.smartbear.com/payment-required",
+        status: HttpStatus.PAYMENT_REQUIRED,
+        title: "Message Limit Reached",
+        detail: `You have reached your message limit (${usage}/${limit}). Please upgrade your plan to continue.`,
+        code: "MESSAGE_LIMIT_REACHED",
+        details: {
+          limit,
+          usage,
+          settingsUrl,
+        },
+      } satisfies ProblemDetails,
+      HttpStatus.PAYMENT_REQUIRED,
+    );
+  }
+}

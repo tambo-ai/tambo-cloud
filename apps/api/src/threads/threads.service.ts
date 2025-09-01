@@ -28,6 +28,7 @@ import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { AuthService } from "../common/services/auth.service";
+import { AutumnService } from "../common/services/autumn.service";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
 import { getSystemTools } from "../common/systemTools";
@@ -44,6 +45,7 @@ import {
   FREE_MESSAGE_LIMIT,
   FreeLimitReachedError,
   InvalidSuggestionRequestError,
+  MessageLimitReachedError,
   SuggestionGenerationError,
   SuggestionNotFoundException,
 } from "./types/errors";
@@ -88,6 +90,7 @@ export class ThreadsService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
+    private readonly autumnService: AutumnService,
   ) {}
 
   getDb() {
@@ -504,11 +507,27 @@ export class ThreadsService {
         throw new FreeLimitReachedError();
       }
 
+      // Check Autumn feature access first (if user exists)
+      if (userId && this.autumnService.isEnabled()) {
+        const access = await this.autumnService.checkMessageAccess(userId);
+        if (!access.allowed) {
+          throw new MessageLimitReachedError({
+            limit: access.limit ?? 0,
+            usage: access.usage ?? 0,
+            settingsUrl: "https://tambo.co/dashboard",
+          });
+        }
+      }
+
       // Increment message counts in transaction
       await this.getDb().transaction(async (tx) => {
         // Always increment user message count for pricing
         if (userId) {
           await operations.incrementUserMessageCount(tx, userId);
+          // Track usage in Autumn
+          if (this.autumnService.isEnabled()) {
+            await this.autumnService.trackMessageUsage(userId);
+          }
         }
         // Only increment project message count if using fallback key
         if (usingFallbackKey) {
@@ -532,8 +551,25 @@ export class ThreadsService {
   ): Promise<ThreadMessage> {
     // Count user message for pricing
     const userId = await operations.getUserIdFromThread(this.getDb(), threadId);
-    if (userId) {
+    if (userId && messageDto.role === MessageRole.User) {
+      // Check Autumn feature access if enabled
+      if (this.autumnService.isEnabled()) {
+        const access = await this.autumnService.checkMessageAccess(userId);
+        if (!access.allowed) {
+          throw new MessageLimitReachedError({
+            limit: access.limit ?? 0,
+            usage: access.usage ?? 0,
+            settingsUrl: "https://tambo.co/dashboard",
+          });
+        }
+      }
+
       await operations.incrementUserMessageCount(this.getDb(), userId);
+
+      // Track usage in Autumn if enabled
+      if (this.autumnService.isEnabled()) {
+        await this.autumnService.trackMessageUsage(userId);
+      }
     }
 
     return await addMessage(this.getDb(), threadId, messageDto);
@@ -1058,6 +1094,7 @@ export class ThreadsService {
         userMessage,
         responseMessage,
         this.logger,
+        this.autumnService,
       );
 
       const toolCallRequest = responseMessage.toolCallRequest;
@@ -1580,6 +1617,7 @@ export class ThreadsService {
         threadId,
         userMessage,
         logger,
+        this.autumnService,
       );
       let currentThreadMessage: ThreadMessage = initialMessage;
 
