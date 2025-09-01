@@ -70,9 +70,9 @@ export default function CheckoutDialog(params: CheckoutDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="p-0 pt-4 gap-0 text-foreground overflow-hidden text-sm">
+      <DialogContent className="p-0 pt-4 gap-0 overflow-hidden text-sm">
         <DialogTitle className="px-6 mb-1">{title}</DialogTitle>
-        <div className="px-6 mt-1 mb-4 text-muted-foreground">{message}</div>
+        <div className="px-6 mt-1 mb-4">{message}</div>
 
         {isPaid && checkoutResult && (
           <PriceInformation
@@ -81,7 +81,7 @@ export default function CheckoutDialog(params: CheckoutDialogProps) {
           />
         )}
 
-        <DialogFooter className="flex flex-col sm:flex-row justify-between gap-x-4 py-2 pl-6 pr-3 bg-secondary border-t shadow-inner">
+        <DialogFooter className="flex flex-col sm:flex-row justify-between gap-x-4 py-2 pl-6 pr-3 border-t shadow-inner">
           <Button
             size="sm"
             onClick={async () => {
@@ -169,7 +169,7 @@ function DueAmounts({ checkoutResult }: { checkoutResult: CheckoutResult }) {
         </p>
       </div>
       {showNextCycle && (
-        <div className="flex justify-between text-muted-foreground">
+        <div className="flex justify-between text-secondary">
           <div>
             <p className="text-md">Due next cycle ({nextCycleAtStr})</p>
           </div>
@@ -219,7 +219,7 @@ function ProductItems({
 
           return (
             <div key={index} className="flex justify-between">
-              <p className="text-muted-foreground">
+              <p className="text-secondary">
                 {item.feature ? item.feature.name : "Subscription"}
               </p>
               <p>
@@ -238,9 +238,9 @@ function CheckoutLines({ checkoutResult }: { checkoutResult: CheckoutResult }) {
       <AccordionItem value="total" className="border-b-0">
         <CustomAccordionTrigger className="justify-between w-full my-0 py-0 border-none">
           <div className="cursor-pointer flex items-center gap-1 w-full justify-end">
-            <p className="font-light text-muted-foreground">View details</p>
+            <p className="font-light">View details</p>
             <ChevronDown
-              className="text-muted-foreground mt-0.5 rotate-90 transition-transform duration-200 ease-in-out"
+              className="text-secondary mt-0.5 rotate-90 transition-transform duration-200 ease-in-out"
               size={14}
             />
           </div>
@@ -251,8 +251,8 @@ function CheckoutLines({ checkoutResult }: { checkoutResult: CheckoutResult }) {
             .map((line, index) => {
               return (
                 <div key={index} className="flex justify-between">
-                  <p className="text-muted-foreground">{line.description}</p>
-                  <p className="text-muted-foreground">
+                  <p>{line.description}</p>
+                  <p>
                     {new Intl.NumberFormat("en-US", {
                       style: "currency",
                       currency: checkoutResult?.currency,
@@ -347,11 +347,11 @@ const PrepaidItem = ({
   return (
     <div className="flex justify-between">
       <div className="flex gap-2">
-        <p className="text-muted-foreground">{item.feature?.name}</p>
+        <p>{item.feature?.name}</p>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
             className={cn(
-              "text-muted-foreground text-xs px-1 py-0.5 rounded-md flex items-center gap-1 bg-accent/80",
+              "text-xs px-1 py-0.5 rounded-md flex items-center gap-1 bg-accent/80",
               disableSelection !== true &&
                 "hover:bg-accent hover:text-foreground",
             )}
@@ -366,7 +366,7 @@ const PrepaidItem = ({
           >
             <div className="flex flex-col gap-1">
               <p className="text-sm font-medium">{item.feature?.name}</p>
-              <p className="text-muted-foreground">
+              <p>
                 {item.display?.primary_text} {item.display?.secondary_text}
               </p>
             </div>
@@ -378,7 +378,7 @@ const PrepaidItem = ({
                   value={quantityInput}
                   onChange={(e) => setQuantityInput(e.target.value)}
                 />
-                <p className="text-muted-foreground">
+                <p>
                   {billingUnits > 1 && `x ${billingUnits} `}
                   {item.feature?.name}
                 </p>
@@ -390,7 +390,7 @@ const PrepaidItem = ({
                 disabled={loading}
               >
                 {loading ? (
-                  <Loader2 className="text-muted-foreground animate-spin !w-4 !h-4" />
+                  <Loader2 className="animate-spin !w-4 !h-4" />
                 ) : (
                   "Save"
                 )}

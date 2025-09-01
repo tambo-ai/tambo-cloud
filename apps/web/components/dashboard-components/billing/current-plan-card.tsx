@@ -1,6 +1,6 @@
 "use client";
 
-import PricingTable from "@/components/autumn/pricing-table";
+import PricingTable from "@/components/dashboard-components/billing/pricing-table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -126,7 +126,7 @@ export function CurrentPlanCard({ customer }: CurrentPlanCardProps) {
             customer.features &&
             Object.keys(customer.features).length > 0 && (
               <div className="border-t pt-4">
-                <h4 className="text-sm font-medium mb-3">Plan includes:</h4>
+                <h4 className="text-sm font-semibold mb-3">Plan includes:</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {(() => {
                     // Define features for each plan
@@ -178,13 +178,9 @@ export function CurrentPlanCard({ customer }: CurrentPlanCardProps) {
                         className="flex items-center gap-2 text-sm"
                       >
                         <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                        <span className="text-muted-foreground">
-                          {feature.name}
-                        </span>
+                        <span>{feature.name}</span>
                         {feature.description && (
-                          <span className="text-muted-foreground/70">
-                            {feature.description}
-                          </span>
+                          <span>{feature.description}</span>
                         )}
                       </div>
                     ));
@@ -194,7 +190,7 @@ export function CurrentPlanCard({ customer }: CurrentPlanCardProps) {
                 {/* Overage Pricing Note */}
                 {customer.features.messages && !isFreePlan && (
                   <div className="mt-3 p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs">
                       <span className="font-medium">Usage-based pricing:</span>{" "}
                       Your plan includes up to{" "}
                       {(

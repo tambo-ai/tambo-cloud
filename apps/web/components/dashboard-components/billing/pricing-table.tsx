@@ -1,6 +1,6 @@
 import React from "react";
 
-import CheckoutDialog from "@/components/autumn/checkout-dialog";
+import CheckoutDialog from "@/components/dashboard-components/billing/checkout-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,7 @@ export default function PricingTable({
   if (isLoading) {
     return (
       <div className="w-full h-full flex justify-center items-center min-h-[300px]">
-        <Loader2 className="w-6 h-6 text-zinc-400 animate-spin" />
+        <Loader2 className="w-6 h-6 animate-spin" />
       </div>
     );
   }
@@ -240,7 +240,7 @@ export const PricingCard = ({
       className={cn(
         "relative h-full w-full rounded-lg",
         isRecommended
-          ? "p-[2px] bg-gradient-to-r from-primary via-green-200 to-primary animate-border-wave"
+          ? "p-[2px] bg-gradient-to-r from-green-200 via-green-400 to-green-200 animate-border-wave"
           : "border border-border",
         className,
       )}
@@ -258,13 +258,13 @@ export const PricingCard = ({
         <div className="flex flex-col h-full">
           <CardHeader className="border-b p-6 h-fit">
             <CardTitle className="flex items-center justify-between">
-              <span className="text-lg font-semibold text-foreground">
+              <span className="text-lg font-semibold">
                 {productDisplay?.name || name}
               </span>
               {isRecommended && (
                 <Badge
                   variant="secondary"
-                  className="bg-primary text-primary-foreground hover:bg-secondary-foreground"
+                  className="bg-primary hover:bg-secondary-foreground"
                 >
                   Most Popular
                 </Badge>
@@ -272,17 +272,17 @@ export const PricingCard = ({
             </CardTitle>
             <div className="pt-2">
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">
+                <span className="text-3xl font-bold text-primary">
                   {mainPriceDisplay?.primary_text}
                 </span>
                 {mainPriceDisplay?.secondary_text && (
-                  <span className="text-sm font-medium text-muted-foreground">
+                  <span className="text-sm font-medium text-primary">
                     {mainPriceDisplay.secondary_text}
                   </span>
                 )}
               </div>
               {productDisplay?.description && (
-                <div className="mt-1 text-sm font-medium text-muted-foreground">
+                <div className="mt-1 text-sm font-medium text-primary">
                   {productDisplay.description}
                 </div>
               )}
@@ -291,7 +291,7 @@ export const PricingCard = ({
 
           {showFeatures && featureItems.length > 0 && (
             <CardContent className="flex-grow p-6 pt-5">
-              <ul className="space-y-3">
+              <ul className="space-y-3 text-primary">
                 {featureItems.map((item, featureIndex) => (
                   <li key={featureIndex} className="flex items-start">
                     <Check className="mr-3 size-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -324,14 +324,14 @@ const PricingFeatureItem: React.FC<{ item: ProductItem }> = ({ item }) => {
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-sm font-medium">{displayText}</span>
+      <span className="text-sm font-medium text-primary">{displayText}</span>
       {secondaryText && (
-        <span className="text-sm text-muted-foreground">{secondaryText}</span>
+        <span className="text-sm text-primary">{secondaryText}</span>
       )}
       {hasComingSoon && (
         <Badge
           variant="secondary"
-          className="bg-blue-100 text-blue-800 text-xs px-2 py-1"
+          className="bg-blue-100 text-blue-800 text-xs px-2 py-1 text-primary"
         >
           Coming Soon
         </Badge>
@@ -367,8 +367,8 @@ export const PricingCardButton = React.forwardRef<
       className={cn(
         "w-full",
         recommended
-          ? "bg-primary text-primary-foreground hover:bg-primary/90"
-          : "bg-muted text-foreground hover:bg-muted/80",
+          ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+          : "bg-muted hover:bg-muted/80 text-primary",
         className,
       )}
       size="lg"
@@ -393,13 +393,13 @@ export const AnnualSwitch = ({
 }) => {
   return (
     <div className="flex items-center space-x-2 mb-4">
-      <span className="text-sm text-muted-foreground">Monthly</span>
+      <span className="text-sm">Monthly</span>
       <Switch
         id="annual-billing"
         checked={isAnnualToggle}
         onCheckedChange={setIsAnnualToggle}
       />
-      <span className="text-sm text-muted-foreground">Annual</span>
+      <span className="text-sm">Annual</span>
     </div>
   );
 };

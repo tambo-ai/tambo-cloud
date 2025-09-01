@@ -34,7 +34,7 @@ export default function PaywallDialog(params?: PaywallDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="p-0 pt-4 gap-0 text-foreground overflow-hidden text-sm">
+      <DialogContent className="p-0 pt-4 gap-0 overflow-hidden text-sm">
         <DialogTitle className={cn("font-bold text-xl px-6")}>
           {title}
         </DialogTitle>
