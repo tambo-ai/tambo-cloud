@@ -186,10 +186,28 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
                 Usage-based pricing active
               </h4>
               <p className="text-sm text-blue-700 mt-1">
-                You&apos;ve exceeded your 200k message allowance. Current
-                overage: {overageAmount.toLocaleString()} messages (estimated
-                cost: ${overageCost} at $8 per 100k messages).
+                You&apos;ve exceeded your{" "}
+                {(messagesLimit || 200000).toLocaleString()} message allowance.
               </p>
+
+              {/* Overage Details */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 rounded-full">
+                  <span className="text-xs font-medium text-blue-900">
+                    Overage: {overageAmount.toLocaleString()} messages
+                  </span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/80 rounded-full">
+                  <span className="text-xs font-medium text-blue-900">
+                    Est. cost: ${overageCost}
+                  </span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/60 rounded-full">
+                  <span className="text-xs text-blue-700">
+                    Rate: $8 per 100k
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -199,7 +217,7 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
       {!isInOverage &&
         messagesBalance !== undefined &&
         messagesBalance !== null &&
-        messagesBalance <= 0 && (
+        messagesBalance <= 5000 && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
             <div className="flex gap-2">
               <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -208,9 +226,32 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
                   Approaching usage limit
                 </h4>
                 <p className="text-sm text-amber-700 mt-1">
-                  You&apos;re approaching your 200k message allowance. After
-                  200k, additional messages are charged at $8 per 100k.
+                  You&apos;re approaching your{" "}
+                  {(messagesLimit || 200000).toLocaleString()} message
+                  allowance. Only {messagesBalance.toLocaleString()} messages
+                  remaining.
                 </p>
+
+                {/* Overage Info Pills */}
+                {!isFreePlan && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 rounded-full">
+                      <span className="text-xs font-medium text-amber-900">
+                        ⚠️ {messagesBalance.toLocaleString()} left
+                      </span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 rounded-full">
+                      <span className="text-xs font-medium text-amber-900">
+                        📈 Overage rate: $8 per 100k
+                      </span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/80 rounded-full">
+                      <span className="text-xs text-amber-700">
+                        Auto-billed at end of period
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -220,7 +261,7 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
       {!isInOverage &&
         messagesBalance !== undefined &&
         messagesBalance !== null &&
-        messagesBalance > 0 && (
+        messagesBalance > 5000 && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-4">
             <div className="flex gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
@@ -232,8 +273,16 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
                   You have used {usage.toLocaleString()} of your{" "}
                   {(messagesLimit || 200000).toLocaleString()} message
                   allowance.
-                  {!isFreePlan && <> After 200k, messages are $8 per 100k.</>}
                 </p>
+
+                {/* Overage Info - Subtle */}
+                {!isFreePlan && (
+                  <div className="mt-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100/70 rounded-full text-xs text-green-800 border border-green-200">
+                      💡 Additional usage: $8 per 100k after limit
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

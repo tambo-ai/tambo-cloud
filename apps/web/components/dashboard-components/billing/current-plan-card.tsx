@@ -189,16 +189,20 @@ export function CurrentPlanCard({ customer }: CurrentPlanCardProps) {
 
                 {/* Overage Pricing Note */}
                 {customer.features.messages && !isFreePlan && (
-                  <div className="mt-3 p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs">
-                      <span className="font-medium">Usage-based pricing:</span>{" "}
-                      Your plan includes up to{" "}
-                      {(
-                        customer.features.messages?.included_usage ?? 200000
-                      ).toLocaleString()}{" "}
-                      messages. Additional usage is automatically billed at $8
-                      per 100,000 messages.
-                    </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                      <span>📊</span>
+                      <span>
+                        {(
+                          customer.features.messages?.included_usage ?? 200000
+                        ).toLocaleString()}{" "}
+                        messages included
+                      </span>
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-500 rounded-full text-xs font-medium">
+                      <span>💳</span>
+                      <span>$8 per 100k extra messages</span>
+                    </div>
                   </div>
                 )}
               </div>
