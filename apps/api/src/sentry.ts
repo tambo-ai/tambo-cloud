@@ -21,21 +21,22 @@ if (!process.env.SENTRY_DSN) {
     profilesSampleRate: 1,
 
     // Integrations
-    integrations: (defaults) => [
-      // Keep all default integrations except the stock Http integration.
-      // We exclude it so our customized Sentry.httpIntegration() below is the
-      // only Http integration applied (avoids duplicate spans/breadcrumbs and
-      // ensures our maxIncomingRequestBodySize setting takes effect).
-      ...defaults.filter((integration) => integration.name !== "Http"),
-      // Profiling
-      nodeProfilingIntegration(),
-      // NestJS integrations are auto-configured by @sentry/nestjs
-      // Capture larger incoming request bodies on server routes
-      // even with "always" setting, sentry never captures bodies exceeding 1 MB for performance and security reasons.
-      Sentry.httpIntegration({
-        maxIncomingRequestBodySize: "always",
-      }),
-    ],
+    integrations: (defaults: any[]) =>
+      [
+        // Keep all default integrations except the stock Http integration.
+        // We exclude it so our customized Sentry.httpIntegration() below is the
+        // only Http integration applied (avoids duplicate spans/breadcrumbs and
+        // ensures our maxIncomingRequestBodySize setting takes effect).
+        ...defaults.filter((integration: any) => integration.name !== "Http"),
+        // Profiling
+        nodeProfilingIntegration(),
+        // NestJS integrations are auto-configured by @sentry/nestjs
+        // Capture larger incoming request bodies on server routes
+        // even with "always" setting, sentry never captures bodies exceeding 1 MB for performance and security reasons.
+        Sentry.httpIntegration({
+          maxIncomingRequestBodySize: "always",
+        }),
+      ] as any,
 
     // Configure error filtering
     beforeSend(event, hint) {

@@ -11,7 +11,9 @@ export const MultiComponentReturnSettingWrapperPropsSchema = z.object({
   requestedEnabled: z
     .boolean()
     .optional()
-    .describe("The desired value to pre-toggle in the UI. This is not persisted until Save."),
+    .describe(
+      "The desired value to pre-toggle in the UI. This is not persisted until Save.",
+    ),
 });
 
 interface WrapperProps {

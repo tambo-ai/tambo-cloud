@@ -49,8 +49,7 @@ export function createMockDBProject(
     agentUrl: overrides.agentUrl ?? null,
     agentName: overrides.agentName ?? null,
     creatorId: overrides.creatorId ?? null,
-    allowMultipleUiComponents:
-      overrides.allowMultipleUiComponents ?? false,
+    allowMultipleUiComponents: overrides.allowMultipleUiComponents ?? false,
     members: overrides.members ?? [],
   };
 

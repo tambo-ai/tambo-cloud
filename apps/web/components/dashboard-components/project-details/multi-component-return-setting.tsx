@@ -44,7 +44,10 @@ export function MultiComponentReturnSetting({
   }, [project?.allowMultipleUiComponents, requestedEnabled]);
 
   const serverValue = Boolean(project?.allowMultipleUiComponents);
-  const showUnsavedWarning = useMemo(() => localEnabled !== serverValue, [serverValue, localEnabled]);
+  const showUnsavedWarning = useMemo(
+    () => localEnabled !== serverValue,
+    [serverValue, localEnabled],
+  );
 
   const handleSave = async () => {
     try {
@@ -110,7 +113,8 @@ export function MultiComponentReturnSetting({
               Multiple messages are already enabled.
             </AlertTitle>
             <AlertDescription className="text-green-900/80">
-              You can turn this off here if you want to revert to a single component per response.
+              You can turn this off here if you want to revert to a single
+              component per response.
             </AlertDescription>
           </Alert>
         )}
@@ -166,7 +170,11 @@ export function MultiComponentReturnSetting({
               <Button onClick={handleSave} disabled={isUpdating}>
                 {isUpdating ? "Saving..." : "Save"}
               </Button>
-              <Button variant="outline" onClick={handleCancel} disabled={isUpdating}>
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isUpdating}
+              >
                 Cancel
               </Button>
             </motion.div>
@@ -176,4 +184,3 @@ export function MultiComponentReturnSetting({
     </Card>
   );
 }
-

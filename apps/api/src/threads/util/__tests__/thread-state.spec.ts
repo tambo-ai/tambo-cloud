@@ -365,8 +365,10 @@ describe("Thread State", () => {
 
       // We expect both chunks to be emitted, with the first one withholding toolCall until the end
       expect(collected.length).toBe(3);
-      // 0: first without tool call, 1: second without tool call, 2: final synthesized with first tool call
-      expect(collected[2].toolCallRequest?.toolName).toBe("show_component_Graph");
+      // 0: first without tool call, 1: final synthesized with first tool call, 2: second without tool call
+      expect(collected[1].toolCallRequest?.toolName).toBe(
+        "show_component_Graph",
+      );
     });
   });
 

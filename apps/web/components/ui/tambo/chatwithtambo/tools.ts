@@ -539,9 +539,7 @@ export function useTamboManagementTools() {
         const project = await trpcClient.project.getUserProjects.query();
         const match = project.find((p) => p.id === projectId);
         return {
-          allowMultipleUiComponents: Boolean(
-            match?.allowMultipleUiComponents,
-          ),
+          allowMultipleUiComponents: Boolean(match?.allowMultipleUiComponents),
         };
       },
       toolSchema: fetchAgentSettingsSchema,
@@ -560,9 +558,7 @@ export function useTamboManagementTools() {
         });
         await utils.project.getUserProjects.invalidate();
         return {
-          allowMultipleUiComponents: Boolean(
-            result.allowMultipleUiComponents,
-          ),
+          allowMultipleUiComponents: Boolean(result.allowMultipleUiComponents),
         };
       },
       toolSchema: updateAgentSettingsSchema,
