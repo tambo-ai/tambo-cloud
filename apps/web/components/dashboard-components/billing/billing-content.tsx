@@ -35,19 +35,11 @@ const itemVariants = {
 export function BillingContent({ customer, onRefresh }: BillingContentProps) {
   return (
     <motion.div
-      className="flex-1 p-4 md:p-6 space-y-6"
+      className="flex-1 space-y-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {/* Page Header */}
-      <motion.div variants={itemVariants}>
-        <h1 className="text-2xl font-bold">Billing & Usage</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your subscription, view usage, and billing history
-        </p>
-      </motion.div>
-
       {/* Current Plan Card */}
       <motion.div variants={itemVariants}>
         <CurrentPlanCard customer={customer} onRefresh={onRefresh} />

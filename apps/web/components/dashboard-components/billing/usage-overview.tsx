@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 import type { Customer } from "autumn-js";
 import { AlertCircle, CheckCircle2, MessageSquare } from "lucide-react";
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
+/**
+ * Constants
+ */
 
 // These should ideally come from Autumn's product configuration
 // but are currently hardcoded as business rules
@@ -17,9 +17,9 @@ const FALLBACK_MESSAGE_LIMIT = 200000; // Fallback when Autumn data is unavailab
 const OVERAGE_RATE_PER_100K = 8; // This is a business constant - $8 per 100k messages
 const APPROACHING_LIMIT_THRESHOLD = 5000;
 
-// ============================================================================
-// TYPES
-// ============================================================================
+/**
+ * Types
+ */
 
 interface UsageOverviewProps {
   customer: Customer | null;
@@ -61,9 +61,9 @@ interface UsageMetrics {
   overageCost: number;
 }
 
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
+/**
+ * Utility functions
+ */
 
 /**
  * Calculate usage metrics from customer features
@@ -114,9 +114,9 @@ function checkIsFreePlan(
   return !activeProduct || planName.toLocaleLowerCase() === "free";
 }
 
-// ============================================================================
-// SUB-COMPONENTS
-// ============================================================================
+/**
+ * Sub-components
+ */
 
 /**
  * Overage information pill component
@@ -437,12 +437,8 @@ function FeatureUsageCard({
   );
 }
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
-
 /**
- * Usage Overview component - displays message usage and billing status
+ * Main component
  */
 export function UsageOverview({ customer }: UsageOverviewProps) {
   // Extract and calculate all necessary data

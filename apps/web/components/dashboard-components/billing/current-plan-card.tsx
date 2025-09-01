@@ -10,6 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  isFreePlan,
+  MESSAGE_LIMITS,
+  OVERAGE_CONFIG,
+  PLAN_FEATURES,
+} from "@/lib/billing/constants";
 import type { Customer } from "autumn-js";
 import { useCustomer } from "autumn-js/react";
 import { ArrowUpRight, CreditCard, Loader2 } from "lucide-react";
@@ -32,7 +38,10 @@ export function CurrentPlanCard({ customer }: CurrentPlanCardProps) {
   );
 
   const planName = activeProduct?.name || "Free";
-  const isFreePlan = !activeProduct || planName.toLowerCase() === "free";
+  const isFree = isFreePlan({
+    properties: { is_free: !activeProduct },
+    name: activeProduct?.name || "Free",
+  });
   const nextBillingDate = activeProduct?.started_at
     ? (() => {
         const startDate = new Date(activeProduct.started_at);
@@ -92,7 +101,7 @@ export function CurrentPlanCard({ customer }: CurrentPlanCardProps) {
             </div>
 
             <div className="flex items-center gap-2">
-              {isFreePlan ? (
+              {isFree ? (
                 <Button onClick={handleUpgrade} className="shadow-sm">
                   Upgrade to Pro
                 </Button>
@@ -129,48 +138,9 @@ export function CurrentPlanCard({ customer }: CurrentPlanCardProps) {
                 <h4 className="text-sm font-semibold mb-3">Plan includes:</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {(() => {
-                    // Define features for each plan
-                    const freeFeatures = [
-                      {
-                        key: "messages",
-                        name: "Messages",
-                        description: `(${(customer.features.messages?.included_usage ?? 10000).toLocaleString()} included)`,
-                      },
-                      {
-                        key: "unlimited_users_oauth",
-                        name: "Unlimited Users (OAuth)",
-                      },
-                      {
-                        key: "chat_thread_history",
-                        name: "Chat Thread History",
-                      },
-                      {
-                        key: "analytics__observability",
-                        name: "Analytics & Observability",
-                      },
-                      { key: "Community_support", name: "Community Support" },
-                    ];
-                    const growthFeatures = [
-                      {
-                        key: "messages",
-                        name: "Messages",
-                        description: `(${(customer.features.messages?.included_usage ?? 200000).toLocaleString()} included, then $8/100k)`,
-                      },
-                      { key: "unlimited_users", name: "Unlimited Users" },
-                      {
-                        key: "chat_thread_history",
-                        name: "Chat Thread History",
-                      },
-                      {
-                        key: "analytics__observability",
-                        name: "Analytics & Observability",
-                      },
-                      { key: "email_support", name: "Email Support" },
-                    ];
-
-                    const planFeatures = isFreePlan
-                      ? freeFeatures
-                      : growthFeatures;
+                    const planFeatures = isFree
+                      ? PLAN_FEATURES.free
+                      : PLAN_FEATURES.growth;
 
                     return planFeatures.map((feature) => (
                       <div
@@ -179,8 +149,8 @@ export function CurrentPlanCard({ customer }: CurrentPlanCardProps) {
                       >
                         <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                         <span>{feature.name}</span>
-                        {feature.description && (
-                          <span>{feature.description}</span>
+                        {feature.getDescription && (
+                          <span>({feature.getDescription(customer)})</span>
                         )}
                       </div>
                     ));
@@ -188,20 +158,23 @@ export function CurrentPlanCard({ customer }: CurrentPlanCardProps) {
                 </div>
 
                 {/* Overage Pricing Note */}
-                {customer.features.messages && !isFreePlan && (
+                {customer.features.messages && !isFree && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
                       <span>📊</span>
                       <span>
                         {(
-                          customer.features.messages?.included_usage ?? 200000
+                          customer.features.messages?.included_usage ??
+                          MESSAGE_LIMITS.GROWTH
                         ).toLocaleString()}{" "}
                         messages included
                       </span>
                     </div>
                     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-500 rounded-full text-xs font-medium">
                       <span>💳</span>
-                      <span>$8 per 100k extra messages</span>
+                      <span>
+                        ${OVERAGE_CONFIG.RATE_PER_100K} per 100k extra messages
+                      </span>
                     </div>
                   </div>
                 )}

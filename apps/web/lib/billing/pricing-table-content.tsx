@@ -1,3 +1,9 @@
+/**
+ * Pricing Table Content Component
+ * These functions come from Autumn directly, and are modified to fit our needs
+ * DO NOT CHANGE IF NOT NECESSARY
+ */
+
 import { type Product } from "autumn-js";
 
 export const getPricingTableContent = (product: Product) => {

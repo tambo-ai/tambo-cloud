@@ -1,4 +1,11 @@
+/**
+ * Checkout Dialog Component
+ * This component comes from Autumn directly, and is modified to fit our needs
+ * DO NOT CHANGE IF NOT NECESSARY
+ */
+
 "use client";
+
 import {
   Accordion,
   AccordionContent,
@@ -17,7 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { getCheckoutContent } from "@/lib/autumn/checkout-content";
+import { getCheckoutContent } from "@/lib/billing/checkout-content";
 import { cn } from "@/lib/utils";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import type { CheckoutResult, ProductItem } from "autumn-js";

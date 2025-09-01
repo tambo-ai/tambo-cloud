@@ -1,51 +1,105 @@
-import React from "react";
+/**
+ * Pricing Table Component
+ * This component comes from Autumn directly, and is modified to fit our needs
+ * DO NOT CHANGE IF NOT NECESSARY
+ */
+
+"use client";
 
 import CheckoutDialog from "@/components/dashboard-components/billing/checkout-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { getPricingTableContent } from "@/lib/autumn/pricing-table-content";
+import {
+  PLAN_FEATURES,
+  isFreePlan,
+  isRecommendedPlan,
+  type PlanFeature,
+} from "@/lib/billing/constants";
+import { getPricingTableContent } from "@/lib/billing/pricing-table-content";
 import { cn } from "@/lib/utils";
 import type { Product, ProductItem } from "autumn-js";
 import { ProductDetails, useCustomer, usePricingTable } from "autumn-js/react";
 import { Easing, motion } from "framer-motion";
 import { Check, Loader2 } from "lucide-react";
-import { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
-// Animation configuration
 const ease: Easing = [0.16, 1, 0.3, 1];
 
-export default function PricingTable({
-  productDetails,
-}: {
-  productDetails?: ProductDetails[];
-}) {
-  const { checkout } = useCustomer();
-  const [isAnnual, setIsAnnual] = useState(false);
-  const { products, isLoading, error } = usePricingTable({ productDetails });
+/**
+ * Pricing Table Context
+ * Provides the context for the pricing table
+ */
 
-  if (isLoading) {
-    return (
-      <div className="w-full h-full flex justify-center items-center min-h-[300px]">
-        <Loader2 className="w-6 h-6 animate-spin" />
-      </div>
-    );
+interface PricingTableContextValue {
+  isAnnualToggle: boolean;
+  setIsAnnualToggle: (isAnnual: boolean) => void;
+  products: Product[];
+  showFeatures: boolean;
+}
+
+const PricingTableContext = createContext<PricingTableContextValue>({
+  isAnnualToggle: false,
+  setIsAnnualToggle: () => {},
+  products: [],
+  showFeatures: true,
+});
+
+export const usePricingTableContext = (componentName: string) => {
+  const context = useContext(PricingTableContext);
+  if (context === undefined) {
+    throw new Error(`${componentName} must be used within <PricingTable />`);
   }
+  return context;
+};
 
-  if (error) {
-    return <div> Something went wrong...</div>;
-  }
+/**
+ * Map plan features to ProductItems, using Autumn data when available
+ */
 
-  const intervals = Array.from(
-    new Set(
-      products?.map((p) => p.properties?.interval_group).filter((i) => !!i),
-    ),
-  );
+function mapFeaturesToItems(
+  features: PlanFeature[],
+  productItems: ProductItem[],
+  customer?: any,
+): ProductItem[] {
+  return features.map((feature) => {
+    // Try to find matching item from Autumn data
+    const autumnItem = productItems.find((item) => {
+      const itemText = item.display?.primary_text?.toLocaleLowerCase() || "";
+      const featureNameLower = feature.name.toLocaleLowerCase();
 
-  const multiInterval = intervals.length > 1;
+      // Match by various patterns
+      return (
+        itemText.includes(featureNameLower) ||
+        itemText.includes(feature.key.replace(/_/g, " ")) ||
+        (item as any).feature?.name === feature.key
+      );
+    });
 
-  const intervalFilter = (product: Product) => {
+    // Return either the Autumn item or create a synthetic one
+    if (autumnItem) {
+      return autumnItem;
+    }
+
+    // Create a synthetic item if not found in Autumn data
+    return {
+      type: "feature" as const,
+      display: {
+        primary_text: feature.name,
+        secondary_text: feature.getDescription
+          ? feature.getDescription(customer)
+          : undefined,
+      },
+    } as ProductItem;
+  });
+}
+
+/**
+ * Filter products by billing interval
+ */
+function createIntervalFilter(isAnnual: boolean, multiInterval: boolean) {
+  return (product: Product) => {
     if (!product.properties?.interval_group) {
       return true;
     }
@@ -60,24 +114,59 @@ export default function PricingTable({
 
     return true;
   };
+}
 
-  // Filter to only show Free and Growth tiers
-  const tierFilter = (product: Product) => {
-    const name = (product.display?.name || product.name).toLowerCase();
+/**
+ * Filter to only show Free and Growth tiers
+ */
+function tierFilter(product: Product): boolean {
+  const name = (product.display?.name || product.name).toLocaleLowerCase();
+  return (
+    name.includes("free") || name.includes("growth") || name.includes("starter")
+  );
+}
+
+/**
+ * Main component for the pricing table
+ */
+
+export default function PricingTable({
+  productDetails,
+}: {
+  productDetails?: ProductDetails[];
+}) {
+  const { checkout } = useCustomer();
+  const [isAnnualToggle, setIsAnnualToggle] = useState(false);
+  const { products, isLoading, error } = usePricingTable({ productDetails });
+
+  if (isLoading) {
     return (
-      name.includes("free") ||
-      name.includes("growth") ||
-      name.includes("starter")
+      <div className="w-full h-full flex justify-center items-center min-h-[300px]">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
     );
-  };
+  }
+
+  if (error) {
+    return <div>Something went wrong...</div>;
+  }
+
+  const intervals = Array.from(
+    new Set(
+      products?.map((p) => p.properties?.interval_group).filter((i) => !!i),
+    ),
+  );
+
+  const multiInterval = intervals.length > 1;
+  const intervalFilter = createIntervalFilter(isAnnualToggle, multiInterval);
 
   return (
     <div className={cn("root")}>
       {products && (
         <PricingTableContainer
           products={products}
-          isAnnualToggle={isAnnual}
-          setIsAnnualToggle={setIsAnnual}
+          isAnnualToggle={isAnnualToggle}
+          setIsAnnualToggle={setIsAnnualToggle}
           multiInterval={multiInterval}
         >
           {products
@@ -114,27 +203,9 @@ export default function PricingTable({
   );
 }
 
-const PricingTableContext = createContext<{
-  isAnnualToggle: boolean;
-  setIsAnnualToggle: (isAnnual: boolean) => void;
-  products: Product[];
-  showFeatures: boolean;
-}>({
-  isAnnualToggle: false,
-  setIsAnnualToggle: () => {},
-  products: [],
-  showFeatures: true,
-});
-
-export const usePricingTableContext = (componentName: string) => {
-  const context = useContext(PricingTableContext);
-
-  if (context === undefined) {
-    throw new Error(`${componentName} must be used within <PricingTable />`);
-  }
-
-  return context;
-};
+/**
+ * Container component for the pricing table
+ */
 
 export const PricingTableContainer = ({
   children,
@@ -162,6 +233,7 @@ export const PricingTableContainer = ({
   }
 
   const hasRecommended = products?.some((p) => p.display?.recommend_text);
+
   return (
     <PricingTableContext.Provider
       value={{ isAnnualToggle, setIsAnnualToggle, products, showFeatures }}
@@ -194,6 +266,10 @@ export const PricingTableContainer = ({
   );
 };
 
+/**
+ * Pricing card component
+ */
+
 interface PricingCardProps {
   productId: string;
   showFeatures?: boolean;
@@ -212,34 +288,31 @@ export const PricingCard = ({
   const { products, showFeatures } = usePricingTableContext("PricingCard");
 
   const product = products.find((p) => p.id === productId);
-
   if (!product) {
     throw new Error(`Product with id ${productId} not found`);
   }
 
   const { name, display: productDisplay } = product;
-
   const { buttonText } = getPricingTableContent(product);
 
-  // Mark Growth tier as popular/recommended to match pricing.tsx
-  const isRecommended = productDisplay?.recommend_text
-    ? true
-    : (product.display?.name || product.name).toLowerCase().includes("growth");
-  const mainPriceDisplay = product.properties?.is_free
-    ? {
-        primary_text: "Free",
-      }
-    : product.items[0].display;
+  const recommended = isRecommendedPlan(product);
+  const isFree = isFreePlan(product);
 
-  const featureItems = product.properties?.is_free
-    ? product.items
-    : product.items.slice(1);
+  const mainPriceDisplay = product.properties?.is_free
+    ? { primary_text: "Free" }
+    : product.items[0]?.display;
+
+  // Get the predefined features for this plan type
+  const planFeatures = isFree ? PLAN_FEATURES.free : PLAN_FEATURES.growth;
+
+  // Map features to items, using Autumn data when available
+  const orderedFeatureItems = mapFeaturesToItems(planFeatures, product.items);
 
   return (
     <motion.div
       className={cn(
         "relative h-full w-full rounded-lg",
-        isRecommended
+        recommended
           ? "p-[2px] bg-gradient-to-r from-green-200 via-green-400 to-green-200 animate-border-wave"
           : "border border-border",
         className,
@@ -252,58 +325,23 @@ export const PricingCard = ({
       <div
         className={cn(
           "outline-focus transition-transform-background relative z-10 box-border grid h-full w-full overflow-hidden text-foreground motion-reduce:transition-none rounded-lg bg-white",
-          isRecommended ? "shadow-lg" : "",
+          recommended ? "shadow-lg" : "",
         )}
       >
         <div className="flex flex-col h-full">
-          <CardHeader className="border-b p-6 h-fit">
-            <CardTitle className="flex items-center justify-between">
-              <span className="text-lg font-semibold">
-                {productDisplay?.name || name}
-              </span>
-              {isRecommended && (
-                <Badge
-                  variant="secondary"
-                  className="bg-primary hover:bg-secondary-foreground"
-                >
-                  Most Popular
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="pt-2">
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-primary">
-                  {mainPriceDisplay?.primary_text}
-                </span>
-                {mainPriceDisplay?.secondary_text && (
-                  <span className="text-sm font-medium text-primary">
-                    {mainPriceDisplay.secondary_text}
-                  </span>
-                )}
-              </div>
-              {productDisplay?.description && (
-                <div className="mt-1 text-sm font-medium text-primary">
-                  {productDisplay.description}
-                </div>
-              )}
-            </div>
-          </CardHeader>
+          <PricingCardHeader
+            name={productDisplay?.name || name}
+            isRecommended={recommended}
+            priceDisplay={mainPriceDisplay}
+            description={productDisplay?.description}
+          />
 
-          {showFeatures && featureItems.length > 0 && (
-            <CardContent className="flex-grow p-6 pt-5">
-              <ul className="space-y-3 text-primary">
-                {featureItems.map((item, featureIndex) => (
-                  <li key={featureIndex} className="flex items-start">
-                    <Check className="mr-3 size-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    <PricingFeatureItem item={item} />
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
+          {showFeatures && orderedFeatureItems.length > 0 && (
+            <PricingCardFeatures items={orderedFeatureItems} />
           )}
 
           <div className="p-6 pt-0">
-            <PricingCardButton recommended={isRecommended} {...buttonProps}>
+            <PricingCardButton recommended={recommended} {...buttonProps}>
               {productDisplay?.button_text || buttonText}
             </PricingCardButton>
           </div>
@@ -313,7 +351,78 @@ export const PricingCard = ({
   );
 };
 
-// Pricing Feature Item - matches the FeatureItem from pricing.tsx
+/**
+ * Card sub-components
+ */
+
+interface PricingCardHeaderProps {
+  name: string;
+  isRecommended: boolean;
+  priceDisplay?: {
+    primary_text?: string;
+    secondary_text?: string;
+  };
+  description?: string;
+}
+
+function PricingCardHeader({
+  name,
+  isRecommended,
+  priceDisplay,
+  description,
+}: PricingCardHeaderProps) {
+  return (
+    <CardHeader className="border-b p-6 h-fit">
+      <CardTitle className="flex items-center justify-between">
+        <span className="text-lg font-semibold">{name}</span>
+        {isRecommended && (
+          <Badge
+            variant="secondary"
+            className="bg-primary hover:bg-secondary-foreground"
+          >
+            Most Popular
+          </Badge>
+        )}
+      </CardTitle>
+      <div className="pt-2">
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-bold text-primary">
+            {priceDisplay?.primary_text}
+          </span>
+          {priceDisplay?.secondary_text && (
+            <span className="text-sm font-medium text-primary">
+              {priceDisplay.secondary_text}
+            </span>
+          )}
+        </div>
+        {description && (
+          <div className="mt-1 text-sm font-medium text-primary">
+            {description}
+          </div>
+        )}
+      </div>
+    </CardHeader>
+  );
+}
+
+function PricingCardFeatures({ items }: { items: ProductItem[] }) {
+  return (
+    <CardContent className="flex-grow p-6 pt-5">
+      <ul className="space-y-3 text-primary">
+        {items.map((item, featureIndex) => (
+          <li key={featureIndex} className="flex items-start">
+            <Check className="mr-3 size-4 text-green-500 mt-0.5 flex-shrink-0" />
+            <PricingFeatureItem item={item} />
+          </li>
+        ))}
+      </ul>
+    </CardContent>
+  );
+}
+
+/**
+ * Pricing feature item
+ */
 const PricingFeatureItem: React.FC<{ item: ProductItem }> = ({ item }) => {
   const primaryText = item.display?.primary_text || "";
   const secondaryText = item.display?.secondary_text || "";
@@ -339,7 +448,10 @@ const PricingFeatureItem: React.FC<{ item: ProductItem }> = ({ item }) => {
     </div>
   );
 };
-// Pricing Card Button - updated to match pricing.tsx style
+
+/**
+ * Pricing card button
+ */
 export interface PricingCardButtonProps extends React.ComponentProps<"button"> {
   recommended?: boolean;
   buttonUrl?: string;
@@ -383,7 +495,9 @@ export const PricingCardButton = React.forwardRef<
 });
 PricingCardButton.displayName = "PricingCardButton";
 
-// Annual Switch
+/**
+ * Annual switch
+ */
 export const AnnualSwitch = ({
   isAnnualToggle,
   setIsAnnualToggle,
