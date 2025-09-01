@@ -121,7 +121,9 @@ export async function getUserIdFromThread(
     with: {
       project: {
         with: {
-          creator: true,
+          creator: {
+            columns: { id: true },
+          },
         },
       },
     },
