@@ -1,0 +1,1 @@
+DROP INDEX "user_message_usage_user_id_idx";

@@ -384,7 +384,6 @@ export const userMessageUsage = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   }),
-  (table) => [index("user_message_usage_user_id_idx").on(table.userId)],
 );
 
 export type DBUserMessageUsage = typeof userMessageUsage.$inferSelect;

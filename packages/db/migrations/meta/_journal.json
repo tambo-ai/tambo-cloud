@@ -505,6 +505,13 @@
       "when": 1756676704743,
       "tag": "0071_normal_tenebrous",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1756767950975,
+      "tag": "0072_next_wiccan",
+      "breakpoints": true
     }
   ]
 }
