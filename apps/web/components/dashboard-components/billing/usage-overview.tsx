@@ -5,12 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { Customer } from "autumn-js";
-import {
-  AlertCircle,
-  CheckCircle2,
-  MessageSquare,
-  TrendingUp,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, MessageSquare } from "lucide-react";
 
 interface UsageOverviewProps {
   customer: Customer | null;
@@ -23,8 +18,8 @@ interface FeatureUsageCardProps {
   limit?: number;
   unlimited?: boolean;
   unit?: string;
-  trend?: number;
   resetDate?: string;
+  isInOverage?: boolean;
 }
 
 function FeatureUsageCard({
@@ -34,13 +29,12 @@ function FeatureUsageCard({
   limit,
   unlimited,
   unit = "",
-  trend,
   resetDate,
+  isInOverage = false,
 }: FeatureUsageCardProps) {
   const percentage = limit ? (usage / limit) * 100 : 0;
   const isNearLimit = percentage >= 80;
   const isAtLimit = percentage >= 100;
-
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -49,9 +43,17 @@ function FeatureUsageCard({
             {icon}
             <CardTitle className="text-base font-medium">{title}</CardTitle>
           </div>
-          {isAtLimit && (
+          {isAtLimit && !isInOverage && (
             <Badge variant="destructive" className="text-xs">
               Limit Reached
+            </Badge>
+          )}
+          {isInOverage && (
+            <Badge
+              variant="secondary"
+              className="text-xs bg-blue-100 text-blue-800"
+            >
+              In Overage
             </Badge>
           )}
           {isNearLimit && !isAtLimit && (
@@ -89,35 +91,63 @@ function FeatureUsageCard({
 
         {/* Progress Bar */}
         {!unlimited && limit && (
-          <Progress
-            value={Math.min(percentage, 100)}
-            className={cn(
-              "h-2",
-              isAtLimit && "bg-destructive/20",
-              isNearLimit && !isAtLimit && "bg-amber-100",
+          <div className="space-y-1.5">
+            <div className="relative">
+              <Progress
+                value={Math.min(percentage, 100)}
+                className={cn(
+                  "h-4",
+                  "border",
+                  "shadow-sm",
+                  "bg-background",
+                  isAtLimit && "[&>*]:bg-red-500",
+                  isInOverage && "[&>*]:bg-blue-500",
+                  isNearLimit && !isAtLimit && "[&>*]:bg-amber-500",
+                  !isNearLimit && !isAtLimit && "[&>*]:bg-green-500",
+                )}
+              />
+
+              {/* Overlay percentage text on the progress bar */}
+              <div className="absolute inset-0 flex items-center px-2">
+                <span
+                  className={cn(
+                    "text-xs font-bold",
+                    percentage > 50
+                      ? "text-white ml-auto mr-1"
+                      : "text-gray-700 ml-1",
+                  )}
+                >
+                  {percentage.toFixed(0)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Quick stats */}
+            {isNearLimit && (
+              <p
+                className={cn(
+                  "text-xs font-medium flex items-center justify-center",
+                  isAtLimit ? "text-red-600" : "text-amber-600",
+                )}
+              >
+                {!isInOverage && (
+                  <>
+                    ⚠️ {(limit - usage).toLocaleString()} {unit} remaining
+                  </>
+                )}
+                {isInOverage && (
+                  <span className="text-xs font-normal text-primary ml-1 pl-1">
+                    (Usage-based pricing active)
+                  </span>
+                )}
+              </p>
             )}
-          />
+          </div>
         )}
 
         {/* Additional Info */}
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           {resetDate && <span>Resets {resetDate}</span>}
-          {trend !== undefined && (
-            <div className="flex items-center gap-1">
-              <TrendingUp
-                className={cn(
-                  "w-3 h-3",
-                  trend > 0 ? "text-green-500" : "text-red-500",
-                )}
-              />
-              <span
-                className={cn(trend > 0 ? "text-green-600" : "text-red-600")}
-              >
-                {trend > 0 ? "+" : ""}
-                {trend}% this month
-              </span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
@@ -142,8 +172,9 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
   const usage = messagesLimit - messagesBalance;
 
   // Check if user is in overage pricing tier (beyond 200k)
-  const isInOverage = usage >= 200000;
-  const overageAmount = Math.max(0, usage - 200000);
+  const isInOverage = usage > messagesLimit;
+  const isAtLimit = usage === messagesLimit;
+  const overageAmount = Math.max(0, usage - messagesLimit);
   const overageCost = Math.ceil(overageAmount / 100000) * 8; // $8 per 100k messages
 
   // Calculate reset date (first day of next month)
@@ -173,6 +204,7 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
           unlimited={false}
           unit="messages"
           resetDate={resetDate}
+          isInOverage={isInOverage}
         />
       </div>
 
@@ -217,7 +249,8 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
       {!isInOverage &&
         messagesBalance !== undefined &&
         messagesBalance !== null &&
-        messagesBalance <= 5000 && (
+        messagesBalance <= 5000 &&
+        !isAtLimit && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
             <div className="flex gap-2">
               <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -257,11 +290,33 @@ export function UsageOverview({ customer }: UsageOverviewProps) {
           </div>
         )}
 
+      {/* At limit status */}
+      {messagesBalance !== undefined &&
+        messagesBalance !== null &&
+        isAtLimit && (
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+            <div className="flex gap-2">
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-yellow-900">
+                  At limit
+                </h4>
+                <p className="text-sm text-yellow-700 mt-1">
+                  You have used {usage.toLocaleString()} of your{" "}
+                  {(messagesLimit || 200000).toLocaleString()} message
+                  allowance. Usage-based pricing will be applied from now on.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
       {/* All Good Status */}
       {!isInOverage &&
         messagesBalance !== undefined &&
         messagesBalance !== null &&
-        messagesBalance > 5000 && (
+        messagesBalance > 5000 &&
+        !isAtLimit && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-4">
             <div className="flex gap-2">
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
