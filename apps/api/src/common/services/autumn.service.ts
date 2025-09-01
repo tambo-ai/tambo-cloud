@@ -92,6 +92,7 @@ export class AutumnService {
   }
 
   /**
+   * Currently not used, but could be useful in the future.
    * Get customer subscription and usage data
    * @param userId The user ID
    */
@@ -113,6 +114,7 @@ export class AutumnService {
   }
 
   /**
+   * Currently not used, but could be useful in the future.
    * Check if a user has a specific product (e.g., "pro" plan)
    * @param userId The user ID
    * @param productId The product ID to check
