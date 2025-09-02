@@ -62,6 +62,7 @@ import {
   addUserMessage,
   finishInProgressMessage,
   fixStreamedToolCalls,
+  handleToolCallLimitViolation,
   processThreadMessage,
   updateGenerationStage,
   updateThreadMessageFromLegacyDecision,
@@ -1069,7 +1070,8 @@ export class ThreadsService {
         );
         if (validationResult) {
           // Replace the tool call request with an error message
-          const errorMessage = await this.handleToolCallLimitViolation(
+          const errorMessage = await handleToolCallLimitViolation(
+            db,
             validationResult,
             thread.id,
             responseMessageDto.id,
@@ -1703,7 +1705,8 @@ export class ThreadsService {
           Sentry.captureMessage("Tool call limit reached", "warning");
 
           // Replace the tool call request with an error message
-          const errorMessage = await this.handleToolCallLimitViolation(
+          const errorMessage = await handleToolCallLimitViolation(
+            db,
             validationResult,
             threadId,
             initialMessage.id,
@@ -1944,46 +1947,6 @@ export class ThreadsService {
         `API key decryption failed for project ${projectId}, provider ${chosenKey.providerName}. Ensure the key is correctly encrypted and the decryption key is available.`,
       );
     }
-  }
-
-  /**
-   * Handles a tool call limit violation by creating an error message.
-   * @param errorMessage - The error message to display
-   * @param messageId - The message ID to update
-   * @returns A message to return to the client in place of the tool call request message.
-   */
-  private async handleToolCallLimitViolation(
-    errorMessage: string,
-    threadId: string,
-    messageId: string,
-  ): Promise<ThreadMessageDto> {
-    const updatedMessage: MessageRequest = {
-      role: MessageRole.Assistant,
-      content: [
-        {
-          type: ContentPartType.Text,
-          text: errorMessage,
-        },
-      ],
-      componentState: {},
-      // Remove any tool call request to break the loop
-      toolCallRequest: undefined,
-      tool_call_id: undefined,
-      actionType: undefined,
-    };
-    // Perform both operations in a single transaction
-    return await this.getDb().transaction(async (tx) => {
-      // Update thread generation status
-      await operations.updateThreadGenerationStatus(
-        tx,
-        threadId,
-        GenerationStage.COMPLETE,
-        "Tool call limit reached",
-      );
-
-      // Update the message and return the result
-      return await updateMessage(tx, messageId, updatedMessage);
-    });
   }
 
   private async shouldIgnoreCancelledToolResponse(
