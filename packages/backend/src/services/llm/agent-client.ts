@@ -283,7 +283,7 @@ export class AgentClient {
             type: AgentResponseType.MESSAGE,
             message: {
               role: "assistant",
-              content: currentToolCall.function.arguments,
+              content: "",
               // HACK: we need to generate a message id for the tool call
               // result, but maybe we'll actually emit this in the
               // TOOL_CALL_RESULT event?
