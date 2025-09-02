@@ -32,12 +32,7 @@ export async function* runAgentLoop(
   });
   for await (const event of stream) {
     const { message } = event;
-    const toolCallId =
-      message.role === "assistant"
-        ? message.toolCalls?.[0]?.id
-        : message.role === "tool"
-          ? message.toolCallId
-          : undefined;
+    const toolCallId = getToolCallId(message);
     const toolCallRequest = getToolCallRequest(message);
     yield {
       id: message.id,
@@ -54,6 +49,16 @@ export async function* runAgentLoop(
     };
   }
 }
+function getToolCallId(message: Message) {
+  if (message.role === "assistant") {
+    return message.toolCalls?.[0]?.id;
+  }
+  if (message.role === "tool") {
+    return message.toolCallId;
+  }
+  return undefined;
+}
+
 function getToolCallRequest(message: Message): ToolCallRequest | undefined {
   if (message.role !== "assistant" || !message.toolCalls?.length) {
     return;
