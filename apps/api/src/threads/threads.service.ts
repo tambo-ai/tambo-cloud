@@ -1597,7 +1597,7 @@ export class ThreadsService {
             });
           }
           console.log(
-            "==== appending new message after",
+            "==== appending new message after\n",
             currentThreadMessage?.id,
           );
           previousMessageId = currentThreadMessage?.id ?? userMessage.id;
