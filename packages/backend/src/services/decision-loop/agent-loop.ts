@@ -61,7 +61,7 @@ function getToolCallRequest(message: Message): ToolCallRequest | undefined {
   const toolCall = message.toolCalls[0];
   try {
     const parameters: Record<string, unknown> = JSON.parse(
-      toolCall.function.arguments ?? "{}",
+      toolCall.function.arguments ? toolCall.function.arguments : "{}",
     );
     return {
       toolName: toolCall.function.name,

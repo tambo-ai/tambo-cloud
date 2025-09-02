@@ -10,7 +10,7 @@ import {
   ToolCallResultEvent,
   ToolCallStartEvent,
 } from "@ag-ui/client";
-import { Message, ToolCallEndEvent } from "@ag-ui/core";
+import { Message, StateDeltaEvent, ToolCallEndEvent } from "@ag-ui/core";
 import { CrewAIAgent } from "@ag-ui/crewai";
 import { MastraAgent } from "@ag-ui/mastra";
 import { MastraClient } from "@mastra/client-js";
@@ -91,22 +91,28 @@ export class AgentClient {
     }
 
     console.log("==== Setting messages", params.messages.length);
-    this.aguiAgent.setMessages(
-      params.messages.map((m, msgIndex): AGUIMessage => {
-        if (m.role === "function") {
-          throw new Error("Function messages are not supported");
-        }
-        const toolCallId = getToolCallId(m);
+    const agentMessages = params.messages.map((m, msgIndex): AGUIMessage => {
+      if (m.role === "function") {
+        throw new Error("Function messages are not supported");
+      }
+      const toolCallId = getToolCallId(m);
+      if (m.role === "tool") {
         return {
           role: m.role,
           content: convertMessagesToString(m.content),
-          // TODO: probably include message id in the incoming type
           id: `tambo-${m.role}-${msgIndex}`,
-          // strange that this is required heree
-          toolCallId,
+          toolCallId: toolCallId,
         };
-      }),
-    );
+      }
+      return {
+        role: m.role,
+        content: convertMessagesToString(m.content),
+        // TODO: probably include message id in the incoming type
+        id: `tambo-${m.role}-${msgIndex}`,
+      };
+    });
+    console.log("==== Messages", JSON.stringify(agentMessages, null, 2));
+    this.aguiAgent.setMessages(agentMessages);
 
     console.log("==== Running agent");
     const generator = runStreamingAgent(this.aguiAgent);
@@ -210,9 +216,14 @@ export class AgentClient {
           // all done, no more events to emit
           return;
         }
-        case EventType.STATE_SNAPSHOT:
+        case EventType.STATE_SNAPSHOT: {
+          console.log("=> State snapshot");
+          break;
+        }
         case EventType.STATE_DELTA: {
-          console.log("=> State update");
+          console.log("=> State delta");
+          const e = event as StateDeltaEvent;
+          console.log("   state delta: ", e.delta);
           break;
         }
         case EventType.TOOL_CALL_START: {
