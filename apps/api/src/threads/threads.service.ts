@@ -516,7 +516,7 @@ export class ThreadsService {
           throw new MessageLimitReachedError({
             limit: access.limit ?? 0,
             usage: access.usage ?? 0,
-            settingsUrl: "https://tambo.co/dashboard",
+            settingsUrl: "https://tambo.co/dashboard/billing",
           });
         }
       }
@@ -558,11 +558,26 @@ export class ThreadsService {
       if (this.autumnService.isEnabled()) {
         const access = await this.autumnService.checkMessageAccess(userId);
         if (!access.allowed) {
-          throw new MessageLimitReachedError({
+          const error = new MessageLimitReachedError({
             limit: access.limit ?? 0,
             usage: access.usage ?? 0,
-            settingsUrl: "https://tambo.co/dashboard",
+            settingsUrl: "https://tambo.co/dashboard/billing",
           });
+
+          // Capture to Sentry before throwing
+          Sentry.captureException(error, {
+            tags: {
+              operation: "addMessage",
+              userId,
+              threadId,
+            },
+            extra: {
+              limit: access.limit,
+              usage: access.usage,
+            },
+          });
+
+          throw error;
         }
       }
 
