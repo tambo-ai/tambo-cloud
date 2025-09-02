@@ -4,11 +4,12 @@
     "rootDir": "./src",
     "declaration": true,
     "outDir": "./dist",
-    "esModuleInterop": true,
     "moduleResolution": "node",
     "module": "CommonJS",
-    "sourceMap": true
+    "paths": {
+      "@tambo-ai-cloud/testing": ["../testing/src"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "./dist", "./docs"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
 }

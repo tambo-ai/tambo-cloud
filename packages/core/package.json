@@ -20,7 +20,7 @@
     "@tambo-ai-cloud/typescript-config": "*",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.15.32",
-    "jest": "^30.0.5",
+    "jest": "^30.1.2",
     "prettier-2": "npm:prettier@^2",
     "ts-jest": "^29.4.1"
   },
@@ -34,7 +34,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.4",
     "jose": "^5.10.0",
-    "openai": "^5.12.2"
+    "openai": "^5.16.0"
   },
   "license": "Apache-2.0"
 }
