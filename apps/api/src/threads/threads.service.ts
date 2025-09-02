@@ -30,6 +30,7 @@ import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { AuthService } from "../common/services/auth.service";
+import { AutumnService } from "../common/services/autumn.service";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
 import { getSystemTools } from "../common/systemTools";
@@ -46,6 +47,7 @@ import {
   FREE_MESSAGE_LIMIT,
   FreeLimitReachedError,
   InvalidSuggestionRequestError,
+  MessageLimitReachedError,
   SuggestionGenerationError,
   SuggestionNotFoundException,
 } from "./types/errors";
@@ -90,6 +92,7 @@ export class ThreadsService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
+    private readonly autumnService: AutumnService,
   ) {}
 
   getDb() {
@@ -474,36 +477,30 @@ export class ThreadsService {
         return;
       }
 
+      // Get project owner once for both email and user tracking
+      const projectOwner = await this.getDb().query.projectMembers.findFirst({
+        where: eq(schema.projectMembers.projectId, projectId),
+        with: {
+          user: true,
+        },
+      });
+
+      const userId = projectOwner?.user.id;
+      const ownerEmail = projectOwner?.user.email;
+
       if (!usage.hasApiKey && usage.messageCount >= FREE_MESSAGE_LIMIT) {
         // Only send email if we haven't sent one before
-        if (!usage.notificationSentAt) {
-          // Get project owner's email from auth.users
-          const projectOwner =
-            await this.getDb().query.projectMembers.findFirst({
-              where: eq(schema.projectMembers.projectId, projectId),
-              with: {
-                user: true,
-              },
-            });
+        if (!usage.notificationSentAt && ownerEmail) {
+          await this.emailService.sendMessageLimitNotification(
+            projectId,
+            ownerEmail,
+            project.name,
+          );
 
-          const ownerEmail = projectOwner?.user.email;
-
-          if (ownerEmail) {
-            await this.emailService.sendMessageLimitNotification(
-              projectId,
-              ownerEmail,
-              project.name,
-            );
-
-            // Update the notification sent timestamp
-            await operations.updateProjectMessageUsage(
-              this.getDb(),
-              projectId,
-              {
-                notificationSentAt: new Date(),
-              },
-            );
-          }
+          // Update the notification sent timestamp
+          await operations.updateProjectMessageUsage(this.getDb(), projectId, {
+            notificationSentAt: new Date(),
+          });
         }
 
         // Track rate limit hit
@@ -512,10 +509,33 @@ export class ThreadsService {
         throw new FreeLimitReachedError();
       }
 
-      // Only increment message count if using fallback key
-      if (usingFallbackKey) {
-        await operations.incrementMessageCount(this.getDb(), projectId);
+      // Check Autumn feature access first (if user exists)
+      if (userId && this.autumnService.isEnabled()) {
+        const access = await this.autumnService.checkMessageAccess(userId);
+        if (!access.allowed) {
+          throw new MessageLimitReachedError({
+            limit: access.limit ?? 0,
+            usage: access.usage ?? 0,
+            settingsUrl: "https://tambo.co/dashboard/billing",
+          });
+        }
       }
+
+      // Increment message counts in transaction
+      await this.getDb().transaction(async (tx) => {
+        // Always increment user message count for pricing
+        if (userId) {
+          await operations.incrementUserMessageCount(tx, userId);
+          // Track usage in Autumn
+          if (this.autumnService.isEnabled()) {
+            await this.autumnService.trackMessageUsage(userId);
+          }
+        }
+        // Only increment project message count if using fallback key
+        if (usingFallbackKey) {
+          await operations.incrementProjectMessageCount(tx, projectId);
+        }
+      });
 
       // Check for first message email
       await this.checkAndSendFirstMessageEmail(projectId, usage);
@@ -531,6 +551,44 @@ export class ThreadsService {
     threadId: string,
     messageDto: MessageRequest,
   ): Promise<ThreadMessage> {
+    // Count user message for pricing
+    const userId = await operations.getUserIdFromThread(this.getDb(), threadId);
+    if (userId && messageDto.role === MessageRole.User) {
+      // Check Autumn feature access if enabled
+      if (this.autumnService.isEnabled()) {
+        const access = await this.autumnService.checkMessageAccess(userId);
+        if (!access.allowed) {
+          const error = new MessageLimitReachedError({
+            limit: access.limit ?? 0,
+            usage: access.usage ?? 0,
+            settingsUrl: "https://tambo.co/dashboard/billing",
+          });
+
+          // Capture to Sentry before throwing
+          Sentry.captureException(error, {
+            tags: {
+              operation: "addMessage",
+              userId,
+              threadId,
+            },
+            extra: {
+              limit: access.limit,
+              usage: access.usage,
+            },
+          });
+
+          throw error;
+        }
+      }
+
+      await operations.incrementUserMessageCount(this.getDb(), userId);
+
+      // Track usage in Autumn if enabled
+      if (this.autumnService.isEnabled()) {
+        await this.autumnService.trackMessageUsage(userId);
+      }
+    }
+
     return await addMessage(this.getDb(), threadId, messageDto);
   }
 
@@ -1054,6 +1112,7 @@ export class ThreadsService {
         userMessage,
         responseMessage,
         this.logger,
+        this.autumnService,
       );
 
       const toolCallRequest = responseMessage.toolCallRequest;
@@ -1583,6 +1642,7 @@ export class ThreadsService {
         threadId,
         userMessage,
         logger,
+        this.autumnService,
       );
       let currentThreadMessage: ThreadMessage = initialMessage;
 

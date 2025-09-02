@@ -17,6 +17,7 @@ import {
 } from "@tambo-ai-cloud/testing";
 import { DATABASE } from "../../common/middleware/db-transaction-middleware";
 import { AuthService } from "../../common/services/auth.service";
+import { AutumnService } from "../../common/services/autumn.service";
 import { EmailService } from "../../common/services/email.service";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 import { ProjectsService } from "../../projects/projects.service";
@@ -44,6 +45,18 @@ const {
 }: {
   MockTamboBackend: jest.Mocked<typeof TamboBackend>;
 } = backendMock;
+
+// Mock AutumnService
+jest.mock("../../common/services/autumn.service", () => ({
+  AutumnService: jest.fn().mockImplementation(() => ({
+    checkMessageAccess: jest.fn().mockResolvedValue({
+      hasAccess: true,
+      remainingMessages: 100,
+    }),
+    trackUsage: jest.fn().mockResolvedValue(undefined),
+    processPayment: jest.fn().mockResolvedValue({ success: true }),
+  })),
+}));
 
 // Mock DB operations used by the service
 jest.mock("@tambo-ai-cloud/db", () => {
@@ -75,7 +88,8 @@ jest.mock("@tambo-ai-cloud/db", () => {
     // usage / limits
     getProjectMessageUsage: jest.fn(),
     updateProjectMessageUsage: jest.fn(),
-    incrementMessageCount: jest.fn(),
+    incrementUserMessageCount: jest.fn(),
+    incrementProjectMessageCount: jest.fn(),
     hasUserReceivedFirstMessageEmail: jest.fn(),
     getProjectMembers: jest.fn(),
 
@@ -150,6 +164,18 @@ describe("ThreadsService.advanceThread initialization", () => {
           id: threadId,
           projectId,
           generationStage: GenerationStage.COMPLETE,
+        }),
+      },
+      projectMembers: {
+        findFirst: jest.fn().mockResolvedValue({
+          projectId,
+          userId: "user_1",
+          role: "owner",
+          user: {
+            id: "user_1",
+            email: "test@example.com",
+            name: "Test User",
+          },
         }),
       },
     },
@@ -245,6 +271,17 @@ describe("ThreadsService.advanceThread initialization", () => {
           provide: AuthService,
           useValue: {
             generateMcpAccessToken: jest.fn().mockResolvedValue("mcp-token"),
+          },
+        },
+        {
+          provide: AutumnService,
+          useValue: {
+            checkMessageAccess: jest.fn().mockResolvedValue({
+              hasAccess: true,
+              remainingMessages: 100,
+            }),
+            trackUsage: jest.fn().mockResolvedValue(undefined),
+            processPayment: jest.fn().mockResolvedValue({ success: true }),
           },
         },
         {

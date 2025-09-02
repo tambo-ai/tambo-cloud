@@ -16,6 +16,7 @@ import {
 } from "./common/middleware/db-transaction-middleware";
 import { RequestLoggerMiddleware } from "./common/middleware/request-logger.middleware";
 import { AuthService } from "./common/services/auth.service";
+import { AutumnService } from "./common/services/autumn.service";
 import { EmailService } from "./common/services/email.service";
 import { ConfigServiceSingleton } from "./config.service";
 import { ExtractorModule } from "./extractor/extractor.module";
@@ -47,7 +48,7 @@ export class GlobalModule {}
     SchedulerModule,
   ],
   controllers: [AppController],
-  providers: [AppService, EmailService, AuthService],
+  providers: [AppService, EmailService, AuthService, AutumnService],
 })
 export class AppModule implements OnModuleInit {
   constructor(private configService: ConfigService) {}
