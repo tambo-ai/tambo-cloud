@@ -1674,7 +1674,7 @@ export class ThreadsService {
       };
 
       // Check tool call limits if we have a tool call request
-      if (currentThreadMessage && toolCallRequest) {
+      if (toolCallRequest) {
         Sentry.addBreadcrumb({
           message: `Processing tool call: ${toolCallRequest.toolName}`,
           category: "tools",
