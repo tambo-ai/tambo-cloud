@@ -1,10 +1,19 @@
-/*
-  Debug SSE stream from stdin.
-  - Reads Server-Sent Events where each event contains one or more `data:` lines with JSON
-  - For each completed message (terminated by a blank line), prints:
-    1) A colored unified diff vs the previous message (skipped for the first)
-    2) The current message as pretty-printed JSON with deterministically sorted object keys
-*/
+/**
+ * Debug SSE stream from stdin.
+ *
+ * - Reads Server-Sent Events where each event contains one or more `data:` lines with JSON
+ * - For each completed message (terminated by a blank line), prints:
+ *   - A colored unified diff vs the previous message (skipped for the first)
+ *   - The current message as pretty-printed JSON with deterministically sorted object keys
+ *
+ * This is best used as output from curl:
+ * 1) Use "Copy as cURL" in chrome dev tools
+ * 2) Paste into your terminal and run `| npm run debug-stream`, e.g.
+ *    ```
+ *    curl https://api.tambo.co/threads/advancestream .... | npm run debug-stream
+ *    ```
+ *
+ */
 
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
