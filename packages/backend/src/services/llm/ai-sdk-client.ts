@@ -326,6 +326,7 @@ export class AISdkClient implements LLMClient {
       arguments: string;
       id?: string;
     } = { arguments: "" };
+    console.log("streaming response from ", result);
 
     for await (const delta of result.fullStream) {
       switch (delta.type) {
