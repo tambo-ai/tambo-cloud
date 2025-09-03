@@ -1059,19 +1059,19 @@ export class ThreadsService {
       const toolCallRequest = responseMessage.toolCallRequest;
 
       // Check tool call limits if we have a tool call request
-      if (toolCallRequest) {
-        const violation = await checkToolCallLimitViolation(
-          this.getDb(),
-          thread.id,
-          responseMessageDto.id,
-          responseMessageDto,
-          threadMessageDtoToThreadMessage(messages),
-          toolCallCounts,
-          toolCallRequest,
-          project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
-          mcpAccessToken,
-        );
-        if (violation) return violation;
+      const violation = await checkToolCallLimitViolation(
+        this.getDb(),
+        thread.id,
+        responseMessageDto.id,
+        responseMessageDto,
+        threadMessageDtoToThreadMessage(messages),
+        toolCallCounts,
+        toolCallRequest,
+        project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
+        mcpAccessToken,
+      );
+      if (violation) {
+        return violation;
       }
 
       if (isSystemToolCall(toolCallRequest, systemTools)) {
@@ -1674,31 +1674,21 @@ export class ThreadsService {
       };
 
       // Check tool call limits if we have a tool call request
-      if (toolCallRequest) {
-        Sentry.addBreadcrumb({
-          message: `Processing tool call: ${toolCallRequest.toolName}`,
-          category: "tools",
-          level: "info",
-          data: { threadId, toolName: toolCallRequest.toolName },
-        });
+      const violation = await checkToolCallLimitViolation(
+        this.getDb(),
+        threadId,
+        currentThreadMessage.id,
+        finalThreadMessage,
+        threadMessages,
+        toolCallCounts,
+        toolCallRequest,
+        maxToolCallLimit,
+        mcpAccessToken,
+      );
 
-        const violation = await checkToolCallLimitViolation(
-          this.getDb(),
-          threadId,
-          currentThreadMessage.id,
-          finalThreadMessage,
-          threadMessages,
-          toolCallCounts,
-          toolCallRequest,
-          maxToolCallLimit,
-          mcpAccessToken,
-        );
-
-        if (violation) {
-          Sentry.captureMessage("Tool call limit reached", "warning");
-          yield violation;
-          return;
-        }
+      if (violation) {
+        yield violation;
+        return;
       }
 
       const { resultingGenerationStage, resultingStatusMessage } =

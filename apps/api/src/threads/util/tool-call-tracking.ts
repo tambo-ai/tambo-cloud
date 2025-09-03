@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nestjs";
 import {
   ContentPartType,
   GenerationStage,
@@ -187,7 +188,6 @@ async function handleToolCallLimitViolation(
  * updates the message/thread state and returns a ready response DTO
  * to be sent to the client.
  */
-
 export async function checkToolCallLimitViolation(
   db: HydraDb,
   threadId: string,
@@ -195,11 +195,22 @@ export async function checkToolCallLimitViolation(
   finalThreadMessage: ThreadMessage,
   messages: ThreadMessage[],
   currentToolCounts: Record<string, number>,
-  newToolCallRequest: ToolCallRequest,
+  newToolCallRequest: ToolCallRequest | undefined,
   maxToolCallLimit: number,
   mcpAccessToken: string,
 ): Promise<AdvanceThreadResponseDto | undefined> {
-  const toolLimitErrorMessage = validateToolCallLimits(
+  if (!newToolCallRequest) {
+    // not a tool call
+    return;
+  }
+  Sentry.addBreadcrumb({
+    message: `Processing tool call: ${newToolCallRequest.toolName}`,
+    category: "tools",
+    level: "info",
+    data: { threadId, toolName: newToolCallRequest.toolName },
+  });
+
+  const errorMessage = validateToolCallLimits(
     finalThreadMessage,
     messages,
     currentToolCounts,
@@ -207,19 +218,21 @@ export async function checkToolCallLimitViolation(
     maxToolCallLimit,
   );
 
-  if (!toolLimitErrorMessage) {
-    return undefined;
+  if (!errorMessage) {
+    // tool call is fine
+    return;
   }
 
-  const errorMessage = await handleToolCallLimitViolation(
+  const errorThreadMessage = await handleToolCallLimitViolation(
     db,
-    toolLimitErrorMessage,
+    errorMessage,
     threadId,
     messageId,
   );
+  Sentry.captureMessage("Tool call limit reached", "warning");
 
   return {
-    responseMessageDto: errorMessage,
+    responseMessageDto: errorThreadMessage,
     generationStage: GenerationStage.COMPLETE,
     statusMessage: "Tool call limit reached",
     mcpAccessToken,
