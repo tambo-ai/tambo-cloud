@@ -117,9 +117,21 @@ function handleEventIfComplete(): void {
   if (previousJsonString !== null) {
     const diff = unifiedDiff(previousJsonString, currentJsonString);
     if (diff) {
-      output.write(
-        `${color(`\nDiff vs previous (message ${messageCount - 1} -> ${messageCount}):`, COLORS.bold)}\n`,
-      );
+      const header = [
+        color(
+          "\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          COLORS.magenta,
+        ),
+        color(
+          `┃  ${color("Diff", COLORS.cyan)} ${color("vs previous", COLORS.yellow)} ${color(`(message ${messageCount - 1} -> ${messageCount})`, COLORS.blue)}`,
+          COLORS.bold,
+        ),
+        color(
+          "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+          COLORS.magenta,
+        ),
+      ].join("\n");
+      output.write(`${header}\n`);
       output.write(`${colorizeDiff(diff)}\n`);
     } else {
       output.write(
@@ -184,7 +196,12 @@ rl.on("line", (line: string) => {
 
   // SSE fields can include id:, event:, retry:, and data:
   if (raw.startsWith("data:")) {
-    const dataLine = raw.slice("data:".length).trimStart();
+    const dataLine = raw.slice("data:".length).trim();
+    if (dataLine === "DONE" || dataLine === "[DONE]") {
+      // Explicit terminal line, finalize any pending event and exit quietly
+      handleEventIfComplete();
+      return;
+    }
     currentDataLines.push(dataLine);
     return;
   }
