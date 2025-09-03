@@ -1580,6 +1580,9 @@ export class ThreadsService {
 
       let currentLegacyDecisionId: string | undefined = undefined;
       for await (const legacyDecision of fixStreamedToolCalls(stream)) {
+        console.log(
+          `FIXED TOOL CALL: id=${legacyDecision.id}, toolCallId=${legacyDecision.toolCallId}, toolCallRequest=${legacyDecision.toolCallRequest?.toolName}`,
+        );
         if (
           !currentThreadMessage ||
           currentLegacyDecisionId !== legacyDecision.id
@@ -1705,23 +1708,24 @@ export class ThreadsService {
       };
 
       // Check tool call limits if we have a tool call request
-      const toolLimitErrorMessage = await checkToolCallLimitViolation(
-        this.getDb(),
-        threadId,
-        initialMessage.id,
-        finalThreadMessage,
-        threadMessages,
-        toolCallCounts,
-        toolCallRequest,
-        maxToolCallLimit,
-        mcpAccessToken,
-      );
+      if (currentThreadMessage) {
+        const toolLimitErrorMessage = await checkToolCallLimitViolation(
+          this.getDb(),
+          threadId,
+          currentThreadMessage.id,
+          finalThreadMessage,
+          threadMessages,
+          toolCallCounts,
+          toolCallRequest,
+          maxToolCallLimit,
+          mcpAccessToken,
+        );
 
-      if (toolLimitErrorMessage) {
-        yield toolLimitErrorMessage;
-        return;
+        if (toolLimitErrorMessage) {
+          yield toolLimitErrorMessage;
+          return;
+        }
       }
-
       let resultingGenerationStage: GenerationStage =
         GenerationStage.STREAMING_RESPONSE;
       let resultingStatusMessage: string = `Streaming response...`;
