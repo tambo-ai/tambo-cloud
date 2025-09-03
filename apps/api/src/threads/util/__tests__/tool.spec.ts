@@ -2,6 +2,7 @@ import { McpToolRegistry } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
   ContentPartType,
+  MCPClient,
   MessageRole,
   ThreadMessage,
 } from "@tambo-ai-cloud/core";
@@ -86,9 +87,10 @@ describe("tool utilities", () => {
       mcpToolSources: {
         testTool: {
           callTool: jest.fn(),
-        },
+        } as unknown as MCPClient,
       },
-    } as unknown as McpToolRegistry;
+      mcpToolsSchema: [],
+    } as McpToolRegistry;
 
     const toolCallRequest = {
       toolName: "testTool",
