@@ -1059,7 +1059,7 @@ export class ThreadsService {
       const toolCallRequest = responseMessage.toolCallRequest;
 
       // Check tool call limits if we have a tool call request
-      const violation = await checkToolCallLimitViolation(
+      const toolLimitErrorMessage = await checkToolCallLimitViolation(
         this.getDb(),
         thread.id,
         responseMessageDto.id,
@@ -1070,8 +1070,8 @@ export class ThreadsService {
         project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
         mcpAccessToken,
       );
-      if (violation) {
-        return violation;
+      if (toolLimitErrorMessage) {
+        return toolLimitErrorMessage;
       }
 
       if (isSystemToolCall(toolCallRequest, systemTools)) {
@@ -1674,10 +1674,10 @@ export class ThreadsService {
       };
 
       // Check tool call limits if we have a tool call request
-      const violation = await checkToolCallLimitViolation(
+      const toolLimitErrorMessage = await checkToolCallLimitViolation(
         this.getDb(),
         threadId,
-        currentThreadMessage.id,
+        initialMessage.id,
         finalThreadMessage,
         threadMessages,
         toolCallCounts,
@@ -1686,8 +1686,8 @@ export class ThreadsService {
         mcpAccessToken,
       );
 
-      if (violation) {
-        yield violation;
+      if (toolLimitErrorMessage) {
+        yield toolLimitErrorMessage;
         return;
       }
 
