@@ -19,7 +19,7 @@ import { HydraDatabase, HydraDb, operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
-import { MessageRequest, ThreadMessageDto } from "../dto/message.dto";
+import { MessageRequest } from "../dto/message.dto";
 import { convertContentPartToDto } from "./content";
 import {
   addAssistantMessageToThread,
@@ -463,45 +463,4 @@ export async function finishInProgressMessage(
     );
     throw error;
   }
-}
-
-/**
- * Handles a tool call limit violation by creating an error message.
- * @param errorMessage - The error message to display
- * @param messageId - The message ID to update
- * @returns A message to return to the client in place of the tool call request message.
- */
-export async function handleToolCallLimitViolation(
-  db: HydraDb,
-  errorMessage: string,
-  threadId: string,
-  messageId: string,
-): Promise<ThreadMessageDto> {
-  const updatedMessage: MessageRequest = {
-    role: MessageRole.Assistant,
-    content: [
-      {
-        type: ContentPartType.Text,
-        text: errorMessage,
-      },
-    ],
-    componentState: {},
-    // Remove any tool call request to break the loop
-    toolCallRequest: undefined,
-    tool_call_id: undefined,
-    actionType: undefined,
-  };
-  // Perform both operations in a single transaction
-  return await db.transaction(async (tx) => {
-    // Update thread generation status
-    await operations.updateThreadGenerationStatus(
-      tx,
-      threadId,
-      GenerationStage.COMPLETE,
-      "Tool call limit reached",
-    );
-
-    // Update the message and return the result
-    return await updateMessage(tx, messageId, updatedMessage);
-  });
 }
