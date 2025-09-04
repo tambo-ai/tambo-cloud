@@ -214,7 +214,7 @@ function isThreadProcessing(generationStage: GenerationStage) {
 export async function addAssistantResponse(
   db: HydraDatabase,
   threadId: string,
-  addedUserMessage: ThreadMessage,
+  addedUserMessageId: string,
   responseMessage: LegacyComponentDecision,
   logger?: Logger,
 ): Promise<{
@@ -228,7 +228,7 @@ export async function addAssistantResponse(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessage.id,
+          addedUserMessageId,
           false,
         );
 

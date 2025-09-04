@@ -1041,7 +1041,7 @@ export class ThreadsService {
       } = await addAssistantResponse(
         db,
         thread.id,
-        userMessage,
+        userMessage.id,
         responseMessage,
         this.logger,
       );
