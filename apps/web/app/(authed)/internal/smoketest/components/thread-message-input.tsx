@@ -52,8 +52,10 @@ const ThreadMessageInput: FC<ThreadMessageInputProps> = ({
             Stream response
           </label>
           <Button
+            type="button"
             variant="outline"
             size="sm"
+            disabled={!isPending}
             onClick={async () => await cancel()}
           >
             Cancel
