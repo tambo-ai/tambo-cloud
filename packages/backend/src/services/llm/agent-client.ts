@@ -90,7 +90,6 @@ export class AgentClient {
       throw new Error("Agent not initialized");
     }
 
-    console.log("==== Setting messages", params.messages.length);
     const agentMessages = params.messages.map((m, msgIndex): AGUIMessage => {
       if (m.role === "function") {
         throw new Error("Function messages are not supported");
@@ -111,10 +110,8 @@ export class AgentClient {
         id: `tambo-${m.role}-${msgIndex}`,
       };
     });
-    console.log("==== Messages", JSON.stringify(agentMessages, null, 2));
     this.aguiAgent.setMessages(agentMessages);
 
-    console.log("==== Running agent");
     const generator = runStreamingAgent(this.aguiAgent);
     let currentResponse: AgentResponse | undefined = undefined;
     let currentToolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall | null =
@@ -123,11 +120,6 @@ export class AgentClient {
       // we are doing manual iteration of the generator so we can track the "done" state at the end
       // TODO: figure out if there's a better way to do this
       const { done, value } = await generator.next();
-      console.log(
-        "==== Generator next",
-        done,
-        `=== ${JSON.stringify(value).slice(0, 40)}... ===`,
-      );
       if (done) {
         const _agentRunResult = value;
         // result is the final result of the agent run, but we might have actually streamed everything already?
@@ -143,11 +135,9 @@ export class AgentClient {
         return;
       }
       const { event } = value;
-      console.log(`\n=== ${event.type} ===`);
       // here we need to yield the growing event to the caller
       switch (event.type) {
         case EventType.MESSAGES_SNAPSHOT: {
-          console.log("=> Emitting last message");
           // emit the last message
           const e = event as MessagesSnapshotEvent;
           const lastMessage = e.messages[e.messages.length - 1];
@@ -195,13 +185,11 @@ export class AgentClient {
           break;
         }
         case EventType.RUN_FINISHED: {
-          console.log("=> Emitting final message");
           // we don't support "runs" yet, but "finished" may be a point to emit the final response
           const e = event as RunFinishedEvent;
-          console.log("==> final result", e.result);
           if (!currentResponse) {
             // throw new Error("No current response");
-            console.log("===== Run finished, but no current response");
+            console.warn("Agent run finished, but no current response");
           } else {
             currentResponse.message = {
               ...currentResponse.message,
@@ -217,19 +205,14 @@ export class AgentClient {
           return;
         }
         case EventType.STATE_SNAPSHOT: {
-          console.log("=> State snapshot");
           break;
         }
         case EventType.STATE_DELTA: {
-          console.log("=> State delta");
-          const e = event as StateDeltaEvent;
-          console.log("   state delta: ", e.delta);
+          const _e = event as StateDeltaEvent;
           break;
         }
         case EventType.TOOL_CALL_START: {
-          console.log("=> Starting tool call");
           const e = event as ToolCallStartEvent;
-
           currentToolCall = {
             id: e.toolCallId,
             type: "function",
@@ -238,12 +221,16 @@ export class AgentClient {
               name: e.toolCallName,
             },
           };
+          // HACK: we need to generate a message id for the tool call
+          // result, but maybe we'll actually emit this in the
+          // TOOL_CALL_RESULT event?
+          const messageId = `message-${e.toolCallId}`;
           yield {
             type: AgentResponseType.MESSAGE,
             message: {
               role: "assistant",
-              content: "",
-              id: `message-${e.toolCallId}`,
+              content: "", // there is no content for tol
+              id: messageId,
               toolCalls: [currentToolCall],
             },
           };
@@ -251,43 +238,43 @@ export class AgentClient {
         }
         case EventType.TOOL_CALL_CHUNK:
         case EventType.TOOL_CALL_ARGS: {
-          console.log("=> Accumulating tool call args");
           const e = event as ToolCallArgsEvent;
           if (!currentToolCall) {
             throw new Error("No tool call found");
           }
 
           currentToolCall.function.arguments += e.delta;
+          // HACK: we need to generate a message id for the tool call
+          // result, but maybe we'll actually emit this in the
+          // TOOL_CALL_RESULT event?
+          const messageId = `message-${e.toolCallId}`;
           yield {
             type: AgentResponseType.MESSAGE,
             message: {
               role: "assistant",
               content: currentToolCall.function.arguments,
-              // HACK: we need to generate a message id for the tool call
-              // result, but maybe we'll actually emit this in the
-              // TOOL_CALL_RESULT event?
-              id: `message-${e.toolCallId}`,
+              id: messageId,
               toolCalls: [currentToolCall],
             },
           };
           break;
         }
         case EventType.TOOL_CALL_END: {
-          console.log("=> Tool call end");
           if (!currentToolCall) {
             throw new Error("No tool call found");
           }
           const e = event as ToolCallEndEvent;
-          // TODO: would be nice to distinguish this message from the in-progress one emitted by TOOL_CALL_ARGS
+          // HACK: we need to generate a message id for the tool call
+          // result, but maybe we'll actually emit this in the
+          // TOOL_CALL_RESULT event?
+
+          const messageId = `message-${e.toolCallId}`;
           yield {
             type: AgentResponseType.MESSAGE,
             message: {
               role: "assistant",
               content: "",
-              // HACK: we need to generate a message id for the tool call
-              // result, but maybe we'll actually emit this in the
-              // TOOL_CALL_RESULT event?
-              id: `message-${e.toolCallId}`,
+              id: messageId,
               toolCalls: [currentToolCall],
             },
           };
@@ -295,13 +282,13 @@ export class AgentClient {
         }
         case EventType.TOOL_CALL_RESULT: {
           const e = event as ToolCallResultEvent;
-          console.log("=> Tool call result", `${e.content.slice(0, 10)}...`);
           // this is going to look a lot like the TOOL_CALL_END event, but with a different message id,
           // but the content is almost certainly the same
           yield {
             type: AgentResponseType.MESSAGE,
             message: {
-              // TODO: this is a different message id from the one emitted by the TOOL_CALL_END event
+              // Note that this is the *response* so it is a different message
+              // id from the one emitted by the other TOOL_CALL_*/etc events
               id: e.messageId,
               role: "tool",
               content: e.content,
@@ -311,7 +298,6 @@ export class AgentClient {
           break;
         }
         case EventType.TEXT_MESSAGE_START: {
-          console.log("=> Emitting text message update");
           const e = event as TextMessageStartEvent;
           currentResponse = {
             type: AgentResponseType.MESSAGE,
@@ -327,7 +313,6 @@ export class AgentClient {
         case EventType.TEXT_MESSAGE_CONTENT:
         case EventType.TEXT_MESSAGE_CHUNK: {
           const e = event as TextMessageContentEvent;
-          console.log("=> Text message content", e.delta);
           if (!currentResponse) {
             throw new Error("No current response");
           }
@@ -345,7 +330,6 @@ export class AgentClient {
         }
         case EventType.TEXT_MESSAGE_END: {
           // nothing to actually do here, the message should have been emitted already?
-          console.log("=> Text message end");
           currentResponse = undefined;
           break;
         }
