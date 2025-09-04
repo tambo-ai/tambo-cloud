@@ -1074,6 +1074,10 @@ export class ThreadsService {
           console.warn(
             `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
           );
+          Sentry.captureMessage(
+            "Missing tool call ID from system tool call in stream",
+            "warning",
+          );
         }
         return await this.handleSystemToolCall(
           toolCallRequest,
@@ -1580,9 +1584,6 @@ export class ThreadsService {
 
       let currentLegacyDecisionId: string | undefined = undefined;
       for await (const legacyDecision of fixStreamedToolCalls(stream)) {
-        console.log(
-          `FIXED TOOL CALL: id=${legacyDecision.id}, toolCallId=${legacyDecision.toolCallId}, toolCallRequest=${legacyDecision.toolCallRequest?.toolName}`,
-        );
         if (
           !currentThreadMessage ||
           currentLegacyDecisionId !== legacyDecision.id
@@ -1599,10 +1600,6 @@ export class ThreadsService {
                 : undefined,
             });
           }
-          console.log(
-            "==== appending new message after\n",
-            currentThreadMessage?.id,
-          );
           previousMessageId = currentThreadMessage?.id ?? userMessage.id;
           // time to insert a new message into the db
           currentThreadMessage = await appendNewMessageToThread(
