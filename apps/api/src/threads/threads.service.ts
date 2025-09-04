@@ -691,9 +691,6 @@ export class ThreadsService {
         },
       });
 
-      this.logger.log(
-        `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`,
-      );
       return savedSuggestions.map(mapSuggestionToDto);
     } catch (error) {
       // Capture suggestion generation errors with context
@@ -977,26 +974,6 @@ export class ThreadsService {
         thread.id,
         `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
       );
-
-      // Log available components
-      this.logger.log(
-        `Available components for thread ${thread.id}: ${JSON.stringify(
-          advanceRequestDto.availableComponents?.map((comp) => comp.name),
-        )}`,
-      );
-
-      // Log detailed component information
-      if (advanceRequestDto.availableComponents?.length) {
-        this.logger.log(
-          `Component details for thread ${thread.id}: ${JSON.stringify(
-            advanceRequestDto.availableComponents.map((comp) => ({
-              name: comp.name,
-              description: comp.description,
-              contextTools: comp.contextTools.length || 0,
-            })),
-          )}`,
-        );
-      }
 
       const messages = await this.getMessages(thread.id, true);
       const project = await operations.getProject(db, projectId);
