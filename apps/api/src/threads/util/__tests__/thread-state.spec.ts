@@ -402,19 +402,7 @@ describe("Thread State", () => {
       const result = await finishInProgressMessage(
         mockDb,
         "thread-1",
-        {
-          id: "msg-1",
-          threadId: "thread-2",
-          role: MessageRole.User,
-          content: [
-            {
-              type: ContentPartType.Text,
-              text: "test",
-            },
-          ],
-          createdAt: now,
-          componentState: {},
-        },
+        "msg-1",
         "msg-2",
         mockFinalMessage,
         mockLogger,

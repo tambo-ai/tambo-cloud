@@ -407,7 +407,7 @@ export async function addInitialMessage(
 export async function finishInProgressMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessage,
+  addedUserMessageId: string,
   inProgressMessageId: string,
   finalThreadMessage: ThreadMessage,
   logger?: Logger,
@@ -421,7 +421,7 @@ export async function finishInProgressMessage(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessage.id,
+          addedUserMessageId,
           true,
         );
 
