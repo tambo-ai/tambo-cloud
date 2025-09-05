@@ -102,7 +102,8 @@ const CollapsibleContainer = React.forwardRef<
       open={isOpen}
       onOpenChange={onOpenChange}
       className={cn(
-        "fixed shadow-lg bg-background z-50",
+        "fixed shadow-lg bg-background",
+        showProductHuntHighlight ? "z-[60]" : "z-50",
         "transition-[width,height,border-color] duration-300 ease-in-out",
         // Product Hunt highlight effect
         showProductHuntHighlight
@@ -112,6 +113,7 @@ const CollapsibleContainer = React.forwardRef<
           ? cn(
               // Mobile: Full screen
               "inset-0 w-full h-full rounded-none",
+              // (container remains `fixed`; absolute children will anchor to it)
               // Tablet and up: Floating panel
               "sm:inset-auto sm:bottom-4 sm:right-4 sm:rounded-lg",
               "sm:w-[448px] md:w-[512px] lg:w-[640px] xl:w-[768px] 2xl:w-[896px]",
@@ -207,7 +209,7 @@ export const MessageThreadCollapsible = React.forwardRef<
 >(({ className, contextKey, defaultOpen = false, variant, ...props }, ref) => {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [showProductHuntNotification, setShowProductHuntNotification] =
-    React.useState(true);
+    React.useState(false);
   useTamboManagementTools();
 
   const handleThreadChange = React.useCallback(() => {
@@ -215,6 +217,9 @@ export const MessageThreadCollapsible = React.forwardRef<
   }, [setIsOpen]);
 
   // Check if Product Hunt notification should be shown
+  // Only show when the banner has been dismissed in this session AND
+  // the notification itself has not been dismissed. If storage access
+  // fails or is unavailable, default to not showing to avoid overlap.
   React.useEffect(() => {
     try {
       const ss =
@@ -223,10 +228,8 @@ export const MessageThreadCollapsible = React.forwardRef<
         ss?.getItem("product_hunt_notification_dismissed_session") === "1";
       const bannerDismissed =
         ss?.getItem("product_hunt_banner_dismissed_session") === "1";
-      // Only show the notification if the banner has been dismissed AND the notification itself hasn't
-      setShowProductHuntNotification(!notifDismissed && bannerDismissed);
+      setShowProductHuntNotification(!notifDismissed && !!bannerDismissed);
     } catch {
-      // On any error (e.g., sessionStorage unavailable), default to hiding the notification to avoid overlap
       setShowProductHuntNotification(false);
     }
   }, []);
@@ -282,20 +285,6 @@ export const MessageThreadCollapsible = React.forwardRef<
 
   return (
     <>
-      {/* Product Hunt Notification - positioned as thought bubble above chat */}
-      {showProductHuntNotification && (
-        <ProductHuntNotification
-          className={cn(
-            // Position as thought bubble above chat
-            isOpen
-              ? "bottom-[620px] right-4 sm:bottom-[620px] sm:right-4 md:bottom-[670px] lg:bottom-[720px] xl:bottom-[770px] 2xl:bottom-[820px]"
-              : "bottom-24 right-4",
-          )}
-          productHuntUrl={process.env.NEXT_PUBLIC_PRODUCT_HUNT_URL}
-          onDismiss={() => setShowProductHuntNotification(false)}
-        />
-      )}
-
       <CollapsibleContainer
         ref={ref}
         isOpen={isOpen}
@@ -304,6 +293,19 @@ export const MessageThreadCollapsible = React.forwardRef<
         showProductHuntHighlight={showProductHuntNotification}
         {...props}
       >
+        {isOpen && showProductHuntNotification && (
+          <ProductHuntNotification
+            position="absolute"
+            className={cn(
+              // Mobile (panel fullscreen): show inside top-right
+              "right-3 top-3",
+              // Tablet+ (floating panel): place just above the panel
+              "sm:right-4 sm:-top-6",
+            )}
+            productHuntUrl={process.env.NEXT_PUBLIC_PRODUCT_HUNT_URL}
+            onDismiss={() => setShowProductHuntNotification(false)}
+          />
+        )}
         <CollapsibleTrigger
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}

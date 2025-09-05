@@ -14,13 +14,27 @@ interface ProductHuntNotificationProps {
   productHuntUrl?: string;
   /** Callback when dismissed */
   onDismiss?: () => void;
+  /** CSS positioning mode for the wrapper (defaults to `fixed`) */
+  position?: "fixed" | "absolute" | "relative" | "static" | "sticky";
 }
 
 export const ProductHuntNotification: FC<ProductHuntNotificationProps> = ({
   className,
   productHuntUrl = "https://www.producthunt.com/products/tambo",
   onDismiss,
+  position = "fixed",
 }) => {
+  // Map to static Tailwind utilities to avoid purge issues
+  const positionClass =
+    position === "fixed"
+      ? "fixed"
+      : position === "absolute"
+        ? "absolute"
+        : position === "relative"
+          ? "relative"
+          : position === "static"
+            ? "static"
+            : "sticky";
   const [mounted, setMounted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -70,7 +84,7 @@ export const ProductHuntNotification: FC<ProductHuntNotificationProps> = ({
             scale: 0.95,
           }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className={`fixed z-[60] max-w-sm ${className || ""}`}
+          className={`${positionClass} z-[60] max-w-sm ${className || ""}`}
         >
           {/* Thought bubble design */}
           <div className="relative">
