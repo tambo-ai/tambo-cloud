@@ -112,7 +112,19 @@ export class AgentClient {
     });
     this.aguiAgent.setMessages(agentMessages);
 
-    const generator = runStreamingAgent(this.aguiAgent);
+    const agentTools = params.tools.map((t) => {
+      if (t.type !== "function") {
+        throw new Error("Only function tools are supported");
+      }
+      return {
+        name: t.function.name,
+        description: t.function.description || "",
+        parameters: t.function.parameters,
+      };
+    });
+    const generator = runStreamingAgent(this.aguiAgent, [
+      { tools: agentTools },
+    ]);
     let currentResponse: AgentResponse | undefined = undefined;
     let currentToolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall | null =
       null;
