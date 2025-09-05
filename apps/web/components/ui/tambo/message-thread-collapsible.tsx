@@ -1,5 +1,6 @@
 "use client";
 
+import { ProductHuntNotification } from "@/components/product-hunt-notification";
 import { useTamboManagementTools } from "@/components/ui/tambo/chatwithtambo/tools";
 import type { messageVariants } from "@/components/ui/tambo/message";
 import { Message, MessageContent } from "@/components/ui/tambo/message";
@@ -75,6 +76,7 @@ interface CollapsibleContainerProps
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
+  showProductHuntHighlight?: boolean;
 }
 
 /**
@@ -83,31 +85,47 @@ interface CollapsibleContainerProps
 const CollapsibleContainer = React.forwardRef<
   HTMLDivElement,
   CollapsibleContainerProps
->(({ className, isOpen, onOpenChange, children, ...props }, ref) => (
-  <Collapsible.Root
-    ref={ref}
-    open={isOpen}
-    onOpenChange={onOpenChange}
-    className={cn(
-      "fixed shadow-lg bg-background border border-gray-200 z-50",
-      "transition-[width,height] duration-300 ease-in-out",
-      isOpen
-        ? cn(
-            // Mobile: Full screen
-            "inset-0 w-full h-full rounded-none",
-            // Tablet and up: Floating panel
-            "sm:inset-auto sm:bottom-4 sm:right-4 sm:rounded-lg",
-            "sm:w-[448px] md:w-[512px] lg:w-[640px] xl:w-[768px] 2xl:w-[896px]",
-            "sm:h-auto sm:max-w-[90vw]",
-          )
-        : "bottom-4 right-4 rounded-full w-16 h-16 p-0 flex items-center justify-center",
+>(
+  (
+    {
       className,
-    )}
-    {...props}
-  >
-    {children}
-  </Collapsible.Root>
-));
+      isOpen,
+      onOpenChange,
+      children,
+      showProductHuntHighlight,
+      ...props
+    },
+    ref,
+  ) => (
+    <Collapsible.Root
+      ref={ref}
+      open={isOpen}
+      onOpenChange={onOpenChange}
+      className={cn(
+        "fixed shadow-lg bg-background z-50",
+        "transition-[width,height,border-color] duration-300 ease-in-out",
+        // Product Hunt highlight effect
+        showProductHuntHighlight
+          ? "border-2 border-orange-400 shadow-orange-200/50"
+          : "border border-gray-200",
+        isOpen
+          ? cn(
+              // Mobile: Full screen
+              "inset-0 w-full h-full rounded-none",
+              // Tablet and up: Floating panel
+              "sm:inset-auto sm:bottom-4 sm:right-4 sm:rounded-lg",
+              "sm:w-[448px] md:w-[512px] lg:w-[640px] xl:w-[768px] 2xl:w-[896px]",
+              "sm:h-auto sm:max-w-[90vw]",
+            )
+          : "bottom-4 right-4 rounded-full w-16 h-16 p-0 flex items-center justify-center",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </Collapsible.Root>
+  ),
+);
 CollapsibleContainer.displayName = "CollapsibleContainer";
 
 /**
@@ -188,11 +206,27 @@ export const MessageThreadCollapsible = React.forwardRef<
   MessageThreadCollapsibleProps
 >(({ className, contextKey, defaultOpen = false, variant, ...props }, ref) => {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const [showProductHuntNotification, setShowProductHuntNotification] =
+    React.useState(true);
   useTamboManagementTools();
 
   const handleThreadChange = React.useCallback(() => {
     setIsOpen(true);
   }, [setIsOpen]);
+
+  // Check if Product Hunt notification should be shown
+  React.useEffect(() => {
+    try {
+      const dismissed =
+        typeof window !== "undefined" &&
+        window.sessionStorage.getItem(
+          "product_hunt_notification_dismissed_session",
+        ) === "1";
+      setShowProductHuntNotification(!dismissed);
+    } catch {
+      setShowProductHuntNotification(true);
+    }
+  }, []);
 
   /**
    * Configuration for the MessageThreadCollapsible component
@@ -244,59 +278,76 @@ export const MessageThreadCollapsible = React.forwardRef<
   ];
 
   return (
-    <CollapsibleContainer
-      ref={ref}
-      isOpen={isOpen}
-      onOpenChange={setIsOpen}
-      className={className}
-      {...props}
-    >
-      <CollapsibleTrigger
+    <>
+      {/* Product Hunt Notification - positioned as thought bubble above chat */}
+      {showProductHuntNotification && (
+        <ProductHuntNotification
+          className={cn(
+            // Position as thought bubble above chat
+            isOpen
+              ? "bottom-[620px] right-4 sm:bottom-[620px] sm:right-4 md:bottom-[670px] lg:bottom-[720px] xl:bottom-[770px] 2xl:bottom-[820px]"
+              : "bottom-24 right-4",
+          )}
+          productHuntUrl={process.env.NEXT_PUBLIC_PRODUCT_HUNT_URL}
+          onDismiss={() => setShowProductHuntNotification(false)}
+        />
+      )}
+
+      <CollapsibleContainer
+        ref={ref}
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        contextKey={contextKey}
-        onThreadChange={handleThreadChange}
-        config={THREAD_CONFIG}
-      />
-      <Collapsible.Content>
-        <div className="h-[calc(100vh-6rem)] sm:h-[600px] md:h-[650px] lg:h-[700px] xl:h-[750px] 2xl:h-[800px] max-h-[90vh] flex flex-col">
-          {/* Message thread content */}
-          <ScrollableMessageContainer className="p-2 sm:p-3 md:p-4">
-            {/* Conditionally render the starter message */}
-            {!isUserLoggedIn && thread.messages.length === 0 && (
-              <Message role="assistant" message={starterMessage}>
-                <MessageContent />
-              </Message>
-            )}
+        onOpenChange={setIsOpen}
+        className={className}
+        showProductHuntHighlight={showProductHuntNotification}
+        {...props}
+      >
+        <CollapsibleTrigger
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          contextKey={contextKey}
+          onThreadChange={handleThreadChange}
+          config={THREAD_CONFIG}
+        />
+        <Collapsible.Content>
+          <div className="h-[calc(100vh-6rem)] sm:h-[600px] md:h-[650px] lg:h-[700px] xl:h-[750px] 2xl:h-[800px] max-h-[90vh] flex flex-col">
+            {/* Message thread content */}
+            <ScrollableMessageContainer className="p-2 sm:p-3 md:p-4">
+              {/* Conditionally render the starter message */}
+              {!isUserLoggedIn && thread.messages.length === 0 && (
+                <Message role="assistant" message={starterMessage}>
+                  <MessageContent />
+                </Message>
+              )}
 
-            <ThreadContent variant={variant}>
-              <ThreadContentMessages />
-            </ThreadContent>
-          </ScrollableMessageContainer>
+              <ThreadContent variant={variant}>
+                <ThreadContentMessages />
+              </ThreadContent>
+            </ScrollableMessageContainer>
 
-          {/* Message Suggestions Status */}
-          <MessageSuggestions>
-            <MessageSuggestionsStatus />
-          </MessageSuggestions>
+            {/* Message Suggestions Status */}
+            <MessageSuggestions>
+              <MessageSuggestionsStatus />
+            </MessageSuggestions>
 
-          {/* Message input */}
-          <div className="p-2 sm:p-3 md:p-4">
-            <MessageInput contextKey={contextKey}>
-              <MessageInputTextarea />
-              <MessageInputToolbar>
-                <MessageInputSubmitButton />
-              </MessageInputToolbar>
-              <MessageInputError />
-            </MessageInput>
+            {/* Message input */}
+            <div className="p-2 sm:p-3 md:p-4">
+              <MessageInput contextKey={contextKey}>
+                <MessageInputTextarea />
+                <MessageInputToolbar>
+                  <MessageInputSubmitButton />
+                </MessageInputToolbar>
+                <MessageInputError />
+              </MessageInput>
+            </div>
+
+            {/* Message suggestions */}
+            <MessageSuggestions initialSuggestions={defaultSuggestions}>
+              <MessageSuggestionsList />
+            </MessageSuggestions>
           </div>
-
-          {/* Message suggestions */}
-          <MessageSuggestions initialSuggestions={defaultSuggestions}>
-            <MessageSuggestionsList />
-          </MessageSuggestions>
-        </div>
-      </Collapsible.Content>
-    </CollapsibleContainer>
+        </Collapsible.Content>
+      </CollapsibleContainer>
+    </>
   );
 });
 MessageThreadCollapsible.displayName = "MessageThreadCollapsible";

@@ -1,9 +1,10 @@
 "use client";
 
 import { DashboardHeader } from "@/components/sections/dashboard-header";
+import { ProductHuntBanner } from "@/components/sections/product-hunt-banner";
+import { DashboardThemeProvider } from "@/providers/dashboard-theme-provider";
 import { motion } from "framer-motion";
 import { Suspense } from "react";
-import { DashboardThemeProvider } from "@/providers/dashboard-theme-provider";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
