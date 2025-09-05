@@ -10,7 +10,7 @@
     "lint:fix": "turbo lint -- --fix",
     "test": "turbo test",
     "check-types": "turbo check-types",
-    "format": "echo Prettier version: $(prettier --version) && prettier --write \"**/*.{ts,tsx,md}\"",
+    "format": "echo Prettier version: $(prettier --version) && prettier --write .",
     "prettier-check": "echo Prettier version: $(prettier --version) && prettier --check .",
     "hydra-api:start": "turbo run start --filter=hydra-api",
     "start:api": "turbo run start --filter=hydra-api",
@@ -21,7 +21,8 @@
     "db:studio": "cd packages/db && npm run db:studio",
     "rename-to-tambo": "tsx scripts/update-content.ts && tsx scripts/rename-files.ts",
     "rename-vnext": "tsx scripts/rename-vnext.ts",
-    "smoke:mcp": "bash scripts/smoke-mcp.sh"
+    "smoke:mcp": "bash scripts/smoke-mcp.sh",
+    "debug-stream": "tsx scripts/debug-stream.ts"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.1.0",
@@ -49,6 +50,6 @@
     "npm": "10.9.2"
   },
   "packageManager": "npm@10.9.2",
-  "version": "0.104.1",
+  "version": "0.104.2",
   "license": "Apache-2.0"
 }

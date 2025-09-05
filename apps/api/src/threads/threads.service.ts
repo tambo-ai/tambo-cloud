@@ -4,10 +4,11 @@ import * as Sentry from "@sentry/nestjs";
 import {
   generateChainId,
   getToolsFromSources,
+  McpToolRegistry,
   ModelOptions,
   Provider,
-  SystemTools,
   TamboBackend,
+  ToolRegistry,
 } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
@@ -28,6 +29,7 @@ import type { HydraDatabase, HydraDb } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
+import { convertMetadataToTools } from "../../../../packages/backend/src/services/tool/tool-service";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { AuthService } from "../common/services/auth.service";
 import { EmailService } from "../common/services/email.service";
@@ -72,9 +74,9 @@ import {
   isSystemToolCall,
 } from "./util/tool";
 import {
+  checkToolCallLimitViolation,
   DEFAULT_MAX_TOTAL_TOOL_CALLS,
   updateToolCallCounts,
-  validateToolCallLimits,
 } from "./util/tool-call-tracking";
 
 const TAMBO_ANON_CONTEXT_KEY = "tambo:anon-user";
@@ -689,9 +691,6 @@ export class ThreadsService {
         },
       });
 
-      this.logger.log(
-        `Generated ${savedSuggestions.length} suggestions for message: ${messageId}`,
-      );
       return savedSuggestions.map(mapSuggestionToDto);
     } catch (error) {
       // Capture suggestion generation errors with context
@@ -828,6 +827,8 @@ export class ThreadsService {
    * @param unresolvedThreadId - The thread ID, if any
    * @param stream - Whether to stream the response.
    * @param toolCallCounts - Dictionary mapping tool call signatures to their counts for loop prevention.
+   * @param cachedSystemTools - The system tools loaded from MCP - if included, it is a cache to avoid re-fetching them.
+   * @param contextKey - The context key, if any
    * @returns The the generated response thread message, generation stage, and status message.
    */
   async advanceThread(
@@ -836,7 +837,7 @@ export class ThreadsService {
     unresolvedThreadId?: string,
     stream?: true,
     toolCallCounts?: Record<string, number>,
-    systemTools?: SystemTools,
+    cachedSystemTools?: McpToolRegistry,
     contextKey?: string,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   async advanceThread(
@@ -845,7 +846,7 @@ export class ThreadsService {
     unresolvedThreadId?: string,
     stream?: false,
     toolCallCounts?: Record<string, number>,
-    systemTools?: SystemTools,
+    cachedSystemTools?: McpToolRegistry,
   ): Promise<AdvanceThreadResponseDto>;
   async advanceThread(
     projectId: string,
@@ -853,7 +854,7 @@ export class ThreadsService {
     unresolvedThreadId?: string,
     stream?: boolean,
     toolCallCounts?: Record<string, number>,
-    systemTools?: SystemTools,
+    cachedSystemTools?: McpToolRegistry,
     contextKey?: string,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
@@ -864,7 +865,7 @@ export class ThreadsService {
     unresolvedThreadId?: string,
     stream?: boolean,
     toolCallCounts: Record<string, number> = {},
-    cachedSystemTools?: SystemTools,
+    cachedSystemTools?: McpToolRegistry,
     contextKey?: string,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
@@ -900,7 +901,7 @@ export class ThreadsService {
     unresolvedThreadId?: string,
     stream?: boolean,
     toolCallCounts: Record<string, number> = {},
-    cachedSystemTools?: SystemTools,
+    cachedSystemTools?: McpToolRegistry,
     contextKey?: string,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
@@ -974,26 +975,6 @@ export class ThreadsService {
         `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
       );
 
-      // Log available components
-      this.logger.log(
-        `Available components for thread ${thread.id}: ${JSON.stringify(
-          advanceRequestDto.availableComponents?.map((comp) => comp.name),
-        )}`,
-      );
-
-      // Log detailed component information
-      if (advanceRequestDto.availableComponents?.length) {
-        this.logger.log(
-          `Component details for thread ${thread.id}: ${JSON.stringify(
-            advanceRequestDto.availableComponents.map((comp) => ({
-              name: comp.name,
-              description: comp.description,
-              contextTools: comp.contextTools.length || 0,
-            })),
-          )}`,
-        );
-      }
-
       const messages = await this.getMessages(thread.id, true);
       const project = await operations.getProject(db, projectId);
       const customInstructions = project?.customInstructions ?? undefined;
@@ -1010,6 +991,15 @@ export class ThreadsService {
       if (!cachedSystemTools) {
         this.logger.log(`System tools took ${systemToolsDuration}ms to fetch`);
       }
+      const allTools: ToolRegistry = {
+        ...systemTools,
+        clientToolsSchema: [
+          ...(advanceRequestDto.availableComponents?.flatMap((component) =>
+            convertMetadataToTools(component.contextTools),
+          ) ?? []),
+          ...convertMetadataToTools(advanceRequestDto.clientTools ?? []),
+        ],
+      };
       const mcpAccessToken = await this.authService.generateMcpAccessToken(
         projectId,
         thread.id,
@@ -1027,7 +1017,7 @@ export class ThreadsService {
           advanceRequestDto,
           customInstructions,
           toolCallCounts,
-          systemTools,
+          allTools,
           mcpAccessToken,
           project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
         );
@@ -1040,7 +1030,7 @@ export class ThreadsService {
         userMessage,
         advanceRequestDto,
         tamboBackend,
-        systemTools,
+        allTools,
         customInstructions,
       );
 
@@ -1051,7 +1041,7 @@ export class ThreadsService {
       } = await addAssistantResponse(
         db,
         thread.id,
-        userMessage,
+        userMessage.id,
         responseMessage,
         this.logger,
       );
@@ -1059,31 +1049,22 @@ export class ThreadsService {
       const toolCallRequest = responseMessage.toolCallRequest;
 
       // Check tool call limits if we have a tool call request
-      if (toolCallRequest) {
-        const validationResult = validateToolCallLimits(
-          responseMessageDto,
-          threadMessageDtoToThreadMessage(messages),
-          toolCallCounts,
-          toolCallRequest,
-          project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
-        );
-        if (validationResult) {
-          // Replace the tool call request with an error message
-          const errorMessage = await this.handleToolCallLimitViolation(
-            validationResult,
-            thread.id,
-            responseMessageDto.id,
-          );
-          return {
-            responseMessageDto: errorMessage,
-            generationStage: GenerationStage.COMPLETE,
-            statusMessage: "Tool call limit reached",
-            mcpAccessToken,
-          };
-        }
+      const toolLimitErrorMessage = await checkToolCallLimitViolation(
+        this.getDb(),
+        thread.id,
+        responseMessageDto.id,
+        responseMessageDto,
+        threadMessageDtoToThreadMessage(messages),
+        toolCallCounts,
+        toolCallRequest,
+        project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
+        mcpAccessToken,
+      );
+      if (toolLimitErrorMessage) {
+        return toolLimitErrorMessage;
       }
 
-      if (isSystemToolCall(toolCallRequest, systemTools)) {
+      if (isSystemToolCall(toolCallRequest, allTools)) {
         if (!responseMessage.toolCallId) {
           console.warn(
             `While handling tool call request ${toolCallRequest.toolName}, no tool call id in response message ${responseMessage}, returning assistant message`,
@@ -1092,7 +1073,7 @@ export class ThreadsService {
         return await this.handleSystemToolCall(
           toolCallRequest,
           responseMessage.toolCallId ?? "",
-          systemTools,
+          allTools,
           responseMessage,
           advanceRequestDto,
           projectId,
@@ -1132,7 +1113,7 @@ export class ThreadsService {
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
-    systemTools: SystemTools,
+    allTools: McpToolRegistry,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
     projectId: string,
@@ -1143,7 +1124,7 @@ export class ThreadsService {
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
-    systemTools: SystemTools,
+    allTools: McpToolRegistry,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
     projectId: string,
@@ -1154,7 +1135,7 @@ export class ThreadsService {
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
-    systemTools: SystemTools,
+    allTools: McpToolRegistry,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
     projectId: string,
@@ -1180,7 +1161,7 @@ export class ThreadsService {
         await this.handleSystemToolCall_(
           toolCallRequest,
           toolCallId,
-          systemTools,
+          allTools,
           componentDecision,
           advanceRequestDto,
           projectId,
@@ -1194,7 +1175,7 @@ export class ThreadsService {
   private async handleSystemToolCall_(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
-    systemTools: SystemTools,
+    allTools: McpToolRegistry,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
     projectId: string,
@@ -1214,7 +1195,7 @@ export class ThreadsService {
       });
 
       const messageWithToolResponse: AdvanceThreadDto = await callSystemTool(
-        systemTools,
+        allTools,
         toolCallRequest,
         toolCallId,
         componentDecision,
@@ -1238,7 +1219,7 @@ export class ThreadsService {
         threadId,
         stream,
         updatedToolCallCounts,
-        systemTools,
+        allTools,
       );
     } catch (error) {
       Sentry.captureException(error, {
@@ -1262,7 +1243,7 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     customInstructions: string | undefined,
     toolCallCounts: Record<string, number>,
-    systemTools: SystemTools,
+    allTools: ToolRegistry,
     mcpAccessToken: string,
     maxToolCallLimit: number,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
@@ -1289,7 +1270,7 @@ export class ThreadsService {
           advanceRequestDto,
           customInstructions,
           toolCallCounts,
-          systemTools,
+          allTools,
           mcpAccessToken,
           maxToolCallLimit,
         ),
@@ -1306,7 +1287,7 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     customInstructions: string | undefined,
     toolCallCounts: Record<string, number>,
-    systemTools: SystemTools,
+    allTools: ToolRegistry,
     mcpAccessToken: string,
     maxToolCallLimit: number,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
@@ -1357,9 +1338,8 @@ export class ThreadsService {
         }
 
         const { originalTools, strictTools } = getToolsFromSources(
+          allTools,
           advanceRequestDto.availableComponents ?? [],
-          advanceRequestDto.clientTools ?? [],
-          systemTools,
         );
 
         // Track decision loop execution
@@ -1387,7 +1367,7 @@ export class ThreadsService {
           messageStream,
           messages,
           userMessage,
-          systemTools,
+          allTools,
           advanceRequestDto,
           originalTools,
           toolCallCounts,
@@ -1415,16 +1395,15 @@ export class ThreadsService {
       });
 
       const { originalTools, strictTools } = getToolsFromSources(
+        allTools,
         advanceRequestDto.availableComponents ?? [],
-        advanceRequestDto.clientTools ?? [],
-        systemTools,
       );
 
       // Track available tools
       Sentry.setContext("availableTools", {
         componentCount: advanceRequestDto.availableComponents?.length ?? 0,
         clientToolCount: advanceRequestDto.clientTools?.length ?? 0,
-        systemToolCount: Object.keys(systemTools).length,
+        systemToolCount: Object.keys(allTools).length,
         totalStrictTools: strictTools.length,
       });
 
@@ -1466,7 +1445,7 @@ export class ThreadsService {
         streamedResponseMessage,
         messages,
         userMessage,
-        systemTools,
+        allTools,
         advanceRequestDto,
         originalTools,
         toolCallCounts,
@@ -1500,7 +1479,7 @@ export class ThreadsService {
     stream: AsyncIterableIterator<LegacyComponentDecision>,
     threadMessages: ThreadMessage[],
     userMessage: ThreadMessage,
-    systemTools: SystemTools,
+    allTools: McpToolRegistry,
     originalRequest: AdvanceThreadDto,
     originalTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     toolCallCounts: Record<string, number>,
@@ -1625,20 +1604,28 @@ export class ThreadsService {
           return;
         }
 
-        // do not yield the final thread message if it is a tool call
-        // might have to switch to an internal tool call
-        if (!currentThreadMessage.toolCallRequest) {
-          yield {
-            responseMessageDto: {
-              ...currentThreadMessage,
-              content: convertContentPartToDto(currentThreadMessage.content),
-              componentState: currentThreadMessage.componentState ?? {},
-            },
-            generationStage: GenerationStage.STREAMING_RESPONSE,
-            statusMessage: `Streaming response...`,
-            mcpAccessToken,
-          };
-        }
+        // This is kind of a hack: when we have a tool call, but we might not want to
+        // emit it all the way to the frontend, because that is how the frontend
+        // knows to actually call a tool.. but the tool here might be an
+        // internal (MCP or agent) tool call. So we emit the message without the
+        // toplevel tool call request and tool call id, but both are still set
+        // inside `currentThreadMessage.component`.
+        const {
+          toolCallRequest: _toolCallRequest, // may be undefined
+          tool_call_id: _tool_call_id, // may be undefined
+          ...messageWithoutToolCall
+        } = currentThreadMessage;
+        yield {
+          responseMessageDto: {
+            ...messageWithoutToolCall,
+            content: convertContentPartToDto(messageWithoutToolCall.content),
+            componentState: messageWithoutToolCall.componentState ?? {},
+          },
+          generationStage: GenerationStage.STREAMING_RESPONSE,
+          statusMessage: `Streaming response...`,
+          mcpAccessToken,
+        };
+
         finalThreadMessage = currentThreadMessage;
       }
 
@@ -1683,53 +1670,35 @@ export class ThreadsService {
       };
 
       // Check tool call limits if we have a tool call request
-      if (toolCallRequest) {
-        Sentry.addBreadcrumb({
-          message: `Processing tool call: ${toolCallRequest.toolName}`,
-          category: "tools",
-          level: "info",
-          data: { threadId, toolName: toolCallRequest.toolName },
-        });
+      const toolLimitErrorMessage = await checkToolCallLimitViolation(
+        this.getDb(),
+        threadId,
+        initialMessage.id,
+        finalThreadMessage,
+        threadMessages,
+        toolCallCounts,
+        toolCallRequest,
+        maxToolCallLimit,
+        mcpAccessToken,
+      );
 
-        const validationResult = validateToolCallLimits(
-          finalThreadMessage,
-          threadMessages,
-          toolCallCounts,
-          toolCallRequest,
-          maxToolCallLimit,
-        );
-
-        if (validationResult) {
-          Sentry.captureMessage("Tool call limit reached", "warning");
-
-          // Replace the tool call request with an error message
-          const errorMessage = await this.handleToolCallLimitViolation(
-            validationResult,
-            threadId,
-            initialMessage.id,
-          );
-          yield {
-            responseMessageDto: errorMessage,
-            generationStage: GenerationStage.COMPLETE,
-            statusMessage: "Tool call limit reached",
-            mcpAccessToken,
-          };
-          return;
-        }
+      if (toolLimitErrorMessage) {
+        yield toolLimitErrorMessage;
+        return;
       }
 
       const { resultingGenerationStage, resultingStatusMessage } =
         await finishInProgressMessage(
           db,
           threadId,
-          userMessage,
+          userMessage.id,
           initialMessage.id,
           finalThreadMessage,
           logger,
         );
 
       const componentDecision = finalThreadMessage.component;
-      if (componentDecision && isSystemToolCall(toolCallRequest, systemTools)) {
+      if (componentDecision && isSystemToolCall(toolCallRequest, allTools)) {
         // Track system tool call within stream
         Sentry.addBreadcrumb({
           message: `Handling system tool call in stream: ${toolCallRequest.toolName}`,
@@ -1768,7 +1737,7 @@ export class ThreadsService {
         const toolResponseMessageStream = await this.handleSystemToolCall(
           toolCallRequest,
           toolCallId ?? "",
-          systemTools,
+          allTools,
           componentDecision,
           originalRequest,
           projectId,
@@ -1944,46 +1913,6 @@ export class ThreadsService {
         `API key decryption failed for project ${projectId}, provider ${chosenKey.providerName}. Ensure the key is correctly encrypted and the decryption key is available.`,
       );
     }
-  }
-
-  /**
-   * Handles a tool call limit violation by creating an error message.
-   * @param errorMessage - The error message to display
-   * @param messageId - The message ID to update
-   * @returns A message to return to the client in place of the tool call request message.
-   */
-  private async handleToolCallLimitViolation(
-    errorMessage: string,
-    threadId: string,
-    messageId: string,
-  ): Promise<ThreadMessageDto> {
-    const updatedMessage: MessageRequest = {
-      role: MessageRole.Assistant,
-      content: [
-        {
-          type: ContentPartType.Text,
-          text: errorMessage,
-        },
-      ],
-      componentState: {},
-      // Remove any tool call request to break the loop
-      toolCallRequest: undefined,
-      tool_call_id: undefined,
-      actionType: undefined,
-    };
-    // Perform both operations in a single transaction
-    return await this.getDb().transaction(async (tx) => {
-      // Update thread generation status
-      await operations.updateThreadGenerationStatus(
-        tx,
-        threadId,
-        GenerationStage.COMPLETE,
-        "Tool call limit reached",
-      );
-
-      // Update the message and return the result
-      return await updateMessage(tx, messageId, updatedMessage);
-    });
   }
 
   private async shouldIgnoreCancelledToolResponse(

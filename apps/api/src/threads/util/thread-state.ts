@@ -1,8 +1,8 @@
 import { Logger } from "@nestjs/common";
 import {
   getToolsFromSources,
-  SystemTools,
   TamboBackend,
+  ToolRegistry,
 } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
@@ -94,7 +94,7 @@ export async function updateGenerationStage(
  * @param messages
  * @param advanceRequestDto
  * @param tamboBackend
- * @param systemTools
+ * @param allTools
  * @param availableComponentMap
  * @returns
  */
@@ -105,7 +105,7 @@ export async function processThreadMessage(
   userMessage: ThreadMessage,
   advanceRequestDto: AdvanceThreadDto,
   tamboBackend: TamboBackend,
-  systemTools: SystemTools,
+  allTools: ToolRegistry,
   customInstructions: string | undefined,
 ): Promise<LegacyComponentDecision> {
   const latestMessage = messages[messages.length - 1];
@@ -132,9 +132,8 @@ export async function processThreadMessage(
     );
   }
   const { strictTools, originalTools } = getToolsFromSources(
+    allTools,
     advanceRequestDto.availableComponents ?? [],
-    advanceRequestDto.clientTools ?? [],
-    systemTools,
   );
 
   const decisionStream = await tamboBackend.runDecisionLoop({
@@ -215,7 +214,7 @@ function isThreadProcessing(generationStage: GenerationStage) {
 export async function addAssistantResponse(
   db: HydraDatabase,
   threadId: string,
-  addedUserMessage: ThreadMessage,
+  addedUserMessageId: string,
   responseMessage: LegacyComponentDecision,
   logger?: Logger,
 ): Promise<{
@@ -229,7 +228,7 @@ export async function addAssistantResponse(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessage.id,
+          addedUserMessageId,
           false,
         );
 
@@ -305,24 +304,27 @@ export async function* fixStreamedToolCalls(
   for await (const chunk of stream) {
     if (currentDecision?.id && currentDecisionId !== chunk.id) {
       // we're on to a new chunk, so if we have a previous tool call request, emit it
-      if (currentToolCallRequest) {
-        yield {
-          ...currentDecision,
-          toolCallRequest: currentToolCallRequest,
-          toolCallId: currentToolCallId,
-        };
-      }
+      yield {
+        ...currentDecision,
+        toolCallRequest: currentToolCallRequest,
+        toolCallId: currentToolCallId,
+      };
+      // and clear the current tool call request and id
+      currentToolCallRequest = undefined;
+      currentToolCallId = undefined;
     }
-    const { toolCallId, toolCallRequest, ...incompleteChunk } = chunk;
+
+    // now emit the next chunk
+    const { toolCallRequest, ...incompleteChunk } = chunk;
     currentDecision = incompleteChunk;
     currentDecisionId = chunk.id;
-    currentToolCallId = toolCallId;
+    currentToolCallId = chunk.toolCallId;
     currentToolCallRequest = toolCallRequest;
     yield incompleteChunk;
   }
 
   // account for the last iteration
-  if (currentDecision && currentToolCallRequest) {
+  if (currentDecision) {
     yield {
       ...currentDecision,
       toolCallRequest: currentToolCallRequest,
@@ -408,7 +410,7 @@ export async function addInitialMessage(
 export async function finishInProgressMessage(
   db: HydraDb,
   threadId: string,
-  addedUserMessage: ThreadMessage,
+  addedUserMessageId: string,
   inProgressMessageId: string,
   finalThreadMessage: ThreadMessage,
   logger?: Logger,
@@ -422,7 +424,7 @@ export async function finishInProgressMessage(
         await verifyLatestMessageConsistency(
           tx,
           threadId,
-          addedUserMessage.id,
+          addedUserMessageId,
           true,
         );
 
