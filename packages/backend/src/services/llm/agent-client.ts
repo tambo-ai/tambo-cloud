@@ -12,8 +12,8 @@ import {
 } from "@ag-ui/client";
 import { Message, StateDeltaEvent, ToolCallEndEvent } from "@ag-ui/core";
 import { CrewAIAgent } from "@ag-ui/crewai";
-import { MastraAgent } from "@ag-ui/mastra";
-import { MastraClient } from "@mastra/client-js";
+// TODO: re-introduce mastra support
+// import { MastraAgent } from "@ag-ui/mastra";
 import {
   AgentProviderType,
   ChatCompletionContentPart,
@@ -54,18 +54,18 @@ export class AgentClient {
   }) {
     switch (agentProviderType) {
       case AgentProviderType.MASTRA: {
-        const client = new MastraClient({ baseUrl: agentUrl });
+        throw new Error("Mastra support is not implemented");
+        // const client = new MastraClient({ baseUrl: agentUrl });
+        // const agents = await MastraAgent.getRemoteAgents({
+        //   mastraClient: client,
+        // });
+        // if (!(agentName in agents)) {
+        //   throw new Error(`Agent ${agentName} not found`);
+        // }
+        // const agent = agents[agentName];
+        // const agentClient = new AgentClient(chainId, agent);
 
-        const agents = await MastraAgent.getRemoteAgents({
-          mastraClient: client,
-        });
-        if (!(agentName in agents)) {
-          throw new Error(`Agent ${agentName} not found`);
-        }
-        const agent = agents[agentName];
-        const agentClient = new AgentClient(chainId, agent);
-
-        return agentClient;
+        // return agentClient;
       }
       case AgentProviderType.CREWAI: {
         const agent = new CrewAIAgent({
