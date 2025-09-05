@@ -217,14 +217,17 @@ export const MessageThreadCollapsible = React.forwardRef<
   // Check if Product Hunt notification should be shown
   React.useEffect(() => {
     try {
-      const dismissed =
-        typeof window !== "undefined" &&
-        window.sessionStorage.getItem(
-          "product_hunt_notification_dismissed_session",
-        ) === "1";
-      setShowProductHuntNotification(!dismissed);
+      const ss =
+        typeof window !== "undefined" ? window.sessionStorage : undefined;
+      const notifDismissed =
+        ss?.getItem("product_hunt_notification_dismissed_session") === "1";
+      const bannerDismissed =
+        ss?.getItem("product_hunt_banner_dismissed_session") === "1";
+      // Only show the notification if the banner has been dismissed AND the notification itself hasn't
+      setShowProductHuntNotification(!notifDismissed && bannerDismissed);
     } catch {
-      setShowProductHuntNotification(true);
+      // On any error (e.g., sessionStorage unavailable), default to hiding the notification to avoid overlap
+      setShowProductHuntNotification(false);
     }
   }, []);
 
