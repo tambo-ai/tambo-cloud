@@ -1,0 +1,175 @@
+---
+title: "Building tambo with tambo"
+date: "2025-08-26"
+description: "How we made tambo- our ai assistant with tambo- our react package."
+tags: ["mcp", "ai", "documentation", "support", "integration"]
+author: "Akhilesh Rangani"
+category: "update"
+featured: false
+---
+
+<BlogPost title="Building tambo with tambo" author="Akhilesh Rangani" date="2025-09-04">
+
+At tambo, we’re building the future of AI x UI with one simple rule: if it wasn’t good enough for us, it wasn’t good enough for our developers.
+
+We didn’t want another chat assistant that just dumps documentation links or gives you step-by-step instructions. That doesn’t actually solve the problem. Instead, we built a doc-aware AI assistant—using Inkeep’s MCP server for docs and **our own tambo-ai react SDK for generative UI**. The result? An assistant that doesn’t just _tell_ you what to do, it can actually _show_ you—right inside the chat.
+
+The core idea was simple: people don’t need to figure out your design; they just want to get to their solution. So we wired our chat up to **our own API and existing components** by registering them with tambo. Because those components already encapsulated the logic for things like project data, API keys, and instructions, we didn’t have to rewrite them. Instead, we just added schemas and tools on top of what already existed. That way, anything the app could already do, the chat could now do too—without us touching the original codebase.
+
+That’s the power here: you don’t need to build special “AI components.” You can take your existing React components and backend APIs, wrap them with zod schemas and tambo tools, and suddenly you’ve got a conversational UI layer on top of your app.
+
+We also needed to make sure the bot could explain how to use tambo itself—like our React SDK. That’s where Inkeep’s new MCP server came in clutch. It feeds in contextual docs so the assistant can answer questions, drop in the right code snippets, and even render UI to set things up—without leaving the chat.
+
+### How to build an assistant that knows your UI:
+
+<div className="not-prose my-8">
+  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+    <iframe
+      className="absolute top-0 left-0 w-full h-full rounded-lg border border-gray-200 shadow-lg"
+      src="https://drive.google.com/file/d/162ifd1s-bB-ByCOz2Rdqlvds2SHCbvuy/preview"
+      allow="autoplay"
+      allowFullScreen
+    />
+  </div>
+</div>
+
+It’s actually not that complex—just a few steps:
+
+1. **Create zod schemas** for your dashboard components.  
+   Example: the [APIKeyList component](https://github.com/tambo-ai/tambo-cloud/blob/main/apps/web/components/dashboard-components/project-details/api-key-list.tsx#L26).
+
+```typescript
+export const APIKeyListProps = z.object({
+  project: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+    })
+    .optional()
+    .describe("The project to fetch API keys for."),
+  isLoading: z
+    .boolean()
+    .optional()
+    .describe("Whether the API keys are loading."),
+  onEdited: z
+    .function()
+    .args()
+    .returns(z.void())
+    .optional()
+    .describe(
+      "Optional callback function triggered when API keys are successfully updated.",
+    ),
+});
+```
+
+2. **Register the component** you just defined the schema for.  
+   Example: Registerting [APIKeyList component](https://github.com/tambo-ai/tambo-cloud/blob/main/apps/web/components/ui/tambo/chatwithtambo/config.ts#L62).
+
+```typescript
+export const tamboRegisteredComponents = [
+  {
+    name: "APIKeyList",
+    description:
+      "Manages project API keys with full CRUD operations - create, view, and delete API keys. Automatically generates a first key for new projects. Shows masked key values, last usage dates, and provides secure key generation with one-time display. Includes animated interactions and handles loading states. Use when users need to manage authentication keys for their project.",
+    component: APIKeyList,
+    propsSchema: APIKeyListProps,
+  },
+];
+```
+
+3. **Register your API tools.**  
+   This is where your backend actually hooks in. In our case, we wired in the [`generateApiKey` endpoint](https://github.com/tambo-ai/tambo-cloud/blob/main/apps/web/components/ui/tambo/chatwithtambo/tools.ts#L162). You’d do the same with your own API.
+
+```typescript
+export const generateProjectApiKeySchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The name of the API key"),
+  )
+  .returns(
+    z.object({
+      apiKey: z.string(),
+      id: z.string(),
+      name: z.string(),
+      partiallyHiddenKey: z.string().nullable(),
+      lastUsedAt: z.date().nullable(),
+      projectId: z.string(),
+      hashedKey: z.string(),
+      createdAt: z.date(),
+      updatedAt: z.date(),
+      createdByUserId: z.string(),
+    }),
+  );
+
+export function useTamboManagementTools() {
+  const { registerTool } = useTambo();
+  const apiClient = useTRPCClient();
+
+  useEffect(() => {
+    registerTool({
+      name: "generateProjectApiKey",
+      description: "Generate a new API key for the current project",
+      tool: async (projectId: string, name: string) => {
+        return await apiClient.generateApiKey.mutate({ projectId, name });
+      },
+      toolSchema: generateProjectApiKeySchema,
+    });
+  }, [registerTool, apiClient]);
+}
+```
+
+4. **Pass your components through TamboProvider.**  
+   That’s it--you're done.  
+   _(Note: `useTamboManagementTools` uses `registerTool` internally, so you don’t need to pass it into the provider manually.)_
+
+```typescript
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <TamboProvider
+      apiKey={env.NEXT_PUBLIC_TAMBO_API_KEY!}
+      components={tamboRegisteredComponents}
+    >
+      {children}
+    </TamboProvider>
+  );
+}
+```
+
+### How to register the MCP server
+
+<div className="not-prose my-8">
+  <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+    <iframe
+      className="absolute top-0 left-0 w-full h-full rounded-lg border border-gray-200 shadow-lg"
+      src="https://drive.google.com/file/d/1Cuz8efIh3_SWl00zOiNzYviBH5_xnLLS/preview"
+      allow="autoplay"
+      allowFullScreen
+    />
+  </div>
+</div>
+
+The process is super straightforward:
+
+1. Head over to your **tambo dashboard**.
+2. Open **Settings**.
+3. Add a new MCP server with this URL: https://mcp.tambo.co/mcp
+
+You can plug in your own MCP server to give the assistant context about your product. Our [MCP server](https://mcp.tambo.co/mcp) is also public if you’re building with tambo and want doc-aware context. That’s it—you’re set up.
+
+### Try it
+
+Click the little chat bubble in the corner of this site and start chatting with our assistant.  
+Building your own? Head over to the [docs](https://docs.tambo.co) and start wiring in your components, APIs, and (optionally) an MCP server for docs.
+
+### Wrapping up
+
+With just a few lines of config, we turned our existing components and API into a conversational UI—no major rewrites, no special “AI-only” code. Add in the MCP server for docs, and now the assistant can both **do things** (through our API) and **explain things** (through docs) without leaving the chat.
+
+That’s the whole idea behind tambo: give developers a way to plug their app straight into natural language without fighting their own design.
+
+---
+
+_Questions about tambo? Reach out to the team or join our [discord](https://tambo.co/discord). We’re always around to help._
+
+</BlogPost>
