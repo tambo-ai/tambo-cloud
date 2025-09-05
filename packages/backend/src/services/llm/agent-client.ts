@@ -150,7 +150,9 @@ export class AgentClient {
       // here we need to yield the growing event to the caller
       switch (event.type) {
         case EventType.MESSAGES_SNAPSHOT: {
-          // emit the last message
+          // HACK: emit the last message. really we want the consumer to replace
+          // all the messages they've receieved with all of these, but instead
+          // we'll emit a single message
           const e = event as MessagesSnapshotEvent;
           const lastMessage = e.messages[e.messages.length - 1];
           switch (lastMessage.role) {

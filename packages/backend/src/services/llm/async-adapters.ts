@@ -109,6 +109,7 @@ function eventsToAsyncIterator(
       push(params);
       // TODO: not quite sure what to pass here
       fail(params.event);
+      finish(); // avoid throwing; let the consumer decide how to surface the error
     },
     onRunFinishedEvent(params) {
       push(params);
