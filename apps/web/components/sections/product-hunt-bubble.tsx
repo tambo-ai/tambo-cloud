@@ -44,8 +44,6 @@ export const ProductHuntThoughtBubble: FC<ProductHuntThoughtBubbleProps> = ({
         }}
         // Adjusted positioning to stay within viewport
         className="fixed bottom-24 right-6 z-[60] pointer-events-none"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
         {/* Thought bubble tail pointing down to chat button */}
         <div className="absolute -bottom-3 right-6 pointer-events-auto">
@@ -71,6 +69,8 @@ export const ProductHuntThoughtBubble: FC<ProductHuntThoughtBubbleProps> = ({
             transition: { duration: 0.2 },
           }}
           className="relative bg-white rounded-2xl shadow-lg ring-1 ring-gray-200/50 p-4 w-[250px] sm:w-[280px] pointer-events-auto border-2 border-orange-500"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           {/* Close button */}
           <button
