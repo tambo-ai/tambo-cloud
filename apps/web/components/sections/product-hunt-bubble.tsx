@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import Image from "next/image";
-import productHuntLogo from "@/public/product-hunt-logo.png";
+import productHuntLogo from "../../public/product-hunt-logo.png";
 import * as React from "react";
 
 export const ProductHuntThoughtBubble = ({

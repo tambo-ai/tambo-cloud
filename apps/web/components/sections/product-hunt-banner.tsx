@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import Image from "next/image";
-import productHuntLogo from "@/public/product-hunt-logo.png";
+import productHuntLogo from "../../public/product-hunt-logo.png";
 import { FC, useEffect, useState } from "react";
 
 const STORAGE_KEY = "product_hunt_banner_dismissed_session";
