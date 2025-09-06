@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.105.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.104.2...repo-v0.105.0) (2025-09-06)
+
+
+### Features
+
+* **agents:** Agents support without mastra ([#1701](https://github.com/tambo-ai/tambo-cloud/issues/1701)) ([4269852](https://github.com/tambo-ai/tambo-cloud/commit/4269852377ea61574046f0e830e2b7666675d599))
+
+
+### Miscellaneous Chores
+
+* **onboarding:** add analytics template to onboarding wizard ([#1698](https://github.com/tambo-ai/tambo-cloud/issues/1698)) ([2765a1c](https://github.com/tambo-ai/tambo-cloud/commit/2765a1c9ca5a0a241b7848566310f737401c4099))
+
 ## [0.104.2](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.104.1...repo-v0.104.2) (2025-09-04)
 
 
