@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "custom_llm_params" jsonb DEFAULT '{}'::jsonb NOT NULL;

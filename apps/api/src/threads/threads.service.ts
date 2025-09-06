@@ -156,7 +156,7 @@ export class ThreadsService {
       );
     }
 
-    return await createTamboBackend(apiKey, chainId, userId, {
+    const tamboBackend = await createTamboBackend(apiKey, chainId, userId, {
       provider: providerName as Provider,
       model: modelName,
       baseURL: baseURL ?? undefined,
@@ -166,6 +166,12 @@ export class ThreadsService {
       agentName: project.agentName,
       agentUrl: project.agentUrl,
     });
+
+    // Store project custom LLM parameters for use in LLM calls
+    // This will be used by the decision loop when making LLM requests
+    (tamboBackend as any)._projectCustomLlmParams = project.customLlmParams;
+
+    return tamboBackend;
   }
 
   async createThread(
@@ -1366,6 +1372,7 @@ export class ThreadsService {
           messages,
           strictTools,
           customInstructions,
+          customLlmParams: (tamboBackend as any)._projectCustomLlmParams,
         });
 
         decisionLoopSpan.end();
@@ -1435,6 +1442,7 @@ export class ThreadsService {
         strictTools,
         customInstructions,
         forceToolChoice: advanceRequestDto.forceToolChoice,
+        customLlmParams: (tamboBackend as any)._projectCustomLlmParams,
       });
 
       decisionLoopSpan.end();

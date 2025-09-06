@@ -384,6 +384,7 @@ export const projectRouter = createTRPCRouter({
         maxInputTokens: z.number().nullable().optional(),
         maxToolCallLimit: z.number().optional(),
         isTokenRequired: z.boolean().optional(),
+        customLlmParams: z.record(z.unknown()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -395,9 +396,10 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
-        maxInputTokens,
+        maxInputTokens: _maxInputTokens,
         maxToolCallLimit,
         isTokenRequired,
+        customLlmParams,
       } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
@@ -422,9 +424,10 @@ export const projectRouter = createTRPCRouter({
             ? undefined
             : (customLlmBaseURL ?? undefined),
         maxInputTokens:
-          maxInputTokens === null ? undefined : (maxInputTokens ?? undefined),
+          _maxInputTokens === null ? undefined : (_maxInputTokens ?? undefined),
         maxToolCallLimit,
         isTokenRequired,
+        customLlmParams,
       });
 
       if (!updatedProject) {
@@ -463,7 +466,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
-        maxInputTokens,
+        maxInputTokens: _maxInputTokens,
       } = input;
 
       // Ensure the user has access to the project before performing any further

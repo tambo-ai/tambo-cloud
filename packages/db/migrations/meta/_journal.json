@@ -505,6 +505,13 @@
       "when": 1756347021656,
       "tag": "0071_pink_skrulls",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1757165403228,
+      "tag": "0072_broad_shaman",
+      "breakpoints": true
     }
   ]
 }

@@ -1,9 +1,11 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
   NotFoundException,
   Param,
+  Patch,
   Req,
   UseGuards,
 } from "@nestjs/common";
@@ -12,6 +14,7 @@ import { Request } from "express";
 import { extractContextInfo } from "../common/utils/extract-context-info";
 import {
   ProjectResponse,
+  ProjectUpdateRequest,
   SimpleProjectResponse,
 } from "./dto/project-response.dto";
 import { ApiKeyGuard } from "./guards/apikey.guard";
@@ -37,6 +40,19 @@ export class ProjectsController {
   @Get(":id")
   async findOne(@Param("id") id: string): Promise<ProjectResponse | undefined> {
     const project = await await this.projectsService.findOne(id);
+    if (!project) {
+      throw new NotFoundException("Project not found");
+    }
+    return project;
+  }
+
+  @UseGuards(ProjectAccessOwnGuard)
+  @Patch(":id")
+  async update(
+    @Param("id") id: string,
+    @Body() updateProjectDto: ProjectUpdateRequest,
+  ): Promise<ProjectResponse | undefined> {
+    const project = await this.projectsService.update(id, updateProjectDto);
     if (!project) {
       throw new NotFoundException("Project not found");
     }

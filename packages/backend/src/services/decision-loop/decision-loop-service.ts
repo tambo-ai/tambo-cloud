@@ -35,6 +35,7 @@ export async function* runDecisionLoop(
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   customInstructions: string | undefined,
   forceToolChoice?: string,
+  customLlmParams?: Record<string, unknown>,
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const componentTools = strictTools.filter((tool) =>
     getToolName(tool).startsWith(UI_TOOLNAME_PREFIX),
@@ -75,6 +76,7 @@ export async function* runDecisionLoop(
     tool_choice: forceToolChoice
       ? { type: "function", function: { name: forceToolChoice } }
       : "required",
+    customParams: customLlmParams,
   });
 
   const initialDecision: LegacyComponentDecision = {
