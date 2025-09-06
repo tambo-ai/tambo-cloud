@@ -33,6 +33,7 @@ import { createLangfuseTelemetryConfig } from "../../config/langfuse.config";
 import type { LlmProviderConfigInfo } from "../../config/llm-config-types";
 import { llmProviderConfig } from "../../config/llm.config";
 import { Provider } from "../../model/providers";
+import { mergeModelParams } from "../../model/custom-llm-params";
 import { formatTemplate, ObjectTemplate } from "../../util/template";
 import {
   CompleteParams,
@@ -133,9 +134,6 @@ export class AISdkClient implements LLMClient {
   ): Promise<LLMResponse | AsyncIterableIterator<LLMResponse>> {
     const providerKey = getProviderFromModel(this.model, this.provider);
 
-    // Get the model instance with proper configuration
-    const modelInstance = this.getModelInstance(providerKey);
-
     // Format messages using the same template system as token.js client
     const nonStringParams = Object.entries(params.promptTemplateParams).filter(
       ([, value]) =>
@@ -197,12 +195,29 @@ export class AISdkClient implements LLMClient {
     });
 
     // Default temperature to 0 unless overridden by config
-    const temperature = modelCfg?.properties.temperature;
+    const defaultTemperature = modelCfg?.properties.temperature ?? 0;
+
+    // Merge custom parameters with proper precedence
+    const mergedParams = mergeModelParams(
+      {
+        defaults: { temperature: defaultTemperature },
+        projectParams: {}, // Will be populated by caller
+        requestOverrides: params.customParams || {},
+      },
+      {
+        debug: (message: string) => console.debug(`[LLM Client] ${message}`),
+      },
+    );
+
+    // Get the model instance with proper configuration and provider options
+    const modelInstance = this.getModelInstance(
+      providerKey,
+      mergedParams.providerOptions,
+    );
 
     const baseConfig: TextCompleteParams = {
       model: modelInstance,
       messages: coreMessages,
-      temperature: temperature ?? 0,
       tools,
       toolChoice: params.tool_choice
         ? this.convertToolChoice(params.tool_choice)
@@ -212,7 +227,16 @@ export class AISdkClient implements LLMClient {
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
       }),
+      // Apply standard parameters (temperature, top_p, max_tokens, etc.)
+      ...mergedParams.standardParams,
     };
+
+    // Log provider-specific options that will be ignored
+    if (Object.keys(mergedParams.providerOptions).length > 0) {
+      console.debug(
+        `[LLM Client] Provider-specific options will be passed to model instance: ${Object.keys(mergedParams.providerOptions).join(", ")}`,
+      );
+    }
 
     if (params.stream) {
       // added explicit await even though types say it isn't necessary
@@ -224,8 +248,14 @@ export class AISdkClient implements LLMClient {
     }
   }
 
-  private getModelInstance(providerKey: string): LanguageModel {
-    const config: ProviderConfig = {};
+  private getModelInstance(
+    providerKey: string,
+    providerOptions: Record<string, unknown> = {},
+  ): LanguageModel {
+    const config: ProviderConfig = {
+      // Merge provider-specific options into the config
+      ...providerOptions,
+    };
 
     if (this.apiKey) {
       config.apiKey = this.apiKey;
@@ -536,7 +566,9 @@ function convertOpenAIMessageToCoreMessage(
       ),
     } satisfies CoreAssistantMessage;
   }
-  return convertToCoreMessages([message as any])[0];
+  return convertToCoreMessages([
+    message as OpenAI.Chat.Completions.ChatCompletionMessageParam,
+  ])[0];
 }
 
 function warnUnknownMessageType(message: never) {

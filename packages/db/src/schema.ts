@@ -187,6 +187,10 @@ export const projects = pgTable(
       .notNull(),
     agentUrl: text("agent_url"),
     agentName: text("agent_name"),
+    /** Custom LLM parameters that override defaults and can be passed to providers */
+    customLlmParams: customJsonb<Record<string, unknown>>("custom_llm_params")
+      .notNull()
+      .default({}),
   }),
   (table) => {
     return [

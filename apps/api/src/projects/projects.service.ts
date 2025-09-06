@@ -1,11 +1,19 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { type HydraDatabase, operations } from "@tambo-ai-cloud/db";
+import {
+  validateCustomLlmParams,
+  getCustomLlmParamsSize,
+  MAX_CUSTOM_LLM_PARAMS_SIZE,
+  RESERVED_LLM_PARAM_KEYS,
+  type CustomLlmParams,
+} from "@tambo-ai-cloud/backend";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { APIKeyResponse } from "./dto/api-key-response.dto";
 import {
   ProjectResponse,
   SimpleProjectResponse,
+  ProjectUpdateRequest,
 } from "./dto/project-response.dto";
 import { ProviderKeyResponse } from "./dto/provider-key-response.dto";
 import { Project } from "./entities/project.entity";
@@ -44,6 +52,7 @@ export class ProjectsService {
       userId: project.userId,
       isTokenRequired: project.isTokenRequired,
       providerType: project.providerType,
+      customLlmParams: {},
     };
   }
 
@@ -64,6 +73,7 @@ export class ProjectsService {
       agentProviderType: project.agentProviderType,
       agentName: project.agentName ?? undefined,
       agentUrl: project.agentUrl ?? undefined,
+      customLlmParams: project.customLlmParams,
     }));
   }
 
@@ -87,6 +97,7 @@ export class ProjectsService {
       agentProviderType: project.agentProviderType,
       agentName: project.agentName ?? undefined,
       agentUrl: project.agentUrl ?? undefined,
+      customLlmParams: project.customLlmParams,
     };
   }
 
@@ -134,25 +145,74 @@ export class ProjectsService {
 
   async update(
     id: string,
-    updateProjectDto: {
-      name: string;
-      userId: string;
-    },
+    updateProjectDto: ProjectUpdateRequest,
   ): Promise<ProjectResponse | undefined> {
-    if (!updateProjectDto.name) {
-      throw new Error("Project name is required");
+    // Validate custom LLM parameters if provided
+    if (updateProjectDto.customLlmParams !== undefined) {
+      if (!validateCustomLlmParams(updateProjectDto.customLlmParams)) {
+        throw new Error("Custom LLM parameters must be a valid JSON object");
+      }
+
+      // Check size limit
+      const size = getCustomLlmParamsSize(updateProjectDto.customLlmParams);
+      if (size > MAX_CUSTOM_LLM_PARAMS_SIZE) {
+        throw new Error(
+          `Custom LLM parameters exceed size limit of ${MAX_CUSTOM_LLM_PARAMS_SIZE} bytes (current: ${size} bytes)`,
+        );
+      }
+
+      // Strip reserved keys
+      const cleanParams: CustomLlmParams = {};
+      const strippedKeys: string[] = [];
+      for (const [key, value] of Object.entries(
+        updateProjectDto.customLlmParams,
+      )) {
+        if (RESERVED_LLM_PARAM_KEYS.has(key)) {
+          strippedKeys.push(key);
+        } else {
+          cleanParams[key] = value;
+        }
+      }
+
+      if (strippedKeys.length > 0) {
+        console.warn(
+          `Stripped reserved LLM parameter keys for project ${id}: ${strippedKeys.join(", ")}`,
+        );
+      }
+
+      updateProjectDto.customLlmParams = cleanParams;
     }
 
-    const updated = await operations.updateProject(this.getDb(), id, {
-      name: updateProjectDto.name,
-    });
+    const updateData: any = {};
+    if (updateProjectDto.name !== undefined) {
+      updateData.name = updateProjectDto.name;
+    }
+    if (updateProjectDto.customLlmParams !== undefined) {
+      updateData.customLlmParams = updateProjectDto.customLlmParams;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      throw new Error("No valid fields provided for update");
+    }
+
+    const updated = await operations.updateProject(
+      this.getDb(),
+      id,
+      updateData,
+    );
     if (!updated) {
       return undefined;
     }
+    // Get the project with members to extract userId
+    const projectWithMembers = await operations.getProject(this.getDb(), id);
+    if (!projectWithMembers || !projectWithMembers.members[0]) {
+      return undefined;
+    }
+
     return {
       id: updated.id,
       name: updated.name,
-      userId: updateProjectDto.userId,
+      userId: projectWithMembers.members[0].userId,
       defaultLlmProviderName: updated.defaultLlmProviderName ?? undefined,
       defaultLlmModelName: updated.defaultLlmModelName ?? undefined,
       customLlmModelName: updated.customLlmModelName ?? undefined,
@@ -164,6 +224,7 @@ export class ProjectsService {
       agentProviderType: updated.agentProviderType,
       agentName: updated.agentName ?? undefined,
       agentUrl: updated.agentUrl ?? undefined,
+      customLlmParams: updated.customLlmParams,
     };
   }
 
@@ -254,6 +315,7 @@ export class ProjectsService {
       agentProviderType: result.agentProviderType,
       agentName: result.agentName ?? undefined,
       agentUrl: result.agentUrl ?? undefined,
+      customLlmParams: result.customLlmParams,
     };
   }
 

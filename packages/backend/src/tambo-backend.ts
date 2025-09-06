@@ -41,6 +41,7 @@ interface RunDecisionLoopParams {
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[];
   customInstructions: string | undefined;
   forceToolChoice?: string;
+  customLlmParams?: Record<string, unknown>;
 }
 
 export interface TamboBackend {
@@ -193,6 +194,7 @@ class AgenticTamboBackend implements TamboBackend {
       params.strictTools,
       params.customInstructions,
       params.forceToolChoice,
+      params.customLlmParams,
     );
   }
 

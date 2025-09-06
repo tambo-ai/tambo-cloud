@@ -131,6 +131,7 @@ export async function updateProject(
     maxInputTokens,
     maxToolCallLimit,
     isTokenRequired,
+    customLlmParams,
   }: {
     name?: string;
     customInstructions?: string;
@@ -141,6 +142,7 @@ export async function updateProject(
     maxInputTokens?: number;
     maxToolCallLimit?: number;
     isTokenRequired?: boolean;
+    customLlmParams?: Record<string, unknown>;
   },
 ) {
   // Create update object with only provided fields
@@ -170,6 +172,9 @@ export async function updateProject(
   }
   if (isTokenRequired !== undefined) {
     updateData.isTokenRequired = isTokenRequired;
+  }
+  if (customLlmParams !== undefined) {
+    updateData.customLlmParams = customLlmParams;
   }
 
   // Only perform update if there are fields to update

@@ -6,6 +6,7 @@ import {
 import OpenAI from "openai";
 import { JSONSchema } from "openai/lib/jsonschema";
 import { ZodObject, ZodRawShape } from "zod";
+import { CustomLlmParams } from "../../model/custom-llm-params";
 
 interface BaseResponseFormat {
   jsonMode?: boolean;
@@ -40,6 +41,8 @@ interface StreamingCompleteBaseParams {
   promptTemplateName: string;
   promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>;
   chainId?: string;
+  /** Custom LLM parameters to pass to the provider */
+  customParams?: CustomLlmParams;
 }
 
 export type StreamingCompleteParams = StreamingCompleteBaseParams &
@@ -53,6 +56,8 @@ interface CompleteBaseParams {
   promptTemplateName: string;
   promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>;
   chainId?: string;
+  /** Custom LLM parameters to pass to the provider */
+  customParams?: CustomLlmParams;
 }
 
 export type CompleteParams = CompleteBaseParams & ResponseFormat;
