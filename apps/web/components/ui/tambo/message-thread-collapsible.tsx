@@ -200,21 +200,24 @@ export const MessageThreadCollapsible = React.forwardRef<
   React.useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let timer: number | undefined;
     try {
       const dismissed =
         window.sessionStorage.getItem(PRODUCT_HUNT_STORAGE_KEY) === "1";
 
-      // Show after delay if not dismissed and panel is closed
-      const timer = setTimeout(() => {
-        if (!dismissed && !isOpen) {
-          setShowProductHunt(true);
-        }
+      timer = window.setTimeout(() => {
+        if (!dismissed && !isOpen) setShowProductHunt(true);
       }, 3000);
-
-      return () => clearTimeout(timer);
     } catch {
-      // Session storage not available
+      // If sessionStorage is unavailable, still show after delay if closed
+      timer = window.setTimeout(() => {
+        if (!isOpen) setShowProductHunt(true);
+      }, 3000);
     }
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
   }, [isOpen]);
 
   const handleDismissProductHunt = React.useCallback(() => {
@@ -297,9 +300,15 @@ export const MessageThreadCollapsible = React.forwardRef<
             setIsOpen(false);
             // Maybe show Product Hunt bubble again after closing
             setTimeout(() => {
-              const dismissed =
-                window.sessionStorage.getItem(PRODUCT_HUNT_STORAGE_KEY) === "1";
-              if (!dismissed) {
+              try {
+                if (typeof window !== "undefined") {
+                  const dismissed =
+                    window.sessionStorage.getItem(PRODUCT_HUNT_STORAGE_KEY) ===
+                    "1";
+                  if (!dismissed) setShowProductHunt(true);
+                }
+              } catch {
+                // If sessionStorage is unavailable, still show the bubble after delay
                 setShowProductHunt(true);
               }
             }, 5000);

@@ -1,15 +1,20 @@
+"use client";
+
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import Image from "next/image";
 import productHuntLogo from "../../public/product-hunt-logo.png";
 import * as React from "react";
+import type { FC } from "react";
 
-export const ProductHuntThoughtBubble = ({
-  isOpen,
-  onDismiss,
-}: {
+interface ProductHuntThoughtBubbleProps {
   isOpen: boolean;
   onDismiss: () => void;
+}
+
+export const ProductHuntThoughtBubble: FC<ProductHuntThoughtBubbleProps> = ({
+  isOpen,
+  onDismiss,
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
 
