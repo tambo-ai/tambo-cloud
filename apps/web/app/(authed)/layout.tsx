@@ -1,9 +1,16 @@
 import { NextAuthLayoutWrapper } from "@/components/auth/nextauth-layout-wrapper";
+import { HydrateClient, trpc } from "@/server/api/root";
 
-export default function AuthedLayout({
+export default async function AuthedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <NextAuthLayoutWrapper>{children}</NextAuthLayoutWrapper>;
+  await trpc.user.hasAcceptedLegal.prefetch();
+  await trpc.user.getUser.prefetch();
+  return (
+    <HydrateClient>
+      <NextAuthLayoutWrapper>{children}</NextAuthLayoutWrapper>
+    </HydrateClient>
+  );
 }

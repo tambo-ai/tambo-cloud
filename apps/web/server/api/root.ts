@@ -8,7 +8,6 @@ import {
 import { createQueryClient } from "@/trpc/query-client";
 import { getQueryKey } from "@trpc/react-query";
 import { createHydrationHelpers } from "@trpc/react-query/rsc";
-import {} from "@trpc/react-query/shared";
 import { cache } from "react";
 import { appRouter as applicationRouter } from "./routers/app";
 import { demoRouter } from "./routers/demo";
