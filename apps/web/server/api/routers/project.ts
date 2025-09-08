@@ -527,19 +527,20 @@ export const projectRouter = createTRPCRouter({
         }
       }
 
-      const [updated] = await ctx.db
-        .update(schema.projects)
-        .set({
-          providerType,
-          agentProviderType: agentProviderType ?? AgentProviderType.CREWAI,
-          agentUrl: providerType === AiProviderType.AGENT ? agentUrl : null,
-          agentName: providerType === AiProviderType.AGENT ? agentName : null,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.projects.id, projectId))
-        .returning();
+      const updatedProject = await operations.updateProject(ctx.db, projectId, {
+        providerType,
+        // Persist agent-specific fields only in AGENT mode; clear URL/name otherwise.
+        // Note: agentProviderType column is non-nullable in schema; we intentionally
+        // leave it unchanged when not in AGENT mode to avoid forcing an arbitrary default.
+        agentProviderType:
+          providerType === AiProviderType.AGENT
+            ? (agentProviderType ?? AgentProviderType.CREWAI)
+            : undefined,
+        agentUrl: providerType === AiProviderType.AGENT ? agentUrl : null,
+        agentName: providerType === AiProviderType.AGENT ? agentName : null,
+      });
 
-      if (!updated) {
+      if (!updatedProject) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to update agent settings.",
@@ -547,10 +548,10 @@ export const projectRouter = createTRPCRouter({
       }
 
       return {
-        providerType: updated.providerType,
-        agentProviderType: updated.agentProviderType,
-        agentUrl: updated.agentUrl,
-        agentName: updated.agentName,
+        providerType: updatedProject.providerType,
+        agentProviderType: updatedProject.agentProviderType,
+        agentUrl: updatedProject.agentUrl,
+        agentName: updatedProject.agentName,
       };
     }),
 

@@ -200,6 +200,9 @@ export async function updateProject(
     return project;
   }
 
+  // Always bump the project timestamp on any update for consistency
+  updateData.updatedAt = new Date();
+
   const updated = await db
     .update(schema.projects)
     .set(updateData)
