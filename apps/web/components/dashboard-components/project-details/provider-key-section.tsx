@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 import {
+  AGENT_PROVIDER_REGISTRY,
   AgentProviderType,
   AiProviderType,
   DEFAULT_OPENAI_MODEL,
@@ -35,6 +36,12 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { z } from "zod";
+
+function getAgentProviderLabel(type: AgentProviderType): string {
+  const info = AGENT_PROVIDER_REGISTRY.find((p) => p.type === type);
+  if (!info) return String(type);
+  return info.isSupported ? info.name : `${info.name} (coming soon)`;
+}
 
 export const ProviderKeySectionSchema = z
   .object({
@@ -1201,11 +1208,7 @@ export function ProviderKeySection({
                       className="w-full justify-between h-10 font-normal"
                     >
                       <span className="truncate">
-                        {agentProvider === AgentProviderType.CREWAI
-                          ? "CrewAI"
-                          : agentProvider === AgentProviderType.MASTRA
-                            ? "Mastra (coming soon)"
-                            : "AG-UI (coming soon)"}
+                        {getAgentProviderLabel(agentProvider)}
                       </span>
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -1219,42 +1222,20 @@ export function ProviderKeySection({
                       <CommandList>
                         <CommandEmpty>No provider found.</CommandEmpty>
                         <CommandGroup>
-                          <CommandItem
-                            value={AgentProviderType.CREWAI}
-                            onSelect={() => {
-                              setAgentProvider(AgentProviderType.CREWAI);
-                              setHasUnsavedChanges(true);
-                            }}
-                          >
-                            CrewAI
-                          </CommandItem>
-                          <CommandItem
-                            disabled
-                            value={AgentProviderType.MASTRA}
-                          >
-                            Mastra (coming soon)
-                          </CommandItem>
-                          <CommandItem disabled value={AgentProviderType.AGUI}>
-                            AG-UI (coming soon)
-                          </CommandItem>
-                          <CommandItem
-                            disabled
-                            value={AgentProviderType.LLAMAINDEX}
-                          >
-                            LlamaIndex (coming soon)
-                          </CommandItem>
-                          <CommandItem
-                            disabled
-                            value={AgentProviderType.LANGGRAPH}
-                          >
-                            LangGraph (coming soon)
-                          </CommandItem>
-                          <CommandItem
-                            disabled
-                            value={AgentProviderType.PYDANTICAI}
-                          >
-                            PydanticAI (coming soon)
-                          </CommandItem>
+                          {AGENT_PROVIDER_REGISTRY.map((provider) => (
+                            <CommandItem
+                              key={provider.type}
+                              value={provider.type}
+                              disabled={!provider.isSupported}
+                              onSelect={() => {
+                                if (!provider.isSupported) return;
+                                setAgentProvider(provider.type);
+                                setHasUnsavedChanges(true);
+                              }}
+                            >
+                              {getAgentProviderLabel(provider.type)}
+                            </CommandItem>
+                          ))}
                         </CommandGroup>
                       </CommandList>
                     </Command>
