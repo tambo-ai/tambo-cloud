@@ -150,8 +150,48 @@ export async function processThreadMessage(
 }
 
 /**
- * Add a user message to a thread, making sure that the thread is not already in the middle of processing.
+ * Prepares a message by adding component state from previous messages if needed.
+ * This ensures follow-up messages can reference what the user has interacted with.
  */
+async function prepareMessageWithComponentState(
+  db: HydraDb,
+  threadId: string,
+  message: MessageRequest,
+): Promise<MessageRequest> {
+  // Check if the current message already has component state
+  const currentMessageHasNoState =
+    !message.componentState || Object.keys(message.componentState).length === 0;
+
+  // If message already has state, no need to carry forward
+  if (!currentMessageHasNoState) {
+    return message;
+  }
+
+  // Query for the most recent message with non-empty component state
+  // This ensures we find component state no matter how far back in the conversation
+  const latestWithState = await db
+    .select({ componentState: schema.messages.componentState })
+    .from(schema.messages)
+    .where(
+      and(
+        eq(schema.messages.threadId, threadId),
+        isNotNull(schema.messages.componentState),
+        // Exclude empty JSON objects to only get meaningful state
+        sql`${schema.messages.componentState} <> '{}'::jsonb`,
+      ),
+    )
+    .orderBy(desc(schema.messages.createdAt))
+    .limit(1);
+
+  const previousComponentState = latestWithState[0]?.componentState;
+
+  // Create a new message object to avoid mutating the input parameter
+  // Set the component state directly so it gets wrapped in <ComponentState> tags
+  return previousComponentState
+    ? { ...message, componentState: previousComponentState }
+    : message;
+}
+
 export async function addUserMessage(
   db: HydraDb,
   threadId: string,
@@ -159,6 +199,13 @@ export async function addUserMessage(
   logger?: Logger,
 ) {
   try {
+    // Prepare message with component state BEFORE the transaction
+    const preparedMessage = await prepareMessageWithComponentState(
+      db,
+      threadId,
+      message,
+    );
+
     const result = await db.transaction(
       async (tx) => {
         const currentThread = await tx.query.threads.findFirst({
@@ -183,38 +230,7 @@ export async function addUserMessage(
           "Starting processing...",
         );
 
-        // Query for the most recent message with non-empty component state
-        // This ensures we find component state no matter how far back in the conversation
-        const latestWithState = await tx
-          .select({ componentState: schema.messages.componentState })
-          .from(schema.messages)
-          .where(
-            and(
-              eq(schema.messages.threadId, threadId),
-              isNotNull(schema.messages.componentState),
-              // Exclude empty JSON objects to only get meaningful state
-              sql`${schema.messages.componentState} <> '{}'::jsonb`,
-            ),
-          )
-          .orderBy(desc(schema.messages.createdAt))
-          .limit(1);
-
-        // Check if the current message already has component state
-        // We only want to carry forward state if the message doesn't have its own
-        const currentMessageHasNoState =
-          !message.componentState ||
-          Object.keys(message.componentState).length === 0;
-        const previousComponentState = latestWithState[0]?.componentState;
-
-        // Create a new message object to avoid mutating the input parameter
-        // Set the component state directly so it gets wrapped in <ComponentState> tags
-        // Only add component state if: 1) current message has no state AND 2) we found previous state
-        const messageToSave =
-          currentMessageHasNoState && previousComponentState
-            ? { ...message, componentState: previousComponentState }
-            : message;
-
-        return await addMessage(tx, threadId, messageToSave);
+        return await addMessage(tx, threadId, preparedMessage);
       },
       {
         isolationLevel: "read committed",
