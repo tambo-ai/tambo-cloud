@@ -297,7 +297,7 @@ export function ProviderKeySection({
     );
 
   // --- Mutations ---
-  const { mutate: updateAgentSettings, isPending: isSavingAgent } =
+  const { mutateAsync: updateAgentSettingsAsync, isPending: isSavingAgent } =
     api.project.updateProjectAgentSettings.useMutation({
       onSuccess: async () => {
         toast({ title: "Success", description: "Agent configuration saved." });
@@ -424,7 +424,7 @@ export function ProviderKeySection({
     ],
   );
 
-  const handleSaveDefaults = useCallback(() => {
+  const handleSaveDefaults = useCallback(async () => {
     if (!project?.id) {
       toast({
         title: "Error",
@@ -460,7 +460,7 @@ export function ProviderKeySection({
       }
 
       setShowValidationErrors(false);
-      updateAgentSettings({
+      await updateAgentSettingsAsync({
         projectId: project.id,
         providerType: AiProviderType.AGENT,
         agentProviderType: agentProvider,
@@ -579,6 +579,15 @@ export function ProviderKeySection({
     }
 
     setShowValidationErrors(false);
+    // Ensure providerType is set back to LLM when saving in LLM mode
+    await updateAgentSettingsAsync({
+      projectId: project.id,
+      providerType: AiProviderType.LLM,
+      agentProviderType: null,
+      agentUrl: null,
+      agentName: null,
+    });
+
     updateLlmSettings({
       projectId: project.id,
       defaultLlmProviderName: provider,
@@ -607,7 +616,7 @@ export function ProviderKeySection({
     canUseFreeMessages,
     isUsingDefaultModel,
     updateLlmSettings,
-    updateAgentSettings,
+    updateAgentSettingsAsync,
     mode,
     agentProvider,
     agentUrl,
@@ -843,8 +852,7 @@ export function ProviderKeySection({
                                     : "bg-green-100 text-green-700",
                               )}
                             >
-                              {option.model.status.charAt(0).toUpperCase() +
-                                option.model.status.slice(1)}
+                              {option.model.status}
                             </span>
                           )}
                         </CommandItem>
@@ -1255,6 +1263,10 @@ export function ProviderKeySection({
                     setHasUnsavedChanges(true);
                   }}
                 />
+                <p className="text-xs text-foreground">
+                  Optional. Some agent providers require an agent name to route
+                  requests correctly.
+                </p>
                 {showValidationErrors && !agentName.trim() && (
                   <p className="text-sm text-destructive">
                     Agent name is required

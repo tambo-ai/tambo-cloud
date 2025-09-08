@@ -501,11 +501,10 @@ export const projectRouter = createTRPCRouter({
 
       // If switching to AGENT, validate mandatory fields
       if (providerType === AiProviderType.AGENT) {
-        if (!agentProviderType || !agentUrl || !agentName) {
+        if (!agentProviderType || !agentUrl) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message:
-              "Agent provider, URL, and name are required for Agent mode.",
+            message: "Agent provider and URL are required for Agent mode.",
           });
         }
 
