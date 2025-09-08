@@ -123,7 +123,7 @@ describe("ThreadsService - Initial Messages", () => {
 
       expect(() => {
         (service as any).validateInitialMessages(invalidMessages);
-      }).toThrow("Initial message at index 0 must have a role");
+      }).toThrow('Initial message at index 0 has invalid role "undefined"');
     });
 
     it("should throw error for invalid role", () => {
