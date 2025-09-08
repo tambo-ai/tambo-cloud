@@ -6,8 +6,10 @@ export default async function AuthedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await trpc.user.hasAcceptedLegal.prefetch();
-  await trpc.user.getUser.prefetch();
+  await Promise.all([
+    trpc.user.hasAcceptedLegal.prefetch(),
+    trpc.user.getUser.prefetch(),
+  ]);
   return (
     <HydrateClient>
       <NextAuthLayoutWrapper>{children}</NextAuthLayoutWrapper>
