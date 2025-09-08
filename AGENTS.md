@@ -1,7 +1,5 @@
 # AGENTS.md — Unified coding instructions for AI agents
 
-Audience: any AI/code assistant contributing to this repository (tambo-cloud). This file consolidates all agent-facing rules found in .cursor, .cursorrules, .charlie, CONTRIBUTING.md, devdocs, and local conventions. Prefer this document over scattered files. If something here conflicts with product requirements, ask in Slack before proceeding.
-
 ## 0) Scope and repository layout
 
 - apps/web — Next.js app (UI)
@@ -18,7 +16,7 @@ Audience: any AI/code assistant contributing to this repository (tambo-cloud). T
 - Prefer immutability. Don’t mutate inputs; return new values. Use const, toSorted, object/array spreads.
 - Handle errors up-front with guard clauses and early returns.
 - Strict TypeScript: no any, no type assertions unless unavoidable; define precise types.
-- Use English; meaningful names with standard abbreviations only (API, URL, ctx, req, res, next). Booleans start with is/has/can/should.
+- Use English; meaningful names with widely-recognized standard abbreviations only (API, URL, ctx, req, res, next). Booleans start with is/has/can/should.
 - File/dir naming: kebab-case. Classes: PascalCase. Vars/functions/methods: camelCase. ENV vars: UPPER_SNAKE_CASE.
 - Exports: prefer named exports; allow multiple exports when they belong together (e.g., component + related types); avoid default exports.
 
@@ -59,7 +57,8 @@ Common scopes: api, web, core, db, deps, ci, config, docs, test
 
 Closing issues: use “Fixes #123” (GitHub) or “Fixes TAM-123” (Linear) in PR body.
 
-Dependencies and tooling: do not add/upgrade/remove deps or change tool configs unless explicitly asked.
+Dependencies and tooling: Agents do not add/upgrade/remove deps or change tool
+configs unless explicitly asked, but humans are allowed to do so.
 
 ## 3) Frontend (React + Next.js)
 
@@ -67,17 +66,19 @@ Dependencies and tooling: do not add/upgrade/remove deps or change tool configs 
 - Prefer functional, declarative components; avoid classes.
 - Types
   - Use TypeScript everywhere. Use interfaces for object shapes.
-  - Prefer React.FC for components. Use PropsWithChildren and ComponentProps[WithRef|WithoutRef] as needed.
+  - Prefer React.FC for components. Use PropsWithChildren and `ComponentProps[WithRef|WithoutRef]` as needed.
   - Exports: prefer named exports; allow multiple exports when they belong together (e.g., component + related types); avoid default exports.
 - State & data
-  - Local UI: use useState/useReducer. Shared: Context. Server state: React Query/tRPC hooks.
-  - Minimize useEffect; derive state or memoize instead. Memoize callbacks with useCallback when passed to children.
-  - For tRPC/React Query, don’t track separate loading flags—use hook states. Follow devdocs/LOADING_STATES.md patterns for skeletons and disabling controls.
+  - Local UI: use useState. Shared: use React Context. Server state: React Query/tRPC hooks.
+  - Minimize use of useEffect; derive state or memoize instead. Memoize callbacks with useCallback when passed to children.
+  - For tRPC/React Query, don’t manually track separate loading flags. Instead use the provided hook states. Follow devdocs/LOADING_STATES.md patterns for skeletons and disabling controls.
 - Layout & styling (Tailwind + shadcn)
-  - Use flex/grid; manage spacing primarily with gap-_, and element padding p-_. Avoid margins and avoid space-x/y.
+  - Use flex/grid for any even slightly complex layout. Manage spacing primarily with gap (using `gap-_` classes if needed), and element padding `p-_`. Avoid ever setting margins and avoid space-x/y.
   - Truncate overflowing text with text-ellipsis. Prefer minimal Tailwind usage; avoid ad-hoc CSS.
 - Typography
   - Sentient for headings (font-heading/font-sentient), Geist Sans for body (font-sans), Geist Mono for code (font-mono). See apps/web/lib/fonts.ts and tailwind.config.ts.
+- Text
+  - avoid manually changing string cases, as it is usually a code smell for not providing the correct string to the component. If a internal key should be shown to a user, the english string should be provided separately. e.g. if a key has a value agent_mode, the english string should be provided separately as "Agent Mode" rather than trying to capitalize it.
 
 ## 4) Backend (NestJS in apps/api)
 
@@ -86,7 +87,7 @@ Dependencies and tooling: do not add/upgrade/remove deps or change tool configs 
   - Services encapsulate business logic; keep pure where possible.
   - Use guards/filters/interceptors via a core module. Shared utilities live in a shared module.
 - Error handling
-  - Pure functions: return Result/Either-style objects; don’t throw.
+  - Pure functions: even within a controller, try to keep logic pure, and do not store state in the controller.
   - Boundaries (controllers/services): translate into HTTP/Nest exceptions when appropriate.
 - Testing
   - Unit tests for public functions; integration/e2e for controllers/modules via Jest + supertest.
@@ -94,20 +95,20 @@ Dependencies and tooling: do not add/upgrade/remove deps or change tool configs 
 ## 5) Database (Drizzle ORM)
 
 - Source of truth is packages/db/src/schema.ts. Do not hand-edit generated SQL.
-- One logical change per migration; keep up/down idempotent and focused.
-- Prefer prepared statements and transactions when needed; keep DB logic isolated from business logic.
+- Generate migrations with `npm run db:generate`, do not manually generate migrations.
 
 ## 6) Shared utilities and packages
 
-- packages/core: pure utilities (validation, JSON, crypto, threading, tool utilities). Avoid DB access here.
+- packages/core: pure utilities (validation, JSON, crypto, threading, tool utilities). Avoid DB access here. This package should not have any dependencies on the database.
 - packages/backend: LLM/agent-side helpers and streaming utilities.
-- Reuse helpers; don’t duplicate logic. If a utility is useful across packages, colocate in core; if it’s LLM-specific, in backend.
+- Reuse helpers; don’t duplicate logic. If a utility is useful across packages, colocate in core; if it’s LLM-specific, in backend, if related to database access, in db.
 
 ## 7) Functions and classes (design rules)
 
 - Keep functions short and single-purpose; ideally <20 statements.
+- Avoid `let` - instead make a new function that returns the value.
 - Use verbs for functions; boolean-returning: isX/hasX/canX. If a function returns void, prefer executeX/saveX naming.
-- Avoid deep nesting: prefer early exits and extracting helpers. Use map/filter/reduce for iteration.
+- Avoid deep nesting: prefer early exits and extracting helpers. Use map/filter for iteration.
 - Prefer immutable data; use readonly and as const where applicable.
 - Favor composition over inheritance. If classes are used, keep them small (<200 statements, <10 properties/methods) and validate invariants internally.
 
