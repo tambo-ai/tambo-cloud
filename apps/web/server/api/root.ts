@@ -1,3 +1,5 @@
+import "server-only";
+
 import {
   createCallerFactory,
   createTRPCContext,
@@ -6,8 +8,8 @@ import {
 import { createQueryClient } from "@/trpc/query-client";
 import { getQueryKey } from "@trpc/react-query";
 import { createHydrationHelpers } from "@trpc/react-query/rsc";
+import {} from "@trpc/react-query/shared";
 import { cache } from "react";
-import "server-only";
 import { appRouter as applicationRouter } from "./routers/app";
 import { demoRouter } from "./routers/demo";
 import { llmRouter } from "./routers/llm";
@@ -17,12 +19,31 @@ import { toolsRouter } from "./routers/tools";
 import { userRouter } from "./routers/user";
 import { validateRouter } from "./routers/validate";
 
+// We need to define and export these so that the trpc export can be resolved correctly.
+export type UserRouter = typeof userRouter;
+export type ProjectRouter = typeof projectRouter;
+export type ThreadRouter = typeof threadRouter;
+export type ApplicationRouter = typeof applicationRouter;
+export type ToolsRouter = typeof toolsRouter;
+export type DemoRouter = typeof demoRouter;
+export type LlmRouter = typeof llmRouter;
+export type ValidateRouter = typeof validateRouter;
+
 /**
  * This is the primary router for your server.
  *
  * All routers added in /api/routers should be manually added here.
  */
-export const appRouter = createTRPCRouter({
+export const appRouter = createTRPCRouter<{
+  user: UserRouter;
+  project: ProjectRouter;
+  thread: ThreadRouter;
+  app: ApplicationRouter;
+  tools: ToolsRouter;
+  demo: DemoRouter;
+  llm: LlmRouter;
+  validate: ValidateRouter;
+}>({
   user: userRouter,
   project: projectRouter,
   thread: threadRouter,
@@ -50,7 +71,9 @@ export const createCaller = createCallerFactory(appRouter);
 export type GQK = typeof getQueryKey;
 
 const caller = createCaller(createTRPCContext);
-export const { trpc, HydrateClient } = createHydrationHelpers<AppRouter>(
+export const helpers = createHydrationHelpers<AppRouter>(
   caller,
   getQueryClient,
 );
+export const trpc = helpers.trpc;
+export const HydrateClient = helpers.HydrateClient;
