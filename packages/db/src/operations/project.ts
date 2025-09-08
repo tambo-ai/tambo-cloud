@@ -1,4 +1,6 @@
 import {
+  AgentProviderType,
+  AiProviderType,
   encryptApiKey,
   encryptProviderKey,
   hashKey,
@@ -131,6 +133,10 @@ export async function updateProject(
     maxInputTokens,
     maxToolCallLimit,
     isTokenRequired,
+    providerType,
+    agentProviderType,
+    agentUrl,
+    agentName,
   }: {
     name?: string;
     customInstructions?: string;
@@ -141,6 +147,10 @@ export async function updateProject(
     maxInputTokens?: number;
     maxToolCallLimit?: number;
     isTokenRequired?: boolean;
+    providerType?: AiProviderType;
+    agentProviderType?: AgentProviderType;
+    agentUrl?: string | null;
+    agentName?: string | null;
   },
 ) {
   // Create update object with only provided fields
@@ -170,6 +180,18 @@ export async function updateProject(
   }
   if (isTokenRequired !== undefined) {
     updateData.isTokenRequired = isTokenRequired;
+  }
+  if (providerType !== undefined) {
+    updateData.providerType = providerType;
+  }
+  if (agentProviderType !== undefined) {
+    updateData.agentProviderType = agentProviderType;
+  }
+  if (agentUrl !== undefined) {
+    updateData.agentUrl = agentUrl;
+  }
+  if (agentName !== undefined) {
+    updateData.agentName = agentName;
   }
 
   // Only perform update if there are fields to update

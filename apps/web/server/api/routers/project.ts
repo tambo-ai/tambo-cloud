@@ -3,6 +3,8 @@ import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { llmProviderConfig } from "@tambo-ai-cloud/backend";
 import {
+  AgentProviderType,
+  AiProviderType,
   encryptOAuthSecretKey,
   hashKey,
   MCPTransport,
@@ -224,6 +226,10 @@ export const projectRouter = createTRPCRouter({
           customLlmBaseURL: project.customLlmBaseURL,
           maxToolCallLimit: project.maxToolCallLimit,
           isTokenRequired: project.isTokenRequired,
+          providerType: project.providerType,
+          agentProviderType: project.agentProviderType,
+          agentUrl: project.agentUrl,
+          agentName: project.agentName,
           messages: stats.messages,
           users: stats.users,
           lastMessageAt: stats.lastMessageAt,
@@ -353,6 +359,10 @@ export const projectRouter = createTRPCRouter({
           customLlmModelName: true,
           customLlmBaseURL: true,
           maxInputTokens: true,
+          providerType: true,
+          agentProviderType: true,
+          agentUrl: true,
+          agentName: true,
         },
       });
 
@@ -368,6 +378,10 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: project.customLlmModelName ?? null,
         customLlmBaseURL: project.customLlmBaseURL ?? null,
         maxInputTokens: project.maxInputTokens ?? null,
+        providerType: project.providerType,
+        agentProviderType: project.agentProviderType,
+        agentUrl: project.agentUrl ?? null,
+        agentName: project.agentName ?? null,
       };
     }),
 
@@ -384,6 +398,10 @@ export const projectRouter = createTRPCRouter({
         maxInputTokens: z.number().nullable().optional(),
         maxToolCallLimit: z.number().optional(),
         isTokenRequired: z.boolean().optional(),
+        providerType: z.nativeEnum(AiProviderType).optional(),
+        agentProviderType: z.nativeEnum(AgentProviderType).optional(),
+        agentUrl: z.string().url().nullable().optional(),
+        agentName: z.string().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -398,6 +416,10 @@ export const projectRouter = createTRPCRouter({
         maxInputTokens,
         maxToolCallLimit,
         isTokenRequired,
+        providerType,
+        agentProviderType,
+        agentUrl,
+        agentName,
       } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
@@ -425,6 +447,10 @@ export const projectRouter = createTRPCRouter({
           maxInputTokens === null ? undefined : (maxInputTokens ?? undefined),
         maxToolCallLimit,
         isTokenRequired,
+        providerType,
+        agentProviderType,
+        agentUrl: agentUrl === null ? undefined : agentUrl,
+        agentName: agentName === null ? undefined : agentName,
       });
 
       if (!updatedProject) {
@@ -442,6 +468,90 @@ export const projectRouter = createTRPCRouter({
         customLlmBaseURL: updatedProject.customLlmBaseURL,
         maxInputTokens: updatedProject.maxInputTokens,
         maxToolCallLimit: updatedProject.maxToolCallLimit,
+        providerType: updatedProject.providerType,
+        agentProviderType: updatedProject.agentProviderType,
+        agentUrl: updatedProject.agentUrl,
+        agentName: updatedProject.agentName,
+      };
+    }),
+
+  updateProjectAgentSettings: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        providerType: z.nativeEnum(AiProviderType),
+        agentProviderType: z
+          .nativeEnum(AgentProviderType)
+          .nullable()
+          .optional(),
+        agentUrl: z.string().url().nullable().optional(),
+        agentName: z.string().nullable().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const {
+        projectId,
+        providerType,
+        agentProviderType,
+        agentUrl,
+        agentName,
+      } = input;
+
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
+
+      // If switching to AGENT, validate mandatory fields
+      if (providerType === AiProviderType.AGENT) {
+        if (!agentProviderType || !agentUrl || !agentName) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Agent provider, URL, and name are required for Agent mode.",
+          });
+        }
+
+        // Validate URL safety using same MCP URL validator logic
+        let parsed: URL;
+        try {
+          parsed = new URL(agentUrl);
+        } catch {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid agent URL.",
+          });
+        }
+        const safety = await validateSafeURL(parsed.href);
+        if (!safety.safe) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `URL validation failed${safety.reason ? `: ${safety.reason}` : ""}`,
+          });
+        }
+      }
+
+      const [updated] = await ctx.db
+        .update(schema.projects)
+        .set({
+          providerType,
+          agentProviderType: agentProviderType ?? AgentProviderType.CREWAI,
+          agentUrl: providerType === AiProviderType.AGENT ? agentUrl : null,
+          agentName: providerType === AiProviderType.AGENT ? agentName : null,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.projects.id, projectId))
+        .returning();
+
+      if (!updated) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update agent settings.",
+        });
+      }
+
+      return {
+        providerType: updated.providerType,
+        agentProviderType: updated.agentProviderType,
+        agentUrl: updated.agentUrl,
+        agentName: updated.agentName,
       };
     }),
 
@@ -463,7 +573,6 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
-        maxInputTokens,
       } = input;
 
       // Ensure the user has access to the project before performing any further
