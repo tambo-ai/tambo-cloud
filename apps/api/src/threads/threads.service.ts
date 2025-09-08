@@ -171,6 +171,7 @@ export class ThreadsService {
   async createThread(
     createThreadDto: Omit<ThreadRequest, "contextKey">,
     contextKey?: string,
+    initialMessages?: MessageRequest[],
   ): Promise<Thread> {
     return await Sentry.startSpan(
       {
@@ -179,16 +180,22 @@ export class ThreadsService {
         attributes: {
           projectId: createThreadDto.projectId,
           hasContextKey: !!contextKey,
+          hasInitialMessages: !!initialMessages?.length,
         },
       },
-      async () => await this.createThread_(createThreadDto, contextKey),
+      async () =>
+        await this.createThread_(createThreadDto, contextKey, initialMessages),
     );
   }
 
   private async createThread_(
     createThreadDto: Omit<ThreadRequest, "contextKey">,
     contextKey?: string,
+    initialMessages?: MessageRequest[],
   ): Promise<Thread> {
+    // Validate initial messages if provided
+    this.validateInitialMessages(initialMessages);
+
     const thread = await operations.createThread(this.getDb(), {
       projectId: createThreadDto.projectId,
       contextKey: contextKey,
@@ -196,12 +203,23 @@ export class ThreadsService {
       name: createThreadDto.name,
     });
 
+    // Add initial messages if provided
+    if (initialMessages && initialMessages.length > 0) {
+      for (const message of initialMessages) {
+        await this.addMessage(thread.id, message);
+      }
+    }
+
     // Add breadcrumb for thread creation
     Sentry.addBreadcrumb({
       message: "Thread created",
       category: "threads",
       level: "info",
-      data: { threadId: thread.id, projectId: thread.projectId },
+      data: {
+        threadId: thread.id,
+        projectId: thread.projectId,
+        initialMessageCount: initialMessages?.length || 0,
+      },
     });
 
     return {
@@ -933,6 +951,8 @@ export class ThreadsService {
         projectId,
         unresolvedThreadId,
         contextKey,
+        false,
+        advanceRequestDto.initialMessages,
       );
 
       // Set user context for better error tracking
@@ -1832,6 +1852,7 @@ export class ThreadsService {
     threadId: string | undefined,
     contextKey: string | undefined,
     preventCreate: boolean = false,
+    initialMessages?: MessageRequest[],
   ): Promise<Thread> {
     // If the threadId is provided, ensure that the thread belongs to the project
     if (threadId) {
@@ -1856,8 +1877,41 @@ export class ThreadsService {
         projectId,
       },
       contextKey,
+      initialMessages,
     );
     return newThread;
+  }
+
+  private validateInitialMessages(initialMessages?: MessageRequest[]): void {
+    if (!initialMessages || initialMessages.length === 0) {
+      return;
+    }
+
+    for (const [index, message] of initialMessages.entries()) {
+      if (message.content.length === 0) {
+        throw new Error(`Initial message at index ${index} must have content`);
+      }
+
+      const allowedRoles = [
+        MessageRole.System,
+        MessageRole.User,
+        MessageRole.Assistant,
+      ];
+      if (!allowedRoles.includes(message.role)) {
+        throw new Error(
+          `Initial message at index ${index} has invalid role "${message.role}". Allowed roles are: ${allowedRoles.join(", ")}`,
+        );
+      }
+
+      // Validate content structure
+      for (const [contentIndex, contentPart] of message.content.entries()) {
+        if (contentPart.type === ContentPartType.Text && !contentPart.text) {
+          throw new Error(
+            `Initial message at index ${index}, content part ${contentIndex} with type 'text' must have text property`,
+          );
+        }
+      }
+    }
   }
 
   private async validateProjectAndProviderKeys(
