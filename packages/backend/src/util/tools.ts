@@ -51,14 +51,15 @@ export function generateAdditionalContext(message: ThreadMessage) {
   if (message.component && !message.actionType) {
     nextContentContext += `\n<Component>${JSON.stringify(message.component)}</Component>`;
   }
-  if (
-    Object.keys(message.componentState ?? {}).length > 0 &&
-    !message.actionType
-  ) {
+  if (Object.keys(message.componentState ?? {}).length > 0) {
     nextContentContext += `\n<ComponentState>${JSON.stringify(message.componentState)}</ComponentState>`;
   }
 
-  if (message.additionalContext) {
+  // Only add additionalContext if it has actual content (not just an empty object)
+  if (
+    message.additionalContext &&
+    Object.keys(message.additionalContext).length > 0
+  ) {
     nextContentContext += `<System> The following is additional context provided by the system that you can use when responding to the user: ${JSON.stringify(message.additionalContext)} </System>`;
   }
 

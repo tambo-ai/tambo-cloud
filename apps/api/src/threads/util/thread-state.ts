@@ -16,7 +16,7 @@ import {
   unstrictifyToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import { HydraDatabase, HydraDb, operations, schema } from "@tambo-ai-cloud/db";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { MessageRequest } from "../dto/message.dto";
@@ -182,6 +182,28 @@ export async function addUserMessage(
           GenerationStage.FETCHING_CONTEXT,
           "Starting processing...",
         );
+
+        // Get recent messages from the current thread to find component state
+        const recentMessages = await tx.query.messages.findMany({
+          where: eq(schema.messages.threadId, threadId),
+          orderBy: desc(schema.messages.createdAt),
+          limit: 5,
+        });
+
+        // Find the most recent message with component state
+        const messageWithComponentState = recentMessages.find(
+          (msg) =>
+            msg.componentState && Object.keys(msg.componentState).length > 0,
+        );
+
+        // If there's component state from a previous message, carry it forward
+        if (
+          messageWithComponentState &&
+          messageWithComponentState.componentState
+        ) {
+          // Set the component state directly so it gets wrapped in <ComponentState> tags
+          message.componentState = messageWithComponentState.componentState;
+        }
 
         return await addMessage(tx, threadId, message);
       },

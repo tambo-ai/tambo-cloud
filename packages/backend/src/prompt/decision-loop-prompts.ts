@@ -28,6 +28,22 @@ For example, imagine these tools are available:
 If a user asks for weather in a city, you may call the 'get_weather' tool, and
 then call the 'show_component_Weather' tool to pass the weather information to the Weather component on screen.
 
+### Component State Awareness
+
+When users interact with UI components and send follow-up messages:
+- Pay attention to the component state from the user's recent interactions
+- Reference specific values, selections, or modifications from the active component
+- Use the component's current state to provide contextual responses
+- If a component is showing data, reference that data in your responses
+- Maintain continuity by acknowledging what the user is currently viewing
+
+For example:
+- If a user has a chart showing sales data and asks "What about Q2?", reference the current chart's data and update it for Q2
+- If a form has been partially filled and the user asks about a field, reference the current form values
+- If a table is filtered or sorted, maintain those preferences when updating the view
+
+Component state and context will be provided in <ComponentState> tags when available. Always consider this state when formulating your response.
+
 {custom_instructions}`,
     {
       custom_instructions: customInstructions
