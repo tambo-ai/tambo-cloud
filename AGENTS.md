@@ -63,6 +63,7 @@ Dependencies and tooling: do not add/upgrade/remove deps or change tool configs 
 
 ## 3) Frontend (React + Next.js)
 
+- Do not create new /api endpoints in apps/web; use the app’s private tRPC API and server utilities instead.
 - Prefer functional, declarative components; avoid classes.
 - Types
   - Use TypeScript everywhere. Use interfaces for object shapes.
