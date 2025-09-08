@@ -1,4 +1,13 @@
-import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
+import {
+  createCallerFactory,
+  createTRPCContext,
+  createTRPCRouter,
+} from "@/server/api/trpc";
+import { createQueryClient } from "@/trpc/query-client";
+import { getQueryKey } from "@trpc/react-query";
+import { createHydrationHelpers } from "@trpc/react-query/rsc";
+import { cache } from "react";
+import "server-only";
 import { appRouter as applicationRouter } from "./routers/app";
 import { demoRouter } from "./routers/demo";
 import { llmRouter } from "./routers/llm";
@@ -27,6 +36,9 @@ export const appRouter = createTRPCRouter({
 // export type definition of API for the client
 export type AppRouter = typeof appRouter;
 
+// IMPORTANT: Create a stable getter for the query client that
+//            will return the same client during the same request.
+export const getQueryClient = cache(createQueryClient);
 /**
  * Create a server-side caller for the tRPC API.
  * @example
@@ -35,3 +47,10 @@ export type AppRouter = typeof appRouter;
  *       ^? Post[]
  */
 export const createCaller = createCallerFactory(appRouter);
+export type GQK = typeof getQueryKey;
+
+const caller = createCaller(createTRPCContext);
+export const { trpc, HydrateClient } = createHydrationHelpers<AppRouter>(
+  caller,
+  getQueryClient,
+);
