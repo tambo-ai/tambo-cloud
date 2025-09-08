@@ -20,6 +20,7 @@ Audience: any AI/code assistant contributing to this repository (tambo-cloud). T
 - Strict TypeScript: no any, no type assertions unless unavoidable; define precise types.
 - Use English; meaningful names with standard abbreviations only (API, URL, ctx, req, res, next). Booleans start with is/has/can/should.
 - File/dir naming: kebab-case. Classes: PascalCase. Vars/functions/methods: camelCase. ENV vars: UPPER_SNAKE_CASE.
+- Exports: prefer named exports; allow multiple exports when they belong together (e.g., component + related types); avoid default exports.
 
 ## 2) Workspace commands and verification
 
@@ -65,8 +66,8 @@ Dependencies and tooling: do not add/upgrade/remove deps or change tool configs 
 - Prefer functional, declarative components; avoid classes.
 - Types
   - Use TypeScript everywhere. Use interfaces for object shapes.
-  - React types: FC, PropsWithChildren, ComponentProps[WithRef|WithoutRef] as needed.
-  - For consumer components in this repo, prefer named exports; avoid default exports.
+  - Prefer React.FC for components. Use PropsWithChildren and ComponentProps[WithRef|WithoutRef] as needed.
+  - Exports: prefer named exports; allow multiple exports when they belong together (e.g., component + related types); avoid default exports.
 - State & data
   - Local UI: use useState/useReducer. Shared: Context. Server state: React Query/tRPC hooks.
   - Minimize useEffect; derive state or memoize instead. Memoize callbacks with useCallback when passed to children.
@@ -88,7 +89,6 @@ Dependencies and tooling: do not add/upgrade/remove deps or change tool configs 
   - Boundaries (controllers/services): translate into HTTP/Nest exceptions when appropriate.
 - Testing
   - Unit tests for public functions; integration/e2e for controllers/modules via Jest + supertest.
-  - A lightweight admin/test smoke endpoint per controller is recommended; confirm policy (see open questions).
 
 ## 5) Database (Drizzle ORM)
 
@@ -136,19 +136,3 @@ Include multiple TS examples with comments and good/poor markers (✅/❌) when 
 - Don’t commit secrets. Use env files.
 
 ---
-
-## Open questions to confirm (potential conflicts found)
-
-1. Persistence library: Several legacy rules mention “MikroORM,” but the repo uses Drizzle ORM (packages/db). I will standardize on Drizzle throughout—confirm this is correct and that MikroORM should be ignored going forward.
-
-2. Exports policy: Some rules say “one export per file,” while others encourage structuring files with components, helpers, and types together and also discourage default exports. Proposed policy: prefer named exports; multiple exports per file are allowed when they belong together (e.g., component + subcomponents/types). Confirm.
-
-3. React.FC: .charlie/instructions/react.md suggests using FC. Many teams avoid React.FC today. Should we continue to use React.FC here, or switch to explicit function components with typed props and children when needed?
-
-4. Controller smoke endpoint: apps/api/.cursorrules recommends adding an admin/test endpoint per controller. Is this still required in production controllers, or reserved for test modules only?
-
-5. Commit scopes: Older docs list a hydra-ai scope that isn’t present in this repo. Remove that scope from examples?
-
-6. Verification alias: Some instructions reference “npx charlie fix.” There’s no such script here; I will keep using the explicit commands from .charlie/config.yml (lint --fix and format). Confirm that’s the standard.
-
-If you confirm the items above, I’ll update this file accordingly and remove any remaining conflicting phrasing from legacy rule files.
