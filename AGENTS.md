@@ -55,7 +55,7 @@ fix(web): prevent duplicate project creation
 chore(db): reorganize migration files
 ```
 
-Primary scopes: api, web, core, db, deps, ci, config, docs, test, refactor, chore.
+Common scopes: api, web, core, db, deps, ci, config, docs, test
 
 Closing issues: use “Fixes #123” (GitHub) or “Fixes TAM-123” (Linear) in PR body.
 
