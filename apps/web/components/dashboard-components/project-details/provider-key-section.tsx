@@ -32,7 +32,7 @@ import {
   InfoIcon,
   Loader2,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { z } from "zod";
 
@@ -227,6 +227,10 @@ export function ProviderKeySection({
       ? llmProviderConfigData[parsedSelection.provider]
       : undefined;
 
+  // Track whether we've hydrated agent fields for this project to prevent
+  // overwriting in-progress edits when data is refetched.
+  const agentHydratedRef = useRef<string | null>(null);
+
   // Initialize state from saved settings
   useEffect(() => {
     if (!projectLlmSettings || !llmProviderConfigData) return;
@@ -234,13 +238,17 @@ export function ProviderKeySection({
     // Provider mode
     setMode(projectLlmSettings.providerType ?? AiProviderType.LLM);
 
-    // Agent settings
-    if (projectLlmSettings.providerType === AiProviderType.AGENT) {
+    // Agent settings: hydrate from stored values once per project so a user can
+    // switch between modes without losing previously entered settings, and avoid
+    // clobbering in‑progress edits on refetch.
+    const hydratedRef = agentHydratedRef.current;
+    if (hydratedRef !== project?.id) {
       if (projectLlmSettings.agentProviderType) {
         setAgentProvider(projectLlmSettings.agentProviderType);
       }
       setAgentUrl(projectLlmSettings.agentUrl ?? "");
       setAgentName(projectLlmSettings.agentName ?? "");
+      agentHydratedRef.current = project?.id ?? null;
     }
 
     // LLM settings
@@ -273,7 +281,7 @@ export function ProviderKeySection({
     }
 
     setHasUnsavedChanges(false);
-  }, [projectLlmSettings, llmProviderConfigData]);
+  }, [project?.id, projectLlmSettings, llmProviderConfigData]);
 
   // API key validation
   const [debouncedApiKey] = useDebounce(apiKeyInput, 500);
@@ -579,14 +587,14 @@ export function ProviderKeySection({
     }
 
     setShowValidationErrors(false);
-    // Ensure providerType is set back to LLM when saving in LLM mode
-    await updateAgentSettingsAsync({
-      projectId: project.id,
-      providerType: AiProviderType.LLM,
-      agentProviderType: null,
-      agentUrl: null,
-      agentName: null,
-    });
+    // Ensure providerType is set back to LLM when saving in LLM mode.
+    // Do not clear any agent fields—preserve previously saved values.
+    if (project.providerType !== AiProviderType.LLM) {
+      await updateAgentSettingsAsync({
+        projectId: project.id,
+        providerType: AiProviderType.LLM,
+      });
+    }
 
     updateLlmSettings({
       projectId: project.id,
@@ -605,6 +613,7 @@ export function ProviderKeySection({
     });
   }, [
     project?.id,
+    project?.providerType,
     combinedSelectValue,
     parsedSelection,
     customModelName,

@@ -140,11 +140,11 @@ export async function updateProject(
   }: {
     name?: string;
     customInstructions?: string;
-    defaultLlmProviderName?: string;
-    defaultLlmModelName?: string;
-    customLlmModelName?: string;
-    customLlmBaseURL?: string;
-    maxInputTokens?: number;
+    defaultLlmProviderName?: string | null;
+    defaultLlmModelName?: string | null;
+    customLlmModelName?: string | null;
+    customLlmBaseURL?: string | null;
+    maxInputTokens?: number | null;
     maxToolCallLimit?: number;
     isTokenRequired?: boolean;
     providerType?: AiProviderType;
@@ -167,7 +167,7 @@ export async function updateProject(
   if (customLlmBaseURL !== undefined)
     updateData.customLlmBaseURL = customLlmBaseURL;
   if (maxInputTokens !== undefined) {
-    if (maxInputTokens < 0) {
+    if (maxInputTokens !== null && maxInputTokens < 1) {
       throw new Error("Max input tokens must be greater than 0");
     }
     updateData.maxInputTokens = maxInputTokens;

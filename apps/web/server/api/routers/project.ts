@@ -529,15 +529,16 @@ export const projectRouter = createTRPCRouter({
 
       const updatedProject = await operations.updateProject(ctx.db, projectId, {
         providerType,
-        // Persist agent-specific fields only in AGENT mode; clear URL/name otherwise.
-        // Note: agentProviderType column is non-nullable in schema; we intentionally
-        // leave it unchanged when not in AGENT mode to avoid forcing an arbitrary default.
+        // Persist agent-specific fields only in AGENT mode; when not in AGENT mode
+        // we do NOT clear previously saved values—leave them unchanged so users
+        // can switch back without losing settings.
         agentProviderType:
           providerType === AiProviderType.AGENT
             ? (agentProviderType ?? AgentProviderType.CREWAI)
             : undefined,
-        agentUrl: providerType === AiProviderType.AGENT ? agentUrl : null,
-        agentName: providerType === AiProviderType.AGENT ? agentName : null,
+        agentUrl: providerType === AiProviderType.AGENT ? agentUrl : undefined,
+        agentName:
+          providerType === AiProviderType.AGENT ? agentName : undefined,
       });
 
       if (!updatedProject) {
@@ -685,25 +686,41 @@ export const projectRouter = createTRPCRouter({
         };
       }
 
-      const updatedProject = await ctx.db
-        .update(schema.projects)
-        .set(updateData)
-        .where(eq(schema.projects.id, projectId))
-        .returning();
+      const updatedProject = await operations.updateProject(ctx.db, projectId, {
+        defaultLlmProviderName:
+          "defaultLlmProviderName" in updateData
+            ? (updateData.defaultLlmProviderName as string | null)
+            : undefined,
+        defaultLlmModelName:
+          "defaultLlmModelName" in updateData
+            ? (updateData.defaultLlmModelName as string | null)
+            : undefined,
+        customLlmModelName:
+          "customLlmModelName" in updateData
+            ? (updateData.customLlmModelName as string | null)
+            : undefined,
+        customLlmBaseURL:
+          "customLlmBaseURL" in updateData
+            ? (updateData.customLlmBaseURL as string | null)
+            : undefined,
+        maxInputTokens:
+          "maxInputTokens" in updateData
+            ? (updateData.maxInputTokens as number | null)
+            : undefined,
+      });
 
-      if (!updatedProject || updatedProject.length === 0) {
+      if (!updatedProject) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to update project LLM settings.",
         });
       }
       return {
-        defaultLlmProviderName:
-          updatedProject[0].defaultLlmProviderName ?? null,
-        defaultLlmModelName: updatedProject[0].defaultLlmModelName ?? null,
-        customLlmModelName: updatedProject[0].customLlmModelName ?? null,
-        customLlmBaseURL: updatedProject[0].customLlmBaseURL ?? null,
-        maxInputTokens: updatedProject[0].maxInputTokens ?? null,
+        defaultLlmProviderName: updatedProject.defaultLlmProviderName ?? null,
+        defaultLlmModelName: updatedProject.defaultLlmModelName ?? null,
+        customLlmModelName: updatedProject.customLlmModelName ?? null,
+        customLlmBaseURL: updatedProject.customLlmBaseURL ?? null,
+        maxInputTokens: updatedProject.maxInputTokens ?? null,
       };
     }),
 
