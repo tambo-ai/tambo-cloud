@@ -16,7 +16,7 @@ import {
   unstrictifyToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import { HydraDatabase, HydraDb, operations, schema } from "@tambo-ai-cloud/db";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import OpenAI from "openai";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { MessageRequest } from "../dto/message.dto";
@@ -183,29 +183,38 @@ export async function addUserMessage(
           "Starting processing...",
         );
 
-        // Get recent messages from the current thread to find component state
-        const recentMessages = await tx.query.messages.findMany({
-          where: eq(schema.messages.threadId, threadId),
-          orderBy: desc(schema.messages.createdAt),
-          limit: 5,
-        });
+        // Query for the most recent message with non-empty component state
+        // This ensures we find component state no matter how far back in the conversation
+        const latestWithState = await tx
+          .select({ componentState: schema.messages.componentState })
+          .from(schema.messages)
+          .where(
+            and(
+              eq(schema.messages.threadId, threadId),
+              isNotNull(schema.messages.componentState),
+              // Exclude empty JSON objects to only get meaningful state
+              sql`${schema.messages.componentState} <> '{}'::jsonb`,
+            ),
+          )
+          .orderBy(desc(schema.messages.createdAt))
+          .limit(1);
 
-        // Find the most recent message with component state
-        const messageWithComponentState = recentMessages.find(
-          (msg) =>
-            msg.componentState && Object.keys(msg.componentState).length > 0,
-        );
+        // Check if the current message already has component state
+        // We only want to carry forward state if the message doesn't have its own
+        const currentMessageHasNoState =
+          !message.componentState ||
+          Object.keys(message.componentState).length === 0;
+        const previousComponentState = latestWithState[0]?.componentState;
 
-        // If there's component state from a previous message, carry it forward
-        if (
-          messageWithComponentState &&
-          messageWithComponentState.componentState
-        ) {
-          // Set the component state directly so it gets wrapped in <ComponentState> tags
-          message.componentState = messageWithComponentState.componentState;
-        }
+        // Create a new message object to avoid mutating the input parameter
+        // Set the component state directly so it gets wrapped in <ComponentState> tags
+        // Only add component state if: 1) current message has no state AND 2) we found previous state
+        const messageToSave =
+          currentMessageHasNoState && previousComponentState
+            ? { ...message, componentState: previousComponentState }
+            : message;
 
-        return await addMessage(tx, threadId, message);
+        return await addMessage(tx, threadId, messageToSave);
       },
       {
         isolationLevel: "read committed",
