@@ -1211,7 +1211,7 @@ export function ProviderKeySection({
                         <CommandEmpty>No provider found.</CommandEmpty>
                         <CommandGroup>
                           <CommandItem
-                            value="crewai"
+                            value={AgentProviderType.CREWAI}
                             onSelect={() => {
                               setAgentProvider(AgentProviderType.CREWAI);
                               setHasUnsavedChanges(true);
@@ -1219,11 +1219,32 @@ export function ProviderKeySection({
                           >
                             CrewAI
                           </CommandItem>
-                          <CommandItem disabled value="mastra">
+                          <CommandItem
+                            disabled
+                            value={AgentProviderType.MASTRA}
+                          >
                             Mastra (coming soon)
                           </CommandItem>
-                          <CommandItem disabled value="ag-ui">
+                          <CommandItem disabled value={AgentProviderType.AGUI}>
                             AG-UI (coming soon)
+                          </CommandItem>
+                          <CommandItem
+                            disabled
+                            value={AgentProviderType.LLAMAINDEX}
+                          >
+                            LlamaIndex (coming soon)
+                          </CommandItem>
+                          <CommandItem
+                            disabled
+                            value={AgentProviderType.LANGGRAPH}
+                          >
+                            LangGraph (coming soon)
+                          </CommandItem>
+                          <CommandItem
+                            disabled
+                            value={AgentProviderType.PYDANTICAI}
+                          >
+                            PydanticAI (coming soon)
                           </CommandItem>
                         </CommandGroup>
                       </CommandList>
