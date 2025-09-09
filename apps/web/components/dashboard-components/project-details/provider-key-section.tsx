@@ -823,7 +823,279 @@ export function ProviderKeySection({
                   );
                 }}
               />
-              <div className="border-t p-2 flex items-center justify-between text-xs">
+              <AnimatePresence mode="wait">
+                {mode === AiProviderType.LLM && currentSelectedOption && (
+                  <motion.div
+                    key={combinedSelectValue + "-llm"}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="space-y-4 rounded-md max-w-xl"
+                  >
+                    {/* Model Information */}
+                    {currentSelectedOption.model?.notes && (
+                      <div className="space-y-2 text-xs text-foreground">
+                        <p className="flex items-start">
+                          <InfoIcon className="mr-1.5 mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                          {currentSelectedOption.model.notes}
+                        </p>
+                        <div className="flex items-start space-x-2">
+                          {currentSelectedOption.model.docLink && (
+                            <a
+                              href={currentSelectedOption.model.docLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-link text-xs hover:underline"
+                            >
+                              Learn more
+                              <ExternalLinkIcon className="ml-1 h-3 w-3" />
+                            </a>
+                          )}
+                          <a
+                            href="https://docs.tambo.co/models/labels"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-link text-xs hover:underline"
+                          >
+                            What do these labels mean?
+                            <ExternalLinkIcon className="ml-1 h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Custom Provider Fields */}
+                    {currentSelectedOption.provider.isCustomProvider && (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="custom-model-name">Model Name</Label>
+                          <Input
+                            id="custom-model-name"
+                            type="text"
+                            placeholder="e.g., llama3-8b-instruct"
+                            value={customModelName}
+                            onChange={(e) => {
+                              setCustomModelName(e.target.value);
+                              setHasUnsavedChanges(true);
+                            }}
+                          />
+                          {showValidationErrors && !customModelName.trim() && (
+                            <p className="text-sm text-destructive">
+                              Model name is required
+                            </p>
+                          )}
+                        </div>
+
+                        {currentSelectedOption.provider.requiresBaseUrl && (
+                          <div className="space-y-2">
+                            <Label htmlFor="base-url">Base URL</Label>
+                            <Input
+                              id="base-url"
+                              type="url"
+                              placeholder="e.g., https://api.example.com/v1"
+                              value={baseUrl}
+                              onChange={(e) => {
+                                setBaseUrl(e.target.value);
+                                setHasUnsavedChanges(true);
+                              }}
+                            />
+                            {showValidationErrors && !baseUrl.trim() && (
+                              <p className="text-sm text-destructive">
+                                Base URL is required
+                              </p>
+                            )}
+                            <p className="text-xs text-foreground">
+                              Requests will be sent to{" "}
+                              <span className="inline-flex rounded-md bg-muted px-2 py-0.5 font-mono">
+                                {baseUrl.trim()
+                                  ? baseUrl.trim().replace(/\/$/, "")
+                                  : "<baseurl>"}
+                                /chat/completions
+                              </span>
+                            </p>
+                          </div>
+                        )}
+
+                        {currentSelectedOption.provider.apiName ===
+                          "openai-compatible" && (
+                          <div className="space-y-2">
+                            <Label htmlFor="max-input-tokens">
+                              Maximum Input Tokens
+                            </Label>
+                            <Input
+                              id="max-input-tokens"
+                              type="number"
+                              min="1"
+                              placeholder="e.g., 4096"
+                              value={maxInputTokens}
+                              onChange={(e) => {
+                                setMaxInputTokens(e.target.value);
+                                setHasUnsavedChanges(true);
+                              }}
+                            />
+                            {showValidationErrors &&
+                              (!maxInputTokens ||
+                                Number(maxInputTokens) <= 0) && (
+                                <p className="text-sm text-destructive">
+                                  Please enter a valid token limit
+                                </p>
+                              )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Input Token Limit for Regular Models */}
+                    {!currentSelectedOption.provider.isCustomProvider && (
+                      <div className="space-y-2">
+                        <Label htmlFor="max-input-tokens">
+                          Input Token Limit
+                        </Label>
+                        <Input
+                          id="max-input-tokens"
+                          type="number"
+                          min="1"
+                          max={
+                            currentSelectedOption.model?.properties
+                              ?.inputTokenLimit
+                          }
+                          placeholder={`${currentSelectedOption.model?.properties?.inputTokenLimit ?? 4096}`}
+                          value={maxInputTokens}
+                          onChange={(e) => {
+                            setMaxInputTokens(e.target.value);
+                            setHasUnsavedChanges(true);
+                          }}
+                        />
+                        <p className="text-xs text-foreground">
+                          Tambo will limit the number of tokens sent to the
+                          model to this value.
+                          {currentSelectedOption.model?.properties
+                            ?.inputTokenLimit && (
+                            <span>
+                              {" "}
+                              Maximum:{" "}
+                              {currentSelectedOption.model.properties.inputTokenLimit.toLocaleString()}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* API Key Section */}
+                    <div className="space-y-2">
+                      <Label>
+                        API Key for {currentSelectedOption.provider.displayName}
+                      </Label>
+                      {isEditingApiKey ? (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="space-y-2"
+                        >
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <Input
+                                type="password"
+                                value={apiKeyInput}
+                                onChange={(e) => setApiKeyInput(e.target.value)}
+                                placeholder={
+                                  parsedSelection.provider === "openai"
+                                    ? "Enter API Key or leave empty for free messages"
+                                    : "Enter API Key"
+                                }
+                                autoFocus
+                                className={cn(
+                                  "pr-8",
+                                  !apiKeyValidation?.isValid &&
+                                    apiKeyInput &&
+                                    "border-destructive",
+                                )}
+                              />
+                              {isValidatingApiKey && (
+                                <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={handleSaveApiKey}
+                              disabled={
+                                isUpdatingApiKey ||
+                                isValidatingApiKey ||
+                                (!apiKeyInput.trim() &&
+                                  !["openai", "openai-compatible"].includes(
+                                    parsedSelection.provider || "",
+                                  )) ||
+                                (!apiKeyValidation?.isValid &&
+                                  !!apiKeyInput.trim())
+                              }
+                            >
+                              {isUpdatingApiKey ? "Saving..." : "Save Key"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setIsEditingApiKey(false);
+                                setApiKeyInput("");
+                              }}
+                              disabled={isUpdatingApiKey}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+
+                          {apiKeyInput &&
+                            apiKeyValidation &&
+                            !apiKeyValidation.isValid && (
+                              <p className="text-sm text-destructive">
+                                {apiKeyValidation.error}
+                              </p>
+                            )}
+                          {apiKeyInput && apiKeyValidation?.isValid && (
+                            <p className="text-sm text-green-600">
+                              ✓ API key is valid
+                            </p>
+                          )}
+                        </motion.div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <code className="block truncate rounded-md border bg-background px-2 py-1.5 font-mono text-sm flex-1">
+                            {maskedApiKeyDisplay}
+                          </code>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setIsEditingApiKey(true);
+                              setApiKeyInput("");
+                            }}
+                          >
+                            {currentApiKeyRecord ? "Update Key" : "Add Key"}
+                          </Button>
+                        </div>
+                      )}
+
+                      {currentSelectedOption.provider.apiKeyLink && (
+                        <p className="text-xs text-foreground">
+                          Need an API key?{" "}
+                          <a
+                            href={currentSelectedOption.provider.apiKeyLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-link hover:underline"
+                          >
+                            Get one from{" "}
+                            {currentSelectedOption.provider.displayName}
+                            <ExternalLinkIcon className="ml-1 h-3 w-3" />
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <div className="border-t flex items-center justify-between text-xs">
                 <a
                   href="https://github.com/tambo-ai/tambo-cloud/issues/new?template=feature_request.md&title=Add%20support%20for%20[Model%20Name]"
                   target="_blank"
@@ -833,15 +1105,6 @@ export function ProviderKeySection({
                   Request support for another model
                   <ExternalLinkIcon className="ml-1 h-3 w-3" />
                 </a>
-                <a
-                  href="https://docs.tambo.co/models/labels"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-foreground hover:text-primary transition-colors"
-                >
-                  What do these labels mean?
-                  <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                </a>
               </div>
             </div>
             {showValidationErrors && !combinedSelectValue && (
@@ -849,288 +1112,6 @@ export function ProviderKeySection({
                 Please select a provider and model
               </p>
             )}
-
-            <AnimatePresence mode="wait">
-              {mode === AiProviderType.LLM && currentSelectedOption && (
-                <motion.div
-                  key={combinedSelectValue + "-llm"}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="space-y-4 rounded-md max-w-xl"
-                >
-                  {/* Model Information */}
-                  {currentSelectedOption.model?.notes && (
-                    <div className="space-y-2 text-xs text-foreground">
-                      <p className="flex items-start">
-                        <InfoIcon className="mr-1.5 mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-                        {currentSelectedOption.model.notes}
-                      </p>
-                      <div className="flex items-start space-x-2">
-                        {currentSelectedOption.model.docLink && (
-                          <a
-                            href={currentSelectedOption.model.docLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center text-link text-xs hover:underline"
-                          >
-                            Learn more
-                            <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                          </a>
-                        )}
-                        <a
-                          href="https://github.com/tambo-ai/tambo/issues/new?template=feature_request.md&title=Add%20support%20for%20[Model%20Name]"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center text-link text-xs hover:underline"
-                        >
-                          Request support for another model
-                          <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                        </a>
-                        <a
-                          href="https://docs.tambo.co/models/labels"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center text-link text-xs hover:underline"
-                        >
-                          Docs
-                          <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                        </a>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Custom Provider Fields */}
-                  {currentSelectedOption.provider.isCustomProvider && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="custom-model-name">Model Name</Label>
-                        <Input
-                          id="custom-model-name"
-                          type="text"
-                          placeholder="e.g., llama3-8b-instruct"
-                          value={customModelName}
-                          onChange={(e) => {
-                            setCustomModelName(e.target.value);
-                            setHasUnsavedChanges(true);
-                          }}
-                        />
-                        {showValidationErrors && !customModelName.trim() && (
-                          <p className="text-sm text-destructive">
-                            Model name is required
-                          </p>
-                        )}
-                      </div>
-
-                      {currentSelectedOption.provider.requiresBaseUrl && (
-                        <div className="space-y-2">
-                          <Label htmlFor="base-url">Base URL</Label>
-                          <Input
-                            id="base-url"
-                            type="url"
-                            placeholder="e.g., https://api.example.com/v1"
-                            value={baseUrl}
-                            onChange={(e) => {
-                              setBaseUrl(e.target.value);
-                              setHasUnsavedChanges(true);
-                            }}
-                          />
-                          {showValidationErrors && !baseUrl.trim() && (
-                            <p className="text-sm text-destructive">
-                              Base URL is required
-                            </p>
-                          )}
-                          <p className="text-xs text-foreground">
-                            Requests will be sent to{" "}
-                            <span className="inline-flex rounded-md bg-muted px-2 py-0.5 font-mono">
-                              {baseUrl.trim()
-                                ? baseUrl.trim().replace(/\/$/, "")
-                                : "<baseurl>"}
-                              /chat/completions
-                            </span>
-                          </p>
-                        </div>
-                      )}
-
-                      {currentSelectedOption.provider.apiName ===
-                        "openai-compatible" && (
-                        <div className="space-y-2">
-                          <Label htmlFor="max-input-tokens">
-                            Maximum Input Tokens
-                          </Label>
-                          <Input
-                            id="max-input-tokens"
-                            type="number"
-                            min="1"
-                            placeholder="e.g., 4096"
-                            value={maxInputTokens}
-                            onChange={(e) => {
-                              setMaxInputTokens(e.target.value);
-                              setHasUnsavedChanges(true);
-                            }}
-                          />
-                          {showValidationErrors &&
-                            (!maxInputTokens ||
-                              Number(maxInputTokens) <= 0) && (
-                              <p className="text-sm text-destructive">
-                                Please enter a valid token limit
-                              </p>
-                            )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Input Token Limit for Regular Models */}
-                  {!currentSelectedOption.provider.isCustomProvider && (
-                    <div className="space-y-2">
-                      <Label htmlFor="max-input-tokens">
-                        Input Token Limit
-                      </Label>
-                      <Input
-                        id="max-input-tokens"
-                        type="number"
-                        min="1"
-                        max={
-                          currentSelectedOption.model?.properties
-                            ?.inputTokenLimit
-                        }
-                        placeholder={`${currentSelectedOption.model?.properties?.inputTokenLimit ?? 4096}`}
-                        value={maxInputTokens}
-                        onChange={(e) => {
-                          setMaxInputTokens(e.target.value);
-                          setHasUnsavedChanges(true);
-                        }}
-                      />
-                      <p className="text-xs text-foreground">
-                        Tambo will limit the number of tokens sent to the model
-                        to this value.
-                        {currentSelectedOption.model?.properties
-                          ?.inputTokenLimit && (
-                          <span>
-                            {" "}
-                            Maximum:{" "}
-                            {currentSelectedOption.model.properties.inputTokenLimit.toLocaleString()}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* API Key Section */}
-                  <div className="space-y-2">
-                    <Label>
-                      API Key for {currentSelectedOption.provider.displayName}
-                    </Label>
-                    {isEditingApiKey ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="space-y-2"
-                      >
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
-                            <Input
-                              type="password"
-                              value={apiKeyInput}
-                              onChange={(e) => setApiKeyInput(e.target.value)}
-                              placeholder={
-                                parsedSelection.provider === "openai"
-                                  ? "Enter API Key or leave empty for free messages"
-                                  : "Enter API Key"
-                              }
-                              autoFocus
-                              className={cn(
-                                "pr-8",
-                                !apiKeyValidation?.isValid &&
-                                  apiKeyInput &&
-                                  "border-destructive",
-                              )}
-                            />
-                            {isValidatingApiKey && (
-                              <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />
-                            )}
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={handleSaveApiKey}
-                            disabled={
-                              isUpdatingApiKey ||
-                              isValidatingApiKey ||
-                              (!apiKeyInput.trim() &&
-                                !["openai", "openai-compatible"].includes(
-                                  parsedSelection.provider || "",
-                                )) ||
-                              (!apiKeyValidation?.isValid &&
-                                !!apiKeyInput.trim())
-                            }
-                          >
-                            {isUpdatingApiKey ? "Saving..." : "Save Key"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setIsEditingApiKey(false);
-                              setApiKeyInput("");
-                            }}
-                            disabled={isUpdatingApiKey}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-
-                        {apiKeyInput &&
-                          apiKeyValidation &&
-                          !apiKeyValidation.isValid && (
-                            <p className="text-sm text-destructive">
-                              {apiKeyValidation.error}
-                            </p>
-                          )}
-                        {apiKeyInput && apiKeyValidation?.isValid && (
-                          <p className="text-sm text-green-600">
-                            ✓ API key is valid
-                          </p>
-                        )}
-                      </motion.div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <code className="block truncate rounded-md border bg-background px-2 py-1.5 font-mono text-sm flex-1">
-                          {maskedApiKeyDisplay}
-                        </code>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setIsEditingApiKey(true);
-                            setApiKeyInput("");
-                          }}
-                        >
-                          {currentApiKeyRecord ? "Update Key" : "Add Key"}
-                        </Button>
-                      </div>
-                    )}
-
-                    {currentSelectedOption.provider.apiKeyLink && (
-                      <p className="text-xs text-foreground">
-                        Need an API key?{" "}
-                        <a
-                          href={currentSelectedOption.provider.apiKeyLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center text-link hover:underline"
-                        >
-                          Get one from{" "}
-                          {currentSelectedOption.provider.displayName}
-                          <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                        </a>
-                      </p>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </>
         )}
 
