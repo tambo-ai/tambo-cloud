@@ -24,6 +24,7 @@
     "@ag-ui/client": "^0.0.37",
     "@ag-ui/core": "^0.0.37",
     "@ag-ui/crewai": "^0.0.2",
+    "@ag-ui/llamaindex": "^0.1.2",
     "@ai-sdk/anthropic": "^1.2.12",
     "@ai-sdk/google": "^1.2.22",
     "@ai-sdk/groq": "^1.2.9",
