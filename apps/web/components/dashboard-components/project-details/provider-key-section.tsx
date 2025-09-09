@@ -206,6 +206,12 @@ export function ProviderKeySection({
     });
   }, [llmProviderConfigData]);
 
+  // Fast lookup for options by value to avoid repeated linear searches in renderers
+  const providerModelOptionMap = useMemo(
+    () => new Map(providerModelOptions.map((o) => [o.value, o])),
+    [providerModelOptions],
+  );
+
   const currentSelectedOption = providerModelOptions.find(
     (option) => option.value === combinedSelectValue,
   );
@@ -799,9 +805,7 @@ export function ProviderKeySection({
                 searchPlaceholder="Search providers and models..."
                 emptyText="No provider or model found."
                 renderRight={(option) => {
-                  const opt = providerModelOptions.find(
-                    (o) => o.value === option.value,
-                  );
+                  const opt = providerModelOptionMap.get(option.value);
                   if (!opt?.model?.status) return null;
                   return (
                     <span
