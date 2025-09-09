@@ -26,7 +26,7 @@ Run locally before opening/updating a PR:
 
 ```bash
 npm run check-types   # TS across workspace
-npm run lint -- --fix # ESLint autofix
+npm run lint:fix # ESLint autofix
 npm run format        # Prettier write
 npm test              # Unit/integration tests
 ```
