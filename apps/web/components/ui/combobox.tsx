@@ -51,7 +51,7 @@ export function Combobox<T extends string>({
   const [open, setOpen] = React.useState(false);
 
   const selectedItem = React.useMemo(
-    () => items.find((i) => String(i.value) === String(value)),
+    () => items.find((i) => i.value === value),
     [items, value],
   );
 
@@ -88,19 +88,17 @@ export function Combobox<T extends string>({
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
               {items.map((option) => {
-                const isSelected = String(option.value) === String(value);
+                const isSelected = option.value === value;
                 return (
                   <CommandItem
-                    key={String(option.value)}
-                    value={String(option.value)}
+                    key={option.value}
+                    value={option.value}
                     disabled={option.disabled}
                     className={cn(
                       renderRight && "flex items-center justify-between",
                     )}
                     onSelect={(currentValue) => {
-                      const found = items.find(
-                        (o) => String(o.value) === currentValue,
-                      );
+                      const found = items.find((o) => o.value === currentValue);
                       if (found && !found.disabled) {
                         onChange(found.value);
                         setOpen(false);
