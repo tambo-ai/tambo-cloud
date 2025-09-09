@@ -35,7 +35,6 @@ interface ComboboxProps<T extends string> {
   buttonClassName?: string;
   contentClassName?: string;
   renderRight?: (option: ComboboxOption<T>) => React.ReactNode;
-  footer?: React.ReactNode;
 }
 
 export function Combobox<T extends string>({
@@ -48,7 +47,6 @@ export function Combobox<T extends string>({
   buttonClassName,
   contentClassName,
   renderRight,
-  footer,
 }: ComboboxProps<T>) {
   const [open, setOpen] = React.useState(false);
 
@@ -121,7 +119,6 @@ export function Combobox<T extends string>({
                 );
               })}
             </CommandGroup>
-            {footer}
           </CommandList>
         </Command>
       </PopoverContent>
