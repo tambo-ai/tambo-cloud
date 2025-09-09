@@ -1,20 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Combobox } from "@/components/ui/combobox";
+//
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+//
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -26,13 +16,7 @@ import {
   DEFAULT_OPENAI_MODEL,
 } from "@tambo-ai-cloud/core";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Check,
-  ChevronsUpDown,
-  ExternalLinkIcon,
-  InfoIcon,
-  Loader2,
-} from "lucide-react";
+import { ExternalLinkIcon, InfoIcon, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { z } from "zod";
@@ -144,7 +128,6 @@ export function ProviderKeySection({
   // --- State Management ---
   const [mode, setMode] = useState<AiProviderType>(AiProviderType.LLM);
   const [combinedSelectValue, setCombinedSelectValue] = useState<string>("");
-  const [combinedSelectOpen, setCombinedSelectOpen] = useState(false);
   const [customModelName, setCustomModelName] = useState<string>("");
   const [baseUrl, setBaseUrl] = useState<string>("");
   const [maxInputTokens, setMaxInputTokens] = useState<string>("");
@@ -390,7 +373,6 @@ export function ProviderKeySection({
   const handleCombinedSelectChange = useCallback(
     (value: string) => {
       setCombinedSelectValue(value);
-      setCombinedSelectOpen(false);
 
       // Reset fields when changing selection
       const [provider, model] = value.split("|", 2);
@@ -807,97 +789,59 @@ export function ProviderKeySection({
 
         {mode === AiProviderType.LLM && (
           <>
-            <Popover
-              open={combinedSelectOpen}
-              onOpenChange={setCombinedSelectOpen}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={combinedSelectOpen}
-                  className="w-full justify-between h-10 font-normal"
-                >
-                  {currentSelectedOption ? (
-                    <span className="truncate">
-                      {currentSelectedOption.label}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      Select provider and model
-                    </span>
-                  )}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-[--radix-popover-trigger-width] p-0"
-                align="start"
-              >
-                <Command>
-                  <CommandInput placeholder="Search providers and models..." />
-                  <CommandList>
-                    <CommandEmpty>No provider or model found.</CommandEmpty>
-                    <CommandGroup>
-                      {providerModelOptions.map((option) => (
-                        <CommandItem
-                          key={option.value}
-                          value={option.value}
-                          onSelect={handleCombinedSelectChange}
-                          className="flex items-center justify-between"
-                        >
-                          <div className="flex items-center">
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                combinedSelectValue === option.value
-                                  ? "opacity-100"
-                                  : "opacity-0",
-                              )}
-                            />
-                            <span className="truncate">{option.label}</span>
-                          </div>
-                          {option.model?.status && (
-                            <span
-                              className={cn(
-                                "ml-2 rounded-full px-1.5 py-0.5 text-xs",
-                                option.model.status === "untested"
-                                  ? "bg-gray-200 text-gray-700"
-                                  : option.model.status === "known-issues"
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : "bg-green-100 text-green-700",
-                              )}
-                            >
-                              {option.model.status}
-                            </span>
-                          )}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                    <div className="border-t p-2 flex items-center justify-between text-xs">
-                      <a
-                        href="https://github.com/tambo-ai/tambo-cloud/issues/new?template=feature_request.md&title=Add%20support%20for%20[Model%20Name]"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-foreground hover:text-primary transition-colors"
-                      >
-                        Request support for another model
-                        <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                      </a>
-                      <a
-                        href="https://docs.tambo.co/models/labels"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-foreground hover:text-primary transition-colors"
-                      >
-                        What do these labels mean?
-                        <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                      </a>
-                    </div>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <Combobox
+              items={providerModelOptions.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+              value={combinedSelectValue}
+              onChange={(val) => handleCombinedSelectChange(String(val))}
+              placeholder="Select provider and model"
+              searchPlaceholder="Search providers and models..."
+              emptyText="No provider or model found."
+              renderRight={(option) => {
+                const opt = providerModelOptions.find(
+                  (o) => o.value === option.value,
+                );
+                if (!opt?.model?.status) return null;
+                return (
+                  <span
+                    className={cn(
+                      "ml-2 rounded-full px-1.5 py-0.5 text-xs",
+                      opt.model.status === "untested"
+                        ? "bg-gray-200 text-gray-700"
+                        : opt.model.status === "known-issues"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-green-100 text-green-700",
+                    )}
+                  >
+                    {opt.model.status}
+                  </span>
+                );
+              }}
+              footer={
+                <div className="border-t p-2 flex items-center justify-between text-xs">
+                  <a
+                    href="https://github.com/tambo-ai/tambo-cloud/issues/new?template=feature_request.md&title=Add%20support%20for%20[Model%20Name]"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-foreground hover:text-primary transition-colors"
+                  >
+                    Request support for another model
+                    <ExternalLinkIcon className="ml-1 h-3 w-3" />
+                  </a>
+                  <a
+                    href="https://docs.tambo.co/models/labels"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-foreground hover:text-primary transition-colors"
+                  >
+                    What do these labels mean?
+                    <ExternalLinkIcon className="ml-1 h-3 w-3" />
+                  </a>
+                </div>
+              }
+            />
             {showValidationErrors && !combinedSelectValue && (
               <p className="text-sm text-destructive mt-1">
                 Please select a provider and model
@@ -1201,46 +1145,21 @@ export function ProviderKeySection({
             >
               <div className="space-y-2">
                 <Label htmlFor="agent-provider">Agent Provider</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between h-10 font-normal"
-                    >
-                      <span className="truncate">
-                        {getAgentProviderLabel(agentProvider)}
-                      </span>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-[--radix-popover-trigger-width] p-0"
-                    align="start"
-                  >
-                    <Command>
-                      <CommandInput placeholder="Search agent providers..." />
-                      <CommandList>
-                        <CommandEmpty>No provider found.</CommandEmpty>
-                        <CommandGroup>
-                          {AGENT_PROVIDER_REGISTRY.map((provider) => (
-                            <CommandItem
-                              key={provider.type}
-                              value={provider.type}
-                              disabled={!provider.isSupported}
-                              onSelect={() => {
-                                if (!provider.isSupported) return;
-                                setAgentProvider(provider.type);
-                                setHasUnsavedChanges(true);
-                              }}
-                            >
-                              {getAgentProviderLabel(provider.type)}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Combobox
+                  items={AGENT_PROVIDER_REGISTRY.map((provider) => ({
+                    value: provider.type,
+                    label: getAgentProviderLabel(provider.type),
+                    disabled: !provider.isSupported,
+                  }))}
+                  value={agentProvider}
+                  onChange={(newProvider) => {
+                    setAgentProvider(newProvider);
+                    setHasUnsavedChanges(true);
+                  }}
+                  placeholder="Select agent provider..."
+                  searchPlaceholder="Search agent providers..."
+                  emptyText="No provider found."
+                />
               </div>
 
               <div className="space-y-2">
