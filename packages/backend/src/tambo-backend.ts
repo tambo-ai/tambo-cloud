@@ -127,11 +127,11 @@ class AgenticTamboBackend implements TamboBackend {
         return new AgenticTamboBackend(modelOptions, llmClient);
       }
       case AiProviderType.AGENT: {
-        if (!agentType || !agentUrl || !agentName) {
+        if (!agentType || !agentUrl) {
           console.error(
             `Got agent type ${agentType}, agentUrl ${agentUrl}, and agentName ${agentName}`,
           );
-          throw new Error("Agent type, URL, and name are required");
+          throw new Error("Agent type and URL are required");
         }
         const agentClient = await AgentClient.create({
           agentProviderType: agentType,

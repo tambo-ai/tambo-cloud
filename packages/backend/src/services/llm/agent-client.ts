@@ -49,7 +49,7 @@ export class AgentClient {
   }: {
     agentProviderType: AgentProviderType;
     agentUrl: string;
-    agentName: string;
+    agentName?: string;
     chainId: string;
   }) {
     switch (agentProviderType) {
@@ -70,7 +70,7 @@ export class AgentClient {
       case AgentProviderType.CREWAI: {
         const agent = new CrewAIAgent({
           url: agentUrl,
-          agentId: agentName,
+          agentId: agentName ?? undefined,
         });
         return new AgentClient(chainId, agent as unknown as AbstractAgent);
       }
