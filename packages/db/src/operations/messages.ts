@@ -1,5 +1,5 @@
 import { MessageRole } from "@tambo-ai-cloud/core";
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { schema } from "..";
 import { messages, projectMembers } from "../schema";
 import type { HydraDb } from "../types";
@@ -108,4 +108,36 @@ export async function findPreviousToolCallMessage(
       isNotNull(schema.messages.toolCallRequest),
     ),
   });
+}
+
+/**
+ * Retrieves the most recent component state from a thread's messages.
+ * This searches for the latest message with non-empty component state.
+ *
+ * @param db - The Tambo database instance
+ * @param threadId - The thread ID to search within
+ * @returns The latest component state object, or undefined if none found
+ *
+ * @example
+ * const componentState = await getLatestComponentState(db, 'thread_abc123')
+ */
+export async function getLatestComponentState(
+  db: HydraDb,
+  threadId: string,
+): Promise<Record<string, unknown> | undefined> {
+  const latestWithState = await db
+    .select({ componentState: schema.messages.componentState })
+    .from(schema.messages)
+    .where(
+      and(
+        eq(schema.messages.threadId, threadId),
+        isNotNull(schema.messages.componentState),
+        // Exclude empty JSON objects to only get meaningful state
+        sql`${schema.messages.componentState} <> '{}'::jsonb`,
+      ),
+    )
+    .orderBy(desc(schema.messages.createdAt))
+    .limit(1);
+
+  return latestWithState[0]?.componentState ?? undefined;
 }

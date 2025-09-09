@@ -29,6 +29,7 @@ jest.mock("@tambo-ai-cloud/db", () => {
     operations: {
       updateThread: jest.fn(),
       updateMessage: jest.fn(),
+      getLatestComponentState: jest.fn().mockResolvedValue(undefined),
     },
     schema,
   };

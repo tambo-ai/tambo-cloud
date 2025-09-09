@@ -16,7 +16,7 @@ import {
   unstrictifyToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import { HydraDatabase, HydraDb, operations, schema } from "@tambo-ai-cloud/db";
-import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { MessageRequest } from "../dto/message.dto";
@@ -167,23 +167,11 @@ async function prepareMessageWithComponentState(
     return message;
   }
 
-  // Query for the most recent message with non-empty component state
-  // This ensures we find component state no matter how far back in the conversation
-  const latestWithState = await db
-    .select({ componentState: schema.messages.componentState })
-    .from(schema.messages)
-    .where(
-      and(
-        eq(schema.messages.threadId, threadId),
-        isNotNull(schema.messages.componentState),
-        // Exclude empty JSON objects to only get meaningful state
-        sql`${schema.messages.componentState} <> '{}'::jsonb`,
-      ),
-    )
-    .orderBy(desc(schema.messages.createdAt))
-    .limit(1);
-
-  const previousComponentState = latestWithState[0]?.componentState;
+  // Get the latest component state from the thread
+  const previousComponentState = await operations.getLatestComponentState(
+    db,
+    threadId,
+  );
 
   // Create a new message object to avoid mutating the input parameter
   // Set the component state directly so it gets wrapped in <ComponentState> tags

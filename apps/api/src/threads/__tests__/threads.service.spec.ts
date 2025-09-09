@@ -105,6 +105,9 @@ jest.mock("@tambo-ai-cloud/db", () => {
     // mcp/system tools
     getProjectMcpServers: jest.fn(),
     addProjectLogEntry: jest.fn(),
+
+    // get latest component state
+    getLatestComponentState: jest.fn().mockResolvedValue(undefined),
   } satisfies Partial<typeof dbOperations>;
   return {
     ...actual,
