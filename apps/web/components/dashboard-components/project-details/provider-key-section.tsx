@@ -800,7 +800,7 @@ export function ProviderKeySection({
                   label: option.label,
                 }))}
                 value={combinedSelectValue}
-                onChange={(val) => handleCombinedSelectChange(String(val))}
+                onChange={handleCombinedSelectChange}
                 placeholder="Select provider and model"
                 searchPlaceholder="Search providers and models..."
                 emptyText="No provider or model found."
