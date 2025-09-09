@@ -70,7 +70,7 @@ export class AgentClient {
       case AgentProviderType.CREWAI: {
         const agent = new CrewAIAgent({
           url: agentUrl,
-          agentId: agentName ?? undefined,
+          agentId: agentName && agentName.trim() ? agentName.trim() : undefined,
         });
         return new AgentClient(chainId, agent as unknown as AbstractAgent);
       }
