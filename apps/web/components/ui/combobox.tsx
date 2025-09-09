@@ -69,7 +69,9 @@ export function Combobox<T extends string>({
             buttonClassName,
           )}
         >
-          <span className="truncate">
+          <span
+            className={cn("truncate", !selectedItem && "text-muted-foreground")}
+          >
             {selectedItem ? selectedItem.label : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
