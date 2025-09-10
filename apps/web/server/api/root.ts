@@ -20,31 +20,12 @@ import { validateRouter } from "./routers/validate";
 // Need to re-export this so that the trpc export can be resolved correctly.
 export { type DecorateRouterRecord } from "@trpc/react-query/shared";
 
-// We need to define and export these so that the trpc export can be resolved correctly.
-export type UserRouter = typeof userRouter;
-export type ProjectRouter = typeof projectRouter;
-export type ThreadRouter = typeof threadRouter;
-export type ApplicationRouter = typeof applicationRouter;
-export type ToolsRouter = typeof toolsRouter;
-export type DemoRouter = typeof demoRouter;
-export type LlmRouter = typeof llmRouter;
-export type ValidateRouter = typeof validateRouter;
-
 /**
  * This is the primary router for your server.
  *
  * All routers added in /api/routers should be manually added here.
  */
-export const appRouter = createTRPCRouter<{
-  user: UserRouter;
-  project: ProjectRouter;
-  thread: ThreadRouter;
-  app: ApplicationRouter;
-  tools: ToolsRouter;
-  demo: DemoRouter;
-  llm: LlmRouter;
-  validate: ValidateRouter;
-}>({
+export const appRouter = createTRPCRouter({
   user: userRouter,
   project: projectRouter,
   thread: threadRouter,
