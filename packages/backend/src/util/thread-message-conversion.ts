@@ -1,4 +1,5 @@
 import {
+  ChatCompletionContentPart,
   ChatCompletionContentPartText,
   ChatCompletionMessageParam,
   ComponentDecisionV2,
@@ -291,24 +292,30 @@ function makeUserMessages(
   }
   const additionalContextMessage = generateAdditionalContext(message);
 
-  // Extract user message content and wrap with <User> tags
-  const originalContent = message.content as ChatCompletionContentPartText[];
-  const userContentWithTags: ChatCompletionContentPartText[] =
-    originalContent.map((part) => ({
-      ...part,
-      text:
-        message.role === MessageRole.User
-          ? `<User>${part.text}</User>`
-          : part.text,
-    }));
+  // Only wrap text content with <User> tags, preserve other content types as-is
+  const wrappedContent: ChatCompletionContentPart[] =
+    message.role === MessageRole.User
+      ? [
+          { type: "text", text: "<User>" },
+          ...message.content,
+          { type: "text", text: "</User>" },
+        ]
+      : message.content;
 
-  const content: ChatCompletionContentPartText[] = additionalContextMessage
-    ? [...userContentWithTags, additionalContextMessage]
-    : userContentWithTags;
+  // Combine additional context (if any) with the wrapped content
+  const content: ChatCompletionContentPart[] = additionalContextMessage
+    ? [additionalContextMessage, ...wrappedContent]
+    : wrappedContent;
+
   return [
-    {
-      role: message.role, // either user or system
-      content: content,
-    },
+    message.role === MessageRole.User
+      ? {
+          role: "user" as const,
+          content: content,
+        }
+      : {
+          role: "system" as const,
+          content: content as ChatCompletionContentPartText[],
+        },
   ];
 }

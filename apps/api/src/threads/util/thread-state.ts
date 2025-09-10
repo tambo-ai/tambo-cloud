@@ -149,37 +149,6 @@ export async function processThreadMessage(
   return await getFinalDecision(decisionStream, originalTools);
 }
 
-/**
- * Prepares a message by adding component state from previous messages if needed.
- * This ensures follow-up messages can reference what the user has interacted with.
- */
-async function prepareMessageWithComponentState(
-  db: HydraDb,
-  threadId: string,
-  message: MessageRequest,
-): Promise<MessageRequest> {
-  // Check if the current message already has component state
-  const currentMessageHasNoState =
-    !message.componentState || Object.keys(message.componentState).length === 0;
-
-  // If message already has state, no need to carry forward
-  if (!currentMessageHasNoState) {
-    return message;
-  }
-
-  // Get the latest component state from the thread
-  const previousComponentState = await operations.getLatestComponentState(
-    db,
-    threadId,
-  );
-
-  // Create a new message object to avoid mutating the input parameter
-  // Set the component state directly so it gets wrapped in <ComponentState> tags
-  return previousComponentState
-    ? { ...message, componentState: previousComponentState }
-    : message;
-}
-
 export async function addUserMessage(
   db: HydraDb,
   threadId: string,
@@ -187,13 +156,6 @@ export async function addUserMessage(
   logger?: Logger,
 ) {
   try {
-    // Prepare message with component state BEFORE the transaction
-    const preparedMessage = await prepareMessageWithComponentState(
-      db,
-      threadId,
-      message,
-    );
-
     const result = await db.transaction(
       async (tx) => {
         const currentThread = await tx.query.threads.findFirst({
@@ -218,7 +180,7 @@ export async function addUserMessage(
           "Starting processing...",
         );
 
-        return await addMessage(tx, threadId, preparedMessage);
+        return await addMessage(tx, threadId, message);
       },
       {
         isolationLevel: "read committed",

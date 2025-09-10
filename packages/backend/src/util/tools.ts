@@ -49,24 +49,20 @@ export function generateAdditionalContext(message: ThreadMessage) {
   let nextContentContext = "";
 
   if (message.component && !message.actionType) {
-    nextContentContext += `\n<Component>${JSON.stringify(message.component)}</Component>`;
-  }
-  if (Object.keys(message.componentState ?? {}).length > 0) {
-    nextContentContext += `\n<ComponentState>${JSON.stringify(message.componentState)}</ComponentState>`;
+    nextContentContext += `<Component>${JSON.stringify(message.component)}</Component>\n\n`;
   }
 
-  // Only add additionalContext if it has actual content (not just an empty object)
   if (
     message.additionalContext &&
     Object.keys(message.additionalContext).length > 0
   ) {
-    nextContentContext += `\n<System> The following is additional context provided by the system that you can use when responding to the user: ${JSON.stringify(message.additionalContext)} </System>`;
+    nextContentContext += `<AdditionalContext> The following is additional context provided by the system that you can use when responding to the user: ${JSON.stringify(message.additionalContext)} </AdditionalContext>\n\n`;
   }
 
   if (nextContentContext) {
     const additionalContextMessage: ChatCompletionContentPart = {
       type: "text",
-      text: nextContentContext,
+      text: nextContentContext.trim(),
     };
     return additionalContextMessage;
   }
