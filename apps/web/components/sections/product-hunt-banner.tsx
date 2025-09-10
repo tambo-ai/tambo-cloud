@@ -3,7 +3,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import Image from "next/image";
-import productHuntLogo from "@/public/product-hunt-logo.png";
 import { FC, useEffect, useState } from "react";
 import {
   PRODUCT_HUNT_BANNER_DISMISS_KEY,
@@ -61,7 +60,7 @@ export const ProductHuntBanner: FC = () => {
             <div className="flex items-center justify-center gap-2 sm:gap-3">
               <span className="flex-shrink-0">
                 <Image
-                  src={productHuntLogo}
+                  src="/product-hunt-logo.png"
                   alt="Product Hunt"
                   width={16}
                   height={16}

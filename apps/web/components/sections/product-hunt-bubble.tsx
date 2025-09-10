@@ -3,7 +3,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import Image from "next/image";
-import productHuntLogo from "@/public/product-hunt-logo.png";
 import * as React from "react";
 import type { FC } from "react";
 import { getProductHuntUrl } from "@/lib/product-hunt";
@@ -99,7 +98,7 @@ export const ProductHuntThoughtBubble: FC<ProductHuntThoughtBubbleProps> = ({
             {/* Header with logo */}
             <div className="flex items-center gap-2">
               <Image
-                src={productHuntLogo}
+                src="/product-hunt-logo.png"
                 alt="Product Hunt"
                 width={24}
                 height={24}
