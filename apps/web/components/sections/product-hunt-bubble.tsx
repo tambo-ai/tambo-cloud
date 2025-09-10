@@ -3,9 +3,10 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import Image from "next/image";
-import productHuntLogo from "../../public/product-hunt-logo.png";
+import productHuntLogo from "@/public/product-hunt-logo.png";
 import * as React from "react";
 import type { FC } from "react";
+import { getProductHuntUrl } from "@/lib/product-hunt";
 
 interface ProductHuntThoughtBubbleProps {
   isOpen: boolean;
@@ -18,9 +19,7 @@ export const ProductHuntThoughtBubble: FC<ProductHuntThoughtBubbleProps> = ({
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
 
-  const productHuntUrl =
-    process.env.NEXT_PUBLIC_PRODUCT_HUNT_URL ||
-    "https://www.producthunt.com/products/tambo";
+  const productHuntUrl = getProductHuntUrl();
 
   const handleClick = () => {
     window.open(productHuntUrl, "_blank", "noopener,noreferrer");

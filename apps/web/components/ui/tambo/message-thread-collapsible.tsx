@@ -33,6 +33,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Collapsible } from "radix-ui";
 import * as React from "react";
+import { PRODUCT_HUNT_BUBBLE_DISMISS_KEY } from "@/lib/product-hunt";
 
 /**
  * Props for the MessageThreadCollapsible component
@@ -190,9 +191,7 @@ export const MessageThreadCollapsible = React.forwardRef<
 >(({ className, contextKey, defaultOpen = false, variant, ...props }, ref) => {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [showProductHunt, setShowProductHunt] = React.useState(false);
-
-  const PRODUCT_HUNT_STORAGE_KEY =
-    "product_hunt_thought_bubble_dismissed_session";
+  const reopenBubbleTimeoutRef = React.useRef<number | null>(null);
 
   useTamboManagementTools();
 
@@ -203,7 +202,7 @@ export const MessageThreadCollapsible = React.forwardRef<
     let timer: number | undefined;
     try {
       const dismissed =
-        window.sessionStorage.getItem(PRODUCT_HUNT_STORAGE_KEY) === "1";
+        window.sessionStorage.getItem(PRODUCT_HUNT_BUBBLE_DISMISS_KEY) === "1";
 
       timer = window.setTimeout(() => {
         if (!dismissed && !isOpen) setShowProductHunt(true);
@@ -223,7 +222,7 @@ export const MessageThreadCollapsible = React.forwardRef<
   const handleDismissProductHunt = React.useCallback(() => {
     try {
       if (typeof window !== "undefined") {
-        window.sessionStorage.setItem(PRODUCT_HUNT_STORAGE_KEY, "1");
+        window.sessionStorage.setItem(PRODUCT_HUNT_BUBBLE_DISMISS_KEY, "1");
       }
     } catch {
       // SessionStorage might be blocked
@@ -235,6 +234,13 @@ export const MessageThreadCollapsible = React.forwardRef<
     setIsOpen(true);
     setShowProductHunt(false); // Hide bubble when opening chat
   }, [setIsOpen]);
+
+  React.useEffect(() => {
+    if (reopenBubbleTimeoutRef.current) {
+      window.clearTimeout(reopenBubbleTimeoutRef.current);
+      reopenBubbleTimeoutRef.current = null;
+    }
+  }, []);
 
   /**
    * Configuration for the MessageThreadCollapsible component
@@ -298,17 +304,20 @@ export const MessageThreadCollapsible = React.forwardRef<
           isOpen={isOpen}
           onClose={() => {
             setIsOpen(false);
-            // Maybe show Product Hunt bubble again after closing
-            setTimeout(() => {
+            if (reopenBubbleTimeoutRef.current) {
+              window.clearTimeout(reopenBubbleTimeoutRef.current);
+              reopenBubbleTimeoutRef.current = null;
+            }
+            reopenBubbleTimeoutRef.current = window.setTimeout(() => {
               try {
                 if (typeof window !== "undefined") {
                   const dismissed =
-                    window.sessionStorage.getItem(PRODUCT_HUNT_STORAGE_KEY) ===
-                    "1";
+                    window.sessionStorage.getItem(
+                      PRODUCT_HUNT_BUBBLE_DISMISS_KEY,
+                    ) === "1";
                   if (!dismissed) setShowProductHunt(true);
                 }
               } catch {
-                // If sessionStorage is unavailable, still show the bubble after delay
                 setShowProductHunt(true);
               }
             }, 5000);

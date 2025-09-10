@@ -3,24 +3,25 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
 import Image from "next/image";
-import productHuntLogo from "../../public/product-hunt-logo.png";
+import productHuntLogo from "@/public/product-hunt-logo.png";
 import { FC, useEffect, useState } from "react";
-
-const STORAGE_KEY = "product_hunt_banner_dismissed_session";
+import {
+  PRODUCT_HUNT_BANNER_DISMISS_KEY,
+  getProductHuntUrl,
+} from "@/lib/product-hunt";
 
 export const ProductHuntBanner: FC = () => {
   const [isVisible, setIsVisible] = useState(false);
 
-  const productHuntUrl =
-    process.env.NEXT_PUBLIC_PRODUCT_HUNT_URL ||
-    "https://www.producthunt.com/products/tambo";
+  const productHuntUrl = getProductHuntUrl();
 
   useEffect(() => {
     // Only check on client side
     if (typeof window === "undefined") return;
 
     try {
-      const dismissed = window.sessionStorage.getItem(STORAGE_KEY) === "1";
+      const dismissed =
+        window.sessionStorage.getItem(PRODUCT_HUNT_BANNER_DISMISS_KEY) === "1";
       setIsVisible(!dismissed);
     } catch {
       setIsVisible(true);
@@ -30,7 +31,7 @@ export const ProductHuntBanner: FC = () => {
   const handleDismiss = () => {
     try {
       if (typeof window !== "undefined") {
-        window.sessionStorage.setItem(STORAGE_KEY, "1");
+        window.sessionStorage.setItem(PRODUCT_HUNT_BANNER_DISMISS_KEY, "1");
       }
     } catch {
       // SessionStorage might be blocked - continue anyway
