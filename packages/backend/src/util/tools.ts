@@ -62,7 +62,7 @@ export function generateAdditionalContext(message: ThreadMessage) {
   if (nextContentContext) {
     const additionalContextMessage: ChatCompletionContentPart = {
       type: "text",
-      text: nextContentContext.trim(),
+      text: nextContentContext,
     };
     return additionalContextMessage;
   }
