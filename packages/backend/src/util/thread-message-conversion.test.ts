@@ -229,9 +229,9 @@ describe("threadMessagesToChatHistory", () => {
         {
           role: "user",
           content: [
-            { type: "text", text: "user input" },
+            { type: "text", text: "<User>user input</User>" },
             {
-              text: '<System> The following is additional context provided by the system that you can use when responding to the user: {"extra":"context"} </System>',
+              text: '\n<System> The following is additional context provided by the system that you can use when responding to the user: {"extra":"context"} </System>',
               type: "text",
             },
           ],
@@ -301,7 +301,7 @@ describe("threadMessagesToChatHistory", () => {
           {
             "content": [
               {
-                "text": "user request",
+                "text": "<User>user request</User>",
                 "type": "text",
               },
             ],
