@@ -313,11 +313,11 @@ function makeUserMessages(
   return [
     message.role === MessageRole.User
       ? {
-          role: "user" as const,
+          role: message.role,
           content: content,
         }
       : {
-          role: "system" as const,
+          role: message.role,
           content: content as ChatCompletionContentPartText[],
         },
   ];
