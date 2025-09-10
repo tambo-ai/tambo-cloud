@@ -531,6 +531,9 @@ function convertOpenAIMessageToCoreMessage(
         message.content.forEach((part) => {
           if (part.type === "text") {
             content.push({ type: "text", text: part.text });
+          } else {
+            // Must be refusal - assistant content can only be text or refusal
+            content.push({ type: "text", text: `[Refusal]: ${part.refusal}` });
           }
         });
       }
