@@ -149,6 +149,9 @@ export async function processThreadMessage(
   return await getFinalDecision(decisionStream, originalTools);
 }
 
+/**
+ * Add a user message to a thread, making sure that the thread is not already in the middle of processing.
+ */
 export async function addUserMessage(
   db: HydraDb,
   threadId: string,
