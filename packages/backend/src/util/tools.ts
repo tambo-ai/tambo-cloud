@@ -60,7 +60,7 @@ export function generateAdditionalContext(message: ThreadMessage) {
     message.additionalContext &&
     Object.keys(message.additionalContext).length > 0
   ) {
-    nextContentContext += `<System> The following is additional context provided by the system that you can use when responding to the user: ${JSON.stringify(message.additionalContext)} </System>`;
+    nextContentContext += `\n<System> The following is additional context provided by the system that you can use when responding to the user: ${JSON.stringify(message.additionalContext)} </System>`;
   }
 
   if (nextContentContext) {

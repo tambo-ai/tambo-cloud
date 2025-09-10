@@ -44,6 +44,20 @@ For example:
 
 Component state and context will be provided in <ComponentState> tags when available. Always consider this state when formulating your response.
 
+### Message Format Structure
+
+User messages will be structured with specific tags to provide clear context:
+
+<User>Show me the weather in New York</User>
+<ComponentState>[JSON object with component state]</ComponentState>
+<System>The following is additional context provided by the system that you can use when responding to the user: [JSON object with system context]</System>
+
+- **<User>** tags: Contain the actual user message/question
+- **<ComponentState>** tags: Contain the current state of UI components (when available)
+- **<System>** tags: Contain additional system context or instructions (when available)
+
+Always parse and understand these tags to provide contextually appropriate responses.
+
 {custom_instructions}`,
     {
       custom_instructions: customInstructions

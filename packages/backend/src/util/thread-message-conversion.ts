@@ -291,12 +291,20 @@ function makeUserMessages(
   }
   const additionalContextMessage = generateAdditionalContext(message);
 
+  // Extract user message content and wrap with <User> tags
+  const originalContent = message.content as ChatCompletionContentPartText[];
+  const userContentWithTags: ChatCompletionContentPartText[] =
+    originalContent.map((part) => ({
+      ...part,
+      text:
+        message.role === MessageRole.User
+          ? `<User>${part.text}</User>`
+          : part.text,
+    }));
+
   const content: ChatCompletionContentPartText[] = additionalContextMessage
-    ? [
-        ...(message.content as ChatCompletionContentPartText[]),
-        additionalContextMessage,
-      ]
-    : (message.content as ChatCompletionContentPartText[]);
+    ? [...userContentWithTags, additionalContextMessage]
+    : userContentWithTags;
   return [
     {
       role: message.role, // either user or system
