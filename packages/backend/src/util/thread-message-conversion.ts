@@ -309,7 +309,7 @@ function makeUserMessages(
     ? [additionalContextMessage, ...wrappedContent]
     : wrappedContent;
 
-  // Force role assignment: user messages support mixed content, system messages only support text
+  // user messages support mixed content, system messages only support text
   return [
     message.role === MessageRole.User
       ? {
