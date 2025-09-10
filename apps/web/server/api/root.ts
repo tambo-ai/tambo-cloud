@@ -6,7 +6,6 @@ import {
   createTRPCRouter,
 } from "@/server/api/trpc";
 import { createQueryClient } from "@/trpc/query-client";
-import { getQueryKey } from "@trpc/react-query";
 import { createHydrationHelpers } from "@trpc/react-query/rsc";
 import { cache } from "react";
 import { appRouter as applicationRouter } from "./routers/app";
@@ -17,6 +16,9 @@ import { threadRouter } from "./routers/thread";
 import { toolsRouter } from "./routers/tools";
 import { userRouter } from "./routers/user";
 import { validateRouter } from "./routers/validate";
+
+// Need to re-export this so that the trpc export can be resolved correctly.
+export { type DecorateRouterRecord } from "@trpc/react-query/shared";
 
 // We need to define and export these so that the trpc export can be resolved correctly.
 export type UserRouter = typeof userRouter;
@@ -66,13 +68,10 @@ export const getQueryClient = cache(createQueryClient);
  * const res = await trpc.post.all();
  *       ^? Post[]
  */
-export const createCaller = createCallerFactory(appRouter);
-export type GQK = typeof getQueryKey;
-
+const createCaller = createCallerFactory(appRouter);
 const caller = createCaller(createTRPCContext);
-export const helpers = createHydrationHelpers<AppRouter>(
+
+export const { HydrateClient, trpc } = createHydrationHelpers<AppRouter>(
   caller,
   getQueryClient,
 );
-export const trpc = helpers.trpc;
-export const HydrateClient = helpers.HydrateClient;
