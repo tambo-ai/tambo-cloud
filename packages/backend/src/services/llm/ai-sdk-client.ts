@@ -41,6 +41,7 @@ import {
   StreamingCompleteParams,
 } from "./llm-client";
 import { limitTokens } from "./token-limiter";
+import { UnreachableCaseError } from "ts-essentials";
 
 type TextCompleteParams = Parameters<typeof streamText<ToolSet, never>>[0];
 type TextStreamResponse = ReturnType<typeof streamText<ToolSet, never>>;
@@ -529,11 +530,23 @@ function convertOpenAIMessageToCoreMessage(
         content.push({ type: "text", text: message.content });
       } else if (Array.isArray(message.content)) {
         message.content.forEach((part) => {
-          if (part.type === "text") {
-            content.push({ type: "text", text: part.text });
-          } else {
-            // Must be refusal - assistant content can only be text or refusal
-            content.push({ type: "text", text: `[Refusal]: ${part.refusal}` });
+          switch (part.type) {
+            case "text":
+              content.push({ type: "text", text: part.text });
+              break;
+            case "refusal":
+              // Handle refusal content
+              content.push({
+                type: "text",
+                text: `[Refusal]: ${part.refusal}`,
+              });
+              break;
+            default:
+              // This should never happen - unreachable case
+              console.error(
+                `Unexpected content type in assistant message: ${(part as any).type}`,
+              );
+              throw new UnreachableCaseError(part);
           }
         });
       }
