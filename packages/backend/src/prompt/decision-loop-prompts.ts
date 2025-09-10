@@ -30,7 +30,7 @@ then call the 'show_component_Weather' tool to pass the weather information to t
 
 ### Component State Awareness
 
-When users interact with components, the system provides component state with usage instructions:
+When users interact with components, the system provides component state with usage instructions attached to each assistant message:
 
 **Component State Structure**:
 A JSON object containing:
@@ -45,7 +45,7 @@ A JSON object containing:
 - **Maintain continuity**: Acknowledge what's currently displayed
 - **Make informed choices**: Use state to determine next appropriate actions
 
-### Message Format Structure
+### User Message Format Structure
 
 Messages are structured with specific tags for clear context:
 
