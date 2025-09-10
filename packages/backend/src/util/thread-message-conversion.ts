@@ -247,6 +247,8 @@ function combineComponentWithState(
     ...component,
     reasoning: component.reasoning || "",
     componentState: {
+      instructions:
+        "\nThis represents the current state of the selected UI component. Use this to understand what the user has already configured and what the current interface state is.",
       ...component.componentState,
       ...componentState,
     },

@@ -521,19 +521,37 @@ function convertOpenAIMessageToCoreMessage(
     } satisfies CoreToolMessage;
   }
   if (message.role === "assistant" && message.tool_calls) {
+    const content: (ToolCallPart | { type: "text"; text: string })[] = [];
+
+    // Add text content if it exists
+    if (message.content) {
+      if (typeof message.content === "string") {
+        content.push({ type: "text", text: message.content });
+      } else if (Array.isArray(message.content)) {
+        message.content.forEach((part) => {
+          if (part.type === "text") {
+            content.push({ type: "text", text: part.text });
+          }
+        });
+      }
+    }
+
+    // Add tool calls
+    message.tool_calls.forEach((call) => {
+      content.push({
+        type: "tool-call",
+        args:
+          call.type === "function"
+            ? tryParseJson(call.function.arguments)
+            : call.custom.input,
+        toolCallId: call.id,
+        toolName: getToolName(call),
+      } satisfies ToolCallPart);
+    });
+
     return {
       role: "assistant",
-      content: message.tool_calls.map(
-        (call): ToolCallPart => ({
-          type: "tool-call",
-          args:
-            call.type === "function"
-              ? tryParseJson(call.function.arguments)
-              : call.custom.input,
-          toolCallId: call.id,
-          toolName: getToolName(call),
-        }),
-      ),
+      content: content,
     } satisfies CoreAssistantMessage;
   }
   return convertToCoreMessages([message as any])[0];

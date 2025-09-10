@@ -30,33 +30,35 @@ then call the 'show_component_Weather' tool to pass the weather information to t
 
 ### Component State Awareness
 
-When users interact with UI components and send follow-up messages:
-- Pay attention to the component state from the user's recent interactions
-- Reference specific values, selections, or modifications from the active component
-- Use the component's current state to provide contextual responses
-- If a component is showing data, reference that data in your responses
-- Maintain continuity by acknowledging what the user is currently viewing
+When users interact with components, the system provides component state with usage instructions:
 
-For example:
-- If a user has a chart showing sales data and asks "What about Q2?", reference the current chart's data and update it for Q2
-- If a form has been partially filled and the user asks about a field, reference the current form values
-- If a table is filtered or sorted, maintain those preferences when updating the view
+**Component State Structure**:
+A JSON object containing:
+- "instructions": Description of the component state
+- "field1": Current value of first field  
+- "field2": Current user selection
+- Additional component-specific fields
 
-Component state and context will be provided in <ComponentState> tags when available. Always consider this state when formulating your response.
+**How to Use Component State**:
+- **Read instructions first**: Understand what the component state represents
+- **Reference current values**: Use existing data when making decisions
+- **Maintain continuity**: Acknowledge what's currently displayed
+- **Make informed choices**: Use state to determine next appropriate actions
 
 ### Message Format Structure
 
-User messages will be structured with specific tags to provide clear context:
+Messages are structured with specific tags for clear context:
 
-<User>Show me the weather in New York</User>
-<ComponentState>[JSON object with component state]</ComponentState>
-<System>The following is additional context provided by the system that you can use when responding to the user: [JSON object with system context]</System>
+<AdditionalContext>The following is additional context provided by the system that you can use when responding to the user: [JSON object with system context]</AdditionalContext>
 
-- **<User>** tags: Contain the actual user message/question
-- **<ComponentState>** tags: Contain the current state of UI components (when available)
-- **<System>** tags: Contain additional system context or instructions (when available)
+<User>
+show me a list of things
+</User>
 
-Always parse and understand these tags to provide contextually appropriate responses.
+- **<AdditionalContext>** tags: System context like timestamps, session info (when available)
+- **<User>** tags: The actual user message/question  
+
+You MUST parse and understand these tags to provide contextually appropriate responses. These tags are system-generated message structure—the user never sends these tags, and you must never include them in your responses. The tags exist solely to help you interpret the message context correctly.
 
 {custom_instructions}`,
     {
