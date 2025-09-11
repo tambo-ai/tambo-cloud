@@ -29,6 +29,7 @@ import {
   type ToolSet,
 } from "ai";
 import type OpenAI from "openai";
+import { UnreachableCaseError } from "ts-essentials";
 import { z } from "zod";
 import { createLangfuseTelemetryConfig } from "../../config/langfuse.config";
 import type { LlmProviderConfigInfo } from "../../config/llm-config-types";
@@ -42,7 +43,6 @@ import {
   StreamingCompleteParams,
 } from "./llm-client";
 import { limitTokens } from "./token-limiter";
-import { UnreachableCaseError } from "ts-essentials";
 
 type TextCompleteParams = Parameters<typeof streamText<ToolSet, never>>[0];
 type TextStreamResponse = ReturnType<typeof streamText<ToolSet, never>>;
@@ -324,6 +324,7 @@ export class AISdkClient implements LLMClient {
     result: TextStreamResponse,
   ): AsyncIterableIterator<LLMResponse> {
     let accumulatedMessage = "";
+    let _accumulatedReasoning = "";
     const accumulatedToolCall: {
       name?: string;
       arguments: string;
@@ -347,6 +348,8 @@ export class AISdkClient implements LLMClient {
           // tool call.
           break;
         case "reasoning":
+          _accumulatedReasoning += delta.textDelta;
+          break;
         case "reasoning-signature":
         case "redacted-reasoning":
         case "source":
