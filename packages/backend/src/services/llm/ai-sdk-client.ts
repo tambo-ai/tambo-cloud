@@ -548,7 +548,8 @@ function convertOpenAIMessageToCoreMessage(
             default:
               // This should never happen - unreachable case
               console.error(
-                `Unexpected content type in assistant message: ${(part as any).type}`,
+                `Unexpected content type in assistant message: `,
+                part,
               );
               throw new UnreachableCaseError(part);
           }
