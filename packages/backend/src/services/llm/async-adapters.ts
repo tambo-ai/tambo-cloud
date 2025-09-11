@@ -11,16 +11,17 @@ type EventHandlerParams = Parameters<
  */
 function createPushAsyncIterator<T>() {
   type Resolver = (r: IteratorResult<T>) => void;
+  type Rejecter = (reason?: unknown) => void;
 
   const queue: T[] = [];
-  const waiters: Resolver[] = [];
+  const waiters: { resolve: Resolver; reject: Rejecter }[] = [];
   let done = false;
   let failed: unknown | null = null;
 
   function push(v: T) {
     if (done || failed !== null) return;
     if (waiters.length) {
-      const resolve = waiters.shift()!;
+      const { resolve } = waiters.shift()!;
       resolve({ value: v, done: false });
     } else {
       queue.push(v);
@@ -31,8 +32,8 @@ function createPushAsyncIterator<T>() {
     if (done || failed !== null) return;
     done = true;
     while (waiters.length) {
-      const waiter = waiters.shift()!;
-      waiter({ value: undefined, done: true });
+      const { resolve } = waiters.shift()!;
+      resolve({ value: undefined, done: true });
     }
   }
 
@@ -40,11 +41,9 @@ function createPushAsyncIterator<T>() {
     if (done || failed !== null) return;
     failed = err ?? new Error("Unknown error");
     while (waiters.length) {
-      const resolve = waiters.shift()!;
-      // Propagate error on next pull
-      // We can't throw directly here, so we resolve and let `next()` throw.
-      // We'll handle via a flag in `next()`.
-      resolve({ value: undefined, done: true });
+      const { reject } = waiters.shift()!;
+      // Reject the promise immediately to propagate the error
+      reject(err);
     }
   }
 
@@ -60,8 +59,8 @@ function createPushAsyncIterator<T>() {
     }
     if (done) return { value: undefined, done: true };
 
-    const promise = new Promise<IteratorResult<T>>((resolve) =>
-      waiters.push(resolve),
+    const promise = new Promise<IteratorResult<T>>((resolve, reject) =>
+      waiters.push({ resolve, reject }),
     );
     return await promise;
   }
@@ -113,6 +112,10 @@ function eventsToAsyncIterator(
     },
     onRunFinishedEvent(params) {
       push(params);
+      finish();
+    },
+    onRunFailed({ error }) {
+      fail(error);
       finish();
     },
   });
