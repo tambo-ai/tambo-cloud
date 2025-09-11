@@ -87,7 +87,7 @@ export const ProductHuntBanner: FC = () => {
             <button
               type="button"
               onClick={handleDismiss}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-orange-600 hover:bg-orange-200/50 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
+              className="absolute cursor-pointer right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-orange-600 hover:bg-orange-200/50 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1"
               aria-label="Dismiss banner"
             >
               <X className="h-3 w-3 sm:h-4 sm:w-4" />
