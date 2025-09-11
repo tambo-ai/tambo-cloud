@@ -170,7 +170,13 @@ export async function* runStreamingAgent(
   // Before we return, we need to yield all the events from the agent
   // This is important because the agent may emit events after the runAgent call
   // has resolved, and we want to capture those events as well
-  yield* iter;
+
+  // Note that we are doing a manual iteration instead of `yield* iter` because
+  // we need to capture any errors with stack traces to here, as they happen
+  // inside this iterator
+  for await (const event of iter) {
+    yield event;
+  }
 
   // the final result is not part of the iterator, so we need to await it,
   // and it actually contains the final result of running the agent
