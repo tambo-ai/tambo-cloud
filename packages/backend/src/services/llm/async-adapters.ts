@@ -39,11 +39,13 @@ function createPushAsyncIterator<T>() {
 
   function fail(err: unknown) {
     if (done || failed !== null) return;
-    failed = err ?? new Error("Unknown error");
+    // Normalize once so every consumer sees the same error instance
+    const error = err ?? new Error("Unknown error");
+    failed = error;
     while (waiters.length) {
       const { reject } = waiters.shift()!;
-      // Reject the promise immediately to propagate the error
-      reject(err);
+      // Reject the promise immediately to propagate the same normalized error
+      reject(error);
     }
   }
 
@@ -106,9 +108,9 @@ function eventsToAsyncIterator(
     },
     onRunErrorEvent(params) {
       push(params);
-      // TODO: not quite sure what to pass here
+      // Propagate the error to consumers; pending/next pulls will reject
       fail(params.event);
-      finish(); // avoid throwing; let the consumer decide how to surface the error
+      finish(); // close out the iterator; error is delivered via rejection
     },
     onRunFinishedEvent(params) {
       push(params);
@@ -166,6 +168,8 @@ export async function* runStreamingAgent(
   // Kick off the underlying process (non-blocking)
   // If this can throw synchronously, you might want to catch and fail the iterator.
   const resultPromise = agent.runAgent(...(args ?? []));
+  // Prevent unhandled rejections if iteration aborts early due to a failure
+  void resultPromise.catch(() => undefined);
 
   // Before we return, we need to yield all the events from the agent
   // This is important because the agent may emit events after the runAgent call
