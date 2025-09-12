@@ -27,6 +27,22 @@ import {
 } from "drizzle-orm";
 import { z } from "zod";
 
+// ---------------------------------------------------------------------------
+//  Agent header constraints (no regex; count and length limits only)
+// ---------------------------------------------------------------------------
+const MAX_AGENT_HEADER_COUNT = 20;
+const MAX_AGENT_HEADER_NAME_LENGTH = 100;
+const MAX_AGENT_HEADER_VALUE_LENGTH = 2000;
+
+const agentHeadersSchema = z
+  .record(
+    z.string().min(1).max(MAX_AGENT_HEADER_NAME_LENGTH),
+    z.string().min(1).max(MAX_AGENT_HEADER_VALUE_LENGTH),
+  )
+  .refine((obj) => Object.keys(obj).length <= MAX_AGENT_HEADER_COUNT, {
+    message: `Too many headers (max ${MAX_AGENT_HEADER_COUNT})`,
+  });
+
 // Helper function to get date filter based on period
 function getDateFilter(period: string): Date | null {
   const now = new Date();
@@ -404,7 +420,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: z.nativeEnum(AgentProviderType).optional(),
         agentUrl: z.string().url().nullable().optional(),
         agentName: z.string().nullable().optional(),
-        agentHeaders: z.record(z.string(), z.string()).nullable().optional(),
+        agentHeaders: agentHeadersSchema.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -478,7 +494,7 @@ export const projectRouter = createTRPCRouter({
           .optional(),
         agentUrl: z.string().url().nullable().optional(),
         agentName: z.string().nullable().optional(),
-        agentHeaders: z.record(z.string(), z.string()).nullable().optional(),
+        agentHeaders: agentHeadersSchema.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

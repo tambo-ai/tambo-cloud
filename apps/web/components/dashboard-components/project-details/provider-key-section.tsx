@@ -80,9 +80,12 @@ function agentHeadersArrayToRecord(
 ): Record<string, string> {
   const result: Record<string, string> = {};
   for (const kv of items) {
-    const key = kv.header.trim();
+    // Normalize header names to a consistent case to avoid duplicate
+    // case-variants (HTTP header names are case-insensitive).
+    const key = kv.header.trim().toLowerCase();
     const val = kv.value.trim();
     if (!key || !val) continue;
+    // Keep last-write-wins behavior on duplicate keys.
     result[key] = val;
   }
   return result;
