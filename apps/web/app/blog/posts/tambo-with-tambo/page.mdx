@@ -77,7 +77,7 @@ export const APIKeyListProps = z.object({
     .returns(z.void())
     .optional()
     .describe(
-      "Optional callback function triggered when API keys are successfully updated."
+      "Optional callback function triggered when API keys are successfully updated.",
     ),
 });
 ```
@@ -109,7 +109,7 @@ export const generateProjectApiKeySchema = z
   .function()
   .args(
     z.string().describe("The project ID"),
-    z.string().describe("The name of the API key")
+    z.string().describe("The name of the API key"),
   )
   .returns(
     z.object({
@@ -123,7 +123,7 @@ export const generateProjectApiKeySchema = z
       createdAt: z.date(),
       updatedAt: z.date(),
       createdByUserId: z.string(),
-    })
+    }),
   );
 
 export function useTamboManagementTools() {
