@@ -363,6 +363,7 @@ export const projectRouter = createTRPCRouter({
           agentProviderType: true,
           agentUrl: true,
           agentName: true,
+          agentHeaders: true,
         },
       });
 
@@ -382,6 +383,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: project.agentProviderType,
         agentUrl: project.agentUrl ?? null,
         agentName: project.agentName ?? null,
+        agentHeaders: project.agentHeaders,
       };
     }),
 
@@ -402,6 +404,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: z.nativeEnum(AgentProviderType).optional(),
         agentUrl: z.string().url().nullable().optional(),
         agentName: z.string().nullable().optional(),
+        agentHeaders: z.record(z.string(), z.string()).nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -420,6 +423,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType,
         agentUrl,
         agentName,
+        agentHeaders,
       } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
@@ -449,8 +453,9 @@ export const projectRouter = createTRPCRouter({
         isTokenRequired,
         providerType,
         agentProviderType,
-        agentUrl: agentUrl === null ? undefined : agentUrl,
-        agentName: agentName === null ? undefined : agentName,
+        agentUrl,
+        agentName,
+        agentHeaders,
       });
 
       if (!updatedProject) {
@@ -472,6 +477,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: updatedProject.agentProviderType,
         agentUrl: updatedProject.agentUrl,
         agentName: updatedProject.agentName,
+        agentHeaders: updatedProject.agentHeaders,
       };
     }),
 
@@ -486,6 +492,7 @@ export const projectRouter = createTRPCRouter({
           .optional(),
         agentUrl: z.string().url().nullable().optional(),
         agentName: z.string().nullable().optional(),
+        agentHeaders: z.record(z.string(), z.string()).nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -495,6 +502,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType,
         agentUrl,
         agentName,
+        agentHeaders,
       } = input;
 
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
@@ -539,6 +547,10 @@ export const projectRouter = createTRPCRouter({
         agentUrl: providerType === AiProviderType.AGENT ? agentUrl : undefined,
         agentName:
           providerType === AiProviderType.AGENT ? agentName : undefined,
+        agentHeaders:
+          providerType === AiProviderType.AGENT
+            ? (agentHeaders ?? undefined)
+            : undefined,
       });
 
       if (!updatedProject) {
@@ -553,6 +565,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: updatedProject.agentProviderType,
         agentUrl: updatedProject.agentUrl,
         agentName: updatedProject.agentName,
+        agentHeaders: updatedProject.agentHeaders,
       };
     }),
 

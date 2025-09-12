@@ -74,6 +74,27 @@ interface ProviderModelOption {
 
 export const FREE_MESSAGE_LIMIT = 500;
 
+// --- Header conversion helpers (module-level) ---
+function agentHeadersArrayToRecord(
+  items: { header: string; value: string }[],
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const kv of items) {
+    const key = kv.header.trim();
+    const val = kv.value.trim();
+    if (!key || !val) continue;
+    result[key] = val;
+  }
+  return result;
+}
+
+function agentHeadersRecordToArray(
+  record: Record<string, string> | null | undefined,
+): { header: string; value: string }[] {
+  if (!record) return [];
+  return Object.entries(record).map(([header, value]) => ({ header, value }));
+}
+
 export function ProviderKeySection({
   project,
   onEdited,
@@ -239,7 +260,9 @@ export function ProviderKeySection({
       }
       setAgentUrl(projectLlmSettings.agentUrl ?? "");
       setAgentName(projectLlmSettings.agentName ?? "");
-      setAgentHeaders(projectLlmSettings.agentHeaders ?? []);
+      setAgentHeaders(
+        agentHeadersRecordToArray(projectLlmSettings.agentHeaders),
+      );
       agentHydratedRef.current = project?.id ?? null;
     }
 
@@ -465,6 +488,7 @@ export function ProviderKeySection({
         agentProviderType: agentProvider,
         agentUrl: localAgentUrl,
         agentName: localAgentName || null,
+        agentHeaders: agentHeadersArrayToRecord(agentHeaders),
       });
       return;
     }
@@ -621,6 +645,7 @@ export function ProviderKeySection({
     agentProvider,
     agentUrl,
     agentName,
+    agentHeaders,
     toast,
   ]);
 
