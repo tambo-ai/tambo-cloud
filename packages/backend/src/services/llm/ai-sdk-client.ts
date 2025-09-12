@@ -633,7 +633,16 @@ function convertOpenAIMessageToCoreMessage(
       } satisfies CoreUserMessage;
     }
   }
-  return convertToCoreMessages([message as any])[0];
+  return convertToCoreMessages([
+    {
+      role: message.role,
+      parts:
+        typeof message.content === "string"
+          ? [{ type: "text", text: message.content }]
+          : // this a hack but it works
+            (message.content?.map((part) => part as any) ?? []),
+    },
+  ])[0];
 }
 
 function warnUnknownMessageType(message: never) {
