@@ -12,7 +12,7 @@ featured: true
 
 Most AI chatbots we tried were pretty useless. They just write a screed on how to navigate to a page or don't have enough context about you to actually be helpful.
 
-We figured: if we already have React components and APIs to perform these tasks, the assistant should be able to **render and interact with them directly**.
+We figured: if we already have React components and APIs to perform actions within our app, the assistant should be able to **render and interact with them directly**.
 
 Now you can just ask for what you want and it will search your data, render the UI to perform actions, and explain how the app works.
 
@@ -32,7 +32,7 @@ Now you can just ask for what you want and it will search your data, render the 
 
 At a high level,
 
-1. **Wrapped our existing React components in schemas**. This gave tambo a contract for what props each component needed and what they did.
+1. **Wrapped our existing React components in Zod schemas**. This gave tambo a contract for what props each component needed and what they did.
 
 2. **Registered those components with tambo**. Now the assistant had a library of real UI it could choose from, instead of spitting out text instructions.
 
