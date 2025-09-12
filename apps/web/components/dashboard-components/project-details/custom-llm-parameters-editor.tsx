@@ -181,9 +181,13 @@ export function CustomLlmParametersEditor({
 
   // Initialize parameters from project data
   useEffect(() => {
-    if (project?.customLlmParameters) {
-      const entries = Object.entries(project.customLlmParameters).map(
-        ([key, value]) => ({
+    if (project?.customLlmParameters && project?.defaultLlmProviderName) {
+      // Extract parameters for the current provider from nested structure
+      const providerParams =
+        project.customLlmParameters[project.defaultLlmProviderName];
+
+      if (providerParams && typeof providerParams === "object") {
+        const entries = Object.entries(providerParams).map(([key, value]) => ({
           key,
           value: String(value),
           type:
@@ -192,14 +196,16 @@ export function CustomLlmParametersEditor({
               : typeof value === "number"
                 ? "number"
                 : "string",
-        }),
-      ) as ParameterEntry[];
-      setParameters(entries);
+        })) as ParameterEntry[];
+        setParameters(entries);
+      } else {
+        setParameters([]);
+      }
     } else {
       setParameters([]);
     }
     setHasUnsavedChanges(false);
-  }, [project?.customLlmParameters]);
+  }, [project?.customLlmParameters, project?.defaultLlmProviderName]);
 
   const updateProject = api.project.updateProject.useMutation({
     onSuccess: () => {
@@ -241,9 +247,31 @@ export function CustomLlmParametersEditor({
       }
     }
 
-    // If empty, send null to clear the field
-    const customLlmParameters =
-      Object.keys(parametersObject).length > 0 ? parametersObject : null;
+    // Get the current provider
+    const currentProvider = project.defaultLlmProviderName ?? "openai";
+
+    // Create nested structure with provider -> parameters
+    // Preserve existing parameters for other providers
+    const existingParams = project.customLlmParameters || {};
+
+    let customLlmParameters: z.infer<typeof customLlmParametersSchema> | null =
+      null;
+
+    if (Object.keys(parametersObject).length > 0) {
+      // Add/update parameters for current provider
+      customLlmParameters = {
+        ...existingParams,
+        [currentProvider]: parametersObject,
+      };
+    } else if (existingParams[currentProvider]) {
+      // Remove parameters for current provider but keep others
+      const { [currentProvider]: _, ...rest } = existingParams;
+      customLlmParameters = Object.keys(rest).length > 0 ? rest : null;
+    } else {
+      // No changes needed, keep existing
+      customLlmParameters =
+        Object.keys(existingParams).length > 0 ? existingParams : null;
+    }
 
     updateProject.mutate({
       projectId: project.id,
@@ -253,9 +281,12 @@ export function CustomLlmParametersEditor({
 
   const handleCancel = () => {
     // Reset to original values
-    if (project?.customLlmParameters) {
-      const entries = Object.entries(project.customLlmParameters).map(
-        ([key, value]) => ({
+    if (project?.customLlmParameters && project?.defaultLlmProviderName) {
+      const providerParams =
+        project.customLlmParameters[project.defaultLlmProviderName];
+
+      if (providerParams && typeof providerParams === "object") {
+        const entries = Object.entries(providerParams).map(([key, value]) => ({
           key,
           value: String(value),
           type:
@@ -264,9 +295,11 @@ export function CustomLlmParametersEditor({
               : typeof value === "number"
                 ? "number"
                 : "string",
-        }),
-      ) as ParameterEntry[];
-      setParameters(entries);
+        })) as ParameterEntry[];
+        setParameters(entries);
+      } else {
+        setParameters([]);
+      }
     } else {
       setParameters([]);
     }

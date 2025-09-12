@@ -5,10 +5,10 @@ import { createMistral } from "@ai-sdk/mistral";
 import { createOpenAI } from "@ai-sdk/openai";
 import {
   ChatCompletionMessageParam,
+  CustomLlmParameters,
   getToolDescription,
   getToolName,
   tryParseJson,
-  CustomLlmParameters,
 } from "@tambo-ai-cloud/core";
 import {
   convertToCoreMessages,
@@ -218,8 +218,11 @@ export class AISdkClient implements LLMClient {
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
       }),
-      ...(this.customLlmParameters && {
-        providerOptions: this.customLlmParameters,
+      // Extract parameters for the current provider only
+      ...(this.customLlmParameters?.[providerKey] && {
+        providerOptions: {
+          [providerKey]: this.customLlmParameters[providerKey],
+        },
       }),
     };
 
