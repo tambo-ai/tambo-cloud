@@ -6,6 +6,7 @@ import {
   AgentProviderType,
 } from "@tambo-ai-cloud/core";
 import { motion } from "framer-motion";
+import { HeadersEditor, type HeaderKV } from "./headers-editor";
 
 export function AgentSettings({
   agentProvider,
@@ -16,6 +17,8 @@ export function AgentSettings({
   showValidationErrors,
   agentName,
   setAgentName,
+  agentHeaders,
+  setAgentHeaders,
 }: {
   agentProvider: AgentProviderType;
   setAgentProvider: (agentProvider: AgentProviderType) => void;
@@ -25,6 +28,8 @@ export function AgentSettings({
   showValidationErrors: boolean;
   agentName: string;
   setAgentName: (agentName: string) => void;
+  agentHeaders: HeaderKV[];
+  setAgentHeaders: (headers: HeaderKV[]) => void;
 }) {
   return (
     <motion.div
@@ -69,6 +74,20 @@ export function AgentSettings({
         {showValidationErrors && !agentUrl.trim() && (
           <p className="text-sm text-destructive">Agent URL is required</p>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>Custom Headers</Label>
+        <HeadersEditor
+          headers={agentHeaders}
+          onSave={(updated) => {
+            setAgentHeaders(updated);
+            setHasUnsavedChanges(true);
+          }}
+        />
+        <p className="text-xs text-foreground">
+          Optional. Add HTTP headers sent to your Agent URL.
+        </p>
       </div>
 
       <div className="space-y-2">

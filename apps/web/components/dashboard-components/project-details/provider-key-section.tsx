@@ -134,6 +134,9 @@ export function ProviderKeySection({
   );
   const [agentUrl, setAgentUrl] = useState<string>("");
   const [agentName, setAgentName] = useState<string>("");
+  const [agentHeaders, setAgentHeaders] = useState<
+    { header: string; value: string }[]
+  >([]);
 
   // Parse provider and model from combined value
   const parsedSelection = useMemo(() => {
@@ -236,6 +239,7 @@ export function ProviderKeySection({
       }
       setAgentUrl(projectLlmSettings.agentUrl ?? "");
       setAgentName(projectLlmSettings.agentName ?? "");
+      setAgentHeaders(projectLlmSettings.agentHeaders ?? []);
       agentHydratedRef.current = project?.id ?? null;
     }
 
@@ -1121,6 +1125,8 @@ export function ProviderKeySection({
               showValidationErrors={showValidationErrors}
               agentName={agentName}
               setAgentName={setAgentName}
+              agentHeaders={agentHeaders}
+              setAgentHeaders={setAgentHeaders}
             />
           )}
         </AnimatePresence>
