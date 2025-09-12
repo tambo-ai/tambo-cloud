@@ -7,7 +7,7 @@ import {
   hideApiKey,
   MCPTransport,
   OAuthValidationMode,
-  CustomLlmParameters,
+  type CustomLlmParameters,
   ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { randomBytes } from "crypto";

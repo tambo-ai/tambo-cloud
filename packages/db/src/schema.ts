@@ -14,7 +14,7 @@ import {
   SessionClientInformation,
   ToolCallRequest,
   ToolProviderType,
-  CustomLlmParameters,
+  type CustomLlmParameters,
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
 import {
