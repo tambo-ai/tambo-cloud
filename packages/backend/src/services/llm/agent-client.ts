@@ -12,6 +12,7 @@ import {
 } from "@ag-ui/client";
 import { Message, StateDeltaEvent, ToolCallEndEvent } from "@ag-ui/core";
 import { CrewAIAgent } from "@ag-ui/crewai";
+import { LlamaIndexAgent } from "@ag-ui/llamaindex";
 // TODO: re-introduce mastra support
 // import { MastraAgent } from "@ag-ui/mastra";
 import {
@@ -49,9 +50,11 @@ export class AgentClient {
   }: {
     agentProviderType: AgentProviderType;
     agentUrl: string;
-    agentName: string;
+    agentName?: string | null;
     chainId: string;
   }) {
+    const normalizedAgentName: string | undefined =
+      agentName && agentName.trim() ? agentName.trim() : undefined;
     switch (agentProviderType) {
       case AgentProviderType.MASTRA: {
         throw new Error("Mastra support is not implemented");
@@ -70,7 +73,14 @@ export class AgentClient {
       case AgentProviderType.CREWAI: {
         const agent = new CrewAIAgent({
           url: agentUrl,
-          agentId: agentName,
+          agentId: normalizedAgentName,
+        });
+        return new AgentClient(chainId, agent as unknown as AbstractAgent);
+      }
+      case AgentProviderType.LLAMAINDEX: {
+        const agent = new LlamaIndexAgent({
+          url: agentUrl,
+          agentId: normalizedAgentName,
         });
         return new AgentClient(chainId, agent as unknown as AbstractAgent);
       }
@@ -101,6 +111,22 @@ export class AgentClient {
           content: convertMessagesToString(m.content),
           id: `tambo-${m.role}-${msgIndex}`,
           toolCallId: toolCallId,
+        };
+      }
+      if (m.role === "assistant") {
+        return {
+          role: m.role,
+          content: convertMessagesToString(m.content),
+          id: `tambo-${m.role}-${msgIndex}`,
+          toolCalls: m.tool_calls
+            ?.map((t) => {
+              if (t.type === "function") {
+                return t;
+              }
+              console.warn(`Unexpected tool call type: ${t.type}`);
+              return undefined;
+            })
+            .filter((t) => t !== undefined),
         };
       }
       return {
@@ -266,7 +292,7 @@ export class AgentClient {
             type: AgentResponseType.MESSAGE,
             message: {
               role: "assistant",
-              content: currentToolCall.function.arguments,
+              content: "",
               id: messageId,
               toolCalls: [currentToolCall],
             },
