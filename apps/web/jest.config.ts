@@ -2,6 +2,20 @@ import type { Config } from "jest";
 
 const config: Config = {
   testEnvironment: "jsdom",
+  collectCoverageFrom: [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "providers/**/*.ts",
+    "providers/**/*.tsx",
+    "trpc/**/*.ts",
+    "trpc/**/*.tsx",
+    "hooks/**/*.ts",
+    "hooks/**/*.tsx",
+  ],
   rootDir: ".",
   moduleNameMapper: {
     "\\.(css|less|sass|scss)$": "identity-obj-proxy",
