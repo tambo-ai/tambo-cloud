@@ -14,12 +14,13 @@ import { SettingsPageSkeleton } from "@/components/skeletons/settings-skeletons"
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ProjectSettingsProps {
   projectId: string;
@@ -78,6 +79,9 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
     api.project.updateProject.useMutation();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [allowSystemPromptOverride, setAllowSystemPromptOverride] = useState<
+    boolean | undefined
+  >(undefined);
 
   const handleDeleteProject = async () => {
     try {
@@ -102,6 +106,13 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
       });
     }
   };
+
+  // keep allowSystemPromptOverride in sync with project
+  useEffect(() => {
+    if (project && allowSystemPromptOverride === undefined) {
+      setAllowSystemPromptOverride(Boolean(project.allowSystemPromptOverride));
+    }
+  }, [project, allowSystemPromptOverride]);
 
   const handleEditName = () => {
     if (project) {
@@ -271,6 +282,41 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
               </Button>
             )}
           </div>
+        </div>
+        <div className="py-2 px-2 flex items-center gap-3">
+          <div className="flex-1">
+            <div className="text-sm font-medium">
+              Allow system prompt override
+            </div>
+            <div className="text-xs text-muted">
+              When enabled, end-users may pass a system message as an initial
+              message to override the project system prompt.
+            </div>
+          </div>
+          <Switch
+            checked={!!allowSystemPromptOverride}
+            onCheckedChange={async (val) => {
+              if (!project) return;
+              setAllowSystemPromptOverride(Boolean(val));
+              try {
+                await updateProject({
+                  projectId: project.id,
+                  allowSystemPromptOverride: Boolean(val),
+                });
+                toast({
+                  title: "Saved",
+                  description: "Updated project setting",
+                });
+                await handleRefreshProject();
+              } catch (_e) {
+                toast({
+                  title: "Error",
+                  description: "Failed to update project setting",
+                  variant: "destructive",
+                });
+              }
+            }}
+          />
         </div>
       </div>
 

@@ -193,7 +193,7 @@ export class ThreadsService {
     contextKey?: string,
     initialMessages?: MessageRequest[],
   ): Promise<Thread> {
-    // Validate initial messages if provided
+    // Validate initial messages if provided (basic checks)
     this.validateInitialMessages(initialMessages);
 
     const thread = await operations.createThread(this.getDb(), {
@@ -203,9 +203,68 @@ export class ThreadsService {
       name: createThreadDto.name,
     });
 
-    // Add initial messages if provided
+    // Insert project system prompt as first message unless overridden
+    const project = await operations.getProject(
+      this.getDb(),
+      createThreadDto.projectId,
+    );
+    const allowOverride = project?.allowSystemPromptOverride ?? false;
+
+    // Validate ordering: if initialMessages contains a system message it must be at index 0
     if (initialMessages && initialMessages.length > 0) {
-      for (const message of initialMessages) {
+      const systemIndices = initialMessages
+        .map((m, i) => (m.role === MessageRole.System ? i : -1))
+        .filter((i) => i >= 0);
+      if (systemIndices.length > 1) {
+        throw new Error(
+          "Only one system message is allowed in initialMessages",
+        );
+      }
+      if (systemIndices.length === 1 && systemIndices[0] !== 0) {
+        throw new Error(
+          "System message, if present, must be the first initial message",
+        );
+      }
+      // If user provided a system message but project disallows overrides -> error
+      if (systemIndices.length === 1 && !allowOverride) {
+        throw new Error(
+          "Project does not allow overriding the system prompt with initial messages",
+        );
+      }
+    }
+
+    // Build final initial messages to persist: prefer user system message if provided and allowed, otherwise use project.customInstructions
+    const finalInitialMessages: MessageRequest[] = [];
+    const userProvidedSystem = initialMessages?.find(
+      (m) => m.role === MessageRole.System,
+    );
+    if (userProvidedSystem) {
+      // user system message will be used (we validated allowOverride above)
+      finalInitialMessages.push(userProvidedSystem);
+      // append remaining initial messages except the system one
+      for (const m of initialMessages ?? []) {
+        if (m.role !== MessageRole.System) finalInitialMessages.push(m);
+      }
+    } else {
+      if (project?.customInstructions) {
+        finalInitialMessages.push({
+          role: MessageRole.System,
+          content: [
+            {
+              type: ContentPartType.Text,
+              text: project.customInstructions,
+            },
+          ],
+        });
+      }
+      if (initialMessages && initialMessages.length > 0) {
+        finalInitialMessages.push(...initialMessages);
+      }
+    }
+
+    // Persist final initial messages
+    if (finalInitialMessages.length > 0) {
+      for (const message of finalInitialMessages) {
         await this.addMessage(thread.id, message);
       }
     }
@@ -947,6 +1006,13 @@ export class ThreadsService {
       // Rate limiting check
       await this.checkMessageLimit(projectId);
 
+      // If advancing an existing thread, initialMessages must not be provided
+      if (unresolvedThreadId && advanceRequestDto.initialMessages?.length) {
+        throw new Error(
+          "Cannot provide initialMessages when advancing an existing thread",
+        );
+      }
+
       const thread = await this.ensureThread(
         projectId,
         unresolvedThreadId,
@@ -1002,7 +1068,6 @@ export class ThreadsService {
 
       const messages = await this.getMessages(thread.id, true);
       const project = await operations.getProject(db, projectId);
-      const customInstructions = project?.customInstructions ?? undefined;
 
       if (messages.length === 0) {
         throw new Error("No messages found");
@@ -1040,7 +1105,6 @@ export class ThreadsService {
           threadMessageDtoToThreadMessage(messages),
           userMessage,
           advanceRequestDto,
-          customInstructions,
           toolCallCounts,
           allTools,
           mcpAccessToken,
@@ -1056,7 +1120,6 @@ export class ThreadsService {
         advanceRequestDto,
         tamboBackend,
         allTools,
-        customInstructions,
       );
 
       const {
@@ -1270,7 +1333,6 @@ export class ThreadsService {
     messages: ThreadMessage[],
     userMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
-    customInstructions: string | undefined,
     toolCallCounts: Record<string, number>,
     allTools: ToolRegistry,
     mcpAccessToken: string,
@@ -1284,7 +1346,9 @@ export class ThreadsService {
           projectId,
           threadId,
           messageCount: messages.length,
-          hasCustomInstructions: !!customInstructions,
+          hasCustomInstructions: messages.some(
+            (m) => m.role === MessageRole.System,
+          ),
           toolCallCount: Object.keys(toolCallCounts).length,
         },
       },
@@ -1297,7 +1361,6 @@ export class ThreadsService {
           messages,
           userMessage,
           advanceRequestDto,
-          customInstructions,
           toolCallCounts,
           allTools,
           mcpAccessToken,
@@ -1314,7 +1377,6 @@ export class ThreadsService {
     messages: ThreadMessage[],
     userMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
-    customInstructions: string | undefined,
     toolCallCounts: Record<string, number>,
     allTools: ToolRegistry,
     mcpAccessToken: string,
@@ -1385,7 +1447,6 @@ export class ThreadsService {
         const messageStream = await tamboBackend.runDecisionLoop({
           messages,
           strictTools,
-          customInstructions,
         });
 
         decisionLoopSpan.end();
@@ -1453,7 +1514,6 @@ export class ThreadsService {
       const streamedResponseMessages = await tamboBackend.runDecisionLoop({
         messages,
         strictTools,
-        customInstructions,
         forceToolChoice: advanceRequestDto.forceToolChoice,
       });
 
@@ -1492,7 +1552,9 @@ export class ThreadsService {
         scope.setTag("threadId", threadId);
         scope.setContext("streamGenerationContext", {
           messageCount: messages.length,
-          hasCustomInstructions: !!customInstructions,
+          hasCustomInstructions: messages.some(
+            (m) => m.role === MessageRole.System,
+          ),
           toolCallCount: Object.keys(toolCallCounts).length,
           maxToolCallLimit,
           userMessageRole: userMessage.role,
@@ -1886,7 +1948,6 @@ export class ThreadsService {
     if (!initialMessages || initialMessages.length === 0) {
       return;
     }
-
     for (const [index, message] of initialMessages.entries()) {
       if (message.content.length === 0) {
         throw new Error(`Initial message at index ${index} must have content`);
@@ -1911,6 +1972,19 @@ export class ThreadsService {
           );
         }
       }
+    }
+
+    // Enforce system messages only at index 0
+    const systemIndices = initialMessages
+      .map((m, i) => (m.role === MessageRole.System ? i : -1))
+      .filter((i) => i >= 0);
+    if (systemIndices.length > 1) {
+      throw new Error("Only one system message is allowed in initialMessages");
+    }
+    if (systemIndices.length === 1 && systemIndices[0] !== 0) {
+      throw new Error(
+        "System message, if present, must be the first initial message",
+      );
     }
   }
 
