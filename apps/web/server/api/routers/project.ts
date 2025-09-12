@@ -429,26 +429,12 @@ export const projectRouter = createTRPCRouter({
 
       const updatedProject = await operations.updateProject(ctx.db, projectId, {
         name,
-        customInstructions:
-          customInstructions === null ? "" : customInstructions,
-        defaultLlmProviderName:
-          defaultLlmProviderName === null
-            ? undefined
-            : (defaultLlmProviderName ?? undefined),
-        defaultLlmModelName:
-          defaultLlmModelName === null
-            ? undefined
-            : (defaultLlmModelName ?? undefined),
-        customLlmModelName:
-          customLlmModelName === null
-            ? undefined
-            : (customLlmModelName ?? undefined),
-        customLlmBaseURL:
-          customLlmBaseURL === null
-            ? undefined
-            : (customLlmBaseURL ?? undefined),
-        maxInputTokens:
-          maxInputTokens === null ? undefined : (maxInputTokens ?? undefined),
+        customInstructions: customInstructions ?? undefined,
+        defaultLlmProviderName,
+        defaultLlmModelName,
+        customLlmModelName,
+        customLlmBaseURL,
+        maxInputTokens,
         maxToolCallLimit,
         isTokenRequired,
         providerType,
@@ -548,9 +534,7 @@ export const projectRouter = createTRPCRouter({
         agentName:
           providerType === AiProviderType.AGENT ? agentName : undefined,
         agentHeaders:
-          providerType === AiProviderType.AGENT
-            ? (agentHeaders ?? undefined)
-            : undefined,
+          providerType === AiProviderType.AGENT ? agentHeaders : undefined,
       });
 
       if (!updatedProject) {
@@ -700,26 +684,11 @@ export const projectRouter = createTRPCRouter({
       }
 
       const updatedProject = await operations.updateProject(ctx.db, projectId, {
-        defaultLlmProviderName:
-          "defaultLlmProviderName" in updateData
-            ? (updateData.defaultLlmProviderName as string | null)
-            : undefined,
-        defaultLlmModelName:
-          "defaultLlmModelName" in updateData
-            ? (updateData.defaultLlmModelName as string | null)
-            : undefined,
-        customLlmModelName:
-          "customLlmModelName" in updateData
-            ? (updateData.customLlmModelName as string | null)
-            : undefined,
-        customLlmBaseURL:
-          "customLlmBaseURL" in updateData
-            ? (updateData.customLlmBaseURL as string | null)
-            : undefined,
-        maxInputTokens:
-          "maxInputTokens" in updateData
-            ? (updateData.maxInputTokens as number | null)
-            : undefined,
+        defaultLlmProviderName: updateData.defaultLlmProviderName,
+        defaultLlmModelName: updateData.defaultLlmModelName,
+        customLlmModelName: updateData.customLlmModelName,
+        customLlmBaseURL: updateData.customLlmBaseURL,
+        maxInputTokens: updateData.maxInputTokens,
       });
 
       if (!updatedProject) {
