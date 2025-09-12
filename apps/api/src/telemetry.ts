@@ -6,7 +6,6 @@ import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
 import { HttpInstrumentation } from "@opentelemetry/instrumentation-http";
 import { NestInstrumentation } from "@opentelemetry/instrumentation-nestjs-core";
 import { NodeSDK, NodeSDKConfiguration } from "@opentelemetry/sdk-node";
-import { LangfuseExporter } from "langfuse-vercel";
 
 // Initialize OpenTelemetry
 export function initializeOpenTelemetry() {
@@ -30,12 +29,9 @@ export function initializeOpenTelemetry() {
     instrumentations,
   };
 
-  sdkConfig.traceExporter = new LangfuseExporter({
-    publicKey: process.env.LANGFUSE_PUBLIC_KEY,
-    secretKey: process.env.LANGFUSE_SECRET_KEY,
-    baseUrl: process.env.LANGFUSE_HOST,
-  }); // new OTLPTraceExporter(langfuseConfig);
-  console.log("OpenTelemetry configured with Langfuse exporter");
+  // this isn't quite working yet
+  // sdkConfig.traceExporter = new OTLPTraceExporter(langfuseConfig);
+  // console.log("OpenTelemetry configured with Langfuse exporter");
 
   // Initialize the SDK
   const sdk = new NodeSDK(sdkConfig);
