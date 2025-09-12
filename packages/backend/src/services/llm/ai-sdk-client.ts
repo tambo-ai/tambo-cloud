@@ -628,10 +628,15 @@ function convertOpenAIMessageToCoreMessage(
         .filter((part) => part !== null);
 
       return {
-        role: "user",
+        role: message.role,
         content: processedContent,
       } satisfies CoreUserMessage;
     }
+    console.error(
+      "Unexpected content type in user message:",
+      typeof message.content,
+    );
+    throw new UnreachableCaseError(message.content);
   }
   return convertToCoreMessages([
     {
