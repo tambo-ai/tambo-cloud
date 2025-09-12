@@ -8,6 +8,7 @@ import {
   getToolDescription,
   getToolName,
   tryParseJson,
+  CustomLlmParameters,
 } from "@tambo-ai-cloud/core";
 import {
   convertToCoreMessages,
@@ -106,6 +107,7 @@ export class AISdkClient implements LLMClient {
   private apiKey: string | undefined;
   private baseURL?: string;
   private maxInputTokens?: number | null;
+  private customLlmParameters?: CustomLlmParameters;
   readonly chainId: string;
   readonly userId: string;
 
@@ -117,6 +119,7 @@ export class AISdkClient implements LLMClient {
     userId: string,
     baseURL?: string,
     maxInputTokens?: number | null,
+    customLlmParameters?: CustomLlmParameters,
   ) {
     this.apiKey = apiKey;
     this.model = model;
@@ -125,6 +128,7 @@ export class AISdkClient implements LLMClient {
     this.userId = userId;
     this.baseURL = baseURL;
     this.maxInputTokens = maxInputTokens;
+    this.customLlmParameters = customLlmParameters;
   }
 
   async complete(
@@ -213,6 +217,9 @@ export class AISdkClient implements LLMClient {
       ...(responseFormat && { responseFormat }),
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
+      }),
+      ...(this.customLlmParameters && {
+        providerOptions: this.customLlmParameters,
       }),
     };
 

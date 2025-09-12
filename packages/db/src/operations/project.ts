@@ -7,6 +7,7 @@ import {
   hideApiKey,
   MCPTransport,
   OAuthValidationMode,
+  CustomLlmParameters,
   ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { randomBytes } from "crypto";
@@ -137,6 +138,7 @@ export async function updateProject(
     agentProviderType,
     agentUrl,
     agentName,
+    customLlmParameters,
   }: {
     name?: string;
     customInstructions?: string;
@@ -151,6 +153,7 @@ export async function updateProject(
     agentProviderType?: AgentProviderType;
     agentUrl?: string | null;
     agentName?: string | null;
+    customLlmParameters?: CustomLlmParameters | null;
   },
 ) {
   // Create update object with only provided fields
@@ -192,6 +195,9 @@ export async function updateProject(
   }
   if (agentName !== undefined) {
     updateData.agentName = agentName;
+  }
+  if (customLlmParameters !== undefined) {
+    updateData.customLlmParameters = customLlmParameters;
   }
 
   // Only perform update if there are fields to update

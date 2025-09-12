@@ -1,5 +1,6 @@
 import { env } from "@/lib/env";
 import { validateSafeURL } from "@/lib/urlSecurity";
+import { customLlmParametersSchema } from "@/lib/llm-parameters";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { llmProviderConfig } from "@tambo-ai-cloud/backend";
 import {
@@ -402,6 +403,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: z.nativeEnum(AgentProviderType).optional(),
         agentUrl: z.string().url().nullable().optional(),
         agentName: z.string().nullable().optional(),
+        customLlmParameters: customLlmParametersSchema.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -420,6 +422,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType,
         agentUrl,
         agentName,
+        customLlmParameters,
       } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
@@ -451,6 +454,10 @@ export const projectRouter = createTRPCRouter({
         agentProviderType,
         agentUrl: agentUrl === null ? undefined : agentUrl,
         agentName: agentName === null ? undefined : agentName,
+        customLlmParameters:
+          customLlmParameters === null
+            ? undefined
+            : (customLlmParameters ?? undefined),
       });
 
       if (!updatedProject) {
@@ -472,6 +479,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: updatedProject.agentProviderType,
         agentUrl: updatedProject.agentUrl,
         agentName: updatedProject.agentName,
+        customLlmParameters: updatedProject.customLlmParameters,
       };
     }),
 
