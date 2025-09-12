@@ -44,7 +44,8 @@ import {
 } from "./llm-client";
 import { limitTokens } from "./token-limiter";
 
-type TextCompleteParams = Parameters<typeof streamText<ToolSet, never>>[0];
+type AICompleteParams = Parameters<typeof streamText<ToolSet, never>>[0] &
+  Parameters<typeof generateText<ToolSet, never>>[0];
 type TextStreamResponse = ReturnType<typeof streamText<ToolSet, never>>;
 
 // Common provider configuration interface
@@ -201,7 +202,7 @@ export class AISdkClient implements LLMClient {
     // Default temperature to 0 unless overridden by config
     const temperature = modelCfg?.properties.temperature;
 
-    const baseConfig: TextCompleteParams = {
+    const baseConfig: AICompleteParams = {
       model: modelInstance,
       messages: coreMessages,
       temperature: temperature ?? 0,
@@ -210,7 +211,6 @@ export class AISdkClient implements LLMClient {
         ? this.convertToolChoice(params.tool_choice)
         : undefined,
       ...(responseFormat && { responseFormat }),
-      toolCallStreaming: true,
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
       }),
@@ -252,13 +252,14 @@ export class AISdkClient implements LLMClient {
       const toolName = getToolName(toolDef);
       // Create a simplified tool definition compatible with AI SDK
       // We'll use a simple z.any() for parameters since converting JSON Schema to Zod is complex
-      const aiSdkTool = tool({
+      const inputSchema: any =
+        toolDef.type === "function"
+          ? jsonSchema(toolDef.function.parameters ?? {})
+          : z.any();
+      const aiSdkTool: Tool = tool<any>({
         type: "function",
         description: getToolDescription(toolDef) || "",
-        parameters:
-          toolDef.type === "function"
-            ? jsonSchema(toolDef.function.parameters ?? {})
-            : z.any(),
+        inputSchema: inputSchema,
       });
 
       toolSet[toolName] = aiSdkTool;
@@ -333,37 +334,56 @@ export class AISdkClient implements LLMClient {
 
     for await (const delta of result.fullStream) {
       switch (delta.type) {
-        case "text-delta":
-          accumulatedMessage += delta.textDelta;
+        case "text-start":
+          accumulatedMessage = "";
           break;
-        case "tool-call-delta":
+        case "text-delta":
+          accumulatedMessage += delta.text;
+          break;
+        case "text-end":
+          break;
+        case "tool-input-start":
           accumulatedToolCall.name = delta.toolName;
-          accumulatedToolCall.arguments += delta.argsTextDelta;
-          accumulatedToolCall.id = delta.toolCallId;
+          break;
+        case "tool-input-delta":
+          accumulatedToolCall.arguments += delta.delta;
+          break;
+        case "tool-input-end":
           break;
         case "tool-call":
-          // this happens after the tool call delta, so we can ignore it - but
-          // this is the point where we know it is safe to actually call the
-          // tool, and might be a good point during streaming to initiate the
-          // tool call.
+          accumulatedToolCall.id = delta.toolCallId;
           break;
-        case "reasoning":
-          _accumulatedReasoning += delta.textDelta;
+        case "tool-result":
+          // Tambo should be handling all tool results, not operating like an agent
+          throw new Error("Tool result should not be emitted during streaming");
+        case "tool-error":
+          console.error("Got error from tool call", delta.error);
           break;
-        case "reasoning-signature":
-        case "redacted-reasoning":
-        case "source":
-        case "file":
-        case "tool-call-streaming-start":
-        case "step-start":
-        case "step-finish":
-        case "finish":
+        case "reasoning-start":
+          _accumulatedReasoning = "";
+          break;
+        case "reasoning-delta":
+          _accumulatedReasoning += delta.text;
+          break;
+        case "reasoning-end":
+          break;
+        case "source": // url? not sure what this is
+        case "file": // TODO: handle files - should be added as message objects
+        case "start": // start of streaming
+        case "finish": // completion is done, no more streaming
+        case "start-step": // for capturing round-trips when behaving like an agent
+        case "finish-step": // for capturing round-trips when behaving like an agent
+        case "raw":
           // Fine to ignore these, but we put them in here to make sure we don't
           // miss any new additions to the streamText API
           break;
         case "error":
           console.error("error:", delta.error);
           throw delta.error;
+          // Mostly ignored/unsupported
+          break;
+        case "abort":
+          throw new Error("Aborted by SDK");
         default:
           warnUnknownMessageType(delta);
       }
@@ -431,7 +451,8 @@ export class AISdkClient implements LLMClient {
     const toolCalls = result.toolCalls.map((call) => ({
       function: {
         name: call.toolName,
-        arguments: JSON.stringify(call.args),
+        // TOOD: is this correct? is call.input actually an object?
+        arguments: JSON.stringify(call.input),
       },
       id: call.toolCallId,
       type: "function" as const,
@@ -507,7 +528,10 @@ function convertOpenAIMessageToCoreMessage(
         typeof message.content === "string"
           ? ([
               {
-                result: message.content,
+                output: {
+                  type: "text",
+                  value: message.content,
+                },
                 toolCallId: message.tool_call_id,
                 type: "tool-result",
                 toolName: toolName,
@@ -518,7 +542,10 @@ function convertOpenAIMessageToCoreMessage(
                 // TODO: Figure out multi-tool + multi-content results - is
                 // there one content per tool call?
                 type: "tool-result",
-                result: part.text,
+                output: {
+                  type: "text",
+                  value: part.text,
+                },
                 toolCallId: message.tool_call_id,
                 toolName: toolName,
               }),
@@ -561,7 +588,7 @@ function convertOpenAIMessageToCoreMessage(
     message.tool_calls.forEach((call) => {
       content.push({
         type: "tool-call",
-        args:
+        input:
           call.type === "function"
             ? tryParseJson(call.function.arguments)
             : call.custom.input,
