@@ -14,6 +14,7 @@ import {
   CoreAssistantMessage,
   CoreMessage,
   CoreToolMessage,
+  CoreUserMessage,
   generateText,
   jsonSchema,
   LanguageModel,
@@ -28,12 +29,13 @@ import {
   type ToolSet,
 } from "ai";
 import type OpenAI from "openai";
+import { UnreachableCaseError } from "ts-essentials";
 import { z } from "zod";
 import { createLangfuseTelemetryConfig } from "../../config/langfuse.config";
 import type { LlmProviderConfigInfo } from "../../config/llm-config-types";
 import { llmProviderConfig } from "../../config/llm.config";
 import { Provider } from "../../model/providers";
-import { formatTemplate } from "../../util/template";
+import { formatTemplate, ObjectTemplate } from "../../util/template";
 import {
   CompleteParams,
   LLMClient,
@@ -42,7 +44,8 @@ import {
 } from "./llm-client";
 import { limitTokens } from "./token-limiter";
 
-type TextCompleteParams = Parameters<typeof streamText<ToolSet, never>>[0];
+type AICompleteParams = Parameters<typeof streamText<ToolSet, never>>[0] &
+  Parameters<typeof generateText<ToolSet, never>>[0];
 type TextStreamResponse = ReturnType<typeof streamText<ToolSet, never>>;
 
 // Common provider configuration interface
@@ -199,7 +202,7 @@ export class AISdkClient implements LLMClient {
     // Default temperature to 0 unless overridden by config
     const temperature = modelCfg?.properties.temperature;
 
-    const baseConfig: TextCompleteParams = {
+    const baseConfig: AICompleteParams = {
       model: modelInstance,
       messages: coreMessages,
       temperature: temperature ?? 0,
@@ -208,14 +211,14 @@ export class AISdkClient implements LLMClient {
         ? this.convertToolChoice(params.tool_choice)
         : undefined,
       ...(responseFormat && { responseFormat }),
-      toolCallStreaming: true,
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
       }),
     };
 
     if (params.stream) {
-      const result = streamText(baseConfig);
+      // added explicit await even though types say it isn't necessary
+      const result = await streamText(baseConfig);
       return this.handleStreamingResponse(result);
     } else {
       const result = await generateText(baseConfig);
@@ -249,13 +252,14 @@ export class AISdkClient implements LLMClient {
       const toolName = getToolName(toolDef);
       // Create a simplified tool definition compatible with AI SDK
       // We'll use a simple z.any() for parameters since converting JSON Schema to Zod is complex
-      const aiSdkTool = tool({
+      const inputSchema: any =
+        toolDef.type === "function"
+          ? jsonSchema(toolDef.function.parameters ?? {})
+          : z.any();
+      const aiSdkTool: Tool = tool<any>({
         type: "function",
         description: getToolDescription(toolDef) || "",
-        parameters:
-          toolDef.type === "function"
-            ? jsonSchema(toolDef.function.parameters ?? {})
-            : z.any(),
+        inputSchema: inputSchema,
       });
 
       toolSet[toolName] = aiSdkTool;
@@ -321,6 +325,7 @@ export class AISdkClient implements LLMClient {
     result: TextStreamResponse,
   ): AsyncIterableIterator<LLMResponse> {
     let accumulatedMessage = "";
+    let _accumulatedReasoning = "";
     const accumulatedToolCall: {
       name?: string;
       arguments: string;
@@ -329,35 +334,56 @@ export class AISdkClient implements LLMClient {
 
     for await (const delta of result.fullStream) {
       switch (delta.type) {
-        case "text-delta":
-          accumulatedMessage += delta.textDelta;
+        case "text-start":
+          accumulatedMessage = "";
           break;
-        case "tool-call-delta":
+        case "text-delta":
+          accumulatedMessage += delta.text;
+          break;
+        case "text-end":
+          break;
+        case "tool-input-start":
           accumulatedToolCall.name = delta.toolName;
-          accumulatedToolCall.arguments += delta.argsTextDelta;
-          accumulatedToolCall.id = delta.toolCallId;
+          break;
+        case "tool-input-delta":
+          accumulatedToolCall.arguments += delta.delta;
+          break;
+        case "tool-input-end":
           break;
         case "tool-call":
-          // this happens after the tool call delta, so we can ignore it - but
-          // this is the point where we know it is safe to actually call the
-          // tool, and might be a good point during streaming to initiate the
-          // tool call.
+          accumulatedToolCall.id = delta.toolCallId;
           break;
-        case "reasoning":
-        case "reasoning-signature":
-        case "redacted-reasoning":
-        case "source":
-        case "file":
-        case "tool-call-streaming-start":
-        case "step-start":
-        case "step-finish":
-        case "finish":
+        case "tool-result":
+          // Tambo should be handling all tool results, not operating like an agent
+          throw new Error("Tool result should not be emitted during streaming");
+        case "tool-error":
+          console.error("Got error from tool call", delta.error);
+          break;
+        case "reasoning-start":
+          _accumulatedReasoning = "";
+          break;
+        case "reasoning-delta":
+          _accumulatedReasoning += delta.text;
+          break;
+        case "reasoning-end":
+          break;
+        case "source": // url? not sure what this is
+        case "file": // TODO: handle files - should be added as message objects
+        case "start": // start of streaming
+        case "finish": // completion is done, no more streaming
+        case "start-step": // for capturing round-trips when behaving like an agent
+        case "finish-step": // for capturing round-trips when behaving like an agent
+        case "raw":
           // Fine to ignore these, but we put them in here to make sure we don't
           // miss any new additions to the streamText API
           break;
         case "error":
           console.error("error:", delta.error);
           throw delta.error;
+          // Mostly ignored/unsupported
+          break;
+        case "abort":
+          throw new Error("Aborted by SDK");
         default:
           warnUnknownMessageType(delta);
       }
@@ -425,7 +451,8 @@ export class AISdkClient implements LLMClient {
     const toolCalls = result.toolCalls.map((call) => ({
       function: {
         name: call.toolName,
-        arguments: JSON.stringify(call.args),
+        // TOOD: is this correct? is call.input actually an object?
+        arguments: JSON.stringify(call.input),
       },
       id: call.toolCallId,
       type: "function" as const,
@@ -447,10 +474,13 @@ export class AISdkClient implements LLMClient {
 /** We have to manually format this because objectTemplate doesn't seem to support chat_history */
 function tryFormatTemplate(
   messages: ChatCompletionMessageParam[],
-  promptTemplateParams: Record<string, unknown>,
+  promptTemplateParams: Record<string, string | ChatCompletionMessageParam[]>,
 ): ChatCompletionMessageParam[] {
   try {
-    return formatTemplate(messages as any, promptTemplateParams);
+    return formatTemplate(
+      messages as ObjectTemplate<ChatCompletionMessageParam[]>,
+      promptTemplateParams,
+    );
   } catch (_e) {
     return messages;
   }
@@ -498,7 +528,10 @@ function convertOpenAIMessageToCoreMessage(
         typeof message.content === "string"
           ? ([
               {
-                result: message.content,
+                output: {
+                  type: "text",
+                  value: message.content,
+                },
                 toolCallId: message.tool_call_id,
                 type: "tool-result",
                 toolName: toolName,
@@ -509,7 +542,10 @@ function convertOpenAIMessageToCoreMessage(
                 // TODO: Figure out multi-tool + multi-content results - is
                 // there one content per tool call?
                 type: "tool-result",
-                result: part.text,
+                output: {
+                  type: "text",
+                  value: part.text,
+                },
                 toolCallId: message.tool_call_id,
                 toolName: toolName,
               }),
@@ -517,22 +553,101 @@ function convertOpenAIMessageToCoreMessage(
     } satisfies CoreToolMessage;
   }
   if (message.role === "assistant" && message.tool_calls) {
+    const content: (ToolCallPart | { type: "text"; text: string })[] = [];
+
+    // Add text content if it exists
+    if (message.content) {
+      if (typeof message.content === "string") {
+        content.push({ type: "text", text: message.content });
+      } else if (Array.isArray(message.content)) {
+        message.content.forEach((part) => {
+          switch (part.type) {
+            case "text":
+              content.push({ type: "text", text: part.text });
+              break;
+            case "refusal":
+              // Handle refusal content
+              content.push({
+                type: "text",
+                text: `[Refusal]: ${part.refusal}`,
+              });
+              break;
+            default:
+              // This should never happen - unreachable case
+              console.error(
+                `Unexpected content type in assistant message: `,
+                part,
+              );
+              throw new UnreachableCaseError(part);
+          }
+        });
+      }
+    }
+
+    // Add tool calls
+    message.tool_calls.forEach((call) => {
+      content.push({
+        type: "tool-call",
+        input:
+          call.type === "function"
+            ? tryParseJson(call.function.arguments)
+            : call.custom.input,
+        toolCallId: call.id,
+        toolName: getToolName(call),
+      } satisfies ToolCallPart);
+    });
+
     return {
       role: "assistant",
-      content: message.tool_calls.map(
-        (call): ToolCallPart => ({
-          type: "tool-call",
-          args:
-            call.type === "function"
-              ? tryParseJson(call.function.arguments)
-              : call.custom.input,
-          toolCallId: call.id,
-          toolName: getToolName(call),
-        }),
-      ),
+      content: content,
     } satisfies CoreAssistantMessage;
   }
-  return convertToCoreMessages([message as any])[0];
+  if (message.role === "user") {
+    if (typeof message.content === "string") {
+      return {
+        role: "user",
+        content: message.content,
+      } satisfies CoreUserMessage;
+    } else if (Array.isArray(message.content)) {
+      const processedContent = message.content
+        .map((part) => {
+          if (part.type === "text") {
+            return {
+              type: "text" as const,
+              text: part.text,
+            };
+          } else if (part.type === "image_url" && part.image_url.url) {
+            // Convert image_url to AI SDK's expected image format
+            return {
+              type: "image" as const,
+              image: part.image_url.url,
+            };
+          }
+          return null;
+        })
+        .filter((part) => part !== null);
+
+      return {
+        role: message.role,
+        content: processedContent,
+      } satisfies CoreUserMessage;
+    }
+    console.error(
+      "Unexpected content type in user message:",
+      typeof message.content,
+    );
+    throw new UnreachableCaseError(message.content);
+  }
+  return convertToCoreMessages([
+    {
+      role: message.role,
+      parts:
+        typeof message.content === "string"
+          ? [{ type: "text", text: message.content }]
+          : // this a hack but it works
+            (message.content?.map((part) => part as any) ?? []),
+    },
+  ])[0];
 }
 
 function warnUnknownMessageType(message: never) {

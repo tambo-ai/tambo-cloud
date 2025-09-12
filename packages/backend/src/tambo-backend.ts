@@ -1,4 +1,6 @@
 import {
+  AgentProviderType,
+  AiProviderType,
   DEFAULT_OPENAI_MODEL,
   LegacyComponentDecision,
   ThreadMessage,
@@ -6,7 +8,9 @@ import {
 import OpenAI from "openai";
 import { AvailableComponent } from "./model/component-metadata";
 import { Provider } from "./model/providers";
+import { runAgentLoop } from "./services/decision-loop/agent-loop";
 import { runDecisionLoop } from "./services/decision-loop/decision-loop-service";
+import { AgentClient } from "./services/llm/agent-client";
 import { AISdkClient } from "./services/llm/ai-sdk-client";
 import { LLMClient } from "./services/llm/llm-client";
 import { generateSuggestions } from "./services/suggestion/suggestion.service";
@@ -18,6 +22,19 @@ interface TamboBackendOptions {
   provider?: Provider;
   baseURL?: string;
   maxInputTokens?: number | null;
+  aiProviderType: AiProviderType;
+  agentType?: AgentProviderType;
+  agentName?: string;
+  agentUrl?: string;
+  headers?: Record<string, string>;
+}
+
+/** The current model options for the TamboBackend, filled in with defaults */
+export interface ModelOptions {
+  readonly model: string;
+  readonly provider: Provider;
+  readonly baseURL?: string;
+  readonly maxInputTokens?: number | null;
 }
 
 interface RunDecisionLoopParams {
@@ -27,21 +44,70 @@ interface RunDecisionLoopParams {
   forceToolChoice?: string;
 }
 
-export default class TamboBackend {
+export interface TamboBackend {
+  generateSuggestions(
+    messages: ThreadMessage[],
+    count: number,
+    availableComponents: AvailableComponent[],
+    threadId: string,
+    stream: true,
+  ): Promise<AsyncIterableIterator<SuggestionDecision>>;
+  generateSuggestions(
+    messages: ThreadMessage[],
+    count: number,
+    availableComponents: AvailableComponent[],
+    threadId: string,
+    stream?: false | undefined,
+  ): Promise<SuggestionDecision>;
+  runDecisionLoop: (
+    params: RunDecisionLoopParams,
+  ) => Promise<AsyncIterableIterator<LegacyComponentDecision>>;
+  generateThreadName: (messages: ThreadMessage[]) => Promise<string>;
+
+  readonly modelOptions: ModelOptions;
+}
+export async function createTamboBackend(
+  apiKey: string | undefined,
+  chainId: string,
+  userId: string,
+  options: TamboBackendOptions = { aiProviderType: AiProviderType.LLM },
+): Promise<TamboBackend> {
+  return await AgenticTamboBackend.create(apiKey, chainId, userId, options);
+}
+
+class AgenticTamboBackend implements TamboBackend {
   private llmClient: LLMClient;
-  constructor(
+  /** The current model options for the TamboBackend, filled in with defaults */
+  public readonly modelOptions: ModelOptions;
+  private agentClient?: AgentClient;
+  private constructor(
+    modelOptions: ModelOptions,
+    llmClient: LLMClient,
+    agentClient?: AgentClient,
+  ) {
+    this.modelOptions = modelOptions;
+    this.llmClient = llmClient;
+    this.agentClient = agentClient;
+  }
+
+  static async create(
     apiKey: string | undefined,
     chainId: string,
     userId: string,
-    options: TamboBackendOptions = {},
+    options: TamboBackendOptions = { aiProviderType: AiProviderType.LLM },
   ) {
     const {
       model = DEFAULT_OPENAI_MODEL,
       provider = "openai",
       baseURL,
       maxInputTokens,
+      aiProviderType,
+      agentType,
+      agentName,
+      agentUrl,
+      headers = {},
     } = options;
-    this.llmClient = new AISdkClient(
+    const llmClient = new AISdkClient(
       apiKey,
       model,
       provider,
@@ -50,6 +116,40 @@ export default class TamboBackend {
       baseURL,
       maxInputTokens,
     );
+
+    const modelOptions = {
+      model,
+      provider,
+      baseURL,
+      maxInputTokens,
+    };
+
+    switch (aiProviderType) {
+      case AiProviderType.LLM: {
+        return new AgenticTamboBackend(modelOptions, llmClient);
+      }
+      case AiProviderType.AGENT: {
+        // Normalize and validate required fields for the Agent provider.
+        // Trim whitespace from the URL to avoid accepting whitespace-only values.
+        const normalizedAgentUrl: string = (agentUrl ?? "").trim();
+        if (!agentType || !normalizedAgentUrl) {
+          console.error(
+            `Got agent type ${agentType} and agentUrl ${normalizedAgentUrl}`,
+          );
+          throw new Error("Agent type and URL are required");
+        }
+        const agentClient = await AgentClient.create({
+          agentProviderType: agentType,
+          agentUrl: normalizedAgentUrl,
+          agentName,
+          chainId,
+          headers,
+        });
+        return new AgenticTamboBackend(modelOptions, llmClient, agentClient);
+      }
+      default:
+        throw new Error(`Unsupported AI provider type: ${aiProviderType}`);
+    }
   }
 
   public async generateSuggestions(
@@ -86,6 +186,13 @@ export default class TamboBackend {
   public async runDecisionLoop(
     params: RunDecisionLoopParams,
   ): Promise<AsyncIterableIterator<LegacyComponentDecision>> {
+    if (this.agentClient) {
+      return runAgentLoop(
+        this.agentClient,
+        params.messages,
+        params.strictTools,
+      );
+    }
     return runDecisionLoop(
       this.llmClient,
       params.messages,

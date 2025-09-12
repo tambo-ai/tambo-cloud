@@ -498,6 +498,20 @@
       "when": 1756239711441,
       "tag": "0070_real_white_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1756347021656,
+      "tag": "0071_pink_skrulls",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1757711186361,
+      "tag": "0072_lucky_hannibal_king",
+      "breakpoints": true
     }
   ]
 }
