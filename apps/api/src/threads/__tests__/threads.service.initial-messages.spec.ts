@@ -97,7 +97,8 @@ describe("ThreadsService - Initial Messages", () => {
 
       expect(() => {
         // Access private method through any
-        (service as any).validateInitialMessages(validMessages);
+        // pass allowOverride=true to simulate project allowing system prompt override
+        (service as any).validateInitialMessages(validMessages, true);
       }).not.toThrow();
     });
 
@@ -164,6 +165,43 @@ describe("ThreadsService - Initial Messages", () => {
       expect(() => {
         (service as any).validateInitialMessages(undefined);
       }).not.toThrow();
+    });
+
+    it("should normalize string content into a single text content part", () => {
+      const messages: MessageRequest[] = [
+        {
+          // content as a plain string should be accepted and normalized
+          // inside validateInitialMessages
+          content: "You are a helpful assistant." as any,
+          role: MessageRole.System,
+        },
+        {
+          // mixed: array for user
+          content: [{ type: ContentPartType.Text, text: "Hello" }],
+          role: MessageRole.User,
+        },
+      ];
+
+      expect(() => {
+        (service as any).validateInitialMessages(messages, true);
+      }).not.toThrow();
+    });
+
+    it("should reject a system message when project disallows override", () => {
+      const messages: MessageRequest[] = [
+        {
+          // cast to any to simulate runtime input where content may be a string
+          content: "Custom system prompt",
+          role: MessageRole.System,
+        } as any,
+      ];
+
+      expect(() => {
+        // allowOverride = false should cause validation to fail for user-provided system message
+        (service as any).validateInitialMessages(messages, false);
+      }).toThrow(
+        "Project does not allow overriding the system prompt with initial messages",
+      );
     });
   });
 

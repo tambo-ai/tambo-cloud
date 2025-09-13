@@ -193,8 +193,15 @@ export class ThreadsService {
     contextKey?: string,
     initialMessages?: MessageRequest[],
   ): Promise<Thread> {
+    // Fetch project early so validation can use project settings (allowSystemPromptOverride)
+    const project = await operations.getProject(
+      this.getDb(),
+      createThreadDto.projectId,
+    );
+    const allowOverride = project?.allowSystemPromptOverride ?? false;
+
     // Validate initial messages if provided (basic checks)
-    this.validateInitialMessages(initialMessages);
+    this.validateInitialMessages(initialMessages, allowOverride);
 
     const thread = await operations.createThread(this.getDb(), {
       projectId: createThreadDto.projectId,
@@ -204,34 +211,6 @@ export class ThreadsService {
     });
 
     // Insert project system prompt as first message unless overridden
-    const project = await operations.getProject(
-      this.getDb(),
-      createThreadDto.projectId,
-    );
-    const allowOverride = project?.allowSystemPromptOverride ?? false;
-
-    // Validate ordering: if initialMessages contains a system message it must be at index 0
-    if (initialMessages && initialMessages.length > 0) {
-      const systemIndices = initialMessages
-        .map((m, i) => (m.role === MessageRole.System ? i : -1))
-        .filter((i) => i >= 0);
-      if (systemIndices.length > 1) {
-        throw new Error(
-          "Only one system message is allowed in initialMessages",
-        );
-      }
-      if (systemIndices.length === 1 && systemIndices[0] !== 0) {
-        throw new Error(
-          "System message, if present, must be the first initial message",
-        );
-      }
-      // If user provided a system message but project disallows overrides -> error
-      if (systemIndices.length === 1 && !allowOverride) {
-        throw new Error(
-          "Project does not allow overriding the system prompt with initial messages",
-        );
-      }
-    }
 
     // Build final initial messages to persist: prefer user system message if provided and allowed, otherwise use project.customInstructions
     const finalInitialMessages: MessageRequest[] = [];
@@ -1944,7 +1923,10 @@ export class ThreadsService {
     return newThread;
   }
 
-  private validateInitialMessages(initialMessages?: MessageRequest[]): void {
+  private validateInitialMessages(
+    initialMessages?: MessageRequest[],
+    allowOverride: boolean = false,
+  ): void {
     if (!initialMessages || initialMessages.length === 0) {
       return;
     }
@@ -1985,7 +1967,7 @@ export class ThreadsService {
       }
     }
 
-    // Enforce system messages only at index 0
+    // Enforce system message rules: only one and must be first. Also respect project override setting.
     const systemIndices = initialMessages
       .map((m, i) => (m.role === MessageRole.System ? i : -1))
       .filter((i) => i >= 0);
@@ -1995,6 +1977,11 @@ export class ThreadsService {
     if (systemIndices.length === 1 && systemIndices[0] !== 0) {
       throw new Error(
         "System message, if present, must be the first initial message",
+      );
+    }
+    if (systemIndices.length === 1 && !allowOverride) {
+      throw new Error(
+        "Project does not allow overriding the system prompt with initial messages",
       );
     }
   }
