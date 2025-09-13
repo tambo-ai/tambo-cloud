@@ -1949,7 +1949,13 @@ export class ThreadsService {
       return;
     }
     for (const [index, message] of initialMessages.entries()) {
-      if (message.content.length === 0) {
+      // Normalize content: accept either array of ContentPart or a simple string
+      const normalizedContent: any[] = Array.isArray(message.content)
+        ? message.content
+        : // if it's a string, treat it as a single text content part
+          [{ type: ContentPartType.Text, text: String(message.content) }];
+
+      if (normalizedContent.length === 0) {
         throw new Error(`Initial message at index ${index} must have content`);
       }
 
@@ -1964,9 +1970,14 @@ export class ThreadsService {
         );
       }
 
-      // Validate content structure
-      for (const [contentIndex, contentPart] of message.content.entries()) {
-        if (contentPart.type === ContentPartType.Text && !contentPart.text) {
+      // Validate content structure using the normalized content
+      for (const [contentIndex, contentPart] of normalizedContent.entries()) {
+        if (
+          contentPart.type === ContentPartType.Text &&
+          (contentPart.text === undefined ||
+            contentPart.text === null ||
+            contentPart.text === "")
+        ) {
           throw new Error(
             `Initial message at index ${index}, content part ${contentIndex} with type 'text' must have text property`,
           );
