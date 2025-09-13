@@ -475,6 +475,7 @@ export const projectRouter = createTRPCRouter({
         agentUrl,
         agentName,
         agentHeaders,
+        allowSystemPromptOverride,
       });
 
       if (!updatedProject) {
