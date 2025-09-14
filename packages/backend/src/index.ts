@@ -6,10 +6,14 @@ export { type LlmProviderConfig } from "./config/llm-config-types";
 export { llmProviderConfig } from "./config/llm.config";
 export * from "./model";
 export * from "./services/suggestion/suggestion.types";
-export { getToolsFromSources } from "./services/tool/tool-service";
+export {
+  convertMetadataToTools,
+  getToolsFromSources,
+} from "./services/tool/tool-service";
 export type * from "./systemTools";
 export {
+  createTamboBackend,
   generateChainId,
-  default as TamboBackend,
+  type TamboBackend as ITamboBackend,
   type ModelOptions,
 } from "./tambo-backend";

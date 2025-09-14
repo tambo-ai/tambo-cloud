@@ -1,6 +1,6 @@
 import dns from "dns/promises";
 import { parse as parseTld } from "tldts";
-import { env } from "./env";
+import { env } from "@/lib/env";
 
 // Helper to validate URLs are not pointing to unsafe locations
 const isUnsafeHostname = (hostname: string): boolean => {
@@ -41,6 +41,19 @@ export const validateSafeURL = async (
   // Skip validation if local MCP servers are allowed
   if (env.ALLOW_LOCAL_MCP_SERVERS) {
     return { safe: true };
+  }
+
+  // Enforce HTTPS-only URLs when a protocol is provided
+  try {
+    const maybeUrl = new URL(urlOrFragment);
+    if (maybeUrl.protocol.toLowerCase() !== "https:") {
+      return {
+        safe: false,
+        reason: "Only HTTPS protocol is allowed",
+      };
+    }
+  } catch {
+    // Not a fully-qualified URL; continue and validate as a hostname/fragment
   }
 
   // use tldts to check for host safety
