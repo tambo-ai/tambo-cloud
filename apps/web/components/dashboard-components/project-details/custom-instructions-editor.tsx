@@ -171,8 +171,8 @@ export function CustomInstructionsEditor({
               Allow system prompt override
             </div>
             <div className="text-sm text-foreground">
-              When enabled, you may pass a system message as an initial message
-              to override the project system prompt.
+              When enabled, a system message passed from client-side
+              initialMessages will override custom instructions.
             </div>
           </div>
           <div className="flex items-center">
