@@ -1,1 +1,0 @@
-ALTER TABLE "projects" ADD COLUMN "custom_llm_parameters" jsonb;
