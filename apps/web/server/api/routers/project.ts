@@ -28,6 +28,22 @@ import {
 } from "drizzle-orm";
 import { z } from "zod";
 
+// ---------------------------------------------------------------------------
+//  Agent header constraints (no regex; count and length limits only)
+// ---------------------------------------------------------------------------
+const MAX_AGENT_HEADER_COUNT = 20;
+const MAX_AGENT_HEADER_NAME_LENGTH = 100;
+const MAX_AGENT_HEADER_VALUE_LENGTH = 2000;
+
+const agentHeadersSchema = z
+  .record(
+    z.string().min(1).max(MAX_AGENT_HEADER_NAME_LENGTH),
+    z.string().min(1).max(MAX_AGENT_HEADER_VALUE_LENGTH),
+  )
+  .refine((obj) => Object.keys(obj).length <= MAX_AGENT_HEADER_COUNT, {
+    message: `Too many headers (max ${MAX_AGENT_HEADER_COUNT})`,
+  });
+
 // Helper function to get date filter based on period
 function getDateFilter(period: string): Date | null {
   const now = new Date();
@@ -364,6 +380,7 @@ export const projectRouter = createTRPCRouter({
           agentProviderType: true,
           agentUrl: true,
           agentName: true,
+          agentHeaders: true,
         },
       });
 
@@ -383,6 +400,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: project.agentProviderType,
         agentUrl: project.agentUrl ?? null,
         agentName: project.agentName ?? null,
+        agentHeaders: project.agentHeaders,
       };
     }),
 
@@ -404,6 +422,7 @@ export const projectRouter = createTRPCRouter({
         agentUrl: z.string().url().nullable().optional(),
         agentName: z.string().nullable().optional(),
         customLlmParameters: customLlmParametersSchema.nullable().optional(),
+        agentHeaders: agentHeadersSchema.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -423,37 +442,25 @@ export const projectRouter = createTRPCRouter({
         agentUrl,
         agentName,
         customLlmParameters,
+        agentHeaders,
       } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       const updatedProject = await operations.updateProject(ctx.db, projectId, {
         name,
-        customInstructions:
-          customInstructions === null ? "" : customInstructions,
-        defaultLlmProviderName:
-          defaultLlmProviderName === null
-            ? undefined
-            : (defaultLlmProviderName ?? undefined),
-        defaultLlmModelName:
-          defaultLlmModelName === null
-            ? undefined
-            : (defaultLlmModelName ?? undefined),
-        customLlmModelName:
-          customLlmModelName === null
-            ? undefined
-            : (customLlmModelName ?? undefined),
-        customLlmBaseURL:
-          customLlmBaseURL === null
-            ? undefined
-            : (customLlmBaseURL ?? undefined),
-        maxInputTokens:
-          maxInputTokens === null ? undefined : (maxInputTokens ?? undefined),
+        customInstructions: customInstructions ?? undefined,
+        defaultLlmProviderName,
+        defaultLlmModelName,
+        customLlmModelName,
+        customLlmBaseURL,
+        maxInputTokens,
         maxToolCallLimit,
         isTokenRequired,
         providerType,
         agentProviderType,
-        agentUrl: agentUrl === null ? undefined : agentUrl,
-        agentName: agentName === null ? undefined : agentName,
+        agentUrl,
+        agentName,
+        agentHeaders,
         customLlmParameters:
           customLlmParameters === null
             ? undefined
@@ -480,6 +487,7 @@ export const projectRouter = createTRPCRouter({
         agentUrl: updatedProject.agentUrl,
         agentName: updatedProject.agentName,
         customLlmParameters: updatedProject.customLlmParameters,
+        agentHeaders: updatedProject.agentHeaders,
       };
     }),
 
@@ -494,6 +502,7 @@ export const projectRouter = createTRPCRouter({
           .optional(),
         agentUrl: z.string().url().nullable().optional(),
         agentName: z.string().nullable().optional(),
+        agentHeaders: agentHeadersSchema.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -503,6 +512,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType,
         agentUrl,
         agentName,
+        agentHeaders,
       } = input;
 
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
@@ -547,6 +557,8 @@ export const projectRouter = createTRPCRouter({
         agentUrl: providerType === AiProviderType.AGENT ? agentUrl : undefined,
         agentName:
           providerType === AiProviderType.AGENT ? agentName : undefined,
+        agentHeaders:
+          providerType === AiProviderType.AGENT ? agentHeaders : undefined,
       });
 
       if (!updatedProject) {
@@ -561,6 +573,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: updatedProject.agentProviderType,
         agentUrl: updatedProject.agentUrl,
         agentName: updatedProject.agentName,
+        agentHeaders: updatedProject.agentHeaders,
       };
     }),
 
@@ -695,26 +708,11 @@ export const projectRouter = createTRPCRouter({
       }
 
       const updatedProject = await operations.updateProject(ctx.db, projectId, {
-        defaultLlmProviderName:
-          "defaultLlmProviderName" in updateData
-            ? (updateData.defaultLlmProviderName as string | null)
-            : undefined,
-        defaultLlmModelName:
-          "defaultLlmModelName" in updateData
-            ? (updateData.defaultLlmModelName as string | null)
-            : undefined,
-        customLlmModelName:
-          "customLlmModelName" in updateData
-            ? (updateData.customLlmModelName as string | null)
-            : undefined,
-        customLlmBaseURL:
-          "customLlmBaseURL" in updateData
-            ? (updateData.customLlmBaseURL as string | null)
-            : undefined,
-        maxInputTokens:
-          "maxInputTokens" in updateData
-            ? (updateData.maxInputTokens as number | null)
-            : undefined,
+        defaultLlmProviderName: updateData.defaultLlmProviderName,
+        defaultLlmModelName: updateData.defaultLlmModelName,
+        customLlmModelName: updateData.customLlmModelName,
+        customLlmBaseURL: updateData.customLlmBaseURL,
+        maxInputTokens: updateData.maxInputTokens,
       });
 
       if (!updatedProject) {

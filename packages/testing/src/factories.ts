@@ -51,6 +51,7 @@ export function createMockDBProject(
     customLlmParameters: overrides.customLlmParameters ?? null,
     creatorId: overrides.creatorId ?? null,
     members: overrides.members ?? [],
+    agentHeaders: overrides.agentHeaders ?? null,
   };
 
   return project;

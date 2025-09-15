@@ -28,6 +28,7 @@ interface TamboBackendOptions {
   agentName?: string;
   agentUrl?: string;
   customLlmParameters?: CustomLlmParameters;
+  headers?: Record<string, string>;
 }
 
 /** The current model options for the TamboBackend, filled in with defaults */
@@ -107,6 +108,7 @@ class AgenticTamboBackend implements TamboBackend {
       agentName,
       agentUrl,
       customLlmParameters,
+      headers = {},
     } = options;
     const llmClient = new AISdkClient(
       apiKey,
@@ -145,6 +147,7 @@ class AgenticTamboBackend implements TamboBackend {
           agentUrl: normalizedAgentUrl,
           agentName,
           chainId,
+          headers,
         });
         return new AgenticTamboBackend(modelOptions, llmClient, agentClient);
       }

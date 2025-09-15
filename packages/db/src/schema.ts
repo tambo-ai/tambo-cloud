@@ -191,6 +191,7 @@ export const projects = pgTable(
     customLlmParameters: customJsonb<CustomLlmParameters>(
       "custom_llm_parameters",
     ),
+    agentHeaders: customJsonb<Record<string, string>>("agent_headers"),
   }),
   (table) => {
     return [
