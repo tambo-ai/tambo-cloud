@@ -448,6 +448,7 @@ export const messages = pgTable(
       customJsonb<OpenAI.Chat.Completions.ChatCompletionContentPart[]>(
         "content",
       ).notNull(),
+    reasoning: customJsonb<string[]>("reasoning"),
     additionalContext:
       customJsonb<Record<string, unknown>>("additional_context"),
     toolCallId: text("tool_call_id"),

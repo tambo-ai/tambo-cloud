@@ -1599,6 +1599,7 @@ export class ThreadsService {
               actionType: currentThreadMessage.toolCallRequest
                 ? ActionType.ToolCall
                 : undefined,
+              reasoning: currentThreadMessage.reasoning,
             });
           }
           previousMessageId = currentThreadMessage?.id ?? userMessage.id;

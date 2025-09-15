@@ -64,6 +64,10 @@ export class ThreadMessageDto {
   })
   metadata?: Record<string, unknown>;
   component?: ComponentDecisionV2Dto;
+  @ApiProperty({
+    description: "Reasoning text from the LLM, if the model supports it.",
+  })
+  reasoning?: string[];
 
   @ApiProperty({
     type: "object",
