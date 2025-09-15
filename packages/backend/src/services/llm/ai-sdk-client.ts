@@ -3,6 +3,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
 import { createMistral } from "@ai-sdk/mistral";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import {
   ChatCompletionMessageParam,
   getToolDescription,
@@ -69,7 +70,13 @@ const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
   mistral: createMistral,
   google: createGoogleGenerativeAI,
   groq: createGroq,
-  "openai-compatible": createOpenAI, // Will be configured with custom baseURL
+  "openai-compatible": (config) =>
+    createOpenAICompatible({
+      name: "openai-compatible",
+      baseURL: config?.baseURL || "",
+      apiKey: config?.apiKey,
+      ...config,
+    }),
 } as const;
 
 // Model to provider mapping based on our config
