@@ -7,7 +7,6 @@ import {
 import { APIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
 import { AvailableMcpServers } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import { CustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
-import { CustomLlmParametersEditor } from "@/components/dashboard-components/project-details/custom-llm-parameters-editor";
 import { OAuthSettings } from "@/components/dashboard-components/project-details/oauth-settings";
 import { ProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
 import { ToolCallLimitEditor } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
@@ -55,7 +54,6 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
   const apiKeysRef = useRef<HTMLDivElement>(null);
   const llmProvidersRef = useRef<HTMLDivElement>(null);
   const customInstructionsRef = useRef<HTMLDivElement>(null);
-  const customParametersRef = useRef<HTMLDivElement>(null);
   const oauthSettingsRef = useRef<HTMLDivElement>(null);
   const mcpServersRef = useRef<HTMLDivElement>(null);
   const toolCallLimitRef = useRef<HTMLDivElement>(null);
@@ -150,7 +148,6 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
       "api-keys": apiKeysRef,
       "llm-providers": llmProvidersRef,
       "custom-instructions": customInstructionsRef,
-      "custom-parameters": customParametersRef,
       "oauth-settings": oauthSettingsRef,
       "mcp-servers": mcpServersRef,
       "tool-call-limit": toolCallLimitRef,
@@ -337,20 +334,6 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             <Button
               variant="ghost"
               className={`w-full justify-start gap-2 rounded-full ${
-                activeSection === "custom-parameters"
-                  ? "bg-accent"
-                  : "hover:bg-accent"
-              }`}
-              onClick={() => {
-                scrollToSection("custom-parameters");
-                setIsMobileMenuOpen(false);
-              }}
-            >
-              Custom parameters
-            </Button>
-            <Button
-              variant="ghost"
-              className={`w-full justify-start gap-2 rounded-full ${
                 activeSection === "mcp-servers"
                   ? "bg-accent"
                   : "hover:bg-accent"
@@ -433,17 +416,6 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             <Button
               variant="ghost"
               className={`justify-start gap-2 rounded-full text-sm ${
-                activeSection === "custom-parameters"
-                  ? "bg-accent"
-                  : "hover:bg-accent"
-              }`}
-              onClick={() => scrollToSection("custom-parameters")}
-            >
-              Custom parameters
-            </Button>
-            <Button
-              variant="ghost"
-              className={`justify-start gap-2 rounded-full text-sm ${
                 activeSection === "mcp-servers"
                   ? "bg-accent"
                   : "hover:bg-accent"
@@ -496,13 +468,6 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
 
             <div ref={customInstructionsRef} className="p-2">
               <CustomInstructionsEditor
-                project={project}
-                onEdited={handleRefreshProject}
-              />
-            </div>
-
-            <div ref={customParametersRef} className="p-2">
-              <CustomLlmParametersEditor
                 project={project}
                 onEdited={handleRefreshProject}
               />

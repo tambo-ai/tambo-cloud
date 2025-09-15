@@ -6,7 +6,6 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { customLlmParametersSchema } from "@/lib/llm-parameters";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Save, Trash2, X } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
@@ -374,210 +373,210 @@ export function CustomLlmParametersEditor({
   }
 
   return (
-    <Card className="border rounded-md overflow-hidden">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold">
-          Custom LLM Parameters
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            {isEditing ? (
-              <motion.div
-                key="edit-form"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="space-y-4"
-              >
-                <CardDescription className="text-sm text-foreground max-w-sm mb-4">
-                  Add custom parameters to send with each LLM request. These
-                  will be passed as provider options.
-                </CardDescription>
+    <div className="relative">
+      <AnimatePresence mode="wait">
+        {isEditing ? (
+          <motion.div
+            key="edit-form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="space-y-4"
+          >
+            <CardDescription className="text-sm text-foreground max-w-sm mb-4">
+              Add custom parameters to send with each LLM request. These will be
+              passed as provider options.
+            </CardDescription>
 
-                {/* Suggestions for common parameters */}
-                {suggestions.length > 0 && (
-                  <div className="mb-4">
-                    <Label className="text-xs text-muted-foreground mb-2 block">
-                      Common parameters for {providerName}:
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestions.map((suggestion) => (
-                        <Button
-                          key={suggestion.key}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => applySuggestion(suggestion)}
-                          className="text-xs"
-                          title={suggestion.description}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          {suggestion.key}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Parameter list */}
-                <div className="space-y-3">
-                  {parameters.map((param, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 10 }}
-                      className="flex gap-2 items-start"
+            {/* Suggestions for common parameters */}
+            {suggestions.length > 0 && (
+              <div className="mb-4">
+                <Label className="text-xs text-muted-foreground mb-2 block">
+                  Common parameters for {providerName}:
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {suggestions.map((suggestion) => (
+                    <Button
+                      key={suggestion.key}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applySuggestion(suggestion)}
+                      className="text-xs"
+                      title={suggestion.description}
                     >
-                      <Input
-                        placeholder="Parameter name"
-                        value={param.key}
-                        onChange={(e) =>
-                          updateParameter(index, "key", e.target.value)
-                        }
-                        className="flex-1"
-                      />
+                      <Plus className="h-3 w-3 mr-1" />
+                      {suggestion.key}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Parameter list */}
+            {parameters.length > 0 ? (
+              <div className="space-y-3">
+                {parameters.map((param, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    className="flex gap-2 items-start"
+                  >
+                    <Input
+                      placeholder="Parameter name"
+                      value={param.key}
+                      onChange={(e) =>
+                        updateParameter(index, "key", e.target.value)
+                      }
+                      className="flex-1"
+                    />
+                    <Select
+                      value={param.type}
+                      onValueChange={(value) =>
+                        updateParameter(index, "type", value)
+                      }
+                    >
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="string">String</SelectItem>
+                        <SelectItem value="number">Number</SelectItem>
+                        <SelectItem value="boolean">Boolean</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {param.type === "boolean" ? (
                       <Select
-                        value={param.type}
+                        value={param.value}
                         onValueChange={(value) =>
-                          updateParameter(index, "type", value)
+                          updateParameter(index, "value", value)
                         }
                       >
-                        <SelectTrigger className="w-[120px]">
+                        <SelectTrigger className="flex-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="string">String</SelectItem>
-                          <SelectItem value="number">Number</SelectItem>
-                          <SelectItem value="boolean">Boolean</SelectItem>
+                          <SelectItem value="true">true</SelectItem>
+                          <SelectItem value="false">false</SelectItem>
                         </SelectContent>
                       </Select>
-                      {param.type === "boolean" ? (
-                        <Select
-                          value={param.value}
-                          onValueChange={(value) =>
-                            updateParameter(index, "value", value)
-                          }
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="true">true</SelectItem>
-                            <SelectItem value="false">false</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input
-                          placeholder={param.type === "number" ? "0" : "Value"}
-                          value={param.value}
-                          onChange={(e) =>
-                            updateParameter(index, "value", e.target.value)
-                          }
-                          className="flex-1"
-                          type={param.type === "number" ? "number" : "text"}
-                        />
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeParameter(index)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
+                    ) : (
+                      <Input
+                        placeholder={param.type === "number" ? "0" : "Value"}
+                        value={param.value}
+                        onChange={(e) =>
+                          updateParameter(index, "value", e.target.value)
+                        }
+                        className="flex-1"
+                        type={param.type === "number" ? "number" : "text"}
+                      />
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeParameter(index)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              /* No parameters - show nothing */
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  No custom parameters configured.
+                </p>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="flex justify-between gap-2 pt-2"
+            >
+              <Button
+                variant="outline"
+                onClick={addParameter}
+                disabled={updateProject.isPending}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Parameter
+              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={handleCancel}
+                  disabled={updateProject.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={updateProject.isPending || !hasUnsavedChanges}
+                >
+                  {updateProject.isPending ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="view-mode"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="flex items-start justify-between gap-4"
+          >
+            <div className="flex-1 space-y-3">
+              <CardDescription className="text-sm text-foreground max-w-sm">
+                Custom parameters sent with each LLM request.
+              </CardDescription>
+
+              {parameters.length > 0 ? (
+                <div className="space-y-2">
+                  {parameters.map((param, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <span className="font-mono font-medium">
+                        {param.key}:
+                      </span>
+                      <span className="text-muted-foreground">
+                        {param.type === "string" && `"${param.value}"`}
+                        {param.type === "number" && param.value}
+                        {param.type === "boolean" && param.value}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({param.type})
+                      </span>
+                    </div>
                   ))}
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No custom parameters configured.
+                </p>
+              )}
+            </div>
 
-                {/* Add parameter button */}
-                <Button
-                  variant="outline"
-                  onClick={addParameter}
-                  className="w-full"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Parameter
-                </Button>
-
-                {/* Action buttons */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="flex justify-end gap-2 pt-2"
-                >
-                  <Button
-                    variant="ghost"
-                    onClick={handleCancel}
-                    disabled={updateProject.isPending}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={updateProject.isPending || !hasUnsavedChanges}
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {updateProject.isPending ? "Saving..." : "Save"}
-                  </Button>
-                </motion.div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="view-mode"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="space-y-3"
-              >
-                <CardDescription className="text-sm text-foreground max-w-sm">
-                  Custom parameters sent with each LLM request.
-                </CardDescription>
-
-                {parameters.length > 0 ? (
-                  <div className="space-y-2">
-                    {parameters.map((param, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <span className="font-mono font-medium">
-                          {param.key}:
-                        </span>
-                        <span className="text-muted-foreground">
-                          {param.type === "string" && `"${param.value}"`}
-                          {param.type === "number" && param.value}
-                          {param.type === "boolean" && param.value}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          ({param.type})
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No custom parameters configured.
-                  </p>
-                )}
-
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditing(true)}
-                  className="mt-4"
-                >
-                  {parameters.length > 0 ? "Edit Parameters" : "Add Parameters"}
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </CardContent>
-    </Card>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditing(true)}
+              className="flex-shrink-0"
+            >
+              {parameters.length > 0 ? "Edit Parameters" : "Add Parameters"}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
