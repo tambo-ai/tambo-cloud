@@ -214,6 +214,13 @@ export class AISdkClient implements LLMClient {
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
       }),
+      providerOptions: {
+        [providerKey]: {
+          parallelToolCalls: false,
+          disableParallelToolUse: true,
+          parallel_tool_calls: false,
+        },
+      },
     };
 
     if (params.stream) {
