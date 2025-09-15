@@ -83,7 +83,9 @@ describe("useMergedRef", () => {
   test("updates both callback and object refs", () => {
     const objectRef = React.createRef<HTMLDivElement | null>();
     const calls: Array<HTMLDivElement | null> = [];
-    const callbackRef = (el: HTMLDivElement | null) => calls.push(el);
+    const callbackRef = (el: HTMLDivElement | null): void => {
+      calls.push(el);
+    };
 
     const { result } = renderHook(() =>
       useMergedRef<HTMLDivElement | null>(objectRef, callbackRef),
