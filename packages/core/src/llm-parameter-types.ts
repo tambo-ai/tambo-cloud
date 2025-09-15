@@ -46,12 +46,3 @@ export type CustomLlmParameters = Record<
   string,
   Record<string, Record<string, JSONValue>>
 >;
-
-/**
- * Legacy type for backward compatibility - parameters organized only by provider.
- * @deprecated Use CustomLlmParameters for new implementations
- */
-export type CustomLlmParametersLegacy = Record<
-  string,
-  Record<string, JSONValue>
->;
