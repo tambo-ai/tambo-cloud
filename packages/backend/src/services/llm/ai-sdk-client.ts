@@ -225,8 +225,15 @@ export class AISdkClient implements LLMClient {
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
       }),
-      // Extract parameters for the current provider and model combination
-      // but flatten them to the format the AI SDK expects (provider -> parameters)
+      /**
+       * Extract and flatten custom parameters from our nested storage structure.
+       *
+       * Storage format: provider -> model -> parameters (for model-specific configs)
+       * AI SDK expects: provider -> parameters (flat structure)
+       *
+       * We extract only the current model's parameters and pass them to the AI SDK.
+       * This allows users to have different settings for GPT-4 vs GPT-3.5, etc.
+       */
       ...(this.customLlmParameters?.[providerKey]?.[this.model] && {
         providerOptions: {
           [providerKey]: {
