@@ -3,6 +3,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
 import { createMistral } from "@ai-sdk/mistral";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import {
   ChatCompletionMessageParam,
   CustomLlmParameters,
@@ -70,7 +71,13 @@ const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
   mistral: createMistral,
   google: createGoogleGenerativeAI,
   groq: createGroq,
-  "openai-compatible": createOpenAI, // Will be configured with custom baseURL
+  "openai-compatible": (config) =>
+    createOpenAICompatible({
+      name: "openai-compatible",
+      baseURL: config?.baseURL || "",
+      apiKey: config?.apiKey,
+      ...config,
+    }),
 } as const;
 
 // Model to provider mapping based on our config
@@ -222,7 +229,23 @@ export class AISdkClient implements LLMClient {
       // but flatten them to the format the AI SDK expects (provider -> parameters)
       ...(this.customLlmParameters?.[providerKey]?.[this.model] && {
         providerOptions: {
-          [providerKey]: this.customLlmParameters[providerKey][this.model],
+          [providerKey]: {
+            ...this.customLlmParameters[providerKey][this.model],
+            // Include parallel tool calls settings
+            parallelToolCalls: false,
+            disableParallelToolUse: true,
+            parallel_tool_calls: false,
+          },
+        },
+      }),
+      // If no custom parameters, still include parallel tool calls settings
+      ...(!this.customLlmParameters?.[providerKey]?.[this.model] && {
+        providerOptions: {
+          [providerKey]: {
+            parallelToolCalls: false,
+            disableParallelToolUse: true,
+            parallel_tool_calls: false,
+          },
         },
       }),
     };
