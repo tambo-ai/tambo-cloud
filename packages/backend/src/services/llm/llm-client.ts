@@ -75,7 +75,11 @@ type LLMChatCompletionChoice = Omit<
     | "unknown";
 };
 
-export type LLMResponse = Omit<LLMChatCompletionChoice, "finish_reason">;
+interface LLMResponseExtras {
+  reasoning?: string[];
+}
+export type LLMResponse = Omit<LLMChatCompletionChoice, "finish_reason"> &
+  LLMResponseExtras;
 
 /** Get the string response from the LLM response */
 export function getLLMResponseMessage(response: Partial<LLMResponse>) {
