@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
-import { validateSafeURL } from "@/lib/urlSecurity";
 import { customLlmParametersSchema } from "@/lib/llm-parameters";
+import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { llmProviderConfig } from "@tambo-ai-cloud/backend";
 import {
@@ -247,6 +247,7 @@ export const projectRouter = createTRPCRouter({
           agentProviderType: project.agentProviderType,
           agentUrl: project.agentUrl,
           agentName: project.agentName,
+          customLlmParameters: project.customLlmParameters,
           messages: stats.messages,
           users: stats.users,
           lastMessageAt: stats.lastMessageAt,

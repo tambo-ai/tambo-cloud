@@ -134,6 +134,11 @@ export const CustomLlmParametersEditorSchema = z.object({
     .nullable()
     .optional()
     .describe("The default LLM provider name."),
+  defaultLlmModelName: z
+    .string()
+    .nullable()
+    .optional()
+    .describe("The default LLM model name."),
 });
 
 export const CustomLlmParametersEditorProps = z.object({
@@ -141,6 +146,20 @@ export const CustomLlmParametersEditorProps = z.object({
     .optional()
     .describe(
       "The project object containing the custom LLM parameters. If null or undefined, the component will show a loading state.",
+    ),
+  selectedProvider: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "The currently selected provider from the dropdown. If provided, this takes precedence over the project's default provider.",
+    ),
+  selectedModel: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "The currently selected model from the dropdown. If provided, this takes precedence over the project's default model.",
     ),
   onEdited: z
     .function()
@@ -154,6 +173,8 @@ export const CustomLlmParametersEditorProps = z.object({
 
 interface CustomLlmParametersEditorProps {
   project?: z.infer<typeof CustomLlmParametersEditorSchema> | null;
+  selectedProvider?: string | null;
+  selectedModel?: string | null;
   onEdited?: () => void;
 }
 
@@ -165,6 +186,8 @@ interface ParameterEntry {
 
 export function CustomLlmParametersEditor({
   project,
+  selectedProvider,
+  selectedModel,
   onEdited,
 }: CustomLlmParametersEditorProps) {
   const { toast } = useToast();
@@ -173,30 +196,41 @@ export function CustomLlmParametersEditor({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Get provider-specific suggestions
-  const providerName = project?.defaultLlmProviderName ?? "openai";
+  const providerName =
+    selectedProvider || project?.defaultLlmProviderName || "openai";
   const suggestions =
     PARAMETER_SUGGESTIONS[providerName] ??
     PARAMETER_SUGGESTIONS["openai-compatible"];
 
   // Initialize parameters from project data
   useEffect(() => {
-    if (project?.customLlmParameters && project?.defaultLlmProviderName) {
-      // Extract parameters for the current provider from nested structure
-      const providerParams =
-        project.customLlmParameters[project.defaultLlmProviderName];
+    if (project?.customLlmParameters) {
+      // Use selectedProvider if provided, otherwise fall back to project's default provider
+      const currentProvider =
+        selectedProvider || project.defaultLlmProviderName;
+      // Use selectedModel if provided, otherwise fall back to project's default model
+      const currentModel = selectedModel || project.defaultLlmModelName;
 
-      if (providerParams && typeof providerParams === "object") {
-        const entries = Object.entries(providerParams).map(([key, value]) => ({
-          key,
-          value: String(value),
-          type:
-            typeof value === "boolean"
-              ? "boolean"
-              : typeof value === "number"
-                ? "number"
-                : "string",
-        })) as ParameterEntry[];
-        setParameters(entries);
+      if (currentProvider && currentModel) {
+        // Extract parameters for the current provider and model combination
+        const providerParams = project.customLlmParameters[currentProvider];
+        const modelParams = providerParams?.[currentModel];
+
+        if (modelParams && typeof modelParams === "object") {
+          const entries = Object.entries(modelParams).map(([key, value]) => ({
+            key,
+            value: String(value),
+            type:
+              typeof value === "boolean"
+                ? "boolean"
+                : typeof value === "number"
+                  ? "number"
+                  : "string",
+          })) as ParameterEntry[];
+          setParameters(entries);
+        } else {
+          setParameters([]);
+        }
       } else {
         setParameters([]);
       }
@@ -204,7 +238,13 @@ export function CustomLlmParametersEditor({
       setParameters([]);
     }
     setHasUnsavedChanges(false);
-  }, [project?.customLlmParameters, project?.defaultLlmProviderName]);
+  }, [
+    project?.customLlmParameters,
+    project?.defaultLlmProviderName,
+    project?.defaultLlmModelName,
+    selectedProvider,
+    selectedModel,
+  ]);
 
   const updateProject = api.project.updateProject.useMutation({
     onSuccess: () => {
@@ -246,26 +286,44 @@ export function CustomLlmParametersEditor({
       }
     }
 
-    // Get the current provider
-    const currentProvider = project.defaultLlmProviderName ?? "openai";
+    // Get the current provider and model
+    const currentProvider =
+      selectedProvider || project.defaultLlmProviderName || "openai";
+    const currentModel = selectedModel || project.defaultLlmModelName || "";
 
-    // Create nested structure with provider -> parameters
-    // Preserve existing parameters for other providers
+    // Create nested structure with provider -> model -> parameters
+    // Preserve existing parameters for other providers and models
     const existingParams = project.customLlmParameters || {};
 
     let customLlmParameters: z.infer<typeof customLlmParametersSchema> | null =
       null;
 
     if (Object.keys(parametersObject).length > 0) {
-      // Add/update parameters for current provider
+      // Add/update parameters for current provider and model
       customLlmParameters = {
         ...existingParams,
-        [currentProvider]: parametersObject,
+        [currentProvider]: {
+          ...existingParams[currentProvider],
+          [currentModel]: parametersObject,
+        },
       };
-    } else if (existingParams[currentProvider]) {
-      // Remove parameters for current provider but keep others
-      const { [currentProvider]: _, ...rest } = existingParams;
-      customLlmParameters = Object.keys(rest).length > 0 ? rest : null;
+    } else if (existingParams[currentProvider]?.[currentModel]) {
+      // Remove parameters for current provider and model but keep others
+      const providerParams = existingParams[currentProvider];
+      const { [currentModel]: _, ...otherModels } = providerParams;
+
+      if (Object.keys(otherModels).length > 0) {
+        // Keep other models for this provider
+        customLlmParameters = {
+          ...existingParams,
+          [currentProvider]: otherModels,
+        };
+      } else {
+        // Remove entire provider if no models left
+        const { [currentProvider]: _, ...otherProviders } = existingParams;
+        customLlmParameters =
+          Object.keys(otherProviders).length > 0 ? otherProviders : null;
+      }
     } else {
       // No changes needed, keep existing
       customLlmParameters =
@@ -280,22 +338,32 @@ export function CustomLlmParametersEditor({
 
   const handleCancel = () => {
     // Reset to original values
-    if (project?.customLlmParameters && project?.defaultLlmProviderName) {
-      const providerParams =
-        project.customLlmParameters[project.defaultLlmProviderName];
+    if (project?.customLlmParameters) {
+      // Use selectedProvider if provided, otherwise fall back to project's default provider
+      const currentProvider =
+        selectedProvider || project.defaultLlmProviderName;
+      // Use selectedModel if provided, otherwise fall back to project's default model
+      const currentModel = selectedModel || project.defaultLlmModelName;
 
-      if (providerParams && typeof providerParams === "object") {
-        const entries = Object.entries(providerParams).map(([key, value]) => ({
-          key,
-          value: String(value),
-          type:
-            typeof value === "boolean"
-              ? "boolean"
-              : typeof value === "number"
-                ? "number"
-                : "string",
-        })) as ParameterEntry[];
-        setParameters(entries);
+      if (currentProvider && currentModel) {
+        const providerParams = project.customLlmParameters[currentProvider];
+        const modelParams = providerParams?.[currentModel];
+
+        if (modelParams && typeof modelParams === "object") {
+          const entries = Object.entries(modelParams).map(([key, value]) => ({
+            key,
+            value: String(value),
+            type:
+              typeof value === "boolean"
+                ? "boolean"
+                : typeof value === "number"
+                  ? "number"
+                  : "string",
+          })) as ParameterEntry[];
+          setParameters(entries);
+        } else {
+          setParameters([]);
+        }
       } else {
         setParameters([]);
       }

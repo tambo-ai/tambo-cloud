@@ -14,23 +14,44 @@ export type JSONValue =
   | JSONValue[];
 
 /**
- * Type for custom LLM parameters organized by provider.
- * Maps provider names (e.g., "openai", "anthropic") to their specific parameter configurations.
- * Each provider's parameters are key-value pairs where values can be any JSON-serializable data.
+ * Type for custom LLM parameters organized by provider and model.
+ * Maps provider names (e.g., "openai", "anthropic") to model-specific parameter configurations.
+ * Each provider contains model names that map to their specific parameter configurations.
+ * Each model's parameters are key-value pairs where values can be any JSON-serializable data.
  *
  * @example
  * ```typescript
  * const params: CustomLlmParameters = {
  *   "openai": {
- *     "temperature": 0.7,
- *     "top_p": 0.9,
- *     "frequency_penalty": 0.1
+ *     "gpt-4.1": {
+ *       "temperature": 0.7,
+ *       "top_p": 0.9,
+ *       "frequency_penalty": 0.1
+ *     },
+ *     "gpt-4": {
+ *       "temperature": 0.5,
+ *       "max_tokens": 1000
+ *     }
  *   },
  *   "anthropic": {
- *     "temperature": 0.8,
- *     "top_k": 250
+ *     "claude-3-sonnet": {
+ *       "temperature": 0.8,
+ *       "top_k": 250
+ *     }
  *   }
  * };
  * ```
  */
-export type CustomLlmParameters = Record<string, Record<string, JSONValue>>;
+export type CustomLlmParameters = Record<
+  string,
+  Record<string, Record<string, JSONValue>>
+>;
+
+/**
+ * Legacy type for backward compatibility - parameters organized only by provider.
+ * @deprecated Use CustomLlmParameters for new implementations
+ */
+export type CustomLlmParametersLegacy = Record<
+  string,
+  Record<string, JSONValue>
+>;

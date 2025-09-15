@@ -218,10 +218,11 @@ export class AISdkClient implements LLMClient {
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
       }),
-      // Extract parameters for the current provider only
-      ...(this.customLlmParameters?.[providerKey] && {
+      // Extract parameters for the current provider and model combination
+      // but flatten them to the format the AI SDK expects (provider -> parameters)
+      ...(this.customLlmParameters?.[providerKey]?.[this.model] && {
         providerOptions: {
-          [providerKey]: this.customLlmParameters[providerKey],
+          [providerKey]: this.customLlmParameters[providerKey][this.model],
         },
       }),
     };

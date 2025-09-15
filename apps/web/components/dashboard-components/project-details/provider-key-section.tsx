@@ -1125,6 +1125,8 @@ export function ProviderKeySection({
                       <Label>Custom LLM Parameters</Label>
                       <CustomLlmParametersEditor
                         project={project}
+                        selectedProvider={parsedSelection.provider}
+                        selectedModel={parsedSelection.model}
                         onEdited={onEdited}
                       />
                     </div>
