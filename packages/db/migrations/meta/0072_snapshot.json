@@ -1,5 +1,5 @@
 {
-  "id": "b8b0662c-40e8-4ead-892c-38bc3b7b24dd",
+  "id": "42aae857-05e0-4e75-9796-1d0bb3e7558e",
   "prevId": "178e35c9-baff-427f-a4fe-e2705c7706a6",
   "version": "7",
   "dialect": "postgresql",
@@ -1159,8 +1159,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "custom_llm_parameters": {
-          "name": "custom_llm_parameters",
+        "agent_headers": {
+          "name": "agent_headers",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
