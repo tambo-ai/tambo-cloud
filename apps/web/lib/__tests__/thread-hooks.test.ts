@@ -13,7 +13,7 @@ describe("thread-hooks utilities", () => {
   test("hasRightClass detects 'right' token", () => {
     expect(hasRightClass(undefined)).toBe(false);
     expect(hasRightClass("")).toBe(false);
-    expect(hasRightClass("foo bar"));
+    expect(hasRightClass("foo bar")).toBe(false);
     expect(hasRightClass("foo right bar")).toBe(true);
     expect(hasRightClass("right")).toBe(true);
   });
