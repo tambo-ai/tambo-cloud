@@ -97,7 +97,7 @@ describe("threadMessagesToChatHistory", () => {
         message: "test reasoning",
         props: {},
         componentState: {},
-        reasoning: "test reasoning",
+        reasoning: ["test reasoning"],
       };
 
       const toolCallRequest: ToolCallRequest = {

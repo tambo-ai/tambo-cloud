@@ -128,7 +128,7 @@ export interface ThreadMessage {
    */
   toolCallRequest?: ToolCallRequest;
   /** Reasoning text from the LLM */
-  reasoning: string[];
+  reasoning?: string[];
 }
 
 /** Temporary internal type to make sure that subclasses are aligned on types */

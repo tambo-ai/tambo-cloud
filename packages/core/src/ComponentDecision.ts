@@ -23,7 +23,6 @@ export interface ComponentDecisionV2 {
   props: Record<string, unknown>;
   message: string;
   componentState: Record<string, unknown> | null;
-  reasoning: string[];
 }
 
 export interface ToolCallRequest {
