@@ -9,8 +9,10 @@ import {
   isNull,
   ne,
   or,
+  SQL,
   sql,
 } from "drizzle-orm";
+import { SubqueryWithSelection } from "drizzle-orm/pg-core";
 import { mergeSuperJson } from "../drizzleUtil";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
@@ -432,14 +434,7 @@ export async function getThreadsByProjectWithCounts(
       .as("counts");
 
     // Build the main query with join
-    const orderBy =
-      sortField === "messages"
-        ? sortDirection === "asc"
-          ? countsSubquery.messageCount
-          : desc(countsSubquery.messageCount)
-        : sortDirection === "asc"
-          ? countsSubquery.errorCount
-          : desc(countsSubquery.errorCount);
+    const orderBy = getOrderBy(sortField, sortDirection, countsSubquery);
 
     const threadsWithCounts = await db
       .select({
@@ -473,35 +468,14 @@ export async function getThreadsByProjectWithCounts(
     }));
   }
 
+  const orderedField = getFieldFromSort(sortField);
   // non-count sorting
-  const getOrderBy = () => {
-    let field;
-    switch (sortField) {
-      case "created":
-        field = schema.threads.createdAt;
-        break;
-      case "updated":
-        field = schema.threads.updatedAt;
-        break;
-      case "threadId":
-        field = schema.threads.id;
-        break;
-      case "threadName":
-        field = schema.threads.name;
-        break;
-      case "contextKey":
-        field = schema.threads.contextKey;
-        break;
-      default:
-        field = schema.threads.createdAt;
-    }
-    return sortDirection === "asc" ? field : desc(field);
-  };
+  const orderedBy = sortDirection === "asc" ? orderedField : desc(orderedField);
 
   // Get threads without messages
   const threads = await db.query.threads.findMany({
     where: and(...whereConditions),
-    orderBy: [getOrderBy()],
+    orderBy: [orderedBy],
     offset,
     limit,
   });
@@ -541,6 +515,47 @@ export async function getThreadsByProjectWithCounts(
     messageCount: countsMap.get(thread.id)?.messageCount || 0,
     errorCount: countsMap.get(thread.id)?.errorCount || 0,
   }));
+}
+
+function getFieldFromSort(sortField: string) {
+  switch (sortField) {
+    case "created":
+      return schema.threads.createdAt;
+    case "updated":
+      return schema.threads.updatedAt;
+    case "threadId":
+      return schema.threads.id;
+    case "threadName":
+      return schema.threads.name;
+    case "contextKey":
+      return schema.threads.contextKey;
+    default:
+      return schema.threads.createdAt;
+  }
+}
+
+function getOrderBy(
+  sortField: "messages" | "errors",
+  sortDirection: "asc" | "desc",
+  countsSubquery: SubqueryWithSelection<
+    {
+      messageCount: SQL.Aliased<number>;
+      errorCount: SQL.Aliased<number>;
+    },
+    "counts"
+  >,
+) {
+  if (sortField === "messages") {
+    if (sortDirection === "asc") {
+      return countsSubquery.messageCount;
+    }
+    return desc(countsSubquery.messageCount);
+  }
+
+  if (sortDirection === "asc") {
+    return countsSubquery.errorCount;
+  }
+  return desc(countsSubquery.errorCount);
 }
 
 export async function countThreadsByProjectWithSearch(
