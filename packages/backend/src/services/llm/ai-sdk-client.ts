@@ -66,7 +66,10 @@ type ProviderFactory = (config?: ProviderConfig) => ConfiguredProvider;
 
 // Provider instances mapping - these are factory functions
 const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
-  openai: createOpenAI,
+  openai: (config) =>
+    createOpenAI({
+      ...config,
+    }),
   anthropic: createAnthropic,
   mistral: createMistral,
   google: createGoogleGenerativeAI,
@@ -241,12 +244,15 @@ export class AISdkClient implements LLMClient {
           parallelToolCalls: false,
           disableParallelToolUse: true,
           parallel_tool_calls: false,
+          reasoningEffort: "low",
+          reasoningSummary: "auto",
           // Custom parameters override defaults (if any exist)
           ...this.customLlmParameters?.[providerKey]?.[this.model],
         },
       },
     };
 
+    console.log("sending provider settings: ", baseConfig.providerOptions);
     if (params.stream) {
       // added explicit await even though types say it isn't necessary
       const result = await streamText(baseConfig);
@@ -392,15 +398,18 @@ export class AISdkClient implements LLMClient {
           break;
         case "reasoning-start":
           // append to the last element of the array
+          console.log("reasoning-start");
           accumulatedReasoning = [...accumulatedReasoning, ""];
           break;
         case "reasoning-delta":
+          console.log("reasoning-delta: ", delta.text);
           accumulatedReasoning = [
             ...accumulatedReasoning.slice(0, -1),
             accumulatedReasoning[accumulatedReasoning.length - 1] + delta.text,
           ];
           break;
         case "reasoning-end":
+          console.log("reasoning-end");
           break;
         case "source": // url? not sure what this is
         case "file": // TODO: handle files - should be added as message objects

@@ -41,11 +41,11 @@ export async function* runAgentLoop(
       componentName: null,
       props: null,
       componentState: null,
-      reasoning: "",
       statusMessage: "",
       completionStatusMessage: "",
       toolCallRequest: toolCallRequest,
       toolCallId: toolCallId,
+      reasoning: [], // undefined,
     };
   }
 }

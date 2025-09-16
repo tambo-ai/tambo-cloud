@@ -124,6 +124,7 @@ describe("threadMessagesToChatHistory", () => {
           toolCallRequest,
         },
         componentState: { state: "test" },
+        reasoning: ["test reasoning"],
       };
 
       const result = threadMessagesToChatCompletionMessageParam([

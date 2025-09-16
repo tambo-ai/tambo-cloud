@@ -68,6 +68,7 @@ export async function addMessage(
     error: message.error ?? undefined,
     isCancelled: message.isCancelled,
     additionalContext: message.additionalContext ?? {},
+    reasoning: message.reasoning ?? [], // undefined,
   };
 }
 
@@ -89,6 +90,7 @@ export async function updateMessage(
     error: messageDto.error,
     isCancelled: messageDto.isCancelled,
     additionalContext: messageDto.additionalContext ?? {},
+    reasoning: messageDto.reasoning ?? undefined,
   });
 
   if (messageDto.role === MessageRole.Tool && messageDto.error) {
@@ -113,6 +115,7 @@ export async function updateMessage(
     error: message.error ?? undefined,
     isCancelled: message.isCancelled,
     additionalContext: message.additionalContext ?? {},
+    reasoning: message.reasoning ?? [], // undefined,
   };
 }
 

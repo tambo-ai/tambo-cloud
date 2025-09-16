@@ -107,9 +107,9 @@ export function getLLMResponseToolCallRequest(
   // TODO: should we throw here?
   const args = tryParseJsonObject(llmToolCall.function.arguments, false);
   if (!args) {
-    console.error(
-      `Failed to parse tool call arguments, is this an incomplete stream? ${llmToolCall.function.arguments}`,
-    );
+    // console.error(
+    //   `Failed to parse tool call arguments, is this an incomplete stream? ${llmToolCall.function.arguments}`,
+    // );
     return undefined;
   }
   const parameters = Object.entries(args).map(([key, value]) => ({

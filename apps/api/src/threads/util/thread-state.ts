@@ -347,6 +347,7 @@ export function updateThreadMessageFromLegacyDecision(
       },
     ],
     component: chunk,
+    reasoning: chunk.reasoning,
     // If the chunk includes a tool call, propagate it onto the thread message.
     // Intermediate chunks from fixStreamedToolCalls will not include tool calls; only
     // final/synthesized chunks carry tool call metadata.
