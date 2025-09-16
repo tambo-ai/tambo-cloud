@@ -231,30 +231,20 @@ export class AISdkClient implements LLMClient {
        * Storage format: provider -> model -> parameters (for model-specific configs)
        * AI SDK expects: provider -> parameters (flat structure)
        *
-       * We extract only the current model's parameters and pass them to the AI SDK.
+       * We extract only the current model's parameters and merge them with default
+       * parallel tool calls settings, then pass them to the AI SDK.
        * This allows users to have different settings for GPT-4 vs GPT-3.5, etc.
        */
-      ...(this.customLlmParameters?.[providerKey]?.[this.model] && {
-        providerOptions: {
-          [providerKey]: {
-            ...this.customLlmParameters[providerKey][this.model],
-            // Include parallel tool calls settings
-            parallelToolCalls: false,
-            disableParallelToolUse: true,
-            parallel_tool_calls: false,
-          },
+      providerOptions: {
+        [providerKey]: {
+          // Default parallel tool calls settings (always applied)
+          parallelToolCalls: false,
+          disableParallelToolUse: true,
+          parallel_tool_calls: false,
+          // Custom parameters override defaults (if any exist)
+          ...this.customLlmParameters?.[providerKey]?.[this.model],
         },
-      }),
-      // If no custom parameters, still include parallel tool calls settings
-      ...(!this.customLlmParameters?.[providerKey]?.[this.model] && {
-        providerOptions: {
-          [providerKey]: {
-            parallelToolCalls: false,
-            disableParallelToolUse: true,
-            parallel_tool_calls: false,
-          },
-        },
-      }),
+      },
     };
 
     if (params.stream) {
