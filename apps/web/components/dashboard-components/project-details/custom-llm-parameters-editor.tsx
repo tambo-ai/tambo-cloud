@@ -183,11 +183,9 @@ interface EditModeProps {
   providerName: string;
   suggestions: Array<{ key: string; type: string; description?: string }>;
   isPending: boolean;
-  hasUnsavedChanges: boolean;
   activeEditIndex: number | null;
-  onParametersChange: (parameters: ParameterEntry[]) => void;
+  onParametersChange: (index: number, updatedParam: ParameterEntry) => void;
   onBeginEdit: (index: number) => void;
-  onSaveRow: (index: number, param: ParameterEntry) => void;
   onRemoveRow: (index: number) => void;
   onAddParameter: () => void;
   onApplySuggestion: (suggestion: { key: string; type: string }) => void;
@@ -200,10 +198,9 @@ function EditMode({
   providerName,
   suggestions,
   isPending,
-  hasUnsavedChanges,
   activeEditIndex,
+  onParametersChange,
   onBeginEdit,
-  onSaveRow,
   onRemoveRow,
   onAddParameter,
   onApplySuggestion,
@@ -238,10 +235,9 @@ function EditMode({
                 index={idx}
                 param={param}
                 isEditing={activeEditIndex === idx}
-                disabled={activeEditIndex !== null && activeEditIndex !== idx}
                 onBeginEdit={onBeginEdit}
-                onSaveRow={onSaveRow}
                 onRemoveRow={onRemoveRow}
+                onParameterChange={onParametersChange}
               />
             ))}
           </AnimatePresence>
@@ -266,7 +262,7 @@ function EditMode({
           <Button variant="ghost" onClick={onCancel} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={onSave} disabled={isPending || !hasUnsavedChanges}>
+          <Button onClick={onSave} disabled={isPending}>
             {isPending ? "Saving..." : "Save"}
           </Button>
         </div>
@@ -277,72 +273,39 @@ function EditMode({
 
 /**
  * ParameterRow Component - Individual parameter entry with self-contained state
- * manages its own local state and auto-saves changes when focus moves to another row
  */
 interface ParameterRowProps {
   index: number;
   param: ParameterEntry;
   isEditing: boolean;
-  disabled: boolean;
   onBeginEdit: (rowIndex: number) => void;
-  onSaveRow: (rowIndex: number, newParam: ParameterEntry) => void;
   onRemoveRow: (rowIndex: number) => void;
+  onParameterChange: (index: number, updatedParam: ParameterEntry) => void;
 }
 
 function ParameterRow({
   index,
   param,
   isEditing,
-  disabled,
   onBeginEdit,
-  onSaveRow,
   onRemoveRow,
+  onParameterChange,
 }: ParameterRowProps) {
   const [local, setLocal] = useState<ParameterEntry>(param);
-  const [touched, setTouched] = useState(false);
 
   // Reset local state when param changes from parent
   useEffect(() => {
     if (!isEditing) {
       setLocal(param);
-      setTouched(false);
     }
   }, [param, isEditing]);
 
-  const trimmedKey = useMemo(() => local.key.trim(), [local.key]);
-  const trimmedValue = useMemo(() => local.value.trim(), [local.value]);
-  const canSave = useMemo(
-    () => Boolean(trimmedKey) && Boolean(trimmedValue) && touched,
-    [trimmedKey, trimmedValue, touched],
-  );
-
   const handleChange = (field: keyof ParameterEntry, value: string) => {
-    if (!isEditing && !disabled) onBeginEdit(index);
-    setLocal((prev) => ({ ...prev, [field]: value }));
-    setTouched(true);
+    if (!isEditing) onBeginEdit(index);
+    const updatedParam = { ...local, [field]: value };
+    setLocal(updatedParam);
+    onParameterChange(index, updatedParam);
   };
-
-  // Auto-save when the row loses focus (i.e. when activeEditIndex changes)
-  useEffect(() => {
-    if (!isEditing && touched && canSave) {
-      onSaveRow(index, {
-        id: param.id,
-        key: trimmedKey,
-        value: trimmedValue,
-        type: local.type,
-      });
-    }
-  }, [
-    isEditing,
-    touched,
-    canSave,
-    index,
-    trimmedKey,
-    trimmedValue,
-    local.type,
-    onSaveRow,
-    param.id,
-  ]);
 
   return (
     <motion.div
@@ -360,13 +323,11 @@ function ParameterRow({
         placeholder="Parameter name"
         value={local.key}
         onChange={(e) => handleChange("key", e.target.value)}
-        disabled={disabled && !isEditing}
         className="flex-1"
       />
       <Select
         value={local.type}
         onValueChange={(v) => handleChange("type", v as ParameterType)}
-        disabled={disabled && !isEditing}
       >
         <SelectTrigger className="w-[120px]">
           <SelectValue />
@@ -382,7 +343,6 @@ function ParameterRow({
         <Select
           value={local.value}
           onValueChange={(v) => handleChange("value", v)}
-          disabled={disabled && !isEditing}
         >
           <SelectTrigger className="flex-1">
             <SelectValue />
@@ -397,7 +357,6 @@ function ParameterRow({
           placeholder={local.type === "number" ? "0" : "Value"}
           value={local.value}
           onChange={(e) => handleChange("value", e.target.value)}
-          disabled={disabled && !isEditing}
           className="flex-1"
           type={local.type === "number" ? "number" : "text"}
         />
@@ -407,7 +366,6 @@ function ParameterRow({
         variant="ghost"
         size="icon"
         onClick={() => onRemoveRow(index)}
-        disabled={disabled && !isEditing}
         className="text-destructive"
       >
         <Trash2 className="h-4 w-4" />
@@ -440,7 +398,6 @@ export function CustomLlmParametersEditor({
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [parameters, setParameters] = useState<ParameterEntry[]>([]);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activeEditIndex, setActiveEditIndex] = useState<number | null>(null);
 
   // Memoized values
@@ -505,7 +462,6 @@ export function CustomLlmParametersEditor({
       currentModel,
     );
     setParameters(params);
-    setHasUnsavedChanges(false);
     setActiveEditIndex(null);
   }, [
     project?.customLlmParameters,
@@ -517,7 +473,6 @@ export function CustomLlmParametersEditor({
   const updateProject = api.project.updateProject.useMutation({
     onSuccess: () => {
       setIsEditing(false);
-      setHasUnsavedChanges(false);
       setActiveEditIndex(null);
       toast({
         description: "Custom parameters saved successfully",
@@ -605,7 +560,6 @@ export function CustomLlmParametersEditor({
     );
     setParameters(params);
     setIsEditing(false);
-    setHasUnsavedChanges(false);
     setActiveEditIndex(null);
   }, [
     project?.customLlmParameters,
@@ -618,22 +572,8 @@ export function CustomLlmParametersEditor({
     setActiveEditIndex(rowIndex);
   }, []);
 
-  const handleSaveRow = useCallback(
-    (rowIndex: number, newParam: ParameterEntry) => {
-      setParameters((prev) => {
-        const updated = [...prev];
-        updated[rowIndex] = newParam;
-        return updated;
-      });
-      setHasUnsavedChanges(true);
-      setActiveEditIndex(null);
-    },
-    [],
-  );
-
   const handleRemoveRow = useCallback((rowIndex: number) => {
     setParameters((prev) => prev.filter((_, i) => i !== rowIndex));
-    setHasUnsavedChanges(true);
     setActiveEditIndex(null);
   }, []);
 
@@ -649,7 +589,6 @@ export function CustomLlmParametersEditor({
     ];
     setParameters(newParams);
     setActiveEditIndex(newParams.length - 1);
-    setHasUnsavedChanges(true);
   }, [parameters]);
 
   const handleApplySuggestion = useCallback(
@@ -677,9 +616,17 @@ export function CustomLlmParametersEditor({
       ];
       setParameters(newParams);
       setActiveEditIndex(newParams.length - 1);
-      setHasUnsavedChanges(true);
     },
     [parameters, toast],
+  );
+
+  const handleParameterChange = useCallback(
+    (index: number, updatedParam: ParameterEntry) => {
+      setParameters((prev) =>
+        prev.map((p, i) => (i === index ? updatedParam : p)),
+      );
+    },
+    [],
   );
 
   return (
@@ -692,11 +639,9 @@ export function CustomLlmParametersEditor({
             providerName={providerName}
             suggestions={suggestions}
             isPending={updateProject.isPending}
-            hasUnsavedChanges={hasUnsavedChanges}
             activeEditIndex={activeEditIndex}
-            onParametersChange={setParameters}
+            onParametersChange={handleParameterChange}
             onBeginEdit={handleBeginEdit}
-            onSaveRow={handleSaveRow}
             onRemoveRow={handleRemoveRow}
             onAddParameter={handleAddParameter}
             onApplySuggestion={handleApplySuggestion}
