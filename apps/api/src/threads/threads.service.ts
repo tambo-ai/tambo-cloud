@@ -1557,7 +1557,6 @@ export class ThreadsService {
             componentState: {},
             threadId: threadId,
             createdAt: new Date(),
-            reasoning: [], // undefined,
           },
           generationStage: GenerationStage.CANCELLED,
           statusMessage: "Thread cancelled",
