@@ -471,8 +471,8 @@ export const messages = pgTable(
       check(
         "chk_messages_reasoning_max_len",
         sql`${table.reasoning} IS NULL
-            OR (jsonb_typeof(${table.reasoning}) = 'array' AND
-                jsonb_array_length(${table.reasoning}) <= 200)`,
+            OR (jsonb_typeof(${table.reasoning}->'json') = 'array' AND
+                jsonb_array_length(${table.reasoning}->'json') <= 200)`,
       ),
     ];
   },
