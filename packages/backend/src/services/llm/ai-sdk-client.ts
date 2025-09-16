@@ -244,15 +244,12 @@ export class AISdkClient implements LLMClient {
           parallelToolCalls: false,
           disableParallelToolUse: true,
           parallel_tool_calls: false,
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
           // Custom parameters override defaults (if any exist)
           ...this.customLlmParameters?.[providerKey]?.[this.model],
         },
       },
     };
 
-    console.log("sending provider settings: ", baseConfig.providerOptions);
     if (params.stream) {
       // added explicit await even though types say it isn't necessary
       const result = await streamText(baseConfig);
