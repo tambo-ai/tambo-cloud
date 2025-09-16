@@ -466,7 +466,15 @@ export const messages = pgTable(
       .notNull(),
   }),
   (table) => {
-    return [index("messages_thread_id_idx").on(table.threadId)];
+    return [
+      index("messages_thread_id_idx").on(table.threadId),
+      check(
+        "chk_messages_reasoning_max_len",
+        sql`${table.reasoning} IS NULL
+            OR (jsonb_typeof(${table.reasoning}) = 'array' AND
+                jsonb_array_length(${table.reasoning}) <= 200)`,
+      ),
+    ];
   },
 );
 
