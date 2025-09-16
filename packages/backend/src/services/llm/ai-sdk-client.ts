@@ -398,18 +398,15 @@ export class AISdkClient implements LLMClient {
           break;
         case "reasoning-start":
           // append to the last element of the array
-          console.log("reasoning-start");
           accumulatedReasoning = [...accumulatedReasoning, ""];
           break;
         case "reasoning-delta":
-          console.log("reasoning-delta: ", delta.text);
           accumulatedReasoning = [
             ...accumulatedReasoning.slice(0, -1),
             accumulatedReasoning[accumulatedReasoning.length - 1] + delta.text,
           ];
           break;
         case "reasoning-end":
-          console.log("reasoning-end");
           break;
         case "source": // url? not sure what this is
         case "file": // TODO: handle files - should be added as message objects
