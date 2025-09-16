@@ -549,22 +549,47 @@ export function CustomLlmParametersEditor({
     const existingParams = project.customLlmParameters ?? {};
     const hasNewParams = Object.keys(parametersObject).length > 0;
 
-    // If adding params, merge them. If removing, delete the current model's entry
-    const { [currentModel]: _, ...otherModels } =
-      existingParams[currentProvider] ?? {};
-    const updatedProviderParams = hasNewParams
-      ? { ...existingParams[currentProvider], [currentModel]: parametersObject }
-      : Object.keys(otherModels).length > 0
-        ? otherModels
-        : null;
+    // Get existing parameters for current provider
+    const currentProviderParams = existingParams[currentProvider] ?? {};
 
-    // If provider has params, keep it. Otherwise, remove it from the structure
+    // Extract other models (excluding current model)
+    const { [currentModel]: _, ...otherModels } = currentProviderParams;
+    const hasOtherModels = Object.keys(otherModels).length > 0;
+
+    // Determine updated parameters for this provider
+    let updatedProviderParams;
+    if (hasNewParams) {
+      // Case A: User added new parameters
+      updatedProviderParams = {
+        ...currentProviderParams, // Keep existing model params
+        [currentModel]: parametersObject, // Add/update current model
+      };
+    } else if (hasOtherModels) {
+      // Case B: No new params, but other models exist for this provider
+      updatedProviderParams = otherModels; // Keep other models
+    } else {
+      // Case C: No params and no other models
+      updatedProviderParams = null; // Remove provider entirely
+    }
+
+    // Extract other providers (excluding current provider)
     const { [currentProvider]: __, ...otherProviders } = existingParams;
-    const customLlmParameters = updatedProviderParams
-      ? { ...existingParams, [currentProvider]: updatedProviderParams }
-      : Object.keys(otherProviders).length > 0
-        ? otherProviders
-        : null;
+    const hasOtherProviders = Object.keys(otherProviders).length > 0;
+
+    let customLlmParameters;
+    if (updatedProviderParams) {
+      // Provider still has params - merge back
+      customLlmParameters = {
+        ...existingParams,
+        [currentProvider]: updatedProviderParams,
+      };
+    } else if (hasOtherProviders) {
+      // No params for current provider, but other providers exist
+      customLlmParameters = otherProviders;
+    } else {
+      // No params anywhere
+      customLlmParameters = null;
+    }
 
     updateProject.mutate({
       projectId: project.id,
