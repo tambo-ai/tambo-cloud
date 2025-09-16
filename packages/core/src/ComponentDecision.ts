@@ -10,7 +10,7 @@ export interface LegacyComponentDecision {
   toolCallRequest?: ToolCallRequest;
   toolCallId?: string;
   componentState: Record<string, unknown> | null;
-  reasoning: string[];
+  reasoning?: string[];
   statusMessage?: string;
   completionStatusMessage?: string;
 }

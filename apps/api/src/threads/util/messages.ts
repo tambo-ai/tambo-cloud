@@ -156,7 +156,6 @@ export async function addAssistantMessageToThread(
     componentName: component.componentName,
     props: component.props,
     componentState: component.componentState,
-    reasoning: component.reasoning,
   };
   return await addMessage(db, threadId, {
     role: MessageRole.Assistant,
@@ -171,6 +170,7 @@ export async function addAssistantMessageToThread(
     toolCallRequest: component.toolCallRequest,
     tool_call_id: component.toolCallId,
     componentState: component.componentState ?? {},
+    reasoning: component.reasoning,
   });
 }
 

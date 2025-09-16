@@ -67,7 +67,7 @@ export class ThreadMessageDto {
   @ApiProperty({
     description: "Reasoning text from the LLM, if the model supports it.",
   })
-  reasoning!: string[];
+  reasoning?: string[];
 
   @ApiProperty({
     type: "object",
