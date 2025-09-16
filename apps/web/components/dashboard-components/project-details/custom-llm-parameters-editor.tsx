@@ -12,67 +12,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import {
-  customLlmParametersSchema,
-  PARAMETER_SUGGESTIONS,
-} from "@/lib/llm-parameters";
-import { api } from "@/trpc/react";
+import { PARAMETER_SUGGESTIONS } from "@/lib/llm-parameters";
+import { api, RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { z } from "zod";
-
-export const CustomLlmParametersEditorSchema = z.object({
-  id: z.string().describe("The unique identifier for the project."),
-  name: z.string().describe("The name of the project."),
-  customLlmParameters: customLlmParametersSchema
-    .nullable()
-    .optional()
-    .describe("Custom LLM parameters for different providers"),
-  defaultLlmProviderName: z
-    .string()
-    .nullable()
-    .optional()
-    .describe("The default LLM provider name."),
-  defaultLlmModelName: z
-    .string()
-    .nullable()
-    .optional()
-    .describe("The default LLM model name."),
-});
-
-export const CustomLlmParametersEditorProps = z.object({
-  project: CustomLlmParametersEditorSchema.nullable()
-    .optional()
-    .describe(
-      "The project object containing the custom LLM parameters. If null or undefined, the component will show a loading state.",
-    ),
-  selectedProvider: z
-    .string()
-    .nullable()
-    .optional()
-    .describe(
-      "The currently selected provider from the dropdown. If provided, this takes precedence over the project's default provider.",
-    ),
-  selectedModel: z
-    .string()
-    .nullable()
-    .optional()
-    .describe(
-      "The currently selected model from the dropdown. If provided, this takes precedence over the project's default model.",
-    ),
-  onEdited: z
-    .function()
-    .args()
-    .returns(z.void())
-    .optional()
-    .describe(
-      "Callback function to be called when the parameters are successfully saved.",
-    ),
-});
 
 interface CustomLlmParametersEditorProps {
-  project?: z.infer<typeof CustomLlmParametersEditorSchema> | null;
+  project?: RouterOutputs["project"]["getUserProjects"][number];
   selectedProvider?: string | null;
   selectedModel?: string | null;
   onEdited?: () => void;
@@ -94,7 +41,10 @@ interface ParameterEntry {
  * Converts string values from form inputs to their proper types for storage.
  * The AI SDK expects proper JSON types, not strings.
  */
-const convertValue = (value: string, type: ParameterType): any => {
+const convertValue = (
+  value: string,
+  type: ParameterType,
+): string | number | boolean | undefined => {
   if (type === "boolean") return value === "true";
   if (type === "number") {
     const num = parseFloat(value);
@@ -107,83 +57,348 @@ const convertValue = (value: string, type: ParameterType): any => {
  * Detects the type of a value from stored JSON.
  * Used when loading parameters from the database.
  */
-const detectType = (value: any): ParameterType => {
+const detectType = (value: unknown): ParameterType => {
   if (typeof value === "boolean") return "boolean";
   if (typeof value === "number") return "number";
   return "string";
 };
 
-// Parameter row component
-interface ParameterRowProps {
-  param: ParameterEntry;
-  index: number;
-  onUpdate: (index: number, field: keyof ParameterEntry, value: string) => void;
-  onRemove: (index: number) => void;
+/**
+ * ParameterSuggestions Component - Displays clickable parameter suggestions
+ */
+interface ParameterSuggestionsProps {
+  providerName: string;
+  suggestions: Array<{ key: string; type: string; description?: string }>;
+  onApply: (suggestion: { key: string; type: string }) => void;
 }
 
-const ParameterRow = ({
-  param,
-  index,
-  onUpdate,
-  onRemove,
-}: ParameterRowProps) => (
-  <motion.div
-    initial={{ opacity: 0, x: -10 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: 10 }}
-    className="flex gap-2 items-start"
-  >
-    <Input
-      placeholder="Parameter name"
-      value={param.key}
-      onChange={(e) => onUpdate(index, "key", e.target.value)}
-      className="flex-1"
-    />
-    <Select
-      value={param.type}
-      onValueChange={(v) => onUpdate(index, "type", v)}
+function ParameterSuggestions({
+  providerName,
+  suggestions,
+  onApply,
+}: ParameterSuggestionsProps) {
+  if (suggestions.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <Label className="text-xs text-muted-foreground mb-2 block">
+        Common parameters for {providerName}:
+      </Label>
+      <div className="flex flex-wrap gap-2">
+        {suggestions.map((s) => (
+          <Button
+            key={s.key}
+            variant="outline"
+            size="sm"
+            onClick={() => onApply(s)}
+            className="text-xs"
+            title={s.description}
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            {s.key}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ViewMode Component - Read-only display mode for parameters
+ * Shows loading placeholders when project data is not yet available
+ */
+interface ViewModeProps {
+  parameters: ParameterEntry[];
+  onEdit: () => void;
+  isLoading?: boolean;
+}
+
+function ViewMode({ parameters, onEdit, isLoading }: ViewModeProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="flex items-start justify-between gap-4"
     >
-      <SelectTrigger className="w-[120px]">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="string">String</SelectItem>
-        <SelectItem value="number">Number</SelectItem>
-        <SelectItem value="boolean">Boolean</SelectItem>
-      </SelectContent>
-    </Select>
-    {param.type === "boolean" ? (
-      <Select
-        value={param.value}
-        onValueChange={(v) => onUpdate(index, "value", v)}
+      <div className="flex-1 space-y-3">
+        <CardDescription className="text-sm text-foreground max-w-sm">
+          Custom parameters sent with each LLM request.
+        </CardDescription>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            <div className="h-4 bg-muted/50 rounded w-3/4 animate-pulse" />
+            <div className="h-4 bg-muted/50 rounded w-1/2 animate-pulse" />
+          </div>
+        ) : parameters.length > 0 ? (
+          <div className="space-y-2">
+            {parameters.map((p, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm">
+                <span className="font-mono font-medium">{p.key}:</span>
+                <span className="text-muted-foreground">
+                  {p.type === "string" ? `"${p.value}"` : p.value}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  ({p.type})
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No custom parameters configured.
+          </p>
+        )}
+      </div>
+
+      <Button
+        variant="outline"
+        onClick={onEdit}
+        className="flex-shrink-0"
+        disabled={isLoading}
       >
-        <SelectTrigger className="flex-1">
+        {parameters.length > 0 ? "Edit Parameters" : "Add Parameters"}
+      </Button>
+    </motion.div>
+  );
+}
+
+/**
+ * EditMode Component - Interactive edit mode for managing parameters
+ * Handles adding, modifying, and removing parameters with per-row editing state
+ */
+interface EditModeProps {
+  parameters: ParameterEntry[];
+  providerName: string;
+  suggestions: Array<{ key: string; type: string; description?: string }>;
+  isPending: boolean;
+  hasUnsavedChanges: boolean;
+  activeEditIndex: number | null;
+  onParametersChange: (parameters: ParameterEntry[]) => void;
+  onBeginEdit: (index: number) => void;
+  onSaveRow: (index: number, param: ParameterEntry) => void;
+  onRemoveRow: (index: number) => void;
+  onAddParameter: () => void;
+  onApplySuggestion: (suggestion: { key: string; type: string }) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}
+
+function EditMode({
+  parameters,
+  providerName,
+  suggestions,
+  isPending,
+  hasUnsavedChanges,
+  activeEditIndex,
+  onBeginEdit,
+  onSaveRow,
+  onRemoveRow,
+  onAddParameter,
+  onApplySuggestion,
+  onSave,
+  onCancel,
+}: EditModeProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="space-y-4"
+    >
+      <CardDescription className="text-sm text-foreground max-w-sm mb-4">
+        Add custom parameters to send with each LLM request. These will be
+        passed as provider options.
+      </CardDescription>
+
+      <ParameterSuggestions
+        providerName={providerName}
+        suggestions={suggestions}
+        onApply={onApplySuggestion}
+      />
+
+      <div className="space-y-3">
+        {parameters.length > 0 ? (
+          <AnimatePresence mode="popLayout">
+            {parameters.map((param, idx) => (
+              <ParameterRow
+                key={`${idx}-${param.key}`}
+                index={idx}
+                param={param}
+                isEditing={activeEditIndex === idx}
+                disabled={activeEditIndex !== null && activeEditIndex !== idx}
+                onBeginEdit={onBeginEdit}
+                onSaveRow={onSaveRow}
+                onRemoveRow={onRemoveRow}
+              />
+            ))}
+          </AnimatePresence>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No custom parameters configured.
+          </p>
+        )}
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="flex justify-between gap-2 pt-2"
+      >
+        <Button variant="outline" onClick={onAddParameter} disabled={isPending}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Parameter
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={onCancel} disabled={isPending}>
+            Cancel
+          </Button>
+          <Button onClick={onSave} disabled={isPending || !hasUnsavedChanges}>
+            {isPending ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/**
+ * ParameterRow Component - Individual parameter entry with self-contained state
+ * manages its own local state and auto-saves changes when focus moves to another row
+ */
+interface ParameterRowProps {
+  index: number;
+  param: ParameterEntry;
+  isEditing: boolean;
+  disabled: boolean;
+  onBeginEdit: (rowIndex: number) => void;
+  onSaveRow: (rowIndex: number, newParam: ParameterEntry) => void;
+  onRemoveRow: (rowIndex: number) => void;
+}
+
+function ParameterRow({
+  index,
+  param,
+  isEditing,
+  disabled,
+  onBeginEdit,
+  onSaveRow,
+  onRemoveRow,
+}: ParameterRowProps) {
+  const [local, setLocal] = useState<ParameterEntry>(param);
+  const [touched, setTouched] = useState(false);
+
+  // Reset local state when param changes from parent
+  useEffect(() => {
+    if (!isEditing) {
+      setLocal(param);
+      setTouched(false);
+    }
+  }, [param, isEditing]);
+
+  const trimmedKey = useMemo(() => local.key.trim(), [local.key]);
+  const trimmedValue = useMemo(() => local.value.trim(), [local.value]);
+  const canSave = useMemo(
+    () => Boolean(trimmedKey) && Boolean(trimmedValue) && touched,
+    [trimmedKey, trimmedValue, touched],
+  );
+
+  const handleChange = (field: keyof ParameterEntry, value: string) => {
+    if (!isEditing && !disabled) onBeginEdit(index);
+    setLocal((prev) => ({ ...prev, [field]: value }));
+    setTouched(true);
+  };
+
+  // Auto-save when the row loses focus (i.e. when activeEditIndex changes)
+  useEffect(() => {
+    if (!isEditing && touched && canSave) {
+      onSaveRow(index, {
+        key: trimmedKey,
+        value: trimmedValue,
+        type: local.type,
+      });
+    }
+  }, [
+    isEditing,
+    touched,
+    canSave,
+    index,
+    trimmedKey,
+    trimmedValue,
+    local.type,
+    onSaveRow,
+  ]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 10 }}
+      className="flex gap-2 items-start"
+    >
+      <Input
+        placeholder="Parameter name"
+        value={local.key}
+        onChange={(e) => handleChange("key", e.target.value)}
+        disabled={disabled && !isEditing}
+        className="flex-1"
+      />
+      <Select
+        value={local.type}
+        onValueChange={(v) => handleChange("type", v as ParameterType)}
+        disabled={disabled && !isEditing}
+      >
+        <SelectTrigger className="w-[120px]">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="true">true</SelectItem>
-          <SelectItem value="false">false</SelectItem>
+          <SelectItem value="string">String</SelectItem>
+          <SelectItem value="number">Number</SelectItem>
+          <SelectItem value="boolean">Boolean</SelectItem>
         </SelectContent>
       </Select>
-    ) : (
-      <Input
-        placeholder={param.type === "number" ? "0" : "Value"}
-        value={param.value}
-        onChange={(e) => onUpdate(index, "value", e.target.value)}
-        className="flex-1"
-        type={param.type === "number" ? "number" : "text"}
-      />
-    )}
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => onRemove(index)}
-      className="text-destructive"
-    >
-      <Trash2 className="h-4 w-4" />
-    </Button>
-  </motion.div>
-);
+
+      {local.type === "boolean" ? (
+        <Select
+          value={local.value}
+          onValueChange={(v) => handleChange("value", v)}
+          disabled={disabled && !isEditing}
+        >
+          <SelectTrigger className="flex-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">true</SelectItem>
+            <SelectItem value="false">false</SelectItem>
+          </SelectContent>
+        </Select>
+      ) : (
+        <Input
+          placeholder={local.type === "number" ? "0" : "Value"}
+          value={local.value}
+          onChange={(e) => handleChange("value", e.target.value)}
+          disabled={disabled && !isEditing}
+          className="flex-1"
+          type={local.type === "number" ? "number" : "text"}
+        />
+      )}
+
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onRemoveRow(index)}
+        disabled={disabled && !isEditing}
+        className="text-destructive"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </motion.div>
+  );
+}
 
 /**
  * CustomLlmParametersEditor Component
@@ -210,6 +425,7 @@ export function CustomLlmParametersEditor({
   const [isEditing, setIsEditing] = useState(false);
   const [parameters, setParameters] = useState<ParameterEntry[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [activeEditIndex, setActiveEditIndex] = useState<number | null>(null);
 
   // Memoized values
   const providerName = useMemo(
@@ -235,31 +451,29 @@ export function CustomLlmParametersEditor({
   );
 
   /**
-   * Extracts parameters from the nested storage structure.
-   *
-   * Storage format: provider -> model -> parameters
-   * This nested structure allows:
-   * - Different parameter sets for different models (GPT-4 vs GPT-3.5)
-   * - Preserving settings when switching between models
-   * - Model-specific optimizations
-   *
-   * @example
-   * Input: { "openai": { "gpt-4": { "temperature": 0.7 } } }
-   * Output: [{ key: "temperature", value: "0.7", type: "number" }]
+   * Extracts parameters from the nested storage structure (provider -> model -> parameters)
+   * and converts them to the UI format for editing
    */
   const extractParameters = useCallback(
     (
-      customParams: any,
+      customParams: unknown,
       provider?: string | null,
       model?: string | null,
     ): ParameterEntry[] => {
       if (!customParams || !provider || !model) return [];
-      const modelParams = customParams[provider]?.[model];
+      if (typeof customParams !== "object") return [];
+
+      const providerParams = (customParams as Record<string, unknown>)[
+        provider
+      ];
+      if (!providerParams || typeof providerParams !== "object") return [];
+
+      const modelParams = (providerParams as Record<string, unknown>)[model];
       if (!modelParams || typeof modelParams !== "object") return [];
 
       return Object.entries(modelParams).map(([key, value]) => ({
         key,
-        value: String(value), // Convert to string for input fields
+        value: String(value),
         type: detectType(value),
       }));
     },
@@ -275,6 +489,7 @@ export function CustomLlmParametersEditor({
     );
     setParameters(params);
     setHasUnsavedChanges(false);
+    setActiveEditIndex(null);
   }, [
     project?.customLlmParameters,
     currentProvider,
@@ -286,6 +501,7 @@ export function CustomLlmParametersEditor({
     onSuccess: () => {
       setIsEditing(false);
       setHasUnsavedChanges(false);
+      setActiveEditIndex(null);
       toast({
         description: "Custom parameters saved successfully",
       });
@@ -305,72 +521,33 @@ export function CustomLlmParametersEditor({
   const handleSave = useCallback(() => {
     if (!project || !currentProvider || !currentModel) return;
 
-    /**
-     * Convert UI parameters (all strings) back to their proper types.
-     * This ensures the stored JSON has correct types for the AI SDK.
-     * The AI SDK expects: { "temperature": 0.7 } not { "temperature": "0.7" }
-     */
-    const parametersObject = parameters.reduce<Record<string, any>>(
-      (acc, param) => {
-        if (param.key) {
-          const converted = convertValue(param.value, param.type);
-          if (converted !== undefined) {
-            acc[param.key] = converted;
-          }
-        }
-        return acc;
-      },
-      {},
-    );
+    // Convert UI parameters back to their proper types
+    const parametersObject = Object.fromEntries(
+      parameters
+        .filter((p) => p.key)
+        .map((p) => [p.key, convertValue(p.value, p.type)])
+        .filter(([_, v]) => v !== undefined),
+    ) as Record<string, string | number | boolean>;
 
-    /**
-     * Build the nested structure for storage: provider -> model -> parameters
-     *
-     * Why this complex structure?
-     * 1. Users may want different settings for different models
-     *    (e.g., creative writing with GPT-4, factual responses with GPT-3.5)
-     * 2. Preserves settings when switching between models
-     * 3. Allows model-specific optimizations
-     *
-     * Note: The AI SDK expects provider -> parameters (flat),
-     * so ai-sdk-client.ts extracts the current model's params:
-     * this.customLlmParameters?.[providerKey]?.[this.model]
-     */
-    const existingParams = project.customLlmParameters || {};
-    let customLlmParameters: z.infer<typeof customLlmParametersSchema> | null =
-      null;
+    const existingParams = project.customLlmParameters ?? {};
+    const hasNewParams = Object.keys(parametersObject).length > 0;
 
-    if (Object.keys(parametersObject).length > 0) {
-      // Add/update parameters for the current model
-      customLlmParameters = {
-        ...existingParams,
-        [currentProvider]: {
-          ...existingParams[currentProvider],
-          [currentModel]: parametersObject,
-        },
-      };
-    } else if (existingParams[currentProvider]?.[currentModel]) {
-      // User cleared all parameters - remove this model's config
-      const { [currentModel]: _, ...otherModels } =
-        existingParams[currentProvider];
+    // If adding params, merge them. If removing, delete the current model's entry
+    const { [currentModel]: _, ...otherModels } =
+      existingParams[currentProvider] ?? {};
+    const updatedProviderParams = hasNewParams
+      ? { ...existingParams[currentProvider], [currentModel]: parametersObject }
+      : Object.keys(otherModels).length > 0
+        ? otherModels
+        : null;
 
-      if (Object.keys(otherModels).length > 0) {
-        // Keep other models' parameters for this provider
-        customLlmParameters = {
-          ...existingParams,
-          [currentProvider]: otherModels,
-        };
-      } else {
-        // No models left for this provider - remove the provider entirely
-        const { [currentProvider]: _, ...otherProviders } = existingParams;
-        customLlmParameters =
-          Object.keys(otherProviders).length > 0 ? otherProviders : null;
-      }
-    } else {
-      // No changes needed - preserve existing parameters
-      customLlmParameters =
-        Object.keys(existingParams).length > 0 ? existingParams : null;
-    }
+    // If provider has params, keep it. Otherwise, remove it from the structure
+    const { [currentProvider]: __, ...otherProviders } = existingParams;
+    const customLlmParameters = updatedProviderParams
+      ? { ...existingParams, [currentProvider]: updatedProviderParams }
+      : Object.keys(otherProviders).length > 0
+        ? otherProviders
+        : null;
 
     updateProject.mutate({
       projectId: project.id,
@@ -387,6 +564,7 @@ export function CustomLlmParametersEditor({
     setParameters(params);
     setIsEditing(false);
     setHasUnsavedChanges(false);
+    setActiveEditIndex(null);
   }, [
     project?.customLlmParameters,
     currentProvider,
@@ -394,29 +572,40 @@ export function CustomLlmParametersEditor({
     extractParameters,
   ]);
 
-  const addParameter = useCallback(() => {
-    setParameters((prev) => [...prev, { key: "", value: "", type: "string" }]);
-    setHasUnsavedChanges(true);
+  const handleBeginEdit = useCallback((rowIndex: number) => {
+    setActiveEditIndex(rowIndex);
   }, []);
 
-  const removeParameter = useCallback((index: number) => {
-    setParameters((prev) => prev.filter((_, i) => i !== index));
-    setHasUnsavedChanges(true);
-  }, []);
-
-  const updateParameter = useCallback(
-    (index: number, field: keyof ParameterEntry, value: string) => {
+  const handleSaveRow = useCallback(
+    (rowIndex: number, newParam: ParameterEntry) => {
       setParameters((prev) => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], [field]: value };
+        updated[rowIndex] = newParam;
         return updated;
       });
       setHasUnsavedChanges(true);
+      setActiveEditIndex(null);
     },
     [],
   );
 
-  const applySuggestion = useCallback(
+  const handleRemoveRow = useCallback((rowIndex: number) => {
+    setParameters((prev) => prev.filter((_, i) => i !== rowIndex));
+    setHasUnsavedChanges(true);
+    setActiveEditIndex(null);
+  }, []);
+
+  const handleAddParameter = useCallback(() => {
+    const newParams = [
+      ...parameters,
+      { key: "", value: "", type: "string" as ParameterType },
+    ];
+    setParameters(newParams);
+    setActiveEditIndex(newParams.length - 1);
+    setHasUnsavedChanges(true);
+  }, [parameters]);
+
+  const handleApplySuggestion = useCallback(
     (suggestion: { key: string; type: string }) => {
       if (parameters.some((p) => p.key === suggestion.key)) {
         toast({ description: `Parameter "${suggestion.key}" already exists` });
@@ -430,167 +619,49 @@ export function CustomLlmParametersEditor({
             ? "0"
             : "";
 
-      setParameters((prev) => [
-        ...prev,
+      const newParams = [
+        ...parameters,
         {
           key: suggestion.key,
           value: defaultValue,
           type: suggestion.type as ParameterType,
         },
-      ]);
+      ];
+      setParameters(newParams);
+      setActiveEditIndex(newParams.length - 1);
       setHasUnsavedChanges(true);
     },
     [parameters, toast],
   );
 
-  // Loading state
-  if (!project) {
-    return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-5 bg-muted rounded w-40" />
-        <div className="space-y-2">
-          <div className="h-4 bg-muted rounded w-full" />
-          <div className="h-4 bg-muted rounded w-3/4" />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="relative">
       <AnimatePresence mode="wait">
         {isEditing ? (
-          <motion.div
-            key="edit-form"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="space-y-4"
-          >
-            <CardDescription className="text-sm text-foreground max-w-sm mb-4">
-              Add custom parameters to send with each LLM request. These will be
-              passed as provider options.
-            </CardDescription>
-
-            {/* Parameter suggestions */}
-            {suggestions.length > 0 && (
-              <div className="mb-4">
-                <Label className="text-xs text-muted-foreground mb-2 block">
-                  Common parameters for {providerName}:
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {suggestions.map((s) => (
-                    <Button
-                      key={s.key}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => applySuggestion(s)}
-                      className="text-xs"
-                      title={s.description}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      {s.key}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Parameter list */}
-            <div className="space-y-3">
-              {parameters.length > 0 ? (
-                parameters.map((param, idx) => (
-                  <ParameterRow
-                    key={idx}
-                    param={param}
-                    index={idx}
-                    onUpdate={updateParameter}
-                    onRemove={removeParameter}
-                  />
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No custom parameters configured.
-                </p>
-              )}
-            </div>
-
-            {/* Action buttons */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="flex justify-between gap-2 pt-2"
-            >
-              <Button
-                variant="outline"
-                onClick={addParameter}
-                disabled={updateProject.isPending}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Parameter
-              </Button>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={handleCancel}
-                  disabled={updateProject.isPending}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={updateProject.isPending || !hasUnsavedChanges}
-                >
-                  {updateProject.isPending ? "Saving..." : "Save"}
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
+          <EditMode
+            key="edit-mode"
+            parameters={parameters}
+            providerName={providerName}
+            suggestions={suggestions}
+            isPending={updateProject.isPending}
+            hasUnsavedChanges={hasUnsavedChanges}
+            activeEditIndex={activeEditIndex}
+            onParametersChange={setParameters}
+            onBeginEdit={handleBeginEdit}
+            onSaveRow={handleSaveRow}
+            onRemoveRow={handleRemoveRow}
+            onAddParameter={handleAddParameter}
+            onApplySuggestion={handleApplySuggestion}
+            onSave={handleSave}
+            onCancel={handleCancel}
+          />
         ) : (
-          <motion.div
+          <ViewMode
             key="view-mode"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="flex items-start justify-between gap-4"
-          >
-            <div className="flex-1 space-y-3">
-              <CardDescription className="text-sm text-foreground max-w-sm">
-                Custom parameters sent with each LLM request.
-              </CardDescription>
-
-              {parameters.length > 0 ? (
-                <div className="space-y-2">
-                  {parameters.map((p, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <span className="font-mono font-medium">{p.key}:</span>
-                      <span className="text-muted-foreground">
-                        {p.type === "string" ? `"${p.value}"` : p.value}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        ({p.type})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No custom parameters configured.
-                </p>
-              )}
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={() => setIsEditing(true)}
-              className="flex-shrink-0"
-            >
-              {parameters.length > 0 ? "Edit Parameters" : "Add Parameters"}
-            </Button>
-          </motion.div>
+            parameters={parameters}
+            onEdit={() => project && setIsEditing(true)}
+            isLoading={!project}
+          />
         )}
       </AnimatePresence>
     </div>
