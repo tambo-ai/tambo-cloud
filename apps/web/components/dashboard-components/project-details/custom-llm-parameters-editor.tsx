@@ -32,6 +32,7 @@ type ParameterType = "string" | "number" | "boolean";
  * All values are stored as strings for form inputs, then converted based on type.
  */
 interface ParameterEntry {
+  id?: string;
   key: string;
   value: string; // Always string for input fields
   type: ParameterType;
@@ -222,10 +223,10 @@ function EditMode({
 
       <div className="space-y-3">
         {parameters.length > 0 ? (
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             {parameters.map((param, idx) => (
               <ParameterRow
-                key={`${idx}-${param.key}`}
+                key={param.id || `fallback-${idx}`}
                 index={idx}
                 param={param}
                 isEditing={activeEditIndex === idx}
@@ -335,10 +336,15 @@ function ParameterRow({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 10 }}
-      className="flex gap-2 items-start"
+      layout
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{
+        opacity: 0,
+        height: 0,
+        transition: { duration: 0.2 },
+      }}
+      className="flex gap-2 items-start overflow-hidden"
     >
       <Input
         placeholder="Parameter name"
@@ -472,6 +478,7 @@ export function CustomLlmParametersEditor({
       if (!modelParams || typeof modelParams !== "object") return [];
 
       return Object.entries(modelParams).map(([key, value]) => ({
+        id: `${key}-${Date.now()}-${Math.random()}`,
         key,
         value: String(value),
         type: detectType(value),
@@ -598,7 +605,12 @@ export function CustomLlmParametersEditor({
   const handleAddParameter = useCallback(() => {
     const newParams = [
       ...parameters,
-      { key: "", value: "", type: "string" as ParameterType },
+      {
+        id: `new-${Date.now()}-${Math.random()}`,
+        key: "",
+        value: "",
+        type: "string" as ParameterType,
+      },
     ];
     setParameters(newParams);
     setActiveEditIndex(newParams.length - 1);
@@ -622,6 +634,7 @@ export function CustomLlmParametersEditor({
       const newParams = [
         ...parameters,
         {
+          id: `${suggestion.key}-${Date.now()}-${Math.random()}`,
           key: suggestion.key,
           value: defaultValue,
           type: suggestion.type as ParameterType,
