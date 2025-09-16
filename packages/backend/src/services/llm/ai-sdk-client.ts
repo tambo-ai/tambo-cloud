@@ -66,10 +66,7 @@ type ProviderFactory = (config?: ProviderConfig) => ConfiguredProvider;
 
 // Provider instances mapping - these are factory functions
 const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
-  openai: (config) =>
-    createOpenAI({
-      ...config,
-    }),
+  openai: createOpenAI,
   anthropic: createAnthropic,
   mistral: createMistral,
   google: createGoogleGenerativeAI,
