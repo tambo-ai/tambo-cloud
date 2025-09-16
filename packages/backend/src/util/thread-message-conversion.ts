@@ -245,7 +245,6 @@ function combineComponentWithState(
 ): ComponentDecisionV2 {
   return {
     ...component,
-    // reasoning: component.reasoning,
     componentState: {
       instructions:
         "\nThe following values represent the current internal state of the component attached to this message. These values may have been updated by the user.",
