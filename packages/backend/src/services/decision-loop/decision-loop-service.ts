@@ -86,7 +86,6 @@ export async function* runDecisionLoop(
     toolCallId: undefined,
     statusMessage: undefined,
     completionStatusMessage: undefined,
-    reasoning: [], // undefined,
   };
 
   let accumulatedDecision = initialDecision;

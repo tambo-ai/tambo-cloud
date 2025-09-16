@@ -289,7 +289,7 @@ export class ThreadsService {
         tool_call_id: message.toolCallId ?? undefined,
         error: message.error ?? undefined,
         isCancelled: message.isCancelled,
-        reasoning: message.reasoning ?? [], // undefined,
+        reasoning: message.reasoning ?? undefined,
       })),
     };
   }
@@ -564,7 +564,7 @@ export class ThreadsService {
       error: message.error ?? undefined,
       isCancelled: message.isCancelled,
       additionalContext: message.additionalContext ?? {},
-      reasoning: message.reasoning ?? [], // undefined,
+      reasoning: message.reasoning ?? undefined,
     }));
   }
 
@@ -825,7 +825,7 @@ export class ThreadsService {
       actionType: message.actionType ?? undefined,
       error: message.error ?? undefined,
       additionalContext: message.additionalContext ?? {},
-      reasoning: message.reasoning ?? [], // undefined,
+      reasoning: message.reasoning ?? undefined,
     };
   }
 
@@ -963,7 +963,6 @@ export class ThreadsService {
             threadId: thread.id,
             componentState: {},
             createdAt: new Date(),
-            reasoning: [], // undefined,
           },
           generationStage: GenerationStage.COMPLETE,
           statusMessage: "",

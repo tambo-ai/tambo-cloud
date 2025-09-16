@@ -45,7 +45,6 @@ export async function* runAgentLoop(
       completionStatusMessage: "",
       toolCallRequest: toolCallRequest,
       toolCallId: toolCallId,
-      reasoning: [], // undefined,
     };
   }
 }

@@ -68,7 +68,7 @@ export async function addMessage(
     error: message.error ?? undefined,
     isCancelled: message.isCancelled,
     additionalContext: message.additionalContext ?? {},
-    reasoning: message.reasoning ?? [], // undefined,
+    reasoning: message.reasoning ?? undefined,
   };
 }
 
@@ -115,7 +115,7 @@ export async function updateMessage(
     error: message.error ?? undefined,
     isCancelled: message.isCancelled,
     additionalContext: message.additionalContext ?? {},
-    reasoning: message.reasoning ?? [], // undefined,
+    reasoning: message.reasoning ?? undefined,
   };
 }
 
