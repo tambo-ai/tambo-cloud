@@ -10,9 +10,6 @@ export const anthropicModels: LlmModelConfig = {
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 200000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "claude-opus-4-20250514": {
     apiName: "claude-opus-4-20250514",
@@ -23,9 +20,6 @@ export const anthropicModels: LlmModelConfig = {
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 200000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "claude-sonnet-4-20250514": {
     apiName: "claude-sonnet-4-20250514",
@@ -36,9 +30,6 @@ export const anthropicModels: LlmModelConfig = {
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 200000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "claude-3-7-sonnet-20250219": {
     apiName: "claude-3-7-sonnet-20250219",
@@ -49,9 +40,6 @@ export const anthropicModels: LlmModelConfig = {
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 200000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "claude-3-5-sonnet-20241022": {
     apiName: "claude-3-5-sonnet-20241022",
@@ -62,9 +50,6 @@ export const anthropicModels: LlmModelConfig = {
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 200000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "claude-3-5-haiku-20241022": {
     apiName: "claude-3-5-haiku-20241022",
@@ -75,8 +60,5 @@ export const anthropicModels: LlmModelConfig = {
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 200000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
 };

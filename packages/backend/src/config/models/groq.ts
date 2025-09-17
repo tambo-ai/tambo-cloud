@@ -10,9 +10,6 @@ export const groqModels: LlmModelConfig = {
     docLink: "https://console.groq.com/docs/model/llama-3.3-70b-versatile",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 131072,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "llama-3.1-8b-instant": {
     apiName: "llama-3.1-8b-instant",
@@ -23,8 +20,5 @@ export const groqModels: LlmModelConfig = {
     docLink: "https://console.groq.com/docs/model/llama-3.1-8b-instant",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 131072,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
 };

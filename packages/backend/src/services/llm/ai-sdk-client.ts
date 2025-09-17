@@ -211,7 +211,7 @@ export class AISdkClient implements LLMClient {
     });
 
     // Default temperature to 0 unless overridden by config
-    const temperature = modelCfg?.commonParametersDefaults.temperature;
+    const temperature = modelCfg?.commonParametersDefaults?.temperature;
 
     const baseConfig: AICompleteParams = {
       model: modelInstance,

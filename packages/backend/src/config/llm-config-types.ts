@@ -1,7 +1,17 @@
 import { JSONValue } from "@tambo-ai-cloud/core";
 
+// These are the common parameters that are supported by AI SDK streamtext
 export interface CommonParametersDefaults {
   temperature?: number;
+  maxOutputTokens?: number;
+  maxRetries?: number;
+  topP?: number;
+  topK?: number;
+  presencePenalty?: number;
+  frequencyPenalty?: number;
+  stopSequences?: string[];
+  seed?: number;
+  headers?: Record<string, string>;
   // We can add other specific capabilities here
 }
 
@@ -19,7 +29,7 @@ export interface LlmModelConfigInfo {
   /** Link to Tambo's documentation about the model or its issues */
   tamboDocLink?: string;
   /** Additional capabilities of the model */
-  commonParametersDefaults: CommonParametersDefaults;
+  commonParametersDefaults?: CommonParametersDefaults;
   /** Whether the model is the default model */
   isDefaultModel?: boolean;
   /** Input token limit of the model */

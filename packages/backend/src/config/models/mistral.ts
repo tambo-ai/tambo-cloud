@@ -10,9 +10,6 @@ export const mistralModels: LlmModelConfig = {
     docLink: "https://mistral.ai/news/mistral-medium-3",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 128000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "codestral-2508": {
     apiName: "codestral-2508",
@@ -23,9 +20,6 @@ export const mistralModels: LlmModelConfig = {
     docLink: "https://mistral.ai/news/codestral-25-08",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 256000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "magistral-medium-2506": {
     apiName: "magistral-medium-2506",
@@ -36,9 +30,6 @@ export const mistralModels: LlmModelConfig = {
     docLink: "https://mistral.ai/news/magistral",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 40000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "mistral-large-2411": {
     apiName: "mistral-large-2411",
@@ -49,8 +40,5 @@ export const mistralModels: LlmModelConfig = {
     docLink: "https://mistral.ai/news/pixtral-large",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 128000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
 };

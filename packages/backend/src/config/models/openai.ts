@@ -46,9 +46,6 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/gpt-4.1",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 1047576,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
     isDefaultModel: true,
   },
   "gpt-4.1-mini-2025-04-14": {
@@ -59,9 +56,6 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/gpt-4.1-mini",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 1047576,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "o3-2025-04-16": {
     apiName: "o3-2025-04-16",
@@ -71,9 +65,6 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/o3",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 200000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "gpt-4o-2024-11-20": {
     apiName: "gpt-4o-2024-11-20",
@@ -84,9 +75,6 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/gpt-4o",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 128000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "gpt-4o-mini-2024-07-18": {
     apiName: "gpt-4o-mini-2024-07-18",
@@ -97,9 +85,6 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/gpt-4o-mini",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 128000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "gpt-4-turbo-2024-04-09": {
     apiName: "gpt-4-turbo-2024-04-09",
@@ -110,8 +95,5 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/gpt-4-turbo",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 128000,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
 };

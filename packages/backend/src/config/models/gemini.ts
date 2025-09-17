@@ -11,9 +11,6 @@ export const geminiModels: LlmModelConfig = {
       "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-pro",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 1048576,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "gemini-2.5-flash": {
     apiName: "gemini-2.5-flash",
@@ -25,9 +22,6 @@ export const geminiModels: LlmModelConfig = {
       "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 1048576,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "gemini-2.0-flash": {
     apiName: "gemini-2.0-flash",
@@ -39,9 +33,6 @@ export const geminiModels: LlmModelConfig = {
       "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-0-flash",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 1048576,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
   "gemini-2.0-flash-lite": {
     apiName: "gemini-2.0-flash-lite",
@@ -53,8 +44,5 @@ export const geminiModels: LlmModelConfig = {
       "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-0-flash-lite",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 1048576,
-    commonParametersDefaults: {
-      temperature: undefined,
-    },
   },
 };
