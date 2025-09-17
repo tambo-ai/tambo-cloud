@@ -22,6 +22,9 @@ export const llmProviderConfig: LlmProviderConfig = {
     docLinkRoot: "https://docs.anthropic.com",
     apiKeyLink: "https://console.anthropic.com/settings/keys",
     models: anthropicModels,
+    providerSpecificParams: {
+      disableParallelToolUse: false,
+    },
   },
   gemini: {
     apiName: "gemini",
