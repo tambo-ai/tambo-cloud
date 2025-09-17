@@ -23,7 +23,7 @@ export const llmProviderConfig: LlmProviderConfig = {
     apiKeyLink: "https://console.anthropic.com/settings/keys",
     models: anthropicModels,
     providerSpecificParams: {
-      disableParallelToolUse: false,
+      disableParallelToolUse: true,
     },
   },
   gemini: {

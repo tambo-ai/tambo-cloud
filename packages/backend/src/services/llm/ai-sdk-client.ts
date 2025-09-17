@@ -237,6 +237,8 @@ export class AISdkClient implements LLMClient {
        */
       providerOptions: {
         [providerKey]: {
+          // Provider-specific params from config as base defaults (e.g., disable parallel tool calls for OpenAI/Anthropic)
+          ...providerCfg?.providerSpecificParams,
           // Custom parameters override defaults (if any exist)
           ...this.customLlmParameters?.[providerKey]?.[this.model],
         },
