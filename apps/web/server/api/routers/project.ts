@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { customLlmParametersSchema } from "@/lib/llm-parameters";
 import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { llmProviderConfig } from "@tambo-ai-cloud/backend";
@@ -247,6 +248,7 @@ export const projectRouter = createTRPCRouter({
           agentProviderType: project.agentProviderType,
           agentUrl: project.agentUrl,
           agentName: project.agentName,
+          customLlmParameters: project.customLlmParameters,
           messages: stats.messages,
           users: stats.users,
           lastMessageAt: stats.lastMessageAt,
@@ -422,6 +424,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: z.nativeEnum(AgentProviderType).optional(),
         agentUrl: z.string().url().nullable().optional(),
         agentName: z.string().nullable().optional(),
+        customLlmParameters: customLlmParametersSchema.nullable().optional(),
         agentHeaders: agentHeadersSchema.nullable().optional(),
       }),
     )
@@ -441,6 +444,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType,
         agentUrl,
         agentName,
+        customLlmParameters,
         agentHeaders,
         allowSystemPromptOverride,
       } = input;
@@ -475,6 +479,10 @@ export const projectRouter = createTRPCRouter({
         agentUrl,
         agentName,
         agentHeaders,
+        customLlmParameters:
+          customLlmParameters === null
+            ? undefined
+            : (customLlmParameters ?? undefined),
         allowSystemPromptOverride,
       });
 
@@ -498,6 +506,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: updatedProject.agentProviderType,
         agentUrl: updatedProject.agentUrl,
         agentName: updatedProject.agentName,
+        customLlmParameters: updatedProject.customLlmParameters,
         agentHeaders: updatedProject.agentHeaders,
       };
     }),

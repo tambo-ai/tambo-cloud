@@ -7,6 +7,7 @@ import {
   hideApiKey,
   MCPTransport,
   OAuthValidationMode,
+  type CustomLlmParameters,
   ToolProviderType,
 } from "@tambo-ai-cloud/core";
 import { randomBytes } from "crypto";
@@ -140,6 +141,7 @@ export async function updateProject(
     agentProviderType,
     agentUrl,
     agentName,
+    customLlmParameters,
     agentHeaders,
     allowSystemPromptOverride,
   }: {
@@ -156,6 +158,7 @@ export async function updateProject(
     agentProviderType?: AgentProviderType;
     agentUrl?: string | null;
     agentName?: string | null;
+    customLlmParameters?: CustomLlmParameters | null;
     agentHeaders?: Record<string, string> | null;
     allowSystemPromptOverride?: boolean;
   },
@@ -199,6 +202,9 @@ export async function updateProject(
   }
   if (agentName !== undefined) {
     updateData.agentName = agentName;
+  }
+  if (customLlmParameters !== undefined) {
+    updateData.customLlmParameters = customLlmParameters;
   }
   if (agentHeaders !== undefined) {
     updateData.agentHeaders = agentHeaders ?? null;

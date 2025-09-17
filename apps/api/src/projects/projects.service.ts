@@ -66,6 +66,7 @@ export class ProjectsService {
       agentProviderType: project.agentProviderType,
       agentName: project.agentName ?? undefined,
       agentUrl: project.agentUrl ?? undefined,
+      customLlmParameters: project.customLlmParameters ?? undefined,
     }));
   }
 
@@ -90,6 +91,7 @@ export class ProjectsService {
       agentProviderType: project.agentProviderType,
       agentName: project.agentName ?? undefined,
       agentUrl: project.agentUrl ?? undefined,
+      customLlmParameters: project.customLlmParameters ?? undefined,
     };
   }
 
@@ -169,6 +171,7 @@ export class ProjectsService {
       agentProviderType: updated.agentProviderType,
       agentName: updated.agentName ?? undefined,
       agentUrl: updated.agentUrl ?? undefined,
+      customLlmParameters: updated.customLlmParameters ?? undefined,
     };
   }
 
@@ -259,6 +262,7 @@ export class ProjectsService {
       agentProviderType: result.agentProviderType,
       agentName: result.agentName ?? undefined,
       agentUrl: result.agentUrl ?? undefined,
+      customLlmParameters: result.customLlmParameters ?? undefined,
     };
   }
 
