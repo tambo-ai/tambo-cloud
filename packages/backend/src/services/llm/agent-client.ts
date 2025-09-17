@@ -468,7 +468,7 @@ export class AgentClient {
             throw new Error("No current message");
           }
           const currentReasoningString: string =
-            currentMessage.reasoning?.slice(0, -1)[0] ?? "";
+            currentMessage.reasoning?.at(-1) ?? "";
           currentMessage = {
             ...(currentMessage as unknown as AgentMessage),
             reasoning: [
