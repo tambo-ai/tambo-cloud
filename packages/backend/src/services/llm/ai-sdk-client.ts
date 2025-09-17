@@ -183,7 +183,7 @@ export class AISdkClient implements LLMClient {
       );
     }
 
-    const modelTokenLimit = modelCfg?.properties.inputTokenLimit;
+    const modelTokenLimit = modelCfg?.inputTokenLimit;
     const effectiveTokenLimit = this.maxInputTokens ?? modelTokenLimit;
     messagesFormatted = limitTokens(messagesFormatted, effectiveTokenLimit);
 
@@ -211,7 +211,7 @@ export class AISdkClient implements LLMClient {
     });
 
     // Default temperature to 0 unless overridden by config
-    const temperature = modelCfg?.properties.temperature;
+    const temperature = modelCfg?.commonParametersDefaults.temperature;
 
     const baseConfig: AICompleteParams = {
       model: modelInstance,
@@ -237,10 +237,6 @@ export class AISdkClient implements LLMClient {
        */
       providerOptions: {
         [providerKey]: {
-          // Default parallel tool calls settings (always applied)
-          parallelToolCalls: false,
-          disableParallelToolUse: true,
-          parallel_tool_calls: false,
           // Custom parameters override defaults (if any exist)
           ...this.customLlmParameters?.[providerKey]?.[this.model],
         },

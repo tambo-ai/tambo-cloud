@@ -12,6 +12,9 @@ export const llmProviderConfig: LlmProviderConfig = {
     apiKeyLink: "https://platform.openai.com/api-keys",
     models: openaiModels,
     isDefaultProvider: true,
+    providerSpecificParams: {
+      parallelToolCalls: false,
+    },
   },
   anthropic: {
     apiName: "anthropic",

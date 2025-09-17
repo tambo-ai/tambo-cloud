@@ -1,7 +1,6 @@
-export interface LlmModelCapabilities {
-  inputTokenLimit: number;
-  supportsTools?: boolean;
-  supportsJsonMode?: boolean;
+import { JSONValue } from "@tambo-ai-cloud/core";
+
+export interface CommonParametersDefaults {
   temperature?: number;
   // We can add other specific capabilities here
 }
@@ -20,12 +19,18 @@ export interface LlmModelConfigInfo {
   /** Link to Tambo's documentation about the model or its issues */
   tamboDocLink?: string;
   /** Additional capabilities of the model */
-  properties: LlmModelCapabilities;
+  commonParametersDefaults: CommonParametersDefaults;
   /** Whether the model is the default model */
   isDefaultModel?: boolean;
+  /** Input token limit of the model */
+  inputTokenLimit?: number;
 }
 
 export type LlmModelConfig = Record<string, LlmModelConfigInfo>;
+
+export interface ProviderSpecificParams {
+  [key: string]: JSONValue;
+}
 
 export interface LlmProviderConfigInfo {
   /** e.g., "openai", "anthropic" - must match Provider type and providerKeys.providerName */
@@ -44,6 +49,8 @@ export interface LlmProviderConfigInfo {
   requiresBaseUrl?: boolean;
   /** Whether the provider is the default provider */
   isDefaultProvider?: boolean;
+  /** Provider-specific parameters defaults */
+  providerSpecificParams?: ProviderSpecificParams;
 }
 
 export type LlmProviderConfig = Record<string, LlmProviderConfigInfo>;

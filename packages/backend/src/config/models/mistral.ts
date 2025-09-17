@@ -9,10 +9,9 @@ export const mistralModels: LlmModelConfig = {
       "Mistral Medium 3 is designed to be frontier-class, particularly in categories of professional use.",
     docLink: "https://mistral.ai/news/mistral-medium-3",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 128000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 128000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "codestral-2508": {
@@ -23,10 +22,9 @@ export const mistralModels: LlmModelConfig = {
       "Codestral specializes in low-latency, high-frequency tasks such as fill-in-the-middle (FIM), code correction and test generation.",
     docLink: "https://mistral.ai/news/codestral-25-08",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 256000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 256000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "magistral-medium-2506": {
@@ -37,10 +35,9 @@ export const mistralModels: LlmModelConfig = {
       "Magistral Medium 1 is a frontier-class reasoning model released June 2025.",
     docLink: "https://mistral.ai/news/magistral",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 40000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 40000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "mistral-large-2411": {
@@ -51,10 +48,9 @@ export const mistralModels: LlmModelConfig = {
       "Mistral Large 2.1 is Mistral's top-tier large model for high-complexity tasks with the lastest version released November 2024.",
     docLink: "https://mistral.ai/news/pixtral-large",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 128000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 128000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
 };

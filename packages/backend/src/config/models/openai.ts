@@ -8,11 +8,9 @@ export const openaiModels: LlmModelConfig = {
     notes: "The best model for coding and agentic tasks across domains",
     docLink: "https://platform.openai.com/docs/models/gpt-5",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 400000,
+    inputTokenLimit: 400000,
+    commonParametersDefaults: {
       temperature: 1,
-      supportsTools: true,
-      supportsJsonMode: true,
     },
   },
   "gpt-5-mini-2025-08-07": {
@@ -23,11 +21,9 @@ export const openaiModels: LlmModelConfig = {
       "A faster, more cost-efficient version of GPT-5 for well-defined tasks",
     docLink: "https://platform.openai.com/docs/models/gpt-5-mini",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 400000,
+    inputTokenLimit: 400000,
+    commonParametersDefaults: {
       temperature: 1,
-      supportsTools: true,
-      supportsJsonMode: true,
     },
   },
   "gpt-5-nano-2025-08-07": {
@@ -37,11 +33,9 @@ export const openaiModels: LlmModelConfig = {
     notes: "Fastest, most cost-efficient version of GPT-5",
     docLink: "https://platform.openai.com/docs/models/gpt-5-nano",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 400000,
+    inputTokenLimit: 400000,
+    commonParametersDefaults: {
       temperature: 1,
-      supportsTools: true,
-      supportsJsonMode: true,
     },
   },
   "gpt-4.1-2025-04-14": {
@@ -51,10 +45,9 @@ export const openaiModels: LlmModelConfig = {
     notes: "Excels at function calling and instruction following",
     docLink: "https://platform.openai.com/docs/models/gpt-4.1",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 1047576,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 1047576,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
     isDefaultModel: true,
   },
@@ -65,10 +58,9 @@ export const openaiModels: LlmModelConfig = {
     notes: "Balanced for intelligence, speed, and cost",
     docLink: "https://platform.openai.com/docs/models/gpt-4.1-mini",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 1047576,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 1047576,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "o3-2025-04-16": {
@@ -78,10 +70,9 @@ export const openaiModels: LlmModelConfig = {
     notes: "The most powerful reasoning model",
     docLink: "https://platform.openai.com/docs/models/o3",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 200000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 200000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "gpt-4o-2024-11-20": {
@@ -92,10 +83,9 @@ export const openaiModels: LlmModelConfig = {
       "Versatile and high-intelligence model with text and image input support. Best for most tasks, combining strong reasoning, creativity, and multimodal understanding.",
     docLink: "https://platform.openai.com/docs/models/gpt-4o",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 128000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 128000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "gpt-4o-mini-2024-07-18": {
@@ -106,10 +96,9 @@ export const openaiModels: LlmModelConfig = {
       "Fast, affordable model ideal for focused tasks and fine-tuning. Supports text and image inputs, with low cost and latency for efficient performance.",
     docLink: "https://platform.openai.com/docs/models/gpt-4o-mini",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 128000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 128000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "gpt-4-turbo-2024-04-09": {
@@ -120,10 +109,9 @@ export const openaiModels: LlmModelConfig = {
       "High-intelligence model that's cheaper and faster than GPT-4. Still powerful, but we recommend using GPT-4o for most tasks.",
     docLink: "https://platform.openai.com/docs/models/gpt-4-turbo",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 128000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 128000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
 };

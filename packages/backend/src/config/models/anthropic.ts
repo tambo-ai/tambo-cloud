@@ -9,10 +9,9 @@ export const anthropicModels: LlmModelConfig = {
       "Claude Opus 4.1 is Anthropic's most powerful model yet, with highest level of intelligence and capability",
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 200000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 200000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "claude-opus-4-20250514": {
@@ -23,10 +22,9 @@ export const anthropicModels: LlmModelConfig = {
       "Claude Opus 4 has very high intelligence and capability. It is a good model for coding and reasoning.",
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 200000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 200000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "claude-sonnet-4-20250514": {
@@ -37,10 +35,9 @@ export const anthropicModels: LlmModelConfig = {
       "Claude 4 Sonnet is Anthropic's high-performance model with exceptional reasoning and efficiency.",
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 200000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 200000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "claude-3-7-sonnet-20250219": {
@@ -51,10 +48,9 @@ export const anthropicModels: LlmModelConfig = {
       "Claude 3.7 Sonnet is Anthropic's smartest model yet, with fast or step-by-step thinking. Great for coding and front-end development.",
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 200000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 200000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "claude-3-5-sonnet-20241022": {
@@ -65,10 +61,9 @@ export const anthropicModels: LlmModelConfig = {
       "Claude 3.5 Sonnet is a fast, mid-tier model with top-tier intelligence and vision capabilities. Ideal for coding, reasoning, and complex workflows.",
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 200000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 200000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "claude-3-5-haiku-20241022": {
@@ -79,10 +74,9 @@ export const anthropicModels: LlmModelConfig = {
       "Claude 3.5 Haiku is Anthropic's fastest and most affordable model. Great for real-time tasks like chatbots, coding, and data extraction.",
     docLink: "https://docs.anthropic.com/en/docs/about-claude/models/overview",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 200000,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 200000,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
 };

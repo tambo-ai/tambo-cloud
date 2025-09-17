@@ -10,10 +10,9 @@ export const geminiModels: LlmModelConfig = {
     docLink:
       "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-pro",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 1048576,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 1048576,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "gemini-2.5-flash": {
@@ -25,10 +24,9 @@ export const geminiModels: LlmModelConfig = {
     docLink:
       "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 1048576,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 1048576,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "gemini-2.0-flash": {
@@ -40,10 +38,9 @@ export const geminiModels: LlmModelConfig = {
     docLink:
       "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-0-flash",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 1048576,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 1048576,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
   "gemini-2.0-flash-lite": {
@@ -55,10 +52,9 @@ export const geminiModels: LlmModelConfig = {
     docLink:
       "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-0-flash-lite",
     tamboDocLink: "https://docs.tambo.co",
-    properties: {
-      inputTokenLimit: 1048576,
-      supportsTools: true,
-      supportsJsonMode: true,
+    inputTokenLimit: 1048576,
+    commonParametersDefaults: {
+      temperature: undefined,
     },
   },
 };
