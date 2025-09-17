@@ -191,6 +191,7 @@ interface EditModeProps {
   onApplySuggestion: (suggestion: { key: string; type: string }) => void;
   onSave: () => void;
   onCancel: () => void;
+  allowCustomParameters?: boolean;
 }
 
 function EditMode({
@@ -206,6 +207,7 @@ function EditMode({
   onApplySuggestion,
   onSave,
   onCancel,
+  allowCustomParameters = true,
 }: EditModeProps) {
   return (
     <motion.div
@@ -216,8 +218,9 @@ function EditMode({
       className="space-y-4"
     >
       <CardDescription className="text-sm text-foreground max-w-sm mb-4">
-        Add custom parameters to send with each LLM request. These will be
-        passed as provider options.
+        {allowCustomParameters
+          ? "Add custom parameters to send with each LLM request. These will be passed as provider options."
+          : "Add parameters from the suggestions below. Custom parameters are only available for OpenAI-compatible providers."}
       </CardDescription>
 
       <ParameterSuggestions
@@ -238,6 +241,7 @@ function EditMode({
                 onBeginEdit={onBeginEdit}
                 onRemoveRow={onRemoveRow}
                 onParameterChange={onParametersChange}
+                allowCustomParameters={allowCustomParameters}
               />
             ))}
           </AnimatePresence>
@@ -254,11 +258,17 @@ function EditMode({
         transition={{ delay: 0.1 }}
         className="flex justify-between gap-2 pt-2"
       >
-        <Button variant="outline" onClick={onAddParameter} disabled={isPending}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Parameter
-        </Button>
-        <div className="flex gap-2">
+        {allowCustomParameters && (
+          <Button
+            variant="outline"
+            onClick={onAddParameter}
+            disabled={isPending}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Parameter
+          </Button>
+        )}
+        <div className="flex gap-2 ml-auto">
           <Button variant="ghost" onClick={onCancel} disabled={isPending}>
             Cancel
           </Button>
@@ -281,6 +291,7 @@ interface ParameterRowProps {
   onBeginEdit: (rowIndex: number) => void;
   onRemoveRow: (rowIndex: number) => void;
   onParameterChange: (index: number, updatedParam: ParameterEntry) => void;
+  allowCustomParameters?: boolean;
 }
 
 function ParameterRow({
@@ -290,6 +301,7 @@ function ParameterRow({
   onBeginEdit,
   onRemoveRow,
   onParameterChange,
+  allowCustomParameters = true,
 }: ParameterRowProps) {
   const [local, setLocal] = useState<ParameterEntry>(param);
 
@@ -307,6 +319,19 @@ function ParameterRow({
     onParameterChange(index, updatedParam);
   };
 
+  // Check if this parameter was added from suggestions (exists in PARAMETER_SUGGESTIONS)
+  const isFromSuggestions = useMemo(() => {
+    return Object.values(PARAMETER_SUGGESTIONS).some((suggestions) =>
+      suggestions.some((s) => s.key === param.key),
+    );
+  }, [param.key]);
+
+  // For parameters from suggestions: only allow value editing
+  // For custom parameters: allow full editing only if allowCustomParameters is true
+  const canEditKey = allowCustomParameters && !isFromSuggestions;
+  const canEditType = allowCustomParameters && !isFromSuggestions;
+  const canEditValue = true; // Values can always be edited
+
   return (
     <motion.div
       layout
@@ -317,59 +342,65 @@ function ParameterRow({
         height: 0,
         transition: { duration: 0.2 },
       }}
-      className="flex gap-2 items-start overflow-hidden p-1"
     >
-      <Input
-        placeholder="Parameter name"
-        value={local.key}
-        onChange={(e) => handleChange("key", e.target.value)}
-        className="flex-1"
-      />
-      <Select
-        value={local.type}
-        onValueChange={(v) => handleChange("type", v as ParameterType)}
-      >
-        <SelectTrigger className="w-[120px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="string">String</SelectItem>
-          <SelectItem value="number">Number</SelectItem>
-          <SelectItem value="boolean">Boolean</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {local.type === "boolean" ? (
+      <div className="flex gap-2 items-start">
+        <Input
+          placeholder="Parameter name"
+          value={local.key}
+          onChange={(e) => handleChange("key", e.target.value)}
+          className="flex-1 focus:ring-inset"
+          disabled={!canEditKey}
+        />
         <Select
-          value={local.value}
-          onValueChange={(v) => handleChange("value", v)}
+          value={local.type}
+          onValueChange={(v) => handleChange("type", v as ParameterType)}
+          disabled={!canEditType}
         >
-          <SelectTrigger className="flex-1">
+          <SelectTrigger className="w-[120px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="true">true</SelectItem>
-            <SelectItem value="false">false</SelectItem>
+            <SelectItem value="string">String</SelectItem>
+            <SelectItem value="number">Number</SelectItem>
+            <SelectItem value="boolean">Boolean</SelectItem>
           </SelectContent>
         </Select>
-      ) : (
-        <Input
-          placeholder={local.type === "number" ? "0" : "Value"}
-          value={local.value}
-          onChange={(e) => handleChange("value", e.target.value)}
-          className="flex-1"
-          type={local.type === "number" ? "number" : "text"}
-        />
-      )}
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onRemoveRow(index)}
-        className="text-destructive"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+        {local.type === "boolean" ? (
+          <Select
+            value={local.value}
+            onValueChange={(v) => handleChange("value", v)}
+            disabled={!canEditValue}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">true</SelectItem>
+              <SelectItem value="false">false</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            placeholder={local.type === "number" ? "0" : "Value"}
+            value={local.value}
+            onChange={(e) => handleChange("value", e.target.value)}
+            className="flex-1"
+            type={local.type === "number" ? "number" : "text"}
+            step={local.type === "number" ? "0.01" : undefined}
+            disabled={!canEditValue}
+          />
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onRemoveRow(index)}
+          className="text-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
     </motion.div>
   );
 }
@@ -421,6 +452,13 @@ export function CustomLlmParametersEditor({
   const currentModel = useMemo(
     () => selectedModel || project?.defaultLlmModelName,
     [selectedModel, project?.defaultLlmModelName],
+  );
+
+  // Determine if custom parameters are allowed for this provider
+  // Only OpenAI-compatible providers can add custom parameters
+  const allowCustomParameters = useMemo(
+    () => providerName === "openai-compatible",
+    [providerName],
   );
 
   /**
@@ -578,6 +616,17 @@ export function CustomLlmParametersEditor({
   }, []);
 
   const handleAddParameter = useCallback(() => {
+    // Only allow adding parameters for OpenAI-compatible providers
+    if (!allowCustomParameters) {
+      toast({
+        variant: "destructive",
+        title: "Custom parameters not allowed",
+        description:
+          "Custom parameters are only available for OpenAI-compatible providers. Please use the suggested parameters instead.",
+      });
+      return;
+    }
+
     const newParams = [
       ...parameters,
       {
@@ -589,7 +638,7 @@ export function CustomLlmParametersEditor({
     ];
     setParameters(newParams);
     setActiveEditIndex(newParams.length - 1);
-  }, [parameters]);
+  }, [parameters, allowCustomParameters, toast]);
 
   const handleApplySuggestion = useCallback(
     (suggestion: { key: string; type: string }) => {
@@ -647,6 +696,7 @@ export function CustomLlmParametersEditor({
             onApplySuggestion={handleApplySuggestion}
             onSave={handleSave}
             onCancel={handleCancel}
+            allowCustomParameters={allowCustomParameters}
           />
         ) : (
           <ViewMode
