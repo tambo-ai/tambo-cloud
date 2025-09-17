@@ -38,6 +38,7 @@ export interface LlmModelConfigInfo {
 
 export type LlmModelConfig = Record<string, LlmModelConfigInfo>;
 
+/** Provider-specific parameters defaults that will be passed to the AI SDK via providerOptions */
 export interface ProviderSpecificParams {
   [key: string]: JSONValue;
 }
