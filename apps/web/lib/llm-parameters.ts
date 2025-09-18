@@ -1,3 +1,4 @@
+import { PARAMETER_METADATA } from "@tambo-ai-cloud/backend";
 import type { CustomLlmParameters, JSONValue } from "@tambo-ai-cloud/core";
 import { z } from "zod";
 
@@ -41,100 +42,78 @@ export const customLlmParametersSchema: z.ZodType<CustomLlmParameters> =
     z.record(z.string(), z.record(z.string(), jsonValueSchema)),
   );
 
-// Common parameter suggestions based on provider
-// These parameters are passed directly to the provider's API as providerOptions
-// See: https://ai-sdk.dev/providers/openai-compatible-providers#provider-specific-options
-export const PARAMETER_SUGGESTIONS: Record<
-  string,
-  Array<{ key: string; description: string; type: string }>
-> = {
-  openai: [
-    {
-      key: "temperature",
-      description: "Controls randomness (0-2)",
-      type: "number",
-    },
-    { key: "top_p", description: "Nucleus sampling threshold", type: "number" },
-    {
-      key: "frequency_penalty",
-      description: "Penalty for repetition (-2 to 2)",
-      type: "number",
-    },
-    {
-      key: "presence_penalty",
-      description: "Penalty for new topics (-2 to 2)",
-      type: "number",
-    },
-    { key: "seed", description: "Deterministic sampling seed", type: "number" },
-    {
-      key: "logprobs",
-      description: "Include log probabilities",
-      type: "boolean",
-    },
-    {
-      key: "top_logprobs",
-      description: "Number of log probabilities",
-      type: "number",
-    },
-  ],
-  anthropic: [
-    {
-      key: "temperature",
-      description: "Controls randomness (0-1)",
-      type: "number",
-    },
-    { key: "top_p", description: "Nucleus sampling threshold", type: "number" },
-    { key: "top_k", description: "Top K sampling", type: "number" },
-  ],
-  mistral: [
-    {
-      key: "temperature",
-      description: "Controls randomness (0-1)",
-      type: "number",
-    },
-    { key: "top_p", description: "Nucleus sampling threshold", type: "number" },
-    {
-      key: "safe_prompt",
-      description: "Enable safety prompt",
-      type: "boolean",
-    },
-  ],
-  groq: [
-    {
-      key: "temperature",
-      description: "Controls randomness (0-2)",
-      type: "number",
-    },
-    { key: "top_p", description: "Nucleus sampling threshold", type: "number" },
-  ],
-  gemini: [
-    {
-      key: "temperature",
-      description: "Controls randomness (0-1)",
-      type: "number",
-    },
-    { key: "topP", description: "Nucleus sampling threshold", type: "number" },
-    { key: "topK", description: "Top K sampling", type: "number" },
-  ],
-  "openai-compatible": [
-    { key: "temperature", description: "Controls randomness", type: "number" },
-    { key: "top_p", description: "Nucleus sampling threshold", type: "number" },
-    {
-      key: "frequency_penalty",
-      description: "Penalty for repetition",
-      type: "number",
-    },
-    {
-      key: "presence_penalty",
-      description: "Penalty for new topics",
-      type: "number",
-    },
-    { key: "seed", description: "Deterministic sampling seed", type: "number" },
-    {
-      key: "max_tokens",
-      description: "Maximum tokens to generate",
-      type: "number",
-    },
-    // OpenAI-compatible providers may support various custom parameters
-  ],
+export type ParameterType = (typeof PARAMETER_SUGGESTIONS)[number]["type"];
+
+export const PARAMETER_SUGGESTIONS = Object.entries(PARAMETER_METADATA).map(
+  ([key, { description, uiType }]) => ({
+    key,
+    description,
+    type: uiType,
+  }),
+);
+
+/**
+ * Validates if a value is valid for the given parameter type
+ */
+export const validateValue = (value: string, type: ParameterType) => {
+  if (!value.trim()) return { isValid: true, error: null }; // Empty values are allowed
+
+  switch (type) {
+    case "boolean":
+      return {
+        isValid: value === "true" || value === "false",
+        error:
+          value !== "true" && value !== "false"
+            ? "Must be 'true' or 'false'"
+            : null,
+      };
+
+    case "number": {
+      const num = parseFloat(value);
+      return {
+        isValid: !isNaN(num) && isFinite(num),
+        error: isNaN(num) || !isFinite(num) ? "Must be a valid number" : null,
+      };
+    }
+
+    case "array":
+      try {
+        const parsed = JSON.parse(value);
+        return {
+          isValid: Array.isArray(parsed),
+          error: !Array.isArray(parsed)
+            ? "Must be a valid JSON array (e.g., [1, 2, 3])"
+            : null,
+        };
+      } catch {
+        return {
+          isValid: false,
+          error: "Must be valid JSON array format",
+        };
+      }
+
+    case "object":
+      try {
+        const parsed = JSON.parse(value);
+        const isValidObject =
+          typeof parsed === "object" &&
+          parsed !== null &&
+          !Array.isArray(parsed);
+        return {
+          isValid: isValidObject,
+          error: !isValidObject
+            ? 'Must be a valid JSON object (e.g., {"key": "value"})'
+            : null,
+        };
+      } catch {
+        return {
+          isValid: false,
+          error: "Must be valid JSON object format",
+        };
+      }
+
+    case "string":
+    default:
+      return { isValid: true, error: null };
+  }
 };

@@ -15,6 +15,34 @@ export interface CommonParametersDefaults {
   // We can add other specific capabilities here
 }
 
+export const PARAMETER_METADATA: Record<
+  keyof CommonParametersDefaults,
+  {
+    description: string;
+    uiType: string;
+  }
+> = {
+  temperature: {
+    description: "Controls randomness in output",
+    uiType: "number",
+  },
+  maxOutputTokens: {
+    description: "Maximum tokens to generate",
+    uiType: "number",
+  },
+  maxRetries: { description: "Maximum number of retries", uiType: "number" },
+  topP: { description: "Nucleus sampling threshold", uiType: "number" },
+  topK: { description: "Top K sampling", uiType: "number" },
+  presencePenalty: { description: "Penalty for new topics", uiType: "number" },
+  frequencyPenalty: { description: "Penalty for repetition", uiType: "number" },
+  stopSequences: {
+    description: "Sequences where generation stops",
+    uiType: "array",
+  },
+  seed: { description: "Deterministic sampling seed", uiType: "number" },
+  headers: { description: "Custom headers for requests", uiType: "object" },
+};
+
 export interface LlmModelConfigInfo {
   /** The actual name used in API calls, e.g., "gpt-4o-mini" */
   apiName: string;

@@ -11,8 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { PARAMETER_SUGGESTIONS } from "@/lib/llm-parameters";
+import {
+  PARAMETER_SUGGESTIONS,
+  type ParameterType,
+  validateValue,
+} from "@/lib/llm-parameters";
 import { api, RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
@@ -24,8 +29,6 @@ interface CustomLlmParametersEditorProps {
   selectedModel?: string | null;
   onEdited?: () => void;
 }
-
-type ParameterType = "string" | "number" | "boolean";
 
 /**
  * Represents a single parameter entry in the UI.
@@ -42,16 +45,46 @@ interface ParameterEntry {
  * Converts string values from form inputs to their proper types for storage.
  * The AI SDK expects proper JSON types, not strings.
  */
-const convertValue = (
-  value: string,
-  type: ParameterType,
-): string | number | boolean | undefined => {
+const convertValue = (value: string, type: ParameterType) => {
   if (type === "boolean") return value === "true";
   if (type === "number") {
     const num = parseFloat(value);
     return isNaN(num) ? undefined : num;
   }
+  if (type === "array") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  if (type === "object") {
+    try {
+      const parsed = JSON.parse(value);
+      return typeof parsed === "object" &&
+        parsed !== null &&
+        !Array.isArray(parsed)
+        ? parsed
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
   return value;
+};
+
+/**
+ * Converts a value to a string for UI display, properly handling objects and arrays
+ */
+const valueToString = (value: unknown) => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean")
+    return String(value);
+  if (Array.isArray(value) || (typeof value === "object" && value !== null)) {
+    return JSON.stringify(value);
+  }
+  return String(value);
 };
 
 /**
@@ -69,7 +102,45 @@ const generateParameterId = (prefix: string): string => {
 const detectType = (value: unknown): ParameterType => {
   if (typeof value === "boolean") return "boolean";
   if (typeof value === "number") return "number";
+  if (Array.isArray(value)) return "array";
+  if (typeof value === "object" && value !== null) return "object";
   return "string";
+};
+
+/**
+ * Formats a value for display based on its type
+ */
+const formatValueForDisplay = (value: string, type: ParameterType) => {
+  switch (type) {
+    case "boolean":
+      return value;
+    case "number":
+      return value;
+    case "array":
+      try {
+        const parsed = JSON.parse(value);
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        return value;
+      }
+    case "object":
+      try {
+        const parsed = JSON.parse(value);
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        return value;
+      }
+    case "string":
+    default:
+      return `"${value}"`;
+  }
+};
+
+/**
+ * Checks if a value should use a textarea (for arrays and objects)
+ */
+const shouldUseTextarea = (type: ParameterType) => {
+  return type === "array" || type === "object";
 };
 
 /**
@@ -77,7 +148,7 @@ const detectType = (value: unknown): ParameterType => {
  */
 interface ParameterSuggestionsProps {
   providerName: string;
-  suggestions: Array<{ key: string; type: string; description?: string }>;
+  suggestions: typeof PARAMETER_SUGGESTIONS;
   onApply: (suggestion: { key: string; type: string }) => void;
 }
 
@@ -142,33 +213,38 @@ function ViewMode({ parameters, onEdit, isLoading }: ViewModeProps) {
             <div className="h-4 bg-muted/50 rounded w-1/2 animate-pulse" />
           </div>
         ) : parameters.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {parameters.map((p, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm">
-                <span className="font-mono font-medium">{p.key}:</span>
-                <span className="text-muted-foreground">
-                  {p.type === "string" ? `"${p.value}"` : p.value}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  ({p.type})
-                </span>
+              <div key={i} className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-medium text-sm">
+                    {p.key}:
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    ({p.type})
+                  </span>
+                </div>
+                {shouldUseTextarea(p.type) ? (
+                  <pre className="text-xs bg-muted/50 p-2 rounded border font-mono whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+                    {formatValueForDisplay(p.value, p.type)}
+                  </pre>
+                ) : (
+                  <span className="text-sm text-muted-foreground font-mono">
+                    {formatValueForDisplay(p.value, p.type)}
+                  </span>
+                )}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground">
             No custom parameters configured.
-          </p>
+          </div>
         )}
       </div>
 
-      <Button
-        variant="outline"
-        onClick={onEdit}
-        className="flex-shrink-0"
-        disabled={isLoading}
-      >
-        {parameters.length > 0 ? "Edit Parameters" : "Add Parameters"}
+      <Button variant="outline" size="sm" onClick={onEdit}>
+        Edit
       </Button>
     </motion.div>
   );
@@ -181,7 +257,7 @@ function ViewMode({ parameters, onEdit, isLoading }: ViewModeProps) {
 interface EditModeProps {
   parameters: ParameterEntry[];
   providerName: string;
-  suggestions: Array<{ key: string; type: string; description?: string }>;
+  suggestions: typeof PARAMETER_SUGGESTIONS;
   isPending: boolean;
   activeEditIndex: number | null;
   onParametersChange: (index: number, updatedParam: ParameterEntry) => void;
@@ -217,9 +293,9 @@ function EditMode({
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className="space-y-4"
     >
-      <CardDescription className="text-sm text-foreground max-w-sm mb-4">
+      <CardDescription className="text-sm text-foreground max-w-md mb-4">
         {allowCustomParameters
-          ? "Add custom parameters to send with each LLM request. These will be passed as provider options."
+          ? "Add custom parameters to send with each LLM request."
           : "Add parameters from the suggestions below. Custom parameters are only available for OpenAI-compatible providers."}
       </CardDescription>
 
@@ -304,26 +380,59 @@ function ParameterRow({
   allowCustomParameters = true,
 }: ParameterRowProps) {
   const [local, setLocal] = useState<ParameterEntry>(param);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Reset local state when param changes from parent
   useEffect(() => {
     if (!isEditing) {
       setLocal(param);
+      setValidationError(null);
     }
   }, [param, isEditing]);
 
   const handleChange = (field: keyof ParameterEntry, value: string) => {
     if (!isEditing) onBeginEdit(index);
-    const updatedParam = { ...local, [field]: value };
+
+    let updatedParam = { ...local, [field]: value };
+    let error: string | null = null;
+
+    // Validate value changes
+    if (field === "value") {
+      const validation = validateValue(value, local.type);
+      error = validation.error;
+      setValidationError(error);
+    }
+
+    // Clear validation error when type changes
+    if (field === "type") {
+      setValidationError(null);
+      // Reset value to appropriate default when type changes
+      if (value !== local.type) {
+        const defaultValue =
+          value === "boolean"
+            ? "false"
+            : value === "number"
+              ? "0"
+              : value === "array"
+                ? "[]"
+                : value === "object"
+                  ? "{}"
+                  : "";
+        updatedParam = { ...updatedParam, value: defaultValue };
+      }
+    }
+
     setLocal(updatedParam);
-    onParameterChange(index, updatedParam);
+
+    // Only propagate changes if there's no validation error
+    if (field !== "value" || !error) {
+      onParameterChange(index, updatedParam);
+    }
   };
 
   // Check if this parameter was added from suggestions (exists in PARAMETER_SUGGESTIONS)
   const isFromSuggestions = useMemo(() => {
-    return Object.values(PARAMETER_SUGGESTIONS).some((suggestions) =>
-      suggestions.some((s) => s.key === param.key),
-    );
+    return PARAMETER_SUGGESTIONS.some((s) => s.key === param.key);
   }, [param.key]);
 
   // For parameters from suggestions: only allow value editing
@@ -344,6 +453,7 @@ function ParameterRow({
       }}
     >
       <div className="flex gap-2 items-start">
+        {/* Key input */}
         <Input
           placeholder="Parameter name"
           value={local.key}
@@ -351,25 +461,30 @@ function ParameterRow({
           className="flex-1 focus:ring-inset"
           disabled={!canEditKey}
         />
+
+        {/* Type selector */}
         <Select
           value={local.type}
-          onValueChange={(v) => handleChange("type", v as ParameterType)}
+          onValueChange={(value) => handleChange("type", value)}
           disabled={!canEditType}
         >
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="w-24">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="string">String</SelectItem>
             <SelectItem value="number">Number</SelectItem>
             <SelectItem value="boolean">Boolean</SelectItem>
+            <SelectItem value="array">Array</SelectItem>
+            <SelectItem value="object">Object</SelectItem>
           </SelectContent>
         </Select>
 
+        {/* Value input with type-specific handling */}
         {local.type === "boolean" ? (
           <Select
             value={local.value}
-            onValueChange={(v) => handleChange("value", v)}
+            onValueChange={(value) => handleChange("value", value)}
             disabled={!canEditValue}
           >
             <SelectTrigger className="flex-1">
@@ -380,18 +495,31 @@ function ParameterRow({
               <SelectItem value="false">false</SelectItem>
             </SelectContent>
           </Select>
+        ) : shouldUseTextarea(local.type) ? (
+          <Textarea
+            placeholder={
+              local.type === "array" ? '[1, "two", 3]' : '{"key": "value"}'
+            }
+            value={local.value}
+            onChange={(e) => handleChange("value", e.target.value)}
+            className={`flex-1 resize-y min-h-[80px] font-mono text-sm ${
+              validationError ? "border-red-500" : ""
+            }`}
+            disabled={!canEditValue}
+          />
         ) : (
           <Input
             placeholder={local.type === "number" ? "0" : "Value"}
             value={local.value}
             onChange={(e) => handleChange("value", e.target.value)}
-            className="flex-1"
+            className={`flex-1 ${validationError ? "border-red-500" : ""}`}
             type={local.type === "number" ? "number" : "text"}
             step={local.type === "number" ? "0.01" : undefined}
             disabled={!canEditValue}
           />
         )}
 
+        {/* Remove button */}
         <Button
           variant="ghost"
           size="icon"
@@ -400,6 +528,21 @@ function ParameterRow({
         >
           <Trash2 className="h-4 w-4" />
         </Button>
+      </div>
+
+      {/* Validation error message */}
+      <div className="h-6 mt-1">
+        {validationError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="text-sm text-red-600 ml-2"
+          >
+            {validationError}
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );
@@ -435,13 +578,6 @@ export function CustomLlmParametersEditor({
   const providerName = useMemo(
     () => selectedProvider || project?.defaultLlmProviderName || "openai",
     [selectedProvider, project?.defaultLlmProviderName],
-  );
-
-  const suggestions = useMemo(
-    () =>
-      PARAMETER_SUGGESTIONS[providerName] ??
-      PARAMETER_SUGGESTIONS["openai-compatible"],
-    [providerName],
   );
 
   const currentProvider = useMemo(
@@ -485,7 +621,7 @@ export function CustomLlmParametersEditor({
       return Object.entries(modelParams).map(([key, value]) => ({
         id: generateParameterId(key),
         key,
-        value: String(value),
+        value: valueToString(value),
         type: detectType(value),
       }));
     },
@@ -537,7 +673,7 @@ export function CustomLlmParametersEditor({
         .filter((p) => p.key)
         .map((p) => [p.key, convertValue(p.value, p.type)])
         .filter(([_, v]) => v !== undefined),
-    ) as Record<string, string | number | boolean>;
+    );
 
     const existingParams = project.customLlmParameters ?? {};
     const hasNewParams = Object.keys(parametersObject).length > 0;
@@ -633,7 +769,7 @@ export function CustomLlmParametersEditor({
         id: generateParameterId("new"),
         key: "",
         value: "",
-        type: "string" as ParameterType,
+        type: "string",
       },
     ];
     setParameters(newParams);
@@ -652,7 +788,11 @@ export function CustomLlmParametersEditor({
           ? "false"
           : suggestion.type === "number"
             ? "0"
-            : "";
+            : suggestion.type === "array"
+              ? "[]"
+              : suggestion.type === "object"
+                ? "{}"
+                : "";
 
       const newParams = [
         ...parameters,
@@ -660,7 +800,7 @@ export function CustomLlmParametersEditor({
           id: generateParameterId(suggestion.key),
           key: suggestion.key,
           value: defaultValue,
-          type: suggestion.type as ParameterType,
+          type: suggestion.type,
         },
       ];
       setParameters(newParams);
@@ -686,7 +826,7 @@ export function CustomLlmParametersEditor({
             key="edit-mode"
             parameters={parameters}
             providerName={providerName}
-            suggestions={suggestions}
+            suggestions={PARAMETER_SUGGESTIONS}
             isPending={updateProject.isPending}
             activeEditIndex={activeEditIndex}
             onParametersChange={handleParameterChange}
