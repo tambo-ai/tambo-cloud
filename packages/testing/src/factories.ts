@@ -103,6 +103,7 @@ export function createMockDBMessage(
     metadata: overrides.metadata ?? null,
     isCancelled: overrides.isCancelled ?? false,
     createdAt: overrides.createdAt ?? now,
+    reasoning: overrides.reasoning ?? null,
   };
 
   return message;
@@ -132,6 +133,7 @@ export function createMockThreadMessage(
     createdAt: overrides.createdAt ?? now,
     tool_call_id: overrides.tool_call_id,
     toolCallRequest: overrides.toolCallRequest,
+    reasoning: overrides.reasoning,
   };
   return message;
 }
