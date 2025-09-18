@@ -9,10 +9,11 @@ import {
   isNull,
   ne,
   or,
-  SQL,
+  type SQL,
   sql,
 } from "drizzle-orm";
-import { SubqueryWithSelection } from "drizzle-orm/pg-core";
+import { type SubqueryWithSelection } from "drizzle-orm/pg-core";
+import { UnreachableCaseError } from "ts-essentials";
 import { mergeSuperJson } from "../drizzleUtil";
 import * as schema from "../schema";
 import type { HydraDb } from "../types";
@@ -365,6 +366,15 @@ export async function updateThreadGenerationStatus(
   return updated;
 }
 
+type SortFieldKeys =
+  | "created"
+  | "updated"
+  | "threadId"
+  | "threadName"
+  | "contextKey"
+  | "messages"
+  | "errors";
+
 export async function getThreadsByProjectWithCounts(
   db: HydraDb,
   projectId: string,
@@ -382,14 +392,7 @@ export async function getThreadsByProjectWithCounts(
     sortDirection = "desc",
   }: {
     searchQuery?: string;
-    sortField?:
-      | "created"
-      | "updated"
-      | "threadId"
-      | "threadName"
-      | "contextKey"
-      | "messages"
-      | "errors";
+    sortField?: SortFieldKeys;
     sortDirection?: "asc" | "desc";
   } = {},
 ) {
@@ -517,7 +520,7 @@ export async function getThreadsByProjectWithCounts(
   }));
 }
 
-function getFieldFromSort(sortField: string) {
+function getFieldFromSort(sortField: SortFieldKeys) {
   switch (sortField) {
     case "created":
       return schema.threads.createdAt;
@@ -529,8 +532,12 @@ function getFieldFromSort(sortField: string) {
       return schema.threads.name;
     case "contextKey":
       return schema.threads.contextKey;
-    default:
+    case "errors":
+    case "messages":
+      // For now you can't sort by messages or errors
       return schema.threads.createdAt;
+    default:
+      throw new UnreachableCaseError(sortField);
   }
 }
 
