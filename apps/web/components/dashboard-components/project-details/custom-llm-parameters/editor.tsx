@@ -6,6 +6,7 @@ import {
   detectType,
   convertValue,
   valueToString,
+  getDefaultValueForType,
 } from "./utils";
 import { api, RouterOutputs } from "@/trpc/react";
 import { AnimatePresence } from "framer-motion";
@@ -228,23 +229,12 @@ export function CustomLlmParametersEditor({
         return;
       }
 
-      const defaultValue =
-        suggestion.type === "boolean"
-          ? "false"
-          : suggestion.type === "number"
-            ? "0"
-            : suggestion.type === "array"
-              ? "[]"
-              : suggestion.type === "object"
-                ? "{}"
-                : "";
-
       const newParams = [
         ...parameters,
         {
           id: generateParameterId(suggestion.key),
           key: suggestion.key,
-          value: defaultValue,
+          value: getDefaultValueForType(suggestion.type),
           type: suggestion.type,
         },
       ];

@@ -167,3 +167,22 @@ export const formatValueForDisplay = (value: string, type: ParameterType) => {
 export const shouldUseTextarea = (type: ParameterType) => {
   return type === "array" || type === "object";
 };
+
+/**
+ * Gets the default value for a given parameter type
+ */
+export const getDefaultValueForType = (type: ParameterType): string => {
+  switch (type) {
+    case "boolean":
+      return "false";
+    case "number":
+      return "0";
+    case "array":
+      return "[]";
+    case "object":
+      return "{}";
+    case "string":
+    default:
+      return "";
+  }
+};

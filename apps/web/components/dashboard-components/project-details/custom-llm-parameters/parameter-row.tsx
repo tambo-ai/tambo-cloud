@@ -11,7 +11,11 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { validateValue, shouldUseTextarea } from "./utils";
+import {
+  validateValue,
+  shouldUseTextarea,
+  getDefaultValueForType,
+} from "./utils";
 import { PARAMETER_SUGGESTIONS, type ParameterEntry } from "./types";
 
 /**
@@ -69,16 +73,7 @@ export function ParameterRow({
       setValidationError(null);
       // Reset value to appropriate default when type changes
       if (value !== local.type) {
-        const defaultValue =
-          value === "boolean"
-            ? "false"
-            : value === "number"
-              ? "0"
-              : value === "array"
-                ? "[]"
-                : value === "object"
-                  ? "{}"
-                  : "";
+        const defaultValue = getDefaultValueForType(value);
         updatedParam = { ...updatedParam, value: defaultValue };
       }
     }
