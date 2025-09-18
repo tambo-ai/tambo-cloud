@@ -12,6 +12,7 @@ import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EditMode, ViewMode } from "./editor-modes";
 import { PARAMETER_SUGGESTIONS, type ParameterEntry } from "./types";
+import { CustomLlmParameters } from "@tambo-ai-cloud/core";
 
 interface CustomLlmParametersEditorProps {
   project?: RouterOutputs["project"]["getUserProjects"][number];
@@ -85,32 +86,22 @@ export function CustomLlmParametersEditor({
    * Extracts parameters from the nested storage structure (provider -> model -> parameters)
    * and converts them to the UI format for editing
    */
-  const extractParameters = useCallback(
-    (
-      customParams: unknown,
-      provider?: string | null,
-      model?: string | null,
-    ): ParameterEntry[] => {
-      if (!customParams || !provider || !model) return [];
-      if (typeof customParams !== "object") return [];
+  function extractParameters(
+    customParams: CustomLlmParameters | null | undefined,
+    provider?: string | null,
+    model?: string | null,
+  ): ParameterEntry[] {
+    if (!provider || !model) return [];
 
-      const providerParams = (customParams as Record<string, unknown>)[
-        provider
-      ];
-      if (!providerParams || typeof providerParams !== "object") return [];
+    const modelParams = customParams?.[provider]?.[model] ?? {};
 
-      const modelParams = (providerParams as Record<string, unknown>)[model];
-      if (!modelParams || typeof modelParams !== "object") return [];
-
-      return Object.entries(modelParams).map(([key, value]) => ({
-        id: generateParameterId(key),
-        key,
-        value: valueToString(value),
-        type: detectType(value),
-      }));
-    },
-    [],
-  );
+    return Object.entries(modelParams).map(([key, value]) => ({
+      id: generateParameterId(key),
+      key,
+      value: valueToString(value),
+      type: detectType(value),
+    }));
+  }
 
   // Initialize parameters from project data
   useEffect(() => {
@@ -121,12 +112,7 @@ export function CustomLlmParametersEditor({
     );
     setParameters(params);
     setActiveEditIndex(null);
-  }, [
-    project?.customLlmParameters,
-    currentProvider,
-    currentModel,
-    extractParameters,
-  ]);
+  }, [project?.customLlmParameters, currentProvider, currentModel]);
 
   const updateProject = api.project.updateProject.useMutation({
     onSuccess: () => {
@@ -230,12 +216,7 @@ export function CustomLlmParametersEditor({
     setParameters(params);
     setIsEditing(false);
     setActiveEditIndex(null);
-  }, [
-    project?.customLlmParameters,
-    currentProvider,
-    currentModel,
-    extractParameters,
-  ]);
+  }, [project?.customLlmParameters, currentProvider, currentModel]);
 
   const handleBeginEdit = useCallback((rowIndex: number) => {
     setActiveEditIndex(rowIndex);
