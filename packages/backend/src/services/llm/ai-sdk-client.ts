@@ -266,7 +266,7 @@ export class AISdkClient implements LLMClient {
       },
       /**
        * Apply parameter hierarchy:
-       * 1. Model-specific defaults (temperature: 1 for gpt-5 models)
+       * 1. Model-specific defaults
        * 2. Custom user parameters (highest priority)
        */
       ...modelDefaults, // Model-specific defaults (e.g., temperature: 1)
