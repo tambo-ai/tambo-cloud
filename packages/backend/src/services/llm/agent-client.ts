@@ -322,6 +322,8 @@ export class AgentClient {
             );
           }
           if (currentMessage.role === MessageRole.Assistant) {
+            // we replace whatever tool calls we had before with the new one,
+            // because they are partial/incomplete
             currentMessage = {
               ...currentMessage,
               toolCalls: [currentToolCall],
