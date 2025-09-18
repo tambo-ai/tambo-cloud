@@ -9,9 +9,10 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/gpt-5",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 400000,
-    commonParametersDefaults: {
-      temperature: 1,
-    },
+    // We can add common parameters defaults here if needed
+    // commonParametersDefaults: {
+    //   temperature: 1,
+    // },
   },
   "gpt-5-mini-2025-08-07": {
     apiName: "gpt-5-mini-2025-08-07",
@@ -22,9 +23,6 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/gpt-5-mini",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 400000,
-    commonParametersDefaults: {
-      temperature: 1,
-    },
   },
   "gpt-5-nano-2025-08-07": {
     apiName: "gpt-5-nano-2025-08-07",
@@ -34,9 +32,6 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/gpt-5-nano",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 400000,
-    commonParametersDefaults: {
-      temperature: 1,
-    },
   },
   "gpt-4.1-2025-04-14": {
     apiName: "gpt-4.1-2025-04-14",

@@ -210,13 +210,15 @@ export class AISdkClient implements LLMClient {
       functionId: `${this.provider}-${this.model}`,
     });
 
-    // Default temperature to 0 unless overridden by config
-    const temperature = modelCfg?.commonParametersDefaults?.temperature;
+    // Extract custom parameters for the current model
+    const customParams = this.customLlmParameters?.[providerKey]?.[this.model];
+
+    // Get model-specific defaults (e.g., temperature: 1 for models that need it)
+    const modelDefaults = modelCfg?.commonParametersDefaults || {};
 
     const baseConfig: AICompleteParams = {
       model: modelInstance,
       messages: coreMessages,
-      temperature: temperature ?? 0,
       tools,
       toolChoice: params.tool_choice
         ? this.convertToolChoice(params.tool_choice)
@@ -226,23 +228,21 @@ export class AISdkClient implements LLMClient {
         experimental_telemetry: experimentalTelemetry,
       }),
       /**
-       * Extract and flatten custom parameters from our nested storage structure.
-       *
-       * Storage format: provider -> model -> parameters (for model-specific configs)
-       * AI SDK expects: provider -> parameters (flat structure)
-       *
-       * We extract only the current model's parameters and merge them with default
-       * parallel tool calls settings, then pass them to the AI SDK.
-       * This allows users to have different settings for GPT-4 vs GPT-3.5, etc.
+       * Provider-specific configuration
        */
       providerOptions: {
         [providerKey]: {
           // Provider-specific params from config as base defaults (e.g., disable parallel tool calls for OpenAI/Anthropic)
           ...providerCfg?.providerSpecificParams,
-          // Custom parameters override defaults (if any exist)
-          ...this.customLlmParameters?.[providerKey]?.[this.model],
         },
       },
+      /**
+       * Apply parameter hierarchy:
+       * 1. Model-specific defaults (temperature: 1 for gpt-5 models)
+       * 2. Custom user parameters (highest priority)
+       */
+      ...modelDefaults, // Model-specific defaults (e.g., temperature: 1)
+      ...(customParams && customParams), // Custom parameters override all
     };
 
     if (params.stream) {
