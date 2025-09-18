@@ -124,7 +124,6 @@ export const generateParameterId = (prefix: string): string => {
  * Used when loading parameters from the database.
  */
 export const detectType = (value: unknown): ParameterType => {
-  if (value === null) return "string"; // explicit null handling
   if (Array.isArray(value)) return "array"; // check arrays before objects
   return typeof value as ParameterType; // for boolean, number, object, string
 };
