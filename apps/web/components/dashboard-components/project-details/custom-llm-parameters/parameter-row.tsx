@@ -55,28 +55,40 @@ export function ParameterRow({
     }
   }, [param, isEditing]);
 
-  const handleChange = (field: keyof ParameterEntry, value: string) => {
+  const handleKeyChange = (value: string) => {
     if (!isEditing) onBeginEdit(index);
 
-    let updatedParam = { ...local, [field]: value };
-    let error: string | null = null;
+    const updatedParam = { ...local, key: value };
+    setLocal(updatedParam);
+    onParameterChange(index, updatedParam);
+  };
 
-    // Validate value changes
-    if (field === "value") {
-      const validation = validateValue(value, local.type);
-      error = validation.error;
-      setValidationError(error);
-    }
+  const handleTypeChange = (value: string) => {
+    if (!isEditing) onBeginEdit(index);
 
     // Clear validation error when type changes
-    if (field === "type") {
-      setValidationError(null);
-      // Reset value to appropriate default when type changes
-      if (value !== local.type) {
-        const defaultValue = getDefaultValueForType(value);
-        updatedParam = { ...updatedParam, value: defaultValue };
-      }
+    setValidationError(null);
+
+    // Reset value to appropriate default when type changes
+    let updatedParam = { ...local, type: value };
+    if (value !== local.type) {
+      const defaultValue = getDefaultValueForType(value);
+      updatedParam = { ...updatedParam, value: defaultValue };
     }
+
+    setLocal(updatedParam);
+    onParameterChange(index, updatedParam);
+  };
+
+  const handleValueChange = (value: string) => {
+    if (!isEditing) onBeginEdit(index);
+
+    const updatedParam = { ...local, value };
+
+    // Validate value changes
+    const validation = validateValue(value, local.type);
+    const error = validation.error;
+    setValidationError(error);
 
     setLocal(updatedParam);
 
@@ -112,7 +124,7 @@ export function ParameterRow({
         <Input
           placeholder="Parameter name"
           value={local.key}
-          onChange={(e) => handleChange("key", e.target.value)}
+          onChange={(e) => handleKeyChange(e.target.value)}
           className="flex-1 focus:ring-inset"
           disabled={!canEditKey}
         />
@@ -120,7 +132,7 @@ export function ParameterRow({
         {/* Type selector */}
         <Select
           value={local.type}
-          onValueChange={(value) => handleChange("type", value)}
+          onValueChange={handleTypeChange}
           disabled={!canEditType}
         >
           <SelectTrigger className="w-24">
@@ -139,7 +151,7 @@ export function ParameterRow({
         {local.type === "boolean" ? (
           <Select
             value={local.value}
-            onValueChange={(value) => handleChange("value", value)}
+            onValueChange={handleValueChange}
             disabled={!canEditValue}
           >
             <SelectTrigger className="flex-1">
@@ -156,7 +168,7 @@ export function ParameterRow({
               local.type === "array" ? '[1, "two", 3]' : '{"key": "value"}'
             }
             value={local.value}
-            onChange={(e) => handleChange("value", e.target.value)}
+            onChange={(e) => handleValueChange(e.target.value)}
             className={`flex-1 resize-y min-h-[80px] font-mono text-sm ${
               validationError ? "border-red-500" : ""
             }`}
@@ -166,7 +178,7 @@ export function ParameterRow({
           <Input
             placeholder={local.type === "number" ? "0" : "Value"}
             value={local.value}
-            onChange={(e) => handleChange("value", e.target.value)}
+            onChange={(e) => handleValueChange(e.target.value)}
             className={`flex-1 ${validationError ? "border-red-500" : ""}`}
             type={local.type === "number" ? "number" : "text"}
             step={local.type === "number" ? "0.01" : undefined}
