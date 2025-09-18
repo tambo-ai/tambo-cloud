@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { z } from "zod";
 import { AgentSettings } from "./agent-settings";
-import { CustomLlmParametersEditor } from "./custom-llm-parameters-editor";
+import { CustomLlmParametersEditor } from "./custom-llm-parameters/editor";
 
 export const ProviderKeySectionSchema = z
   .object({
