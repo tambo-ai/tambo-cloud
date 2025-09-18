@@ -157,49 +157,14 @@ export function CustomLlmParametersEditor({
     );
 
     const existingParams = project.customLlmParameters ?? {};
-    const hasNewParams = Object.keys(parametersObject).length > 0;
 
-    // Get existing parameters for current provider
-    const currentProviderParams = existingParams[currentProvider] ?? {};
-
-    // Extract other models (excluding current model)
-    const { [currentModel]: _, ...otherModels } = currentProviderParams;
-    const hasOtherModels = Object.keys(otherModels).length > 0;
-
-    // Determine updated parameters for this provider
-    let updatedProviderParams;
-    if (hasNewParams) {
-      // Case A: User added new parameters
-      updatedProviderParams = {
-        ...currentProviderParams, // Keep existing model params
-        [currentModel]: parametersObject, // Add/update current model
-      };
-    } else if (hasOtherModels) {
-      // Case B: No new params, but other models exist for this provider
-      updatedProviderParams = otherModels; // Keep other models
-    } else {
-      // Case C: No params and no other models
-      updatedProviderParams = null; // Remove provider entirely
-    }
-
-    // Extract other providers (excluding current provider)
-    const { [currentProvider]: __, ...otherProviders } = existingParams;
-    const hasOtherProviders = Object.keys(otherProviders).length > 0;
-
-    let customLlmParameters;
-    if (updatedProviderParams) {
-      // Provider still has params - merge back
-      customLlmParameters = {
-        ...existingParams,
-        [currentProvider]: updatedProviderParams,
-      };
-    } else if (hasOtherProviders) {
-      // No params for current provider, but other providers exist
-      customLlmParameters = otherProviders;
-    } else {
-      // No params anywhere
-      customLlmParameters = null;
-    }
+    const customLlmParameters = {
+      ...existingParams,
+      [currentProvider]: {
+        ...existingParams[currentProvider],
+        [currentModel]: parametersObject,
+      },
+    };
 
     updateProject.mutate({
       projectId: project.id,
