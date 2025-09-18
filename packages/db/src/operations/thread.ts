@@ -367,11 +367,11 @@ export async function updateThreadGenerationStatus(
 }
 
 type SortFieldKeys =
+  | "contextKey"
+  | "threadId"
   | "created"
   | "updated"
-  | "threadId"
   | "threadName"
-  | "contextKey"
   | "messages"
   | "errors";
 
@@ -437,7 +437,8 @@ export async function getThreadsByProjectWithCounts(
       .as("counts");
 
     // Build the main query with join
-    const orderBy = getOrderBy(sortField, sortDirection, countsSubquery);
+    const countsField = getCountsField(sortField, countsSubquery);
+    const orderBy = sortDirection === "asc" ? countsField : desc(countsField);
 
     const threadsWithCounts = await db
       .select({
@@ -473,12 +474,12 @@ export async function getThreadsByProjectWithCounts(
 
   const orderedField = getFieldFromSort(sortField);
   // non-count sorting
-  const orderedBy = sortDirection === "asc" ? orderedField : desc(orderedField);
+  const orderBy = sortDirection === "asc" ? orderedField : desc(orderedField);
 
   // Get threads without messages
   const threads = await db.query.threads.findMany({
     where: and(...whereConditions),
-    orderBy: [orderedBy],
+    orderBy: [orderBy],
     offset,
     limit,
   });
@@ -534,16 +535,15 @@ function getFieldFromSort(sortField: SortFieldKeys) {
       return schema.threads.contextKey;
     case "errors":
     case "messages":
-      // For now you can't sort by messages or errors
+      // should never happen because we handle these separately
       return schema.threads.createdAt;
     default:
       throw new UnreachableCaseError(sortField);
   }
 }
 
-function getOrderBy(
+function getCountsField(
   sortField: "messages" | "errors",
-  sortDirection: "asc" | "desc",
   countsSubquery: SubqueryWithSelection<
     {
       messageCount: SQL.Aliased<number>;
@@ -552,17 +552,14 @@ function getOrderBy(
     "counts"
   >,
 ) {
-  if (sortField === "messages") {
-    if (sortDirection === "asc") {
+  switch (sortField) {
+    case "messages":
       return countsSubquery.messageCount;
-    }
-    return desc(countsSubquery.messageCount);
+    case "errors":
+      return countsSubquery.errorCount;
+    default:
+      throw new UnreachableCaseError(sortField);
   }
-
-  if (sortDirection === "asc") {
-    return countsSubquery.errorCount;
-  }
-  return desc(countsSubquery.errorCount);
 }
 
 export async function countThreadsByProjectWithSearch(
