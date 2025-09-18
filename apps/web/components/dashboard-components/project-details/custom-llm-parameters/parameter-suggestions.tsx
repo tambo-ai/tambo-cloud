@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { PARAMETER_SUGGESTIONS } from "./types";
+import { Tooltip, TooltipProvider } from "@/components/ui/tambo/tooltip";
 import { Plus } from "lucide-react";
+import { PARAMETER_SUGGESTIONS } from "./types";
 
 /**
  * ParameterSuggestions Component
@@ -29,19 +30,21 @@ export function ParameterSuggestions({
         Common parameters for {providerName}:
       </Label>
       <div className="flex flex-wrap gap-2">
-        {suggestions.map((s) => (
-          <Button
-            key={s.key}
-            variant="outline"
-            size="sm"
-            onClick={() => onApply(s)}
-            className="text-xs"
-            title={s.description}
-          >
-            <Plus className="h-3 w-3 mr-1" />
-            {s.key}
-          </Button>
-        ))}
+        <TooltipProvider>
+          {suggestions.map((s) => (
+            <Tooltip key={s.key} content={s.description}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onApply(s)}
+                className="text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                {s.key}
+              </Button>
+            </Tooltip>
+          ))}
+        </TooltipProvider>
       </div>
     </div>
   );
