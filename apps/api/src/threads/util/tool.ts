@@ -34,8 +34,8 @@ function buildToolResponseContent(
   if (typeof result === "string") {
     return [{ type: ContentPartType.Text, text: result }];
   }
-  if (Array.isArray(result)) {
-    return result;
+  if (Array.isArray(result.content)) {
+    return result.content;
   }
   return [];
 }
