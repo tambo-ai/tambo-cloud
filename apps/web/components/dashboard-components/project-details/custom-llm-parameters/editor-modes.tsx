@@ -105,6 +105,7 @@ interface EditModeProps {
   onSave: () => void;
   onCancel: () => void;
   allowCustomParameters?: boolean;
+  hasValidationErrors?: boolean;
 }
 
 export function EditMode({
@@ -121,6 +122,7 @@ export function EditMode({
   onSave,
   onCancel,
   allowCustomParameters = true,
+  hasValidationErrors,
 }: EditModeProps) {
   return (
     <motion.div
@@ -185,7 +187,7 @@ export function EditMode({
           <Button variant="ghost" onClick={onCancel} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={onSave} disabled={isPending}>
+          <Button onClick={onSave} disabled={isPending || hasValidationErrors}>
             {isPending ? "Saving..." : "Save"}
           </Button>
         </div>

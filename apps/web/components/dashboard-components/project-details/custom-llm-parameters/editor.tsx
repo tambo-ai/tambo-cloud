@@ -136,6 +136,15 @@ export function CustomLlmParametersEditor({
     },
   });
 
+  const hasValidationErrors = useMemo(() => {
+    return parameters
+      .filter((p) => p.key.trim())
+      .some((p) => {
+        const convertedValue = convertValue(p.value, p.type);
+        return convertedValue === undefined && p.value.trim();
+      });
+  }, [parameters]);
+
   const handleSave = useCallback(() => {
     if (!project || !currentProvider || !currentModel) return;
 
@@ -309,6 +318,7 @@ export function CustomLlmParametersEditor({
             onSave={handleSave}
             onCancel={handleCancel}
             allowCustomParameters={allowCustomParameters}
+            hasValidationErrors={hasValidationErrors}
           />
         ) : (
           <ViewMode

@@ -85,10 +85,9 @@ export function ParameterRow({
 
     setLocal(updatedParam);
 
-    // Only propagate changes if there's no validation error
-    if (field !== "value" || !error) {
-      onParameterChange(index, updatedParam);
-    }
+    // Always propagate changes to parent, even with validation errors
+    // The parent can decide how to handle invalid parameters during save
+    onParameterChange(index, updatedParam);
   };
 
   // Check if this parameter was added from suggestions (exists in PARAMETER_SUGGESTIONS)
