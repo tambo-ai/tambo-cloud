@@ -270,7 +270,7 @@ export class AISdkClient implements LLMClient {
        * 2. Custom user parameters (highest priority)
        */
       ...modelDefaults, // Model-specific defaults (e.g., temperature: 1)
-      ...(customParams && customParams), // Custom parameters override all
+      ...(customParams || {}), // Custom parameters override all
     };
 
     if (params.stream) {
