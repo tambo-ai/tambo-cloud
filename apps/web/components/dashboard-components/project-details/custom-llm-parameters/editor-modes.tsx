@@ -37,20 +37,20 @@ export function ViewMode({ parameters, onEdit, isLoading }: ViewModeProps) {
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className="flex items-start justify-between gap-4"
     >
-      <div className="flex-1 space-y-3">
+      <div className="flex-1 flex flex-col gap-3">
         <CardDescription className="text-sm text-foreground max-w-sm">
           Custom parameters sent with each LLM request.
         </CardDescription>
 
         {isLoading ? (
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             <div className="h-4 bg-muted/50 rounded w-3/4 animate-pulse" />
             <div className="h-4 bg-muted/50 rounded w-1/2 animate-pulse" />
           </div>
         ) : parameters.length > 0 ? (
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             {parameters.map((p, i) => (
-              <div key={i} className="space-y-1">
+              <div key={i} className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-medium text-sm">
                     {p.key}:
@@ -130,7 +130,7 @@ export function EditMode({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="space-y-4"
+      className="flex flex-col"
     >
       <CardDescription className="text-sm text-foreground max-w-md mb-4">
         {allowCustomParameters
@@ -144,7 +144,7 @@ export function EditMode({
         onApply={onApplySuggestion}
       />
 
-      <div className="space-y-3">
+      <div className="flex flex-col">
         {parameters.length > 0 ? (
           <AnimatePresence>
             {parameters.map((param, idx) => (
