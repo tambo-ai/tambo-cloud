@@ -604,6 +604,7 @@ export class ThreadsService {
   async getMessages(
     threadId: string,
     includeInternal: boolean = false,
+    includeSystem: boolean = false,
   ): Promise<ThreadMessageDto[]> {
     const messages = await operations.getMessages(
       this.getDb(),
@@ -611,7 +612,7 @@ export class ThreadsService {
       includeInternal,
     );
     return messages
-      .filter((message) => message.role !== MessageRole.System)
+      .filter((message) => includeSystem || message.role !== MessageRole.System)
       .map((message) => ({
         ...message,
         content: convertContentPartToDto(message.content),
@@ -1053,7 +1054,7 @@ export class ThreadsService {
         `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
       );
 
-      const messages = await this.getMessages(thread.id, true);
+      const messages = await this.getMessages(thread.id, true, true);
       const project = await operations.getProject(db, projectId);
 
       if (messages.length === 0) {
