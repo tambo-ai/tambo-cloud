@@ -4,65 +4,74 @@ import { type ParameterType } from "./types";
  * Validates if a value is valid for the given parameter type
  */
 export const validateValue = (value: string, type: ParameterType) => {
-  if (!value.trim()) return { isValid: true, error: null }; // Empty values are allowed
+  if (!value.trim()) return { isValid: false, error: "Value cannot be empty" }; // Empty values are not allowed
 
-  switch (type) {
-    case "boolean":
-      return {
-        isValid: value === "true" || value === "false",
-        error:
-          value !== "true" && value !== "false"
-            ? "Must be 'true' or 'false'"
-            : null,
-      };
+  // Handle string type separately since it doesn't need JSON parsing
+  if (type === "string") {
+    return { isValid: true, error: null };
+  }
 
-    case "number": {
-      const num = parseFloat(value);
-      return {
-        isValid: !isNaN(num) && isFinite(num),
-        error: isNaN(num) || !isFinite(num) ? "Must be a valid number" : null,
-      };
-    }
+  // For all other types, use JSON.parse for validation
+  try {
+    const parsed = JSON.parse(value);
 
-    case "array":
-      try {
-        const parsed = JSON.parse(value);
+    switch (type) {
+      case "boolean": {
+        const isValid = typeof parsed === "boolean";
         return {
-          isValid: Array.isArray(parsed),
-          error: !Array.isArray(parsed)
-            ? "Must be a valid JSON array (e.g., [1, 2, 3])"
-            : null,
-        };
-      } catch {
-        return {
-          isValid: false,
-          error: "Must be valid JSON array format",
+          isValid,
+          error: isValid ? null : "Must be 'true' or 'false'",
         };
       }
 
-    case "object":
-      try {
-        const parsed = JSON.parse(value);
+      case "number": {
+        const isValidNumber = typeof parsed === "number" && isFinite(parsed);
+        return {
+          isValid: isValidNumber,
+          error: isValidNumber ? null : "Must be a valid number",
+        };
+      }
+
+      case "array": {
+        const isValidArray = Array.isArray(parsed);
+        return {
+          isValid: isValidArray,
+          error: isValidArray
+            ? null
+            : "Must be a valid JSON array (e.g., [1, 2, 3])",
+        };
+      }
+
+      case "object": {
         const isValidObject =
           typeof parsed === "object" &&
           parsed !== null &&
           !Array.isArray(parsed);
         return {
           isValid: isValidObject,
-          error: !isValidObject
-            ? 'Must be a valid JSON object (e.g., {"key": "value"})'
-            : null,
-        };
-      } catch {
-        return {
-          isValid: false,
-          error: "Must be valid JSON object format",
+          error: isValidObject
+            ? null
+            : 'Must be a valid JSON object (e.g., {"key": "value"})',
         };
       }
 
-    case "string":
-    default:
-      return { isValid: true, error: null };
+      default:
+        return { isValid: true, error: null };
+    }
+  } catch {
+    const errorMessages = {
+      boolean: "Must be valid JSON boolean format",
+      number: "Must be valid JSON number format",
+      array: "Must be valid JSON array format",
+      object: "Must be valid JSON object format",
+    };
+
+    return {
+      isValid: false,
+      error:
+        errorMessages[type as keyof typeof errorMessages] ||
+        "Must be valid JSON format",
+    };
   }
 };
 
@@ -71,32 +80,22 @@ export const validateValue = (value: string, type: ParameterType) => {
  * The AI SDK expects proper JSON types, not strings.
  */
 export const convertValue = (value: string, type: ParameterType) => {
-  if (type === "boolean") return value === "true";
-  if (type === "number") {
-    const num = parseFloat(value);
-    return isNaN(num) ? undefined : num;
+  // Handle string type separately
+  if (type === "string") {
+    return value;
   }
-  if (type === "array") {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed : undefined;
-    } catch {
-      return undefined;
-    }
+
+  // Use the validation function to check if the value is valid first
+  const validation = validateValue(value, type);
+  if (!validation.isValid) {
+    return undefined;
   }
-  if (type === "object") {
-    try {
-      const parsed = JSON.parse(value);
-      return typeof parsed === "object" &&
-        parsed !== null &&
-        !Array.isArray(parsed)
-        ? parsed
-        : undefined;
-    } catch {
-      return undefined;
-    }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
   }
-  return value;
 };
 
 /**
@@ -125,39 +124,29 @@ export const generateParameterId = (prefix: string): string => {
  * Used when loading parameters from the database.
  */
 export const detectType = (value: unknown): ParameterType => {
-  if (typeof value === "boolean") return "boolean";
-  if (typeof value === "number") return "number";
-  if (Array.isArray(value)) return "array";
-  if (typeof value === "object" && value !== null) return "object";
-  return "string";
+  if (value === null) return "string"; // explicit null handling
+  if (Array.isArray(value)) return "array"; // check arrays before objects
+  return typeof value as ParameterType; // for boolean, number, object, string
 };
 
 /**
  * Formats a value for display based on its type
  */
 export const formatValueForDisplay = (value: string, type: ParameterType) => {
-  switch (type) {
-    case "boolean":
-      return value;
-    case "number":
-      return value;
-    case "array":
-      try {
-        const parsed = JSON.parse(value);
-        return JSON.stringify(parsed, null, 2);
-      } catch {
-        return value;
-      }
-    case "object":
-      try {
-        const parsed = JSON.parse(value);
-        return JSON.stringify(parsed, null, 2);
-      } catch {
-        return value;
-      }
-    case "string":
-    default:
-      return `"${value}"`;
+  // Handle string type separately to add quotes
+  if (type === "string") {
+    return `"${value}"`;
+  }
+
+  // For other types, use JSON.stringify for consistent formatting
+  try {
+    const parsed = JSON.parse(value);
+    return type === "array" || type === "object"
+      ? JSON.stringify(parsed, null, 2)
+      : JSON.stringify(parsed);
+  } catch {
+    // Fallback to original value if parsing fails
+    return value;
   }
 };
 

@@ -7,6 +7,7 @@ import {
   convertValue,
   valueToString,
   getDefaultValueForType,
+  validateValue,
 } from "./utils";
 import { api, RouterOutputs } from "@/trpc/react";
 import { AnimatePresence } from "framer-motion";
@@ -138,12 +139,15 @@ export function CustomLlmParametersEditor({
   });
 
   const hasValidationErrors = useMemo(() => {
-    return parameters
-      .filter((p) => p.key.trim())
-      .some((p) => {
-        const convertedValue = convertValue(p.value, p.type);
-        return convertedValue === undefined && p.value.trim();
-      });
+    return parameters.some((p) => {
+      // Check if key is empty
+      if (!p.key.trim()) {
+        return true;
+      }
+      // Check if value is invalid
+      const validation = validateValue(p.value, p.type);
+      return !validation.isValid;
+    });
   }, [parameters]);
 
   const handleSave = useCallback(() => {
