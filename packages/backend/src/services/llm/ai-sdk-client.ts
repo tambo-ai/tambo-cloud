@@ -19,6 +19,7 @@ import {
   CoreUserMessage,
   generateText,
   jsonSchema,
+  JSONValue,
   LanguageModel,
   streamText,
   Tool,
@@ -34,7 +35,10 @@ import type OpenAI from "openai";
 import { UnreachableCaseError } from "ts-essentials";
 import { z } from "zod";
 import { createLangfuseTelemetryConfig } from "../../config/langfuse.config";
-import type { LlmProviderConfigInfo } from "../../config/llm-config-types";
+import {
+  PARAMETER_METADATA,
+  type LlmProviderConfigInfo,
+} from "../../config/llm-config-types";
 import { llmProviderConfig } from "../../config/llm.config";
 import { Provider } from "../../model/providers";
 import { formatTemplate, ObjectTemplate } from "../../util/template";
@@ -211,7 +215,28 @@ export class AISdkClient implements LLMClient {
     });
 
     // Extract custom parameters for the current model
-    const customParams = this.customLlmParameters?.[providerKey]?.[this.model];
+    const allCustomParams =
+      this.customLlmParameters?.[providerKey]?.[this.model];
+
+    // For openai-compatible provider, split parameters between suggestions and custom keys
+    let customParams = allCustomParams;
+    let providerSpecificCustomParams = {} as Record<string, JSONValue>;
+
+    if (providerKey === "openai-compatible" && allCustomParams) {
+      const suggestionKeys = Object.keys(PARAMETER_METADATA);
+
+      // Split parameters: suggestions go to customParams, custom keys go to providerOptions
+      customParams = {};
+      providerSpecificCustomParams = {};
+
+      Object.entries(allCustomParams).forEach(([key, value]) => {
+        if (suggestionKeys.includes(key)) {
+          customParams![key] = value;
+        } else {
+          providerSpecificCustomParams[key] = value;
+        }
+      });
+    }
 
     // Get model-specific defaults (e.g., temperature: 1 for models that need it)
     const modelDefaults = modelCfg?.commonParametersDefaults || {};
@@ -234,6 +259,9 @@ export class AISdkClient implements LLMClient {
         [providerKey]: {
           // Provider-specific params from config as base defaults (e.g., disable parallel tool calls for OpenAI/Anthropic)
           ...providerCfg?.providerSpecificParams,
+          // For openai-compatible, add custom user-defined keys here
+          ...(providerKey === "openai-compatible" &&
+            providerSpecificCustomParams),
         },
       },
       /**

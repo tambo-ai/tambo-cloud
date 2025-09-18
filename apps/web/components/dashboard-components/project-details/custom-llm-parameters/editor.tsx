@@ -57,10 +57,22 @@ export function CustomLlmParametersEditor({
     [selectedProvider, project?.defaultLlmProviderName],
   );
 
-  const currentModel = useMemo(
-    () => selectedModel || project?.defaultLlmModelName,
-    [selectedModel, project?.defaultLlmModelName],
-  );
+  const currentModel = useMemo(() => {
+    if (selectedModel) return selectedModel;
+
+    // For OpenAI-compatible providers, use customLlmModelName
+    if (providerName === "openai-compatible") {
+      return project?.customLlmModelName;
+    }
+
+    // For other providers, use defaultLlmModelName
+    return project?.defaultLlmModelName;
+  }, [
+    selectedModel,
+    project?.defaultLlmModelName,
+    project?.customLlmModelName,
+    providerName,
+  ]);
 
   // Determine if custom parameters are allowed for this provider
   // Only OpenAI-compatible providers can add custom parameters
@@ -121,6 +133,8 @@ export function CustomLlmParametersEditor({
       setIsEditing(false);
       setActiveEditIndex(null);
       toast({
+        variant: "success",
+        title: "Success",
         description: "Custom parameters saved successfully",
       });
       if (onEdited) {
@@ -260,7 +274,11 @@ export function CustomLlmParametersEditor({
   const handleApplySuggestion = useCallback(
     (suggestion: { key: string; type: string }) => {
       if (parameters.some((p) => p.key === suggestion.key)) {
-        toast({ description: `Parameter "${suggestion.key}" already exists` });
+        toast({
+          variant: "default",
+          title: "Info",
+          description: `Parameter "${suggestion.key}" already exists`,
+        });
         return;
       }
 
