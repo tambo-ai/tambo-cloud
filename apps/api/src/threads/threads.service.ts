@@ -331,21 +331,23 @@ export class ThreadsService {
       statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
       name: thread.name ?? undefined,
-      messages: thread.messages.map((message) => ({
-        id: message.id,
-        threadId: message.threadId,
-        role: message.role,
-        createdAt: message.createdAt,
-        component: message.componentDecision ?? undefined,
-        content: convertContentPartToDto(message.content),
-        metadata: message.metadata ?? undefined,
-        componentState: message.componentState ?? {},
-        toolCallRequest: message.toolCallRequest ?? undefined,
-        actionType: message.actionType ?? undefined,
-        tool_call_id: message.toolCallId ?? undefined,
-        error: message.error ?? undefined,
-        isCancelled: message.isCancelled,
-      })),
+      messages: thread.messages
+        .filter((message) => message.role !== MessageRole.System)
+        .map((message) => ({
+          id: message.id,
+          threadId: message.threadId,
+          role: message.role,
+          createdAt: message.createdAt,
+          component: message.componentDecision ?? undefined,
+          content: convertContentPartToDto(message.content),
+          metadata: message.metadata ?? undefined,
+          componentState: message.componentState ?? {},
+          toolCallRequest: message.toolCallRequest ?? undefined,
+          actionType: message.actionType ?? undefined,
+          tool_call_id: message.toolCallId ?? undefined,
+          error: message.error ?? undefined,
+          isCancelled: message.isCancelled,
+        })),
     };
   }
 
@@ -607,19 +609,21 @@ export class ThreadsService {
       threadId,
       includeInternal,
     );
-    return messages.map((message) => ({
-      ...message,
-      content: convertContentPartToDto(message.content),
-      metadata: message.metadata ?? undefined,
-      toolCallRequest: message.toolCallRequest ?? undefined,
-      tool_call_id: message.toolCallId ?? undefined,
-      actionType: message.actionType ?? undefined,
-      componentState: message.componentState ?? {},
-      component: message.componentDecision as ComponentDecisionV2 | undefined,
-      error: message.error ?? undefined,
-      isCancelled: message.isCancelled,
-      additionalContext: message.additionalContext ?? {},
-    }));
+    return messages
+      .filter((message) => message.role !== MessageRole.System)
+      .map((message) => ({
+        ...message,
+        content: convertContentPartToDto(message.content),
+        metadata: message.metadata ?? undefined,
+        toolCallRequest: message.toolCallRequest ?? undefined,
+        tool_call_id: message.toolCallId ?? undefined,
+        actionType: message.actionType ?? undefined,
+        componentState: message.componentState ?? {},
+        component: message.componentDecision as ComponentDecisionV2 | undefined,
+        error: message.error ?? undefined,
+        isCancelled: message.isCancelled,
+        additionalContext: message.additionalContext ?? {},
+      }));
   }
 
   async deleteMessage(messageId: string) {
