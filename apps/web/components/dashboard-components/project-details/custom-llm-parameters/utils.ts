@@ -129,10 +129,7 @@ export const formatValueForDisplay = (value: string, type: ParameterType) => {
 
   // For other types, use JSON.stringify for consistent formatting
   try {
-    const parsed = JSON.parse(value);
-    return type === "array" || type === "object"
-      ? JSON.stringify(parsed, null, 2)
-      : JSON.stringify(parsed);
+    return JSON.stringify(JSON.parse(value), null, 2);
   } catch {
     // Fallback to original value if parsing fails
     return value;
