@@ -7,6 +7,7 @@ import { ParameterRow } from "./parameter-row";
 import { shouldUseTextarea, formatValueForDisplay } from "./utils";
 import { Plus } from "lucide-react";
 import { PARAMETER_SUGGESTIONS, type ParameterEntry } from "./types";
+import type { FC } from "react";
 
 /**
  *
@@ -15,6 +16,61 @@ import { PARAMETER_SUGGESTIONS, type ParameterEntry } from "./types";
  * and edit the LLM parameters respectively.
  *
  */
+
+/**
+ * ViewModeContent Component
+ *
+ * Renders the content area of the view mode, handling loading states,
+ * empty states, and parameter display.
+ */
+interface ViewModeContentProps {
+  parameters: ParameterEntry[];
+  isLoading?: boolean;
+}
+
+const ViewModeContent: FC<ViewModeContentProps> = ({
+  parameters,
+  isLoading,
+}) => {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="h-4 bg-muted/50 rounded w-3/4 animate-pulse" />
+        <div className="h-4 bg-muted/50 rounded w-1/2 animate-pulse" />
+      </div>
+    );
+  }
+
+  if (parameters.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        No custom parameters configured.
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {parameters.map((p, i) => (
+        <div key={i} className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="font-mono font-medium text-sm">{p.key}:</span>
+            <span className="text-xs text-muted-foreground">({p.type})</span>
+          </div>
+          {shouldUseTextarea(p.type) ? (
+            <pre className="text-xs bg-muted/50 p-2 rounded border font-mono whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+              {formatValueForDisplay(p.value, p.type)}
+            </pre>
+          ) : (
+            <span className="text-sm text-muted-foreground font-mono">
+              {formatValueForDisplay(p.value, p.type)}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 /**
  * ViewMode Component
@@ -29,47 +85,6 @@ interface ViewModeProps {
 }
 
 export function ViewMode({ parameters, onEdit, isLoading }: ViewModeProps) {
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex flex-col gap-2">
-          <div className="h-4 bg-muted/50 rounded w-3/4 animate-pulse" />
-          <div className="h-4 bg-muted/50 rounded w-1/2 animate-pulse" />
-        </div>
-      );
-    }
-
-    if (parameters.length === 0) {
-      return (
-        <div className="text-sm text-muted-foreground">
-          No custom parameters configured.
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex flex-col gap-3">
-        {parameters.map((p, i) => (
-          <div key={i} className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="font-mono font-medium text-sm">{p.key}:</span>
-              <span className="text-xs text-muted-foreground">({p.type})</span>
-            </div>
-            {shouldUseTextarea(p.type) ? (
-              <pre className="text-xs bg-muted/50 p-2 rounded border font-mono whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
-                {formatValueForDisplay(p.value, p.type)}
-              </pre>
-            ) : (
-              <span className="text-sm text-muted-foreground font-mono">
-                {formatValueForDisplay(p.value, p.type)}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -83,7 +98,7 @@ export function ViewMode({ parameters, onEdit, isLoading }: ViewModeProps) {
           Custom parameters sent with each LLM request.
         </CardDescription>
 
-        {renderContent()}
+        <ViewModeContent parameters={parameters} isLoading={isLoading} />
       </div>
 
       <Button variant="outline" size="sm" onClick={onEdit}>
