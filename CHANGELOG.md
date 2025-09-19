@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.109.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.108.0...repo-v0.109.0) (2025-09-19)
+
+
+### Features
+
+* **llms:** Allow model-specific parameters, add reasoning for openai ([#1791](https://github.com/tambo-ai/tambo-cloud/issues/1791)) ([9d006ea](https://github.com/tambo-ai/tambo-cloud/commit/9d006ea84580f0115cd2ba048f9d21f0712015a1))
+
 ## [0.108.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.107.0...repo-v0.108.0) (2025-09-19)
 
 
