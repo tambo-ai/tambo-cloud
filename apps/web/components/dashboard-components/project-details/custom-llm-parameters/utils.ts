@@ -2,6 +2,17 @@ import { CustomLlmParameters } from "@tambo-ai-cloud/core";
 import { ParameterEntry, type ParameterType } from "./types";
 
 /**
+ * Safely attempts to parse JSON, returning null if parsing fails
+ */
+const tryParseJson = (value: string): unknown => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Validates if a value is valid for the given parameter type
  */
 export const validateValue = (value: string, type: ParameterType) => {
@@ -12,54 +23,11 @@ export const validateValue = (value: string, type: ParameterType) => {
     return { isValid: true, error: null };
   }
 
-  // For all other types, use JSON.parse for validation
-  try {
-    const parsed = JSON.parse(value);
+  // For all other types, try to parse as JSON
+  const parsed = tryParseJson(value);
 
-    switch (type) {
-      case "boolean": {
-        const isValid = typeof parsed === "boolean";
-        return {
-          isValid,
-          error: isValid ? null : "Must be 'true' or 'false'",
-        };
-      }
-
-      case "number": {
-        const isValidNumber = typeof parsed === "number" && isFinite(parsed);
-        return {
-          isValid: isValidNumber,
-          error: isValidNumber ? null : "Must be a valid number",
-        };
-      }
-
-      case "array": {
-        const isValidArray = Array.isArray(parsed);
-        return {
-          isValid: isValidArray,
-          error: isValidArray
-            ? null
-            : "Must be a valid JSON array (e.g., [1, 2, 3])",
-        };
-      }
-
-      case "object": {
-        const isValidObject =
-          typeof parsed === "object" &&
-          parsed !== null &&
-          !Array.isArray(parsed);
-        return {
-          isValid: isValidObject,
-          error: isValidObject
-            ? null
-            : 'Must be a valid JSON object (e.g., {"key": "value"})',
-        };
-      }
-
-      default:
-        return { isValid: true, error: null };
-    }
-  } catch {
+  // If parsing failed, return appropriate error message
+  if (parsed === null) {
     const errorMessages = {
       boolean: "Must be valid JSON boolean format",
       number: "Must be valid JSON number format",
@@ -73,6 +41,49 @@ export const validateValue = (value: string, type: ParameterType) => {
         errorMessages[type as keyof typeof errorMessages] ||
         "Must be valid JSON format",
     };
+  }
+
+  // Validate the parsed value based on type
+  switch (type) {
+    case "boolean": {
+      const isValid = typeof parsed === "boolean";
+      return {
+        isValid,
+        error: isValid ? null : "Must be 'true' or 'false'",
+      };
+    }
+
+    case "number": {
+      const isValidNumber = typeof parsed === "number" && isFinite(parsed);
+      return {
+        isValid: isValidNumber,
+        error: isValidNumber ? null : "Must be a valid number",
+      };
+    }
+
+    case "array": {
+      const isValidArray = Array.isArray(parsed);
+      return {
+        isValid: isValidArray,
+        error: isValidArray
+          ? null
+          : "Must be a valid JSON array (e.g., [1, 2, 3])",
+      };
+    }
+
+    case "object": {
+      const isValidObject =
+        typeof parsed === "object" && parsed !== null && !Array.isArray(parsed);
+      return {
+        isValid: isValidObject,
+        error: isValidObject
+          ? null
+          : 'Must be a valid JSON object (e.g., {"key": "value"})',
+      };
+    }
+
+    default:
+      return { isValid: true, error: null };
   }
 };
 
