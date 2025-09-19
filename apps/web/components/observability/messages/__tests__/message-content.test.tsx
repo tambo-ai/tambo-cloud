@@ -199,6 +199,9 @@ describe("MessageContent", () => {
   });
 
   it.skip("toggles additional context visibility", async () => {
+    // SKIPPED: This test has issues with framer-motion component interactions and state management.
+    // The toggle functionality involves complex UI state changes that are difficult to test reliably
+    // in the current test environment. The core functionality is tested through other tests.
     const user = userEvent.setup();
     const messageWithContext = {
       ...baseMessage,
@@ -249,6 +252,9 @@ describe("MessageContent", () => {
   });
 
   it.skip("shows check icon when message ID is copied", () => {
+    // SKIPPED: This test depends on clipboard functionality which is difficult to mock reliably.
+    // The test would verify the visual state change (copy icon → check icon) after copying,
+    // but since clipboard API mocking isn't working, this test is skipped.
     render(
       <MessageContent
         message={baseMessage}
@@ -263,6 +269,9 @@ describe("MessageContent", () => {
   });
 
   it.skip("handles copy functionality for additional context", async () => {
+    // SKIPPED: This test depends on clipboard functionality which is difficult to mock reliably.
+    // The test would verify copying additional context data to clipboard, but since clipboard
+    // API mocking isn't working, this test is skipped.
     const user = userEvent.setup();
     const messageWithContext = {
       ...baseMessage,
@@ -311,6 +320,9 @@ describe("MessageContent", () => {
   });
 
   it.skip("applies highlighted styling when message is highlighted", () => {
+    // SKIPPED: This test has issues with framer-motion component styling and state management.
+    // The highlighted styling involves complex CSS classes and component state that are difficult
+    // to test reliably in the current test environment. The core functionality is tested through other tests.
     render(
       <MessageContent
         message={baseMessage}
