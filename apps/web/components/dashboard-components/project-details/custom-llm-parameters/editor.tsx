@@ -3,18 +3,16 @@
 import { useToast } from "@/hooks/use-toast";
 import {
   generateParameterId,
-  detectType,
   convertValue,
-  valueToString,
   getDefaultValueForType,
   validateValue,
+  extractParameters,
 } from "./utils";
 import { api, RouterOutputs } from "@/trpc/react";
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EditMode, ViewMode } from "./editor-modes";
 import { PARAMETER_SUGGESTIONS, type ParameterEntry } from "./types";
-import { CustomLlmParameters } from "@tambo-ai-cloud/core";
 
 interface CustomLlmParametersEditorProps {
   project?: RouterOutputs["project"]["getUserProjects"][number];
@@ -74,27 +72,6 @@ export function CustomLlmParametersEditor({
   // Determine if custom parameters are allowed for this provider
   // Only OpenAI-compatible providers can add custom parameters
   const allowCustomParameters = providerName === "openai-compatible";
-
-  /**
-   * Extracts parameters from the nested storage structure (provider -> model -> parameters)
-   * and converts them to the UI format for editing
-   */
-  function extractParameters(
-    customParams: CustomLlmParameters | null | undefined,
-    provider?: string | null,
-    model?: string | null,
-  ): ParameterEntry[] {
-    if (!provider || !model) return [];
-
-    const modelParams = customParams?.[provider]?.[model] ?? {};
-
-    return Object.entries(modelParams).map(([key, value]) => ({
-      id: generateParameterId(key),
-      key,
-      value: valueToString(value),
-      type: detectType(value),
-    }));
-  }
 
   // Initialize parameters from project data
   useEffect(() => {

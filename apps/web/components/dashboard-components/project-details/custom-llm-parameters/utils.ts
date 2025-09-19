@@ -1,4 +1,5 @@
-import { type ParameterType } from "./types";
+import { CustomLlmParameters } from "@tambo-ai-cloud/core";
+import { ParameterEntry, type ParameterType } from "./types";
 
 /**
  * Validates if a value is valid for the given parameter type
@@ -173,4 +174,25 @@ export const getDefaultValueForType = (type: ParameterType): string => {
     default:
       return "";
   }
+};
+
+/**
+ * Extracts parameters from the nested storage structure (provider -> model -> parameters)
+ * and converts them to the UI format for editing
+ */
+export const extractParameters = (
+  customParams: CustomLlmParameters | null | undefined,
+  provider?: string | null,
+  model?: string | null,
+): ParameterEntry[] => {
+  if (!provider || !model) return [];
+
+  const modelParams = customParams?.[provider]?.[model] ?? {};
+
+  return Object.entries(modelParams).map(([key, value]) => ({
+    id: generateParameterId(key),
+    key,
+    value: valueToString(value),
+    type: detectType(value),
+  }));
 };
