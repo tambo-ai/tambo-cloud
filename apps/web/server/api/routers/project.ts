@@ -480,9 +480,7 @@ export const projectRouter = createTRPCRouter({
         agentName,
         agentHeaders,
         customLlmParameters:
-          customLlmParameters === null
-            ? undefined
-            : (customLlmParameters ?? undefined),
+          customLlmParameters === undefined ? undefined : customLlmParameters,
         allowSystemPromptOverride,
       });
 
@@ -682,7 +680,8 @@ export const projectRouter = createTRPCRouter({
             if (
               !input.maxInputTokens ||
               input.maxInputTokens < 1 ||
-              input.maxInputTokens > modelConfig.properties.inputTokenLimit
+              (typeof modelConfig.inputTokenLimit === "number" &&
+                input.maxInputTokens > modelConfig.inputTokenLimit)
             ) {
               throw new TRPCError({
                 code: "BAD_REQUEST",
