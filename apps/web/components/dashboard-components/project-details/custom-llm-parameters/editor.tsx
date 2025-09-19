@@ -49,16 +49,10 @@ export function CustomLlmParametersEditor({
   const [parameters, setParameters] = useState<ParameterEntry[]>([]);
   const [activeEditIndex, setActiveEditIndex] = useState<number | null>(null);
 
-  // Memoized values
-  const providerName = useMemo(
-    () => selectedProvider || project?.defaultLlmProviderName || "openai",
-    [selectedProvider, project?.defaultLlmProviderName],
-  );
+  const providerName =
+    selectedProvider || project?.defaultLlmProviderName || "openai";
 
-  const currentProvider = useMemo(
-    () => selectedProvider || project?.defaultLlmProviderName,
-    [selectedProvider, project?.defaultLlmProviderName],
-  );
+  const currentProvider = selectedProvider || project?.defaultLlmProviderName;
 
   const currentModel = useMemo(() => {
     if (selectedModel) return selectedModel;
@@ -79,10 +73,7 @@ export function CustomLlmParametersEditor({
 
   // Determine if custom parameters are allowed for this provider
   // Only OpenAI-compatible providers can add custom parameters
-  const allowCustomParameters = useMemo(
-    () => providerName === "openai-compatible",
-    [providerName],
-  );
+  const allowCustomParameters = providerName === "openai-compatible";
 
   /**
    * Extracts parameters from the nested storage structure (provider -> model -> parameters)
