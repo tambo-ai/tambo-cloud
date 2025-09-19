@@ -1,4 +1,5 @@
 import { DeleteConfirmationDialog } from "@/components/dashboard-components/delete-confirmation-dialog";
+import { api } from "@/trpc/react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -32,7 +33,6 @@ describe("DeleteConfirmationDialog", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset the mock to return isPending: false
-    const { api } = await import("@/trpc/react");
     jest
       .mocked(api.project.removeMultipleProjects.useMutation)
       .mockReturnValue({
@@ -78,7 +78,6 @@ describe("DeleteConfirmationDialog", () => {
         isPending: true,
       };
 
-      const { api } = await import("@/trpc/react");
       jest
         .mocked(api.project.removeMultipleProjects.useMutation)
         .mockReturnValue(mockMutation);
