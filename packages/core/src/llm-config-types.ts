@@ -1,4 +1,4 @@
-import { JSONValue } from "@tambo-ai-cloud/core";
+import type { JSONValue } from "./llm-parameter-types";
 
 // These are the common parameters that are supported by AI SDK streamtext
 export interface CommonParametersDefaults {
@@ -72,6 +72,7 @@ export interface LlmModelConfigInfo {
   tamboDocLink?: string;
   /** Additional capabilities of the model */
   commonParametersDefaults?: CommonParametersDefaults;
+  /** Any parameters that are specific to just this model, such as reasoning or modality */
   modelSpecificParams?: LlmParameterMetadata;
   /** Whether the model is the default model */
   isDefaultModel?: boolean;

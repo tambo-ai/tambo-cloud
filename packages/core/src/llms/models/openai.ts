@@ -1,4 +1,7 @@
-import { LlmModelConfig, LlmParameterMetadata } from "@tambo-ai-cloud/core";
+import type {
+  LlmModelConfig,
+  LlmParameterMetadata,
+} from "../../llm-config-types";
 
 const reasoningParameters: LlmParameterMetadata = {
   reasoningEffort: {

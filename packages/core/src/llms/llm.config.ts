@@ -1,4 +1,4 @@
-import type { LlmProviderConfig } from "@tambo-ai-cloud/core";
+import type { LlmProviderConfig } from "../llm-config-types";
 import { anthropicModels } from "./models/anthropic";
 import { geminiModels } from "./models/gemini";
 import { mistralModels } from "./models/mistral";

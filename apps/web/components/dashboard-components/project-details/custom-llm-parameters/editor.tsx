@@ -226,18 +226,25 @@ export function CustomLlmParametersEditor({
     [],
   );
   const suggestions = useMemo(() => {
-    if (!currentModel) return PARAMETER_SUGGESTIONS;
+    const base = PARAMETER_SUGGESTIONS;
+    if (!currentModel) return base;
     const providerInfo = llmProviderConfig[providerName];
     const modelInfo = providerInfo?.models?.[currentModel];
     const providerParams = modelInfo?.modelSpecificParams ?? {};
-    const providerSuggestions = Object.entries(providerParams ?? {}).map(
+    const providerSuggestions = Object.entries(providerParams).map(
       ([key, value]) => ({
         key,
         description: value.description,
         type: value.uiType,
       }),
     );
-    return [...PARAMETER_SUGGESTIONS, ...providerSuggestions];
+    const seen = new Set<string>();
+    const merged = [...base, ...providerSuggestions].filter((s) => {
+      if (seen.has(s.key)) return false;
+      seen.add(s.key);
+      return true;
+    });
+    return merged;
   }, [providerName, currentModel]);
 
   return (
