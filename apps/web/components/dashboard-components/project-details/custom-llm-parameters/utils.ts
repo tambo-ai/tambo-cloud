@@ -26,23 +26,6 @@ export const validateValue = (value: string, type: ParameterType) => {
   // For all other types, try to parse as JSON
   const parsed = tryParseJson(value);
 
-  // If parsing failed, return appropriate error message
-  if (parsed === null) {
-    const errorMessages = {
-      boolean: "Must be valid JSON boolean format",
-      number: "Must be valid JSON number format",
-      array: "Must be valid JSON array format",
-      object: "Must be valid JSON object format",
-    };
-
-    return {
-      isValid: false,
-      error:
-        errorMessages[type as keyof typeof errorMessages] ||
-        "Must be valid JSON format",
-    };
-  }
-
   // Validate the parsed value based on type
   switch (type) {
     case "boolean": {
