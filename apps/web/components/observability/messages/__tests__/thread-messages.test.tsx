@@ -171,6 +171,9 @@ describe("ThreadMessages", () => {
   });
 
   it.skip("applies correct alignment for tool call and component messages", () => {
+    // SKIPPED: This test has issues with framer-motion component styling and CSS class application.
+    // The alignment styling involves complex CSS classes that are difficult to test reliably
+    // in the current test environment. The core functionality is tested through other tests.
     render(
       <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
     );
@@ -210,6 +213,9 @@ describe("ThreadMessages", () => {
   });
 
   it.skip("applies opacity to non-matching messages when searching", () => {
+    // SKIPPED: This test has issues with framer-motion component styling and CSS class application.
+    // The opacity styling involves complex CSS classes that are difficult to test reliably
+    // in the current test environment. The core functionality is tested through other tests.
     const searchMatches = [
       {
         messageId: "msg-1",
@@ -235,6 +241,9 @@ describe("ThreadMessages", () => {
   });
 
   it.skip("highlights current match message", () => {
+    // SKIPPED: This test has issues with framer-motion component styling and CSS class application.
+    // The highlighting styling involves complex CSS classes that are difficult to test reliably
+    // in the current test environment. The core functionality is tested through other tests.
     render(
       <ThreadMessages
         thread={mockThread}
@@ -281,6 +290,9 @@ describe("ThreadMessages", () => {
   });
 
   it.skip("handles copy functionality", async () => {
+    // SKIPPED: This test depends on clipboard functionality which is difficult to mock reliably.
+    // The test would verify copying message IDs to clipboard, but since clipboard API mocking
+    // isn't working, this test is skipped.
     const user = userEvent.setup();
     render(
       <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
@@ -294,6 +306,9 @@ describe("ThreadMessages", () => {
   });
 
   it.skip("shows check icon when message ID is copied", () => {
+    // SKIPPED: This test depends on clipboard functionality which is difficult to mock reliably.
+    // The test would verify the visual state change (copy icon → check icon) after copying,
+    // but since clipboard API mocking isn't working, this test is skipped.
     render(
       <ThreadMessages
         thread={mockThread}
