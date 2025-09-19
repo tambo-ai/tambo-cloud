@@ -2,6 +2,7 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { api, RouterOutputs } from "@/trpc/react";
+import { llmProviderConfig } from "@tambo-ai-cloud/backend";
 import { LlmParameterUIType } from "@tambo-ai-cloud/core";
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -225,6 +226,20 @@ export function CustomLlmParametersEditor({
     },
     [],
   );
+  const suggestions = useMemo(() => {
+    if (!currentModel) return PARAMETER_SUGGESTIONS;
+    const providerInfo = llmProviderConfig[providerName];
+    const modelInfo = providerInfo?.models?.[currentModel];
+    const providerParams = modelInfo?.modelSpecificParams ?? {};
+    const providerSuggestions = Object.entries(providerParams ?? {}).map(
+      ([key, value]) => ({
+        key,
+        description: value.description,
+        type: value.uiType,
+      }),
+    );
+    return [...PARAMETER_SUGGESTIONS, ...providerSuggestions];
+  }, [providerName, currentModel]);
 
   return (
     <div className="relative">
@@ -234,7 +249,7 @@ export function CustomLlmParametersEditor({
             key="edit-mode"
             parameters={parameters}
             providerName={providerName}
-            suggestions={PARAMETER_SUGGESTIONS}
+            suggestions={suggestions}
             isPending={updateProject.isPending}
             activeEditIndex={activeEditIndex}
             onParametersChange={handleParameterChange}
