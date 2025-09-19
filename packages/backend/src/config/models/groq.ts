@@ -1,4 +1,4 @@
-import { LlmModelConfig } from "../llm-config-types";
+import { LlmModelConfig } from "@tambo-ai-cloud/core";
 
 export const groqModels: LlmModelConfig = {
   "llama-3.3-70b-versatile": {

@@ -1,4 +1,4 @@
-import { LlmModelConfig } from "../llm-config-types";
+import { LlmModelConfig } from "@tambo-ai-cloud/core";
 
 export const openaiModels: LlmModelConfig = {
   "gpt-5-2025-08-07": {
@@ -9,6 +9,7 @@ export const openaiModels: LlmModelConfig = {
     docLink: "https://platform.openai.com/docs/models/gpt-5",
     tamboDocLink: "https://docs.tambo.co",
     inputTokenLimit: 400000,
+
     // We can add common parameters defaults here if needed
     // commonParametersDefaults: {
     //   temperature: 1,

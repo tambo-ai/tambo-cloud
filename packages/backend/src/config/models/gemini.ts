@@ -1,4 +1,4 @@
-import { LlmModelConfig } from "../llm-config-types";
+import { LlmModelConfig } from "@tambo-ai-cloud/core";
 
 export const geminiModels: LlmModelConfig = {
   "gemini-2.5-pro": {

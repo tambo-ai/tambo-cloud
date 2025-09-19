@@ -19,5 +19,5 @@ export type * from "./typeutils";
 export * from "./agent-registry";
 export * from "./ai-providers";
 export * from "./auth/email-domain";
-export type * from "./llm-config-types";
+export * from "./llm-config-types";
 export * from "./throttle";
