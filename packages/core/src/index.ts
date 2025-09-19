@@ -20,4 +20,5 @@ export * from "./agent-registry";
 export * from "./ai-providers";
 export * from "./auth/email-domain";
 export * from "./llm-config-types";
+export * from "./llms/llm.config";
 export * from "./throttle";

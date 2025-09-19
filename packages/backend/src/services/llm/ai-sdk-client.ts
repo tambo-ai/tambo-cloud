@@ -9,6 +9,7 @@ import {
   CustomLlmParameters,
   getToolDescription,
   getToolName,
+  llmProviderConfig,
   PARAMETER_METADATA,
   tryParseJson,
   type LlmProviderConfigInfo,
@@ -37,7 +38,6 @@ import type OpenAI from "openai";
 import { UnreachableCaseError } from "ts-essentials";
 import { z } from "zod";
 import { createLangfuseTelemetryConfig } from "../../config/langfuse.config";
-import { llmProviderConfig } from "../../config/llm.config";
 import { Provider } from "../../model/providers";
 import { formatTemplate, ObjectTemplate } from "../../util/template";
 import {

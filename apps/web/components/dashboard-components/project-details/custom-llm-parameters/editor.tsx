@@ -2,8 +2,7 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { api, RouterOutputs } from "@/trpc/react";
-import { llmProviderConfig } from "@tambo-ai-cloud/backend";
-import { LlmParameterUIType } from "@tambo-ai-cloud/core";
+import { LlmParameterUIType, llmProviderConfig } from "@tambo-ai-cloud/core";
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { EditMode, ViewMode } from "./editor-modes";

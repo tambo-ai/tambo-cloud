@@ -1,5 +1,4 @@
-import { PARAMETER_METADATA } from "@tambo-ai-cloud/backend";
-import { LlmParameterUIType } from "@tambo-ai-cloud/core";
+import { LlmParameterUIType, PARAMETER_METADATA } from "@tambo-ai-cloud/core";
 /**
  * Represents a single parameter entry in the UI.
  * All values are stored as strings for form inputs, then converted based on type.
