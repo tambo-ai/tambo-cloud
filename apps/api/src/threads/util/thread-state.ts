@@ -106,7 +106,6 @@ export async function processThreadMessage(
   advanceRequestDto: AdvanceThreadDto,
   tamboBackend: ITamboBackend,
   allTools: ToolRegistry,
-  customInstructions: string | undefined,
 ): Promise<LegacyComponentDecision> {
   const latestMessage = messages[messages.length - 1];
   // For tool responses, we can fully hydrate the component
@@ -139,7 +138,6 @@ export async function processThreadMessage(
   const decisionStream = await tamboBackend.runDecisionLoop({
     messages,
     strictTools,
-    customInstructions,
     forceToolChoice:
       latestMessage.role === MessageRole.User
         ? advanceRequestDto.forceToolChoice
@@ -337,6 +335,9 @@ export function updateThreadMessageFromLegacyDecision(
   initialMessage: ThreadMessage,
   chunk: LegacyComponentDecision,
 ): ThreadMessage {
+  // we explicitly remove certain fields from the component decision to avoid
+  // duplication, because they appear in the thread message
+  const { reasoning, ...simpleDecisionChunk } = chunk;
   const currentThreadMessage: ThreadMessage = {
     ...initialMessage,
     componentState: chunk.componentState ?? {},
@@ -346,7 +347,8 @@ export function updateThreadMessageFromLegacyDecision(
         text: chunk.message,
       },
     ],
-    component: chunk,
+    component: simpleDecisionChunk,
+    reasoning: reasoning,
     // If the chunk includes a tool call, propagate it onto the thread message.
     // Intermediate chunks from fixStreamedToolCalls will not include tool calls; only
     // final/synthesized chunks carry tool call metadata.

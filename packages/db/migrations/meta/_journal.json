@@ -512,6 +512,34 @@
       "when": 1757711186361,
       "tag": "0072_lucky_hannibal_king",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1757968702060,
+      "tag": "0073_brown_alex_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1758047662923,
+      "tag": "0074_real_fantastic_four",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1758050997948,
+      "tag": "0075_short_maginty",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1758222851703,
+      "tag": "0076_jittery_doctor_doom",
+      "breakpoints": true
     }
   ]
 }

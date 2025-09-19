@@ -9,7 +9,7 @@ import {
   MessageRole,
   OAuthValidationMode,
 } from "@tambo-ai-cloud/core";
-import { type operations as dbOperations } from "@tambo-ai-cloud/db";
+import { schema, type operations as dbOperations } from "@tambo-ai-cloud/db";
 import {
   createMockDBMessage,
   createMockDBProject,
@@ -225,22 +225,25 @@ describe("ThreadsService.advanceThread initialization", () => {
       ]),
     ]);
 
-    operations.addMessage.mockImplementation(async (_db: any, input: any) => ({
-      id: "u1",
-      threadId: input.threadId,
-      role: input.role,
-      content: input.content,
-      createdAt: new Date(),
-      metadata: input.metadata,
-      actionType: input.actionType,
-      toolCallRequest: input.toolCallRequest,
-      toolCallId: input.toolCallId,
-      componentState: input.componentState ?? {},
-      componentDecision: input.componentDecision,
-      error: input.error,
-      isCancelled: input.isCancelled ?? false,
-      additionalContext: input.additionalContext ?? {},
-    }));
+    operations.addMessage.mockImplementation(
+      async (_db: any, input: typeof schema.messages.$inferInsert) => ({
+        id: "u1",
+        threadId: input.threadId,
+        role: input.role,
+        content: input.content,
+        createdAt: new Date(),
+        metadata: input.metadata ?? null,
+        actionType: input.actionType ?? null,
+        toolCallRequest: input.toolCallRequest ?? null,
+        toolCallId: input.toolCallId ?? null,
+        componentState: input.componentState ?? {},
+        componentDecision: input.componentDecision ?? null,
+        error: input.error ?? null,
+        isCancelled: input.isCancelled ?? false,
+        additionalContext: input.additionalContext ?? {},
+        reasoning: input.reasoning ?? null,
+      }),
+    );
 
     module = await Test.createTestingModule({
       providers: [
@@ -377,7 +380,6 @@ describe("ThreadsService.advanceThread initialization", () => {
       expect.objectContaining({
         messages: expect.any(Array),
         strictTools: expect.any(Array),
-        customInstructions: undefined,
       }),
     );
   });
@@ -492,7 +494,6 @@ describe("ThreadsService.advanceThread initialization", () => {
       expect.objectContaining({
         messages: expect.any(Array),
         strictTools: expect.any(Array),
-        customInstructions: undefined,
         forceToolChoice: "someTool",
       }),
     );

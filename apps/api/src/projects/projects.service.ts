@@ -49,6 +49,7 @@ export class ProjectsService {
 
   async findAllForUser(userId: string): Promise<ProjectResponse[]> {
     const projects = await operations.getProjectsForUser(this.getDb(), userId);
+
     return projects.map((project) => ({
       id: project.id,
       name: project.name,
@@ -58,12 +59,14 @@ export class ProjectsService {
       customLlmModelName: project.customLlmModelName ?? undefined,
       customLlmBaseURL: project.customLlmBaseURL ?? undefined,
       customInstructions: project.customInstructions ?? undefined,
+      allowSystemPromptOverride: project.allowSystemPromptOverride,
       maxInputTokens: project.maxInputTokens ?? undefined,
       isTokenRequired: project.isTokenRequired,
       providerType: project.providerType,
       agentProviderType: project.agentProviderType,
       agentName: project.agentName ?? undefined,
       agentUrl: project.agentUrl ?? undefined,
+      customLlmParameters: project.customLlmParameters ?? undefined,
     }));
   }
 
@@ -81,12 +84,14 @@ export class ProjectsService {
       customLlmModelName: project.customLlmModelName ?? undefined,
       customLlmBaseURL: project.customLlmBaseURL ?? undefined,
       customInstructions: project.customInstructions ?? undefined,
+      allowSystemPromptOverride: project.allowSystemPromptOverride,
       maxInputTokens: project.maxInputTokens ?? undefined,
       isTokenRequired: project.isTokenRequired,
       providerType: project.providerType,
       agentProviderType: project.agentProviderType,
       agentName: project.agentName ?? undefined,
       agentUrl: project.agentUrl ?? undefined,
+      customLlmParameters: project.customLlmParameters ?? undefined,
     };
   }
 
@@ -149,6 +154,7 @@ export class ProjectsService {
     if (!updated) {
       return undefined;
     }
+
     return {
       id: updated.id,
       name: updated.name,
@@ -158,12 +164,14 @@ export class ProjectsService {
       customLlmModelName: updated.customLlmModelName ?? undefined,
       customLlmBaseURL: updated.customLlmBaseURL ?? undefined,
       customInstructions: updated.customInstructions ?? undefined,
+      allowSystemPromptOverride: updated.allowSystemPromptOverride,
       maxInputTokens: updated.maxInputTokens ?? undefined,
       isTokenRequired: updated.isTokenRequired,
       providerType: updated.providerType,
       agentProviderType: updated.agentProviderType,
       agentName: updated.agentName ?? undefined,
       agentUrl: updated.agentUrl ?? undefined,
+      customLlmParameters: updated.customLlmParameters ?? undefined,
     };
   }
 
@@ -254,6 +262,7 @@ export class ProjectsService {
       agentProviderType: result.agentProviderType,
       agentName: result.agentName ?? undefined,
       agentUrl: result.agentUrl ?? undefined,
+      customLlmParameters: result.customLlmParameters ?? undefined,
     };
   }
 

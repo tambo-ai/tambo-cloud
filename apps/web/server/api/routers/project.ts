@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { customLlmParametersSchema } from "@/lib/llm-parameters";
 import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { llmProviderConfig } from "@tambo-ai-cloud/backend";
@@ -236,6 +237,7 @@ export const projectRouter = createTRPCRouter({
           createdAt: project.createdAt,
           updatedAt: project.updatedAt,
           customInstructions: project.customInstructions,
+          allowSystemPromptOverride: project.allowSystemPromptOverride ?? false,
           defaultLlmProviderName: project.defaultLlmProviderName,
           defaultLlmModelName: project.defaultLlmModelName,
           customLlmModelName: project.customLlmModelName,
@@ -246,6 +248,7 @@ export const projectRouter = createTRPCRouter({
           agentProviderType: project.agentProviderType,
           agentUrl: project.agentUrl,
           agentName: project.agentName,
+          customLlmParameters: project.customLlmParameters,
           messages: stats.messages,
           users: stats.users,
           lastMessageAt: stats.lastMessageAt,
@@ -409,6 +412,7 @@ export const projectRouter = createTRPCRouter({
         projectId: z.string(),
         name: z.string().optional(),
         customInstructions: z.string().nullable().optional(),
+        allowSystemPromptOverride: z.boolean().optional(),
         defaultLlmProviderName: z.string().nullable().optional(),
         defaultLlmModelName: z.string().nullable().optional(),
         customLlmModelName: z.string().nullable().optional(),
@@ -420,6 +424,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: z.nativeEnum(AgentProviderType).optional(),
         agentUrl: z.string().url().nullable().optional(),
         agentName: z.string().nullable().optional(),
+        customLlmParameters: customLlmParametersSchema.nullable().optional(),
         agentHeaders: agentHeadersSchema.nullable().optional(),
       }),
     )
@@ -439,18 +444,34 @@ export const projectRouter = createTRPCRouter({
         agentProviderType,
         agentUrl,
         agentName,
+        customLlmParameters,
         agentHeaders,
+        allowSystemPromptOverride,
       } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
       const updatedProject = await operations.updateProject(ctx.db, projectId, {
         name,
-        customInstructions: customInstructions ?? undefined,
-        defaultLlmProviderName,
-        defaultLlmModelName,
-        customLlmModelName,
-        customLlmBaseURL,
-        maxInputTokens,
+        customInstructions:
+          customInstructions === null ? "" : customInstructions,
+        defaultLlmProviderName:
+          defaultLlmProviderName === null
+            ? undefined
+            : (defaultLlmProviderName ?? undefined),
+        defaultLlmModelName:
+          defaultLlmModelName === null
+            ? undefined
+            : (defaultLlmModelName ?? undefined),
+        customLlmModelName:
+          customLlmModelName === null
+            ? undefined
+            : (customLlmModelName ?? undefined),
+        customLlmBaseURL:
+          customLlmBaseURL === null
+            ? undefined
+            : (customLlmBaseURL ?? undefined),
+        maxInputTokens:
+          maxInputTokens === null ? undefined : (maxInputTokens ?? undefined),
         maxToolCallLimit,
         isTokenRequired,
         providerType,
@@ -458,6 +479,9 @@ export const projectRouter = createTRPCRouter({
         agentUrl,
         agentName,
         agentHeaders,
+        customLlmParameters:
+          customLlmParameters === undefined ? undefined : customLlmParameters,
+        allowSystemPromptOverride,
       });
 
       if (!updatedProject) {
@@ -469,6 +493,7 @@ export const projectRouter = createTRPCRouter({
         name: updatedProject.name,
         userId: ctx.user.id,
         customInstructions: updatedProject.customInstructions,
+        allowSystemPromptOverride: updatedProject.allowSystemPromptOverride,
         defaultLlmProviderName: updatedProject.defaultLlmProviderName,
         defaultLlmModelName: updatedProject.defaultLlmModelName,
         customLlmModelName: updatedProject.customLlmModelName,
@@ -479,6 +504,7 @@ export const projectRouter = createTRPCRouter({
         agentProviderType: updatedProject.agentProviderType,
         agentUrl: updatedProject.agentUrl,
         agentName: updatedProject.agentName,
+        customLlmParameters: updatedProject.customLlmParameters,
         agentHeaders: updatedProject.agentHeaders,
       };
     }),
@@ -654,7 +680,8 @@ export const projectRouter = createTRPCRouter({
             if (
               !input.maxInputTokens ||
               input.maxInputTokens < 1 ||
-              input.maxInputTokens > modelConfig.properties.inputTokenLimit
+              (typeof modelConfig.inputTokenLimit === "number" &&
+                input.maxInputTokens > modelConfig.inputTokenLimit)
             ) {
               throw new TRPCError({
                 code: "BAD_REQUEST",

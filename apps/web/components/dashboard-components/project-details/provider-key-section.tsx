@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { z } from "zod";
 import { AgentSettings } from "./agent-settings";
+import { CustomLlmParametersEditor } from "./custom-llm-parameters/editor";
 
 export const ProviderKeySectionSchema = z
   .object({
@@ -66,9 +67,7 @@ interface ProviderModelOption {
     status?: string;
     notes?: string;
     docLink?: string;
-    properties?: {
-      inputTokenLimit?: number;
-    };
+    inputTokenLimit?: number;
   };
 }
 
@@ -211,7 +210,7 @@ export function ProviderKeySection({
               status: model.status,
               notes: model.notes,
               docLink: model.docLink,
-              properties: model.properties,
+              inputTokenLimit: model.inputTokenLimit,
             },
           });
         });
@@ -292,8 +291,8 @@ export function ProviderKeySection({
       } else {
         const providerConfig = llmProviderConfigData[provider];
         const modelConfig = providerConfig?.models?.[actualModel];
-        if (modelConfig?.properties?.inputTokenLimit) {
-          setMaxInputTokens(modelConfig.properties.inputTokenLimit.toString());
+        if (modelConfig?.inputTokenLimit) {
+          setMaxInputTokens(modelConfig.inputTokenLimit.toString());
         }
       }
     }
@@ -393,8 +392,8 @@ export function ProviderKeySection({
       : canUseFreeMessages
         ? messageUsage?.messageCount &&
           messageUsage.messageCount >= FREE_MESSAGE_LIMIT
-          ? "free messages used, please add a key"
-          : `using free messages (${messageUsage?.messageCount ?? 0}/${FREE_MESSAGE_LIMIT})`
+          ? "starter LLM calls used — connect your provider key to continue"
+          : `using starter LLM calls (${messageUsage?.messageCount ?? 0}/${FREE_MESSAGE_LIMIT})`
         : "API key required";
 
   // --- Event Handlers ---
@@ -426,10 +425,8 @@ export function ProviderKeySection({
           const option = providerModelOptions.find(
             (opt) => opt.value === value,
           );
-          if (option?.model?.properties?.inputTokenLimit) {
-            setMaxInputTokens(
-              option.model.properties.inputTokenLimit.toString(),
-            );
+          if (option?.model?.inputTokenLimit) {
+            setMaxInputTokens(option.model.inputTokenLimit.toString());
           } else {
             setMaxInputTokens("");
           }
@@ -590,12 +587,12 @@ export function ProviderKeySection({
 
       // Check against model limit if applicable
       if (
-        currentSelectedOption?.model?.properties?.inputTokenLimit &&
-        tokens > currentSelectedOption.model.properties.inputTokenLimit
+        currentSelectedOption?.model?.inputTokenLimit &&
+        tokens > currentSelectedOption.model.inputTokenLimit
       ) {
         toast({
           title: "Error",
-          description: `Input token limit cannot exceed model maximum (${currentSelectedOption.model.properties.inputTokenLimit.toLocaleString()}).`,
+          description: `Input token limit cannot exceed model maximum (${currentSelectedOption.model.inputTokenLimit.toLocaleString()}).`,
           variant: "destructive",
         });
         return;
@@ -789,12 +786,13 @@ export function ProviderKeySection({
         {mode === AiProviderType.LLM && (
           <div className="max-w-xl">
             <p className="text-sm font-sans text-foreground max-w-sm">
-              Tambo offers 500 free messages. Once the limit is reached,
-              you&apos;ll have to add your API key to your project.
+              Get started with 500 starter LLM calls. Tambo is BYO Model — add
+              your provider key anytime to continue.
             </p>
             <div className="flex items-center gap-2 mt-2 mb-2">
               <p className="text-xs font-sans text-success max-w-xs bg-success-background rounded-full p-2">
-                {projectMessageUsage?.messageCount} out of 500 messages used
+                {projectMessageUsage?.messageCount} of 500 starter LLM calls
+                used
               </p>
             </div>
           </div>
@@ -982,11 +980,8 @@ export function ProviderKeySection({
                           id="max-input-tokens"
                           type="number"
                           min="1"
-                          max={
-                            currentSelectedOption.model?.properties
-                              ?.inputTokenLimit
-                          }
-                          placeholder={`${currentSelectedOption.model?.properties?.inputTokenLimit ?? 4096}`}
+                          max={currentSelectedOption.model?.inputTokenLimit}
+                          placeholder={`${currentSelectedOption.model?.inputTokenLimit ?? 4096}`}
                           value={maxInputTokens}
                           onChange={(e) => {
                             setMaxInputTokens(e.target.value);
@@ -996,12 +991,11 @@ export function ProviderKeySection({
                         <p className="text-xs text-foreground">
                           Tambo will limit the number of tokens sent to the
                           model to this value.
-                          {currentSelectedOption.model?.properties
-                            ?.inputTokenLimit && (
+                          {currentSelectedOption.model?.inputTokenLimit && (
                             <span>
                               {" "}
                               Maximum:{" "}
-                              {currentSelectedOption.model.properties.inputTokenLimit.toLocaleString()}
+                              {currentSelectedOption.model.inputTokenLimit.toLocaleString()}
                             </span>
                           )}
                         </p>
@@ -1027,8 +1021,8 @@ export function ProviderKeySection({
                                 onChange={(e) => setApiKeyInput(e.target.value)}
                                 placeholder={
                                   parsedSelection.provider === "openai"
-                                    ? "Enter API Key or leave empty for free messages"
-                                    : "Enter API Key"
+                                    ? "Enter your LLM provider key"
+                                    : "Enter your LLM provider key"
                                 }
                                 autoFocus
                                 className={cn(
@@ -1118,19 +1112,32 @@ export function ProviderKeySection({
                         </p>
                       )}
                     </div>
+
+                    {/* Custom LLM Parameters Section */}
+                    <div className="space-y-2">
+                      <Label>Custom LLM Parameters</Label>
+                      <CustomLlmParametersEditor
+                        project={project}
+                        selectedProvider={parsedSelection.provider}
+                        selectedModel={parsedSelection.model}
+                        onEdited={onEdited}
+                      />
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
-              <div className="border-t flex items-center justify-between text-xs">
-                <a
-                  href="https://github.com/tambo-ai/tambo-cloud/issues/new?template=feature_request.md&title=Add%20support%20for%20[Model%20Name]"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-foreground hover:text-primary transition-colors"
-                >
-                  Request support for another model
-                  <ExternalLinkIcon className="ml-1 h-3 w-3" />
-                </a>
+              <div className="border-t pt-2">
+                <div className="flex items-center justify-between text-xs">
+                  <a
+                    href="https://github.com/tambo-ai/tambo-cloud/issues/new?template=feature_request.md&title=Add%20support%20for%20[Model%20Name]"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-foreground hover:text-primary transition-colors"
+                  >
+                    Request support for another model
+                    <ExternalLinkIcon className="ml-1 h-3 w-3" />
+                  </a>
+                </div>
               </div>
             </div>
             {showValidationErrors && !combinedSelectValue && (

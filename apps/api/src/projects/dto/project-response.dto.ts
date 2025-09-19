@@ -1,4 +1,8 @@
-import { AgentProviderType, AiProviderType } from "@tambo-ai-cloud/core";
+import {
+  AgentProviderType,
+  AiProviderType,
+  CustomLlmParameters,
+} from "@tambo-ai-cloud/core";
 
 export class ProjectCreateRequest {
   projectName!: string;
@@ -18,6 +22,7 @@ export class ProjectResponse {
   customLlmBaseURL?: string;
   customInstructions?: string;
   maxInputTokens?: number | null;
+  allowSystemPromptOverride?: boolean;
   isTokenRequired!: boolean;
   providerType!: AiProviderType;
   agentProviderType?: AgentProviderType;
@@ -25,6 +30,7 @@ export class ProjectResponse {
   agentName?: string;
   // TODO: This should not be exposed in the public API
   agentUrl?: string;
+  customLlmParameters?: CustomLlmParameters;
 }
 
 export class SimpleProjectResponse {

@@ -32,6 +32,7 @@ export function createMockDBProject(
     deprecated_mcpEnabled: overrides.deprecated_mcpEnabled ?? false,
     deprecatedComposioEnabled: overrides.deprecatedComposioEnabled ?? false,
     customInstructions: overrides.customInstructions ?? null,
+    allowSystemPromptOverride: overrides.allowSystemPromptOverride ?? false,
     defaultLlmProviderName: overrides.defaultLlmProviderName ?? "openai",
     defaultLlmModelName: overrides.defaultLlmModelName ?? "gpt-4.1-2025-04-14",
     customLlmModelName: overrides.customLlmModelName ?? null,
@@ -48,6 +49,7 @@ export function createMockDBProject(
     agentProviderType: overrides.agentProviderType ?? AgentProviderType.AGUI,
     agentUrl: overrides.agentUrl ?? null,
     agentName: overrides.agentName ?? null,
+    customLlmParameters: overrides.customLlmParameters ?? null,
     creatorId: overrides.creatorId ?? null,
     members: overrides.members ?? [],
     agentHeaders: overrides.agentHeaders ?? null,
@@ -101,6 +103,7 @@ export function createMockDBMessage(
     metadata: overrides.metadata ?? null,
     isCancelled: overrides.isCancelled ?? false,
     createdAt: overrides.createdAt ?? now,
+    reasoning: overrides.reasoning ?? null,
   };
 
   return message;
@@ -130,6 +133,7 @@ export function createMockThreadMessage(
     createdAt: overrides.createdAt ?? now,
     tool_call_id: overrides.tool_call_id,
     toolCallRequest: overrides.toolCallRequest,
+    reasoning: overrides.reasoning,
   };
   return message;
 }

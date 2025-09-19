@@ -3,8 +3,10 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
 import { createMistral } from "@ai-sdk/mistral";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import {
   ChatCompletionMessageParam,
+  CustomLlmParameters,
   getToolDescription,
   getToolName,
   tryParseJson,
@@ -17,6 +19,7 @@ import {
   CoreUserMessage,
   generateText,
   jsonSchema,
+  JSONValue,
   LanguageModel,
   streamText,
   Tool,
@@ -32,7 +35,10 @@ import type OpenAI from "openai";
 import { UnreachableCaseError } from "ts-essentials";
 import { z } from "zod";
 import { createLangfuseTelemetryConfig } from "../../config/langfuse.config";
-import type { LlmProviderConfigInfo } from "../../config/llm-config-types";
+import {
+  PARAMETER_METADATA,
+  type LlmProviderConfigInfo,
+} from "../../config/llm-config-types";
 import { llmProviderConfig } from "../../config/llm.config";
 import { Provider } from "../../model/providers";
 import { formatTemplate, ObjectTemplate } from "../../util/template";
@@ -69,7 +75,13 @@ const PROVIDER_FACTORIES: Record<string, ProviderFactory> = {
   mistral: createMistral,
   google: createGoogleGenerativeAI,
   groq: createGroq,
-  "openai-compatible": createOpenAI, // Will be configured with custom baseURL
+  "openai-compatible": (config) =>
+    createOpenAICompatible({
+      name: "openai-compatible",
+      baseURL: config?.baseURL || "",
+      apiKey: config?.apiKey,
+      ...config,
+    }),
 } as const;
 
 // Model to provider mapping based on our config
@@ -106,6 +118,7 @@ export class AISdkClient implements LLMClient {
   private apiKey: string | undefined;
   private baseURL?: string;
   private maxInputTokens?: number | null;
+  private customLlmParameters?: CustomLlmParameters;
   readonly chainId: string;
   readonly userId: string;
 
@@ -117,6 +130,7 @@ export class AISdkClient implements LLMClient {
     userId: string,
     baseURL?: string,
     maxInputTokens?: number | null,
+    customLlmParameters?: CustomLlmParameters,
   ) {
     this.apiKey = apiKey;
     this.model = model;
@@ -125,6 +139,7 @@ export class AISdkClient implements LLMClient {
     this.userId = userId;
     this.baseURL = baseURL;
     this.maxInputTokens = maxInputTokens;
+    this.customLlmParameters = customLlmParameters;
   }
 
   async complete(
@@ -172,7 +187,7 @@ export class AISdkClient implements LLMClient {
       );
     }
 
-    const modelTokenLimit = modelCfg?.properties.inputTokenLimit;
+    const modelTokenLimit = modelCfg?.inputTokenLimit;
     const effectiveTokenLimit = this.maxInputTokens ?? modelTokenLimit;
     messagesFormatted = limitTokens(messagesFormatted, effectiveTokenLimit);
 
@@ -199,13 +214,36 @@ export class AISdkClient implements LLMClient {
       functionId: `${this.provider}-${this.model}`,
     });
 
-    // Default temperature to 0 unless overridden by config
-    const temperature = modelCfg?.properties.temperature;
+    // Extract custom parameters for the current model
+    const allCustomParams =
+      this.customLlmParameters?.[providerKey]?.[this.model];
+
+    // For openai-compatible provider, split parameters between suggestions and custom keys
+    let customParams = allCustomParams;
+    let providerSpecificCustomParams = {} as Record<string, JSONValue>;
+
+    if (providerKey === "openai-compatible" && allCustomParams) {
+      const suggestionKeys = Object.keys(PARAMETER_METADATA);
+
+      // Split parameters: suggestions go to customParams, custom keys go to providerOptions
+      customParams = {};
+      providerSpecificCustomParams = {};
+
+      Object.entries(allCustomParams).forEach(([key, value]) => {
+        if (suggestionKeys.includes(key)) {
+          customParams![key] = value;
+        } else {
+          providerSpecificCustomParams[key] = value;
+        }
+      });
+    }
+
+    // Get model-specific defaults (e.g., temperature: 1 for models that need it)
+    const modelDefaults = modelCfg?.commonParametersDefaults || {};
 
     const baseConfig: AICompleteParams = {
       model: modelInstance,
       messages: coreMessages,
-      temperature: temperature ?? 0,
       tools,
       toolChoice: params.tool_choice
         ? this.convertToolChoice(params.tool_choice)
@@ -214,6 +252,25 @@ export class AISdkClient implements LLMClient {
       ...(experimentalTelemetry && {
         experimental_telemetry: experimentalTelemetry,
       }),
+      /**
+       * Provider-specific configuration
+       */
+      providerOptions: {
+        [providerKey]: {
+          // Provider-specific params from config as base defaults (e.g., disable parallel tool calls for OpenAI/Anthropic)
+          ...providerCfg?.providerSpecificParams,
+          // For openai-compatible, add custom user-defined keys here
+          ...(providerKey === "openai-compatible" &&
+            providerSpecificCustomParams),
+        },
+      },
+      /**
+       * Apply parameter hierarchy:
+       * 1. Model-specific defaults
+       * 2. Custom user parameters (highest priority)
+       */
+      ...modelDefaults, // Model-specific defaults (e.g., temperature: 1)
+      ...(customParams || {}), // Custom parameters override all
     };
 
     if (params.stream) {
@@ -325,7 +382,7 @@ export class AISdkClient implements LLMClient {
     result: TextStreamResponse,
   ): AsyncIterableIterator<LLMResponse> {
     let accumulatedMessage = "";
-    let _accumulatedReasoning = "";
+    let accumulatedReasoning: string[] = [];
     const accumulatedToolCall: {
       name?: string;
       arguments: string;
@@ -360,10 +417,14 @@ export class AISdkClient implements LLMClient {
           console.error("Got error from tool call", delta.error);
           break;
         case "reasoning-start":
-          _accumulatedReasoning = "";
+          // append to the last element of the array
+          accumulatedReasoning = [...accumulatedReasoning, ""];
           break;
         case "reasoning-delta":
-          _accumulatedReasoning += delta.text;
+          accumulatedReasoning = [
+            ...accumulatedReasoning.slice(0, -1),
+            accumulatedReasoning[accumulatedReasoning.length - 1] + delta.text,
+          ];
           break;
         case "reasoning-end":
           break;
@@ -408,6 +469,7 @@ export class AISdkClient implements LLMClient {
           tool_calls: toolCallRequest ? [toolCallRequest] : undefined,
           refusal: null,
         },
+        reasoning: accumulatedReasoning,
         index: 0,
         logprobs: null,
       };

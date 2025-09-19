@@ -14,6 +14,7 @@ import {
   SessionClientInformation,
   ToolCallRequest,
   ToolProviderType,
+  type CustomLlmParameters,
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -161,6 +162,10 @@ export const projects = pgTable(
     customLlmBaseURL: text("custom_llm_base_url"), // For "openai-compatible" provider type
     maxInputTokens: integer("max_input_tokens"), // Maximum number of input tokens to send to the model
     maxToolCallLimit: integer("max_tool_call_limit").default(10).notNull(), // Maximum number of tool calls allowed per response
+    // Whether end-users are allowed to provide system prompts when creating/advancing threads
+    allowSystemPromptOverride: boolean("allow_system_prompt_override")
+      .default(false)
+      .notNull(),
     // OAuth token validation settings
     oauthValidationMode: text("oauth_validation_mode", {
       enum: Object.values(OAuthValidationMode) as [OAuthValidationMode],
@@ -187,6 +192,9 @@ export const projects = pgTable(
       .notNull(),
     agentUrl: text("agent_url"),
     agentName: text("agent_name"),
+    customLlmParameters: customJsonb<CustomLlmParameters>(
+      "custom_llm_parameters",
+    ),
     agentHeaders: customJsonb<Record<string, string>>("agent_headers"),
   }),
   (table) => {
@@ -444,6 +452,7 @@ export const messages = pgTable(
       customJsonb<OpenAI.Chat.Completions.ChatCompletionContentPart[]>(
         "content",
       ).notNull(),
+    reasoning: customJsonb<string[]>("reasoning"),
     additionalContext:
       customJsonb<Record<string, unknown>>("additional_context"),
     toolCallId: text("tool_call_id"),
@@ -461,7 +470,15 @@ export const messages = pgTable(
       .notNull(),
   }),
   (table) => {
-    return [index("messages_thread_id_idx").on(table.threadId)];
+    return [
+      index("messages_thread_id_idx").on(table.threadId),
+      check(
+        "chk_messages_reasoning_max_len",
+        sql`${table.reasoning} IS NULL
+            OR (jsonb_typeof(${table.reasoning}->'json') = 'array' AND
+                jsonb_array_length(${table.reasoning}->'json') <= 200)`,
+      ),
+    ];
   },
 );
 
