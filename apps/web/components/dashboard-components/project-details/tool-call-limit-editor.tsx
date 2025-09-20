@@ -16,7 +16,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
-export const ToolCallLimitEditorPropsSchema = z.object({
+// Base props schema used by LLM (excludes UI-only props)
+export const ToolCallLimitEditorLLMPropsSchema = z.object({
   project: z
     .object({
       id: z.string().describe("The unique identifier for the project."),
@@ -35,20 +36,29 @@ export const ToolCallLimitEditorPropsSchema = z.object({
     ),
 });
 
+// Extended component props schema for UI-only props (not passed to LLM)
+export const ToolCallLimitEditorPropsSchema =
+  ToolCallLimitEditorLLMPropsSchema.extend({
+    editMode: z.boolean().optional().describe("When true, start in edit mode."),
+  });
+
 interface ToolCallLimitEditorProps {
   project: {
     id: string;
     maxToolCallLimit: number;
   };
   onEdited?: () => void;
+  /** If true, starts in editing mode (used in chat context) */
+  editMode?: boolean;
 }
 
 export function ToolCallLimitEditor({
   project,
   onEdited,
+  editMode,
 }: ToolCallLimitEditorProps) {
   const { toast } = useToast();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!!editMode);
   const [maxToolCallLimit, setMaxToolCallLimit] = useState("");
 
   const { mutateAsync: updateProject, isPending: isUpdating } =
