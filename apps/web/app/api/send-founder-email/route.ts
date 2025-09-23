@@ -82,37 +82,35 @@ export async function POST(req: Request) {
       );
     }
 
-    /*
-     * Attempt to subscribe the user to the Resend audience before
-     * sending the email. This operation is *best-effort* – any failure
-     * is logged but will not block email delivery.
-     */
+    // If possible, block emails if the user is unsubscribed in the audience (best-effort)
     if (env.RESEND_AUDIENCE_ID) {
       try {
-        console.log(
-          `Subscribing ${usersEmail} to audience ${env.RESEND_AUDIENCE_ID}`,
+        const listResult: any = await (resend as any).contacts
+          ?.list?.({ audienceId: env.RESEND_AUDIENCE_ID, limit: 200 })
+          .catch(() => null);
+        const contacts = Array.isArray(listResult?.data)
+          ? listResult.data
+          : Array.isArray(listResult?.results)
+            ? listResult.results
+            : Array.isArray(listResult)
+              ? listResult
+              : Array.isArray(listResult?.data?.data)
+                ? listResult.data.data
+                : [];
+        const lower = usersEmail.toLowerCase();
+        const match = contacts.find(
+          (c: any) =>
+            typeof c?.email === "string" && c.email.toLowerCase() === lower,
         );
-        const contactResponse = await resend.contacts.create({
-          audienceId: env.RESEND_AUDIENCE_ID,
-          email: usersEmail,
-          unsubscribed: false,
-        });
-        console.log("Successfully subscribed contact", contactResponse);
-      } catch (subscriptionError) {
-        console.warn(
-          "Audience subscription failed (continuing with email send):",
-          subscriptionError instanceof Error
-            ? {
-                message: subscriptionError.message,
-                name: subscriptionError.name,
-              }
-            : subscriptionError,
-        );
+        if (match?.unsubscribed === true) {
+          return NextResponse.json(
+            { error: "Recipient is unsubscribed" },
+            { status: 400 },
+          );
+        }
+      } catch (_subscriptionError) {
+        // proceed if we cannot determine
       }
-    } else {
-      console.log(
-        "RESEND_AUDIENCE_ID not configured – skipping audience subscription",
-      );
     }
 
     // Send the email to founders

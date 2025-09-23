@@ -16,6 +16,34 @@ export const appRouter = createTRPCRouter({
 
       const resend = new Resend(env.RESEND_API_KEY);
 
+      // If available, block emails to unsubscribed contacts (best-effort)
+      if (env.RESEND_AUDIENCE_ID) {
+        try {
+          const listResult: any = await (resend as any).contacts
+            ?.list?.({ audienceId: env.RESEND_AUDIENCE_ID, limit: 200 })
+            .catch(() => null);
+          const contacts = Array.isArray(listResult?.data)
+            ? listResult.data
+            : Array.isArray(listResult?.results)
+              ? listResult.results
+              : Array.isArray(listResult)
+                ? listResult
+                : Array.isArray(listResult?.data?.data)
+                  ? listResult.data.data
+                  : [];
+          const lower = input.email.toLowerCase();
+          const match = contacts.find(
+            (c: any) =>
+              typeof c?.email === "string" && c.email.toLowerCase() === lower,
+          );
+          if (match?.unsubscribed === true) {
+            return { success: false, error: "Recipient is unsubscribed" };
+          }
+        } catch {
+          // proceed if we cannot determine
+        }
+      }
+
       const data = await resend.emails.send({
         from: "Tambo AI <magan@tambo.co>",
         to: input.email,

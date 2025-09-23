@@ -14,6 +14,7 @@ export class EmailService {
   private readonly fromEmailPersonal: string;
   private readonly replyToSupport: string;
   private readonly replyToPersonal: string;
+  private readonly resendAudienceId?: string;
 
   constructor(private readonly configService: ConfigService) {
     const resendApiKey = this.configService.get<string>("RESEND_API_KEY");
@@ -49,6 +50,59 @@ export class EmailService {
     if (!this.replyToPersonal) {
       throw new Error("EMAIL_REPLY_TO_PERSONAL is not configured");
     }
+
+    // Optional audience for unsubscribe checks
+    const audienceId = this.configService.get<string>("RESEND_AUDIENCE_ID");
+    this.resendAudienceId = audienceId || undefined;
+  }
+
+  /**
+   * Best-effort check: returns true if the email appears unsubscribed in Resend audience.
+   * Fails closed to false (i.e., do not block) if we cannot determine.
+   */
+  private async isEmailUnsubscribed(userEmail: string): Promise<boolean> {
+    if (!this.resendAudienceId) return false;
+    try {
+      // Try SDK list with an email filter if supported
+      const lower = userEmail.toLowerCase();
+      const maybeListWithFilter: any = await (this.resend as any).contacts
+        ?.list?.({
+          audienceId: this.resendAudienceId,
+          email: userEmail,
+          limit: 200,
+        })
+        .catch(() => null);
+
+      const extractContacts = (result: any): any[] => {
+        if (!result) return [];
+        // Resend SDK/result shapes vary; handle a few possibilities safely
+        if (Array.isArray(result)) return result;
+        if (Array.isArray(result?.data)) return result.data;
+        if (Array.isArray(result?.data?.data)) return result.data.data;
+        if (Array.isArray(result?.results)) return result.results;
+        return [];
+      };
+
+      let contacts = extractContacts(maybeListWithFilter);
+      if (!contacts.length) {
+        const listFallback: any = await (this.resend as any).contacts
+          ?.list?.({ audienceId: this.resendAudienceId, limit: 200 })
+          .catch(() => null);
+        contacts = extractContacts(listFallback);
+      }
+
+      const match = contacts.find(
+        (c: any) =>
+          typeof c?.email === "string" && c.email.toLowerCase() === lower,
+      );
+      return match?.unsubscribed === true;
+    } catch (error) {
+      console.warn(
+        "Unsubscribe check failed; proceeding without blocking",
+        error,
+      );
+      return false;
+    }
   }
 
   async sendMessageLimitNotification(
@@ -79,6 +133,9 @@ export class EmailService {
     firstName?: string | null,
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      if (await this.isEmailUnsubscribed(userEmail)) {
+        return { success: false, error: "Recipient is unsubscribed" };
+      }
       const result = await this.resend.emails.send({
         from: this.fromEmailPersonal,
         to: userEmail,
@@ -140,6 +197,9 @@ export class EmailService {
     firstName?: string | null,
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      if (await this.isEmailUnsubscribed(userEmail)) {
+        return { success: false, error: "Recipient is unsubscribed" };
+      }
       const result = await this.resend.emails.send({
         from: this.fromEmailPersonal,
         to: userEmail,
