@@ -40,11 +40,6 @@ const config = {
         permanent: false,
       },
       {
-        source: "/ui",
-        destination: "https://ui.tambo.co",
-        permanent: false,
-      },
-      {
         source: "/discord",
         destination: "https://discord.gg/dJNvPEHth6",
         permanent: false,
