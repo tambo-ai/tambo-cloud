@@ -299,8 +299,6 @@ export class AISdkClient implements LLMClient {
       ...filteredCustomParams, // Custom parameters override all, but exclude model-specific provider params
     };
 
-    console.log("baseConfig", baseConfig);
-
     if (params.stream) {
       // added explicit await even though types say it isn't necessary
       const result = await streamText(baseConfig);
