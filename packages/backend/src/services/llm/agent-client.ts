@@ -315,12 +315,23 @@ export class AgentClient {
         case EventType.TOOL_CALL_CHUNK:
         case EventType.TOOL_CALL_ARGS: {
           const e = event as ToolCallArgsEvent;
-          const currentToolCall = currentToolCalls.at(-1);
+          const currentToolCall = currentToolCalls.find(
+            (t) => t.id === e.toolCallId,
+          );
           if (!currentToolCall) {
             throw new Error("No tool call found");
           }
 
-          currentToolCall.function.arguments += e.delta;
+          const updatedToolCall = {
+            ...currentToolCall,
+            function: {
+              ...currentToolCall.function,
+              arguments: currentToolCall.function.arguments + e.delta,
+            },
+          };
+          currentToolCalls = currentToolCalls.map((t) =>
+            t.id === e.toolCallId ? updatedToolCall : t,
+          );
           // HACK: we need to generate a message id for the tool call
           // result, but maybe we'll actually emit this in the
           // TOOL_CALL_RESULT event?
@@ -346,13 +357,12 @@ export class AgentClient {
           break;
         }
         case EventType.TOOL_CALL_END: {
-          const currentToolCall = currentToolCalls.at(-1);
+          const e = event as ToolCallEndEvent;
+          const currentToolCall = currentToolCalls.find(
+            (t) => t.id === e.toolCallId,
+          );
           if (!currentToolCall) {
             throw new Error("No tool call found");
-          }
-          const e = event as ToolCallEndEvent;
-          if (e.toolCallId !== currentToolCall.id) {
-            throw new Error("Tool call id mismatch");
           }
           // HACK: we need to generate a message id for the tool call
           // result, but maybe we'll actually emit this in the
