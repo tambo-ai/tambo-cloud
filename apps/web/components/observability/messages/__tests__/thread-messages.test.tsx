@@ -65,6 +65,13 @@ jest.mock("../tool-call-message", () => ({
 // Get the clipboard mock from navigator
 const mockWriteText = navigator.clipboard.writeText as jest.Mock;
 
+// Helper function to create properly typed message refs
+const createMessageRefs = (): React.MutableRefObject<
+  Record<string, HTMLDivElement>
+> => {
+  return { current: {} };
+};
+
 describe("ThreadMessages", () => {
   const mockThread = createMockThreadWithMessages();
 
@@ -73,7 +80,7 @@ describe("ThreadMessages", () => {
   });
 
   it("renders all message types correctly", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     render(
       <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
     );
@@ -83,7 +90,7 @@ describe("ThreadMessages", () => {
   });
 
   it("groups tool calls with their responses", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     render(
       <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
     );
@@ -95,7 +102,7 @@ describe("ThreadMessages", () => {
   });
 
   it("renders component messages when component decision exists", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     render(
       <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
     );
@@ -109,7 +116,7 @@ describe("ThreadMessages", () => {
   });
 
   it("determines correct group type for different message types", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     render(
       <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
     );
@@ -123,7 +130,7 @@ describe("ThreadMessages", () => {
   });
 
   it("applies correct alignment for user vs assistant messages", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     render(
       <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
     );
@@ -136,7 +143,7 @@ describe("ThreadMessages", () => {
     // SKIPPED: This test has issues with framer-motion component styling and CSS class application.
     // The alignment styling involves complex CSS classes that are difficult to test reliably
     // in the current test environment. The core functionality is tested through other tests.
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     render(
       <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
     );
@@ -153,7 +160,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles search highlighting for matching messages", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     const searchMatches = createMockSearchMatches();
 
     render(
@@ -174,7 +181,7 @@ describe("ThreadMessages", () => {
     // SKIPPED: This test has issues with framer-motion component styling and CSS class application.
     // The opacity styling involves complex CSS classes that are difficult to test reliably
     // in the current test environment. The core functionality is tested through other tests.
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     const searchMatches = createMockSearchMatches();
 
     render(
@@ -197,7 +204,7 @@ describe("ThreadMessages", () => {
     // SKIPPED: This test has issues with framer-motion component styling and CSS class application.
     // The highlighting styling involves complex CSS classes that are difficult to test reliably
     // in the current test environment. The core functionality is tested through other tests.
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     render(
       <ThreadMessages
         thread={mockThread}
@@ -218,7 +225,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles empty messages array", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     const emptyThread = { ...mockThread, messages: [] };
 
     render(
@@ -229,7 +236,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles undefined messages", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     const threadWithUndefinedMessages = {
       ...mockThread,
       messages: undefined as any,
@@ -256,7 +263,7 @@ describe("ThreadMessages", () => {
   });
 
   it("shows check icon when message ID is copied", async () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     const user = userEvent.setup();
     render(
       <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
@@ -272,7 +279,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles messages with same day correctly", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     const sameDayThread = createMockThreadSameDay();
 
     render(
@@ -285,7 +292,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles messages with different days correctly", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     const differentDayThread = createMockThreadDifferentDays();
 
     render(
@@ -301,7 +308,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles missing tool response gracefully", () => {
-    const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+    const mockMessageRefs = createMessageRefs();
     const threadWithoutToolResponse = createMockThreadWithoutToolResponse();
 
     expect(() => {
