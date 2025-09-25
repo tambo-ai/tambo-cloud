@@ -1,4 +1,5 @@
 import { MessageContent } from "@/components/observability/messages/message-content";
+import { ChatCompletionContentPart, MessageRole } from "@tambo-ai-cloud/core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -43,10 +44,23 @@ describe("MessageContent", () => {
   const mockOnCopyId = jest.fn();
   const baseMessage = {
     id: "msg-1",
-    role: "user" as const,
-    content: "Hello world",
+    role: MessageRole.User,
+    content: [{ type: "text" as const, text: "Hello world" }],
     createdAt: new Date("2024-01-01T12:00:00Z"),
     additionalContext: null,
+    componentDecision: undefined,
+    toolCallRequest: undefined,
+    suggestedActions: [],
+    metadata: {},
+    suggestions: [],
+    projectId: undefined,
+    threadId: "thr_123",
+    toolCallId: null,
+    actionType: null,
+    componentState: null,
+    error: null,
+    isCancelled: false,
+    reasoning: null,
   };
 
   beforeEach(() => {
@@ -57,7 +71,26 @@ describe("MessageContent", () => {
   it("renders user message content", () => {
     render(
       <MessageContent
-        message={baseMessage}
+        message={{
+          ...baseMessage,
+          componentDecision: undefined,
+          toolCallRequest: undefined,
+          suggestedActions: [],
+          metadata: {},
+          suggestions: [],
+          threadId: "thr_123",
+          toolCallId: null,
+          actionType: null,
+          componentState: null,
+          error: null,
+          isCancelled: false,
+          reasoning: null,
+          additionalContext: null,
+          content: [],
+          createdAt: new Date(),
+          id: "msg-1",
+          role: MessageRole.User,
+        }}
         isUserMessage={true}
         copiedId={null}
         onCopyId={mockOnCopyId}
@@ -70,7 +103,7 @@ describe("MessageContent", () => {
   });
 
   it("renders assistant message content", () => {
-    const assistantMessage = { ...baseMessage, role: "assistant" as const };
+    const assistantMessage = { ...baseMessage, role: MessageRole.Assistant };
 
     render(
       <MessageContent
@@ -118,7 +151,11 @@ describe("MessageContent", () => {
   it("handles React element content", () => {
     const elementMessage = {
       ...baseMessage,
-      content: React.createElement("div", null, "Custom element"),
+      content: React.createElement(
+        "div",
+        null,
+        "Custom element",
+      ) as unknown as ChatCompletionContentPart[],
     };
 
     render(
@@ -134,7 +171,7 @@ describe("MessageContent", () => {
   });
 
   it("handles empty or invalid content", () => {
-    const emptyMessage = { ...baseMessage, content: "" };
+    const emptyMessage = { ...baseMessage, content: [] };
 
     render(
       <MessageContent
@@ -169,7 +206,7 @@ describe("MessageContent", () => {
   it("does not show additional context for assistant messages", () => {
     const messageWithContext = {
       ...baseMessage,
-      role: "assistant" as const,
+      role: MessageRole.Assistant,
       additionalContext: { key: "value" },
     };
 

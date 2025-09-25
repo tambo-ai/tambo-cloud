@@ -76,7 +76,8 @@ describe("DeleteConfirmationDialog", () => {
       const mockMutation = {
         mutateAsync: jest.fn(),
         isPending: true,
-      };
+        trpc: { path: "project.removeMultipleProjects" } as any,
+      } as any;
 
       jest
         .mocked(api.project.removeMultipleProjects.useMutation)

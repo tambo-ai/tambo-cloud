@@ -1,4 +1,11 @@
 import { ThreadMessages } from "@/components/observability/messages/thread-messages";
+import {
+  createMockSearchMatches,
+  createMockThreadDifferentDays,
+  createMockThreadSameDay,
+  createMockThreadWithMessages,
+  createMockThreadWithoutToolResponse,
+} from "@/test/factories/thread-factories";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -55,60 +62,9 @@ Object.defineProperty(navigator, "clipboard", {
 });
 
 describe("ThreadMessages", () => {
-  const mockThread = {
-    id: "thread-1",
-    messages: [
-      {
-        id: "msg-1",
-        role: "user" as const,
-        content: "Hello",
-        createdAt: new Date("2024-01-01T10:00:00Z"),
-        toolCallRequest: null,
-        toolCallId: null,
-        componentDecision: null,
-        additionalContext: null,
-      },
-      {
-        id: "msg-2",
-        role: "assistant" as const,
-        content: "Hi there",
-        createdAt: new Date("2024-01-01T10:01:00Z"),
-        toolCallRequest: {
-          toolCallId: "tool-1",
-          name: "test-tool",
-          arguments: {},
-        },
-        toolCallId: "tool-1",
-        componentDecision: null,
-        additionalContext: null,
-      },
-      {
-        id: "msg-3",
-        role: "tool" as const,
-        content: "Tool response",
-        createdAt: new Date("2024-01-01T10:02:00Z"),
-        toolCallId: "tool-1",
-        toolCallRequest: null,
-        componentDecision: null,
-        additionalContext: null,
-      },
-      {
-        id: "msg-4",
-        role: "assistant" as const,
-        content: "Response with component",
-        createdAt: new Date("2024-01-01T10:03:00Z"),
-        toolCallRequest: null,
-        toolCallId: null,
-        componentDecision: {
-          componentName: "test-component",
-          props: {},
-        },
-        additionalContext: null,
-      },
-    ],
-  };
+  const mockThread = createMockThreadWithMessages();
 
-  const mockMessageRefs = React.createRef<Record<string, HTMLDivElement>>();
+  const mockMessageRefs = React.useRef<Record<string, HTMLDivElement>>({});
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -190,13 +146,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles search highlighting for matching messages", () => {
-    const searchMatches = [
-      {
-        messageId: "msg-1",
-        messageType: "message" as const,
-        contentType: "content" as const,
-      },
-    ];
+    const searchMatches = createMockSearchMatches();
 
     render(
       <ThreadMessages
@@ -216,13 +166,7 @@ describe("ThreadMessages", () => {
     // SKIPPED: This test has issues with framer-motion component styling and CSS class application.
     // The opacity styling involves complex CSS classes that are difficult to test reliably
     // in the current test environment. The core functionality is tested through other tests.
-    const searchMatches = [
-      {
-        messageId: "msg-1",
-        messageType: "message" as const,
-        contentType: "content" as const,
-      },
-    ];
+    const searchMatches = createMockSearchMatches();
 
     render(
       <ThreadMessages
@@ -310,11 +254,7 @@ describe("ThreadMessages", () => {
     // The test would verify the visual state change (copy icon → check icon) after copying,
     // but since clipboard API mocking isn't working, this test is skipped.
     render(
-      <ThreadMessages
-        thread={mockThread}
-        copiedId="msg-1"
-        messageRefs={mockMessageRefs}
-      />,
+      <ThreadMessages thread={mockThread} messageRefs={mockMessageRefs} />,
     );
 
     const checkIcon = screen.getByText("msg-1").querySelector("svg");
@@ -322,19 +262,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles messages with same day correctly", () => {
-    const sameDayThread = {
-      ...mockThread,
-      messages: [
-        {
-          ...mockThread.messages[0],
-          createdAt: new Date("2024-01-01T10:00:00Z"),
-        },
-        {
-          ...mockThread.messages[1],
-          createdAt: new Date("2024-01-01T11:00:00Z"),
-        },
-      ],
-    };
+    const sameDayThread = createMockThreadSameDay();
 
     render(
       <ThreadMessages thread={sameDayThread} messageRefs={mockMessageRefs} />,
@@ -346,19 +274,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles messages with different days correctly", () => {
-    const differentDayThread = {
-      ...mockThread,
-      messages: [
-        {
-          ...mockThread.messages[0],
-          createdAt: new Date("2024-01-01T10:00:00Z"),
-        },
-        {
-          ...mockThread.messages[1],
-          createdAt: new Date("2024-01-02T10:00:00Z"),
-        },
-      ],
-    };
+    const differentDayThread = createMockThreadDifferentDays();
 
     render(
       <ThreadMessages
@@ -373,21 +289,7 @@ describe("ThreadMessages", () => {
   });
 
   it("handles missing tool response gracefully", () => {
-    const threadWithoutToolResponse = {
-      ...mockThread,
-      messages: [
-        {
-          ...mockThread.messages[1],
-          toolCallRequest: {
-            toolCallId: "tool-1",
-            name: "test-tool",
-            arguments: {},
-          },
-          toolCallId: "tool-1",
-        },
-        // No corresponding tool response message
-      ],
-    };
+    const threadWithoutToolResponse = createMockThreadWithoutToolResponse();
 
     expect(() => {
       render(
