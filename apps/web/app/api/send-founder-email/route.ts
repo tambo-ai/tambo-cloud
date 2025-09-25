@@ -3,6 +3,7 @@ import { env } from "@/lib/env";
 import { NextResponse } from "next/server";
 import { isResendEmailUnsubscribed } from "@tambo-ai-cloud/core";
 import { Resend } from "resend";
+import { isResendEmailUnsubscribed } from "@tambo-ai-cloud/core";
 
 // Define the expected request body shape
 interface FounderEmailRequest {
@@ -83,7 +84,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // If possible, block emails if the user is unsubscribed in the audience (best-effort)
+    // If possible, block emails if the user is unsubscribed in the audience (best‑effort)
     if (env.RESEND_AUDIENCE_ID) {
       try {
         const unsubscribed = await isResendEmailUnsubscribed(

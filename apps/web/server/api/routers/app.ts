@@ -17,7 +17,7 @@ export const appRouter = createTRPCRouter({
 
       const resend = new Resend(env.RESEND_API_KEY);
 
-      // If available, block emails to unsubscribed contacts (best-effort)
+      // If available, block emails to unsubscribed contacts (best‑effort)
       if (env.RESEND_AUDIENCE_ID) {
         try {
           const unsubscribed = await isResendEmailUnsubscribed(

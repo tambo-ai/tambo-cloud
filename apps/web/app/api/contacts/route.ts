@@ -56,18 +56,16 @@ export async function POST(req: Request) {
       try {
         const resend = new Resend(env.RESEND_API_KEY);
         // Create or update contact but do not override unsubscribe
-        const upsert: any = await (resend as any).contacts?.create?.({
+        const upsert = await resend.contacts.create({
           audienceId: env.RESEND_AUDIENCE_ID,
           email,
-          firstName: firstName,
+          firstName,
           ...(lastName && { lastName }),
         });
-        if (upsert?.error) {
+        if (upsert.error) {
           console.error("Resend API error:", upsert.error);
-        }
-        const id = upsert?.data?.id || upsert?.id;
-        if (id) {
-          resendContactId = id as string;
+        } else if (upsert.data?.id) {
+          resendContactId = upsert.data.id;
           metadata.resendContactId = resendContactId;
           console.log(`Added to Resend audience with ID: ${resendContactId}`);
         }
