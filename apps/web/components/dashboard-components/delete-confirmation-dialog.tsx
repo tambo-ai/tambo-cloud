@@ -42,16 +42,16 @@ interface SingleProjectProps {
 type DeleteConfirmationDialogProps = MultipleProjectsProps | SingleProjectProps;
 
 // Helper function to format project names for display
-const formatProjectNames = (
-  projectNames: string[],
-  projectCount: number,
-): string => {
-  if (projectCount <= 3) {
+// Note: compute the remainder from the names array length to ensure
+// the UI matches what is actually rendered.
+const formatProjectNames = (projectNames: string[]): string => {
+  const count = projectNames.length;
+  if (count <= 3) {
     return projectNames.join(", ");
   }
 
   const firstThree = projectNames.slice(0, 3).join(", ");
-  const remainingCount = projectCount - 3;
+  const remainingCount = count - 3;
   return `${firstThree} and ${remainingCount} more`;
 };
 
@@ -66,7 +66,7 @@ const getMultipleProjectsContent = (props: MultipleProjectsProps) => {
         Are you sure you want to delete {projectCount} project
         {projectCount > 1 ? "s" : ""}?
         <span className="block mt-2 font-medium">
-          {formatProjectNames(props.selectedProjectNames, projectCount)}
+          {formatProjectNames(props.selectedProjectNames)}
         </span>
         <span className="block mt-2 text-destructive">
           This action cannot be undone.

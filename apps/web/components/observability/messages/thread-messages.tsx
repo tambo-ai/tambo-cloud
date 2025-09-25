@@ -19,7 +19,7 @@ type MessageGroup = {
 
 // Helper function to determine alignment classes
 const getAlignmentClasses = (
-  groupType: string,
+  groupType: MessageGroup["type"],
   isUserMessage: boolean,
 ): string => {
   if (groupType === "tool_call" || groupType === "component") {
