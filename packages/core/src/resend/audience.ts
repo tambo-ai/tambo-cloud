@@ -1,28 +1,19 @@
 /**
- * Minimal helpers for working with Resend Audience contacts without depending on
- * the Resend SDK types. Accepts a "contacts"-like client with a `get` method.
- *
- * These helpers are intentionally tiny and tolerate unknown SDK response shapes
- * by using runtime guards on `unknown` instead of `any`.
+ * Minimal helpers for working with Resend Audience contacts without importing
+ * the Resend SDK. We model only the parts of the response we read so callers
+ * can pass the real `resend.contacts` client directly and get strong typing.
  */
 
-export interface ResendContactsClientLike {
-  get(options: { audienceId: string; email: string }): Promise<unknown>;
+export interface ResendGetContactResponseLike {
+  readonly data: { readonly unsubscribed?: boolean } | null;
+  readonly error?: unknown;
 }
 
-/**
- * Extracts the `unsubscribed` flag from a `contacts.get(...)` result.
- * Returns `undefined` when the shape doesn't match or the value is absent.
- */
-export function readUnsubscribedFlag(result: unknown): boolean | undefined {
-  if (!result || typeof result !== "object") return undefined;
-  const r = result as Record<string, unknown>;
-  const data = (r as { data?: unknown }).data;
-  if (data && typeof data === "object") {
-    const unsub = (data as Record<string, unknown>)["unsubscribed"];
-    if (typeof unsub === "boolean") return unsub;
-  }
-  return undefined;
+export interface ResendContactsClientLike {
+  get(options: {
+    audienceId: string;
+    email: string;
+  }): Promise<ResendGetContactResponseLike>;
 }
 
 /**
@@ -43,7 +34,7 @@ export async function isResendEmailUnsubscribed(
   if (!trimmed) return false;
   try {
     const res = await contacts.get({ audienceId, email: trimmed });
-    return readUnsubscribedFlag(res) === true;
+    return res.data?.unsubscribed === true;
   } catch {
     // Non‑blocking on API error or network failure
     return false;
