@@ -63,38 +63,20 @@ export class EmailService {
   private async isEmailUnsubscribed(userEmail: string): Promise<boolean> {
     if (!this.resendAudienceId) return false;
     try {
-      // Try SDK list with an email filter if supported
+      // Fetch a page of contacts for the audience and search locally by email
       const lower = userEmail.toLowerCase();
-      const maybeListWithFilter: any = await (this.resend as any).contacts
-        ?.list?.({
-          audienceId: this.resendAudienceId,
-          email: userEmail,
-          limit: 200,
-        })
-        .catch(() => null);
+      const list = await this.resend.contacts.list({
+        audienceId: this.resendAudienceId,
+        limit: 200,
+      });
 
-      const extractContacts = (result: any): any[] => {
-        if (!result) return [];
-        // Resend SDK/result shapes vary; handle a few possibilities safely
-        if (Array.isArray(result)) return result;
-        if (Array.isArray(result?.data)) return result.data;
-        if (Array.isArray(result?.data?.data)) return result.data.data;
-        if (Array.isArray(result?.results)) return result.results;
-        return [];
-      };
-
-      let contacts = extractContacts(maybeListWithFilter);
-      if (!contacts.length) {
-        const listFallback: any = await (this.resend as any).contacts
-          ?.list?.({ audienceId: this.resendAudienceId, limit: 200 })
-          .catch(() => null);
-        contacts = extractContacts(listFallback);
+      if (!list.data) {
+        // Treat API errors as non-blocking
+        return false;
       }
 
-      const match = contacts.find(
-        (c: any) =>
-          typeof c?.email === "string" && c.email.toLowerCase() === lower,
-      );
+      const contacts = list.data.data;
+      const match = contacts.find((c) => c.email.toLowerCase() === lower);
       return match?.unsubscribed === true;
     } catch (error) {
       console.warn(
