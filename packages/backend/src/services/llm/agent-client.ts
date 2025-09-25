@@ -173,8 +173,8 @@ export class AgentClient {
     const generator = runStreamingAgent(this.aguiAgent, [
       { tools: agentTools },
     ]);
-    let currentToolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall | null =
-      null;
+    let currentToolCalls: OpenAI.Chat.Completions.ChatCompletionMessageFunctionToolCall[] =
+      [];
     let currentMessage: AgentMessage | undefined = undefined;
     for (;;) {
       // we are doing manual iteration of the generator so we can track the "done" state at the end
@@ -198,9 +198,9 @@ export class AgentClient {
       // here we need to yield the growing event to the caller
       switch (event.type) {
         case EventType.MESSAGES_SNAPSHOT: {
-          // HACK: emit the last message. really we want the consumer to replace
-          // all the messages they've receieved with all of these, but instead
-          // we'll emit a single message
+          // HACK: emit the last message from the snapshot. really we want the
+          // consumer to replace all the messages they've receieved with all of
+          // these, but we don't yet have a way to do that
           const e = event as MessagesSnapshotEvent;
           currentMessage = e.messages[e.messages.length - 1];
           switch (currentMessage.role) {
@@ -263,7 +263,13 @@ export class AgentClient {
               complete: true,
             };
           }
-          // all done, no more events to emit
+
+          // Note at this point, any tools left in currentToolCalls are supposed
+          // to be called by the client. It would be nice if there was a way to
+          // emit these as well, but it is technically up to the consumer to know
+          // that and to call them at the right time
+
+          // done, no more events to emit, this ends the loop
           return;
         }
         case EventType.STATE_SNAPSHOT: {
@@ -285,17 +291,20 @@ export class AgentClient {
           if (currentMessage.role !== MessageRole.Assistant) {
             throw new Error("Current message is not an assistant message");
           }
-          currentToolCall = {
-            id: e.toolCallId,
-            type: "function",
-            function: {
-              arguments: "",
-              name: e.toolCallName,
+          currentToolCalls = [
+            ...currentToolCalls,
+            {
+              id: e.toolCallId,
+              type: "function",
+              function: {
+                arguments: "",
+                name: e.toolCallName,
+              },
             },
-          };
+          ];
           currentMessage = {
             ...currentMessage,
-            toolCalls: [currentToolCall],
+            toolCalls: currentToolCalls,
           };
           yield {
             type: AgentResponseType.MESSAGE,
@@ -306,6 +315,7 @@ export class AgentClient {
         case EventType.TOOL_CALL_CHUNK:
         case EventType.TOOL_CALL_ARGS: {
           const e = event as ToolCallArgsEvent;
+          const currentToolCall = currentToolCalls.at(-1);
           if (!currentToolCall) {
             throw new Error("No tool call found");
           }
@@ -326,7 +336,7 @@ export class AgentClient {
             // because they are partial/incomplete
             currentMessage = {
               ...currentMessage,
-              toolCalls: [currentToolCall],
+              toolCalls: currentToolCalls,
             };
           }
           yield {
@@ -336,6 +346,7 @@ export class AgentClient {
           break;
         }
         case EventType.TOOL_CALL_END: {
+          const currentToolCall = currentToolCalls.at(-1);
           if (!currentToolCall) {
             throw new Error("No tool call found");
           }
@@ -356,7 +367,7 @@ export class AgentClient {
           if (currentMessage.role === MessageRole.Assistant) {
             currentMessage = {
               ...currentMessage,
-              toolCalls: [currentToolCall],
+              toolCalls: currentToolCalls,
             };
           }
           yield {
@@ -366,6 +377,9 @@ export class AgentClient {
           break;
         }
         case EventType.TOOL_CALL_RESULT: {
+          currentToolCalls = currentToolCalls.filter(
+            (t) => t.id !== e.toolCallId,
+          );
           const e = event as ToolCallResultEvent;
           const messageId = e.messageId;
           currentMessage = {
