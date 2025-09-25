@@ -63,21 +63,20 @@ export class EmailService {
   private async isEmailUnsubscribed(userEmail: string): Promise<boolean> {
     if (!this.resendAudienceId) return false;
     try {
-      // Fetch a page of contacts for the audience and search locally by email
-      const lower = userEmail.toLowerCase();
-      const list = await this.resend.contacts.list({
+      // Prefer direct lookup by email via SDK to avoid listing/pagination
+      // Normalize email to reduce case/whitespace mismatch risk
+      const normalizedEmail = userEmail.trim().toLowerCase();
+      const result = await this.resend.contacts.get({
         audienceId: this.resendAudienceId,
-        limit: 200,
+        email: normalizedEmail,
       });
 
-      if (!list.data) {
-        // Treat API errors as non-blocking
+      if (!result.data) {
+        // Treat API errors or missing contact as non-blocking
         return false;
       }
 
-      const contacts = list.data.data;
-      const match = contacts.find((c) => c.email.toLowerCase() === lower);
-      return match?.unsubscribed === true;
+      return result.data.unsubscribed === true;
     } catch (error) {
       console.warn(
         "Unsubscribe check failed; proceeding without blocking",
