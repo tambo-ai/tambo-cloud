@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Resend } from "resend";
 import { FREE_MESSAGE_LIMIT } from "../../threads/types/errors";
+import { isResendEmailUnsubscribed } from "@tambo-ai-cloud/core";
 import { firstMessageEmail } from "../emails/first-message";
 import { messageLimitEmail } from "../emails/message-limit";
 import { reactivationEmail } from "../emails/reactivation";
@@ -63,20 +64,12 @@ export class EmailService {
   private async isEmailUnsubscribed(userEmail: string): Promise<boolean> {
     if (!this.resendAudienceId) return false;
     try {
-      // Prefer direct lookup by email via SDK to avoid listing/pagination
-      // Normalize email to reduce case/whitespace mismatch risk
-      const normalizedEmail = userEmail.trim().toLowerCase();
-      const result = await this.resend.contacts.get({
-        audienceId: this.resendAudienceId,
-        email: normalizedEmail,
-      });
-
-      if (!result.data) {
-        // Treat API errors or missing contact as non-blocking
-        return false;
-      }
-
-      return result.data.unsubscribed === true;
+      // Use shared helper for a consistent, typed-by-guard lookup
+      return await isResendEmailUnsubscribed(
+        this.resend.contacts,
+        this.resendAudienceId,
+        userEmail,
+      );
     } catch (error) {
       console.warn(
         "Unsubscribe check failed; proceeding without blocking",

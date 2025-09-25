@@ -22,3 +22,5 @@ export * from "./auth/email-domain";
 export * from "./llm-config-types";
 export * from "./llms/llm.config";
 export * from "./throttle";
+// Resend helpers (no SDK dependency)
+export * from "./resend/audience";

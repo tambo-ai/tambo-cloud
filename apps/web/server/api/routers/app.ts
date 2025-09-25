@@ -1,6 +1,7 @@
 import { env } from "@/lib/env";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { Resend } from "resend";
+import { isResendEmailUnsubscribed } from "@tambo-ai-cloud/core";
 import { z } from "zod";
 
 /**
@@ -19,24 +20,12 @@ export const appRouter = createTRPCRouter({
       // If available, block emails to unsubscribed contacts (best-effort)
       if (env.RESEND_AUDIENCE_ID) {
         try {
-          const listResult: any = await (resend as any).contacts
-            ?.list?.({ audienceId: env.RESEND_AUDIENCE_ID, limit: 200 })
-            .catch(() => null);
-          const contacts = Array.isArray(listResult?.data)
-            ? listResult.data
-            : Array.isArray(listResult?.results)
-              ? listResult.results
-              : Array.isArray(listResult)
-                ? listResult
-                : Array.isArray(listResult?.data?.data)
-                  ? listResult.data.data
-                  : [];
-          const lower = input.email.toLowerCase();
-          const match = contacts.find(
-            (c: any) =>
-              typeof c?.email === "string" && c.email.toLowerCase() === lower,
+          const unsubscribed = await isResendEmailUnsubscribed(
+            resend.contacts,
+            env.RESEND_AUDIENCE_ID,
+            input.email,
           );
-          if (match?.unsubscribed === true) {
+          if (unsubscribed) {
             return { success: false, error: "Recipient is unsubscribed" };
           }
         } catch {

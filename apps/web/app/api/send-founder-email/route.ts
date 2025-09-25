@@ -1,6 +1,7 @@
 import { validateEmail } from "@/lib/email-validation";
 import { env } from "@/lib/env";
 import { NextResponse } from "next/server";
+import { isResendEmailUnsubscribed } from "@tambo-ai-cloud/core";
 import { Resend } from "resend";
 
 // Define the expected request body shape
@@ -85,30 +86,18 @@ export async function POST(req: Request) {
     // If possible, block emails if the user is unsubscribed in the audience (best-effort)
     if (env.RESEND_AUDIENCE_ID) {
       try {
-        const listResult: any = await (resend as any).contacts
-          ?.list?.({ audienceId: env.RESEND_AUDIENCE_ID, limit: 200 })
-          .catch(() => null);
-        const contacts = Array.isArray(listResult?.data)
-          ? listResult.data
-          : Array.isArray(listResult?.results)
-            ? listResult.results
-            : Array.isArray(listResult)
-              ? listResult
-              : Array.isArray(listResult?.data?.data)
-                ? listResult.data.data
-                : [];
-        const lower = usersEmail.toLowerCase();
-        const match = contacts.find(
-          (c: any) =>
-            typeof c?.email === "string" && c.email.toLowerCase() === lower,
+        const unsubscribed = await isResendEmailUnsubscribed(
+          resend.contacts,
+          env.RESEND_AUDIENCE_ID,
+          usersEmail,
         );
-        if (match?.unsubscribed === true) {
+        if (unsubscribed) {
           return NextResponse.json(
             { error: "Recipient is unsubscribed" },
             { status: 400 },
           );
         }
-      } catch (_subscriptionError) {
+      } catch {
         // proceed if we cannot determine
       }
     }
