@@ -3,7 +3,6 @@ import { env } from "@/lib/env";
 import { NextResponse } from "next/server";
 import { isResendEmailUnsubscribed } from "@tambo-ai-cloud/core";
 import { Resend } from "resend";
-import { isResendEmailUnsubscribed } from "@tambo-ai-cloud/core";
 
 // Define the expected request body shape
 interface FounderEmailRequest {
