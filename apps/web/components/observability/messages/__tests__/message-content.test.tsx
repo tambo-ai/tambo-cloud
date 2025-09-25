@@ -12,7 +12,9 @@ jest.mock("@/components/ui/tambo/markdown-components", () => ({
 // Mock framer-motion
 jest.mock("framer-motion", () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({ children, _initial, _animate, _transition, ...props }: any) => (
+      <div {...props}>{children}</div>
+    ),
   },
 }));
 
@@ -86,7 +88,7 @@ describe("MessageContent", () => {
           isCancelled: false,
           reasoning: null,
           additionalContext: null,
-          content: [],
+          content: [{ type: "text" as const, text: "Hello world" }],
           createdAt: new Date(),
           id: "msg-1",
           role: MessageRole.User,
@@ -378,7 +380,8 @@ describe("MessageContent", () => {
     );
   });
 
-  it("handles search highlighting in additional context", () => {
+  it("handles search highlighting in additional context", async () => {
+    const user = userEvent.setup();
     const messageWithContext = {
       ...baseMessage,
       additionalContext: { key: "value" },
@@ -398,7 +401,7 @@ describe("MessageContent", () => {
     const toggleButton = screen
       .getByText("Additional Context")
       .closest("button");
-    toggleButton?.click();
+    await user.click(toggleButton!);
 
     expect(screen.getByTestId("highlighted-json")).toBeInTheDocument();
   });
