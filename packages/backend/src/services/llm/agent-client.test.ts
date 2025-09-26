@@ -1,12 +1,18 @@
 import { BaseEvent, EventType } from "@ag-ui/core";
-import { AgentProviderType } from "@tambo-ai-cloud/core";
-import OpenAI from "openai";
-import { AgentClient, AgentResponse } from "./agent-client";
-
 // Mock the async-adapters module
 jest.mock("./async-adapters", () => ({
   runStreamingAgent: jest.fn(),
 }));
+
+// Mock the message ID generator to return deterministic, monotonically increasing IDs
+let messageIdCounter = 0;
+jest.mock("./message-id-generator", () => ({
+  generateMessageId: jest.fn(() => `message-${++messageIdCounter}`),
+}));
+
+import { AgentProviderType } from "@tambo-ai-cloud/core";
+import OpenAI from "openai";
+import { AgentClient, AgentResponse } from "./agent-client";
 
 import { RunAgentResult } from "@ag-ui/client";
 import { EventHandlerParams, runStreamingAgent } from "./async-adapters";
@@ -19,6 +25,7 @@ describe("AgentClient", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    messageIdCounter = 0; // Reset counter for each test
 
     // Mock the runStreamingAgent to return our mock generator
     mockRunStreamingAgent.mockReturnValue({
@@ -498,12 +505,17 @@ describe("AgentClient", () => {
           delta: " Chunk 2",
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Message completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -543,12 +555,17 @@ describe("AgentClient", () => {
           toolCallId: "call-1",
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Tool call completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -587,12 +604,17 @@ describe("AgentClient", () => {
           delta: '"}',
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Tool call completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -619,12 +641,17 @@ describe("AgentClient", () => {
           content: "Tool execution result",
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Tool result completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -663,12 +690,17 @@ describe("AgentClient", () => {
           type: EventType.THINKING_END,
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Thinking completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -715,12 +747,17 @@ describe("AgentClient", () => {
           type: EventType.THINKING_END,
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Multiple thinking completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -742,12 +779,12 @@ describe("AgentClient", () => {
           result: "Task completed successfully",
         });
 
-        mockGenerator.finish();
-
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -763,12 +800,17 @@ describe("AgentClient", () => {
           error: "Something went wrong",
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Run error completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -789,12 +831,17 @@ describe("AgentClient", () => {
           type: EventType.STEP_FINISHED,
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Step sequence completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -812,12 +859,17 @@ describe("AgentClient", () => {
           state: { key: "value" },
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "State snapshot completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -833,12 +885,17 @@ describe("AgentClient", () => {
           delta: { newKey: "newValue" },
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "State delta completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -862,12 +919,17 @@ describe("AgentClient", () => {
           ],
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Messages snapshot completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -890,12 +952,17 @@ describe("AgentClient", () => {
           ],
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Tool messages snapshot completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -917,12 +984,17 @@ describe("AgentClient", () => {
           ],
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "User messages snapshot completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -1283,12 +1355,17 @@ describe("AgentClient", () => {
           delta: '{"param": "value"}',
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Empty tool calls completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -1313,12 +1390,17 @@ describe("AgentClient", () => {
           delta: '{"type": "unexpected"}',
         });
 
-        mockGenerator.finish();
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Non-function tool calls completed",
+        });
 
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -1334,12 +1416,12 @@ describe("AgentClient", () => {
           result: "Simple string result",
         });
 
-        mockGenerator.finish();
-
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -1355,12 +1437,12 @@ describe("AgentClient", () => {
           result: { status: "success", data: { key: "value" } },
         });
 
-        mockGenerator.finish();
-
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });

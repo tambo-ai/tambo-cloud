@@ -29,6 +29,7 @@ import {
 import OpenAI from "openai";
 import { runStreamingAgent } from "./async-adapters";
 import { CompleteParams, LLMResponse } from "./llm-client";
+import { generateMessageId } from "./message-id-generator";
 
 export enum AgentResponseType {
   MESSAGE = "message",
@@ -524,9 +525,6 @@ export class AgentClient {
     }
     throw new Error("Method not implemented.");
   }
-}
-function generateMessageId() {
-  return `message-${Math.random().toString(36).substring(2, 15)}`;
 }
 
 function invalidEvent(eventType: never) {
