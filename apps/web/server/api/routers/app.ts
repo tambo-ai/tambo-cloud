@@ -26,7 +26,8 @@ export const appRouter = createTRPCRouter({
             input.email,
           );
           if (unsubscribed) {
-            return { success: false, error: "Recipient is unsubscribed" };
+            // Avoid email enumeration: return a neutral response while skipping the send
+            return { success: true };
           }
         } catch {
           // proceed if we cannot determine

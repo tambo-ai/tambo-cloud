@@ -1,20 +1,8 @@
 /**
- * Minimal helpers for working with Resend Audience contacts without importing
- * the Resend SDK. We model only the parts of the response we read so callers
- * can pass the real `resend.contacts` client directly and get strong typing.
+ * Minimal helper for working with Resend Audience contacts using the SDK's
+ * native types. Callers should pass the real `resend.contacts` client.
  */
-
-export interface ResendGetContactResponseLike {
-  readonly data: { readonly unsubscribed?: boolean } | null;
-  readonly error?: unknown;
-}
-
-export interface ResendContactsClientLike {
-  get(options: {
-    audienceId: string;
-    email: string;
-  }): Promise<ResendGetContactResponseLike>;
-}
+import type { Resend } from "resend";
 
 /**
  * Best‑effort unsubscribe check using Resend `contacts.get({ audienceId, email })`.
@@ -26,7 +14,7 @@ export interface ResendContactsClientLike {
  *   treat this as non‑blocking.
  */
 export async function isResendEmailUnsubscribed(
-  contacts: ResendContactsClientLike,
+  contacts: Resend["contacts"],
   audienceId: string,
   email: string,
 ): Promise<boolean> {

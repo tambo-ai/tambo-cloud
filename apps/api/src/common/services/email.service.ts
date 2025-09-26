@@ -63,20 +63,12 @@ export class EmailService {
    */
   private async isEmailUnsubscribed(userEmail: string): Promise<boolean> {
     if (!this.resendAudienceId) return false;
-    try {
-      // Use shared helper for a consistent, typed-by-guard lookup
-      return await isResendEmailUnsubscribed(
-        this.resend.contacts,
-        this.resendAudienceId,
-        userEmail,
-      );
-    } catch (error) {
-      console.warn(
-        "Unsubscribe check failed; proceeding without blocking",
-        error,
-      );
-      return false;
-    }
+    // Helper already handles errors and returns false on failure
+    return await isResendEmailUnsubscribed(
+      this.resend.contacts,
+      this.resendAudienceId,
+      userEmail,
+    );
   }
 
   async sendMessageLimitNotification(
@@ -108,7 +100,11 @@ export class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       if (await this.isEmailUnsubscribed(userEmail)) {
-        return { success: false, error: "Recipient is unsubscribed" };
+        // Skip send for unsubscribed recipients but respond neutrally to avoid enumeration
+        console.log(
+          `Welcome email skipped: recipient ${userEmail} is unsubscribed in audience ${this.resendAudienceId}`,
+        );
+        return { success: true };
       }
       const result = await this.resend.emails.send({
         from: this.fromEmailPersonal,
@@ -172,7 +168,11 @@ export class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       if (await this.isEmailUnsubscribed(userEmail)) {
-        return { success: false, error: "Recipient is unsubscribed" };
+        // Skip send for unsubscribed recipients but respond neutrally to avoid enumeration
+        console.log(
+          `Reactivation email skipped: recipient ${userEmail} is unsubscribed in audience ${this.resendAudienceId}`,
+        );
+        return { success: true };
       }
       const result = await this.resend.emails.send({
         from: this.fromEmailPersonal,

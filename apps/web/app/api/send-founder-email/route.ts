@@ -92,10 +92,8 @@ export async function POST(req: Request) {
           usersEmail,
         );
         if (unsubscribed) {
-          return NextResponse.json(
-            { error: "Recipient is unsubscribed" },
-            { status: 400 },
-          );
+          // Avoid email enumeration: return a neutral response while skipping the send
+          return NextResponse.json({ success: true }, { status: 202 });
         }
       } catch {
         // proceed if we cannot determine
