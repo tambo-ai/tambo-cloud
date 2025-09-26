@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.110.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.109.0...repo-v0.110.0) (2025-09-26)
+
+
+### Features
+
+* **agents:** support reasoning messages ([#1783](https://github.com/tambo-ai/tambo-cloud/issues/1783)) ([aa04272](https://github.com/tambo-ai/tambo-cloud/commit/aa04272b83e2fbe0ca9775aa6b9af301d2aa4a12))
+
+
+### Bug Fixes
+
+* **email:** Check unsubscribe before sending personal emails ([#1806](https://github.com/tambo-ai/tambo-cloud/issues/1806)) ([5ea3ff7](https://github.com/tambo-ai/tambo-cloud/commit/5ea3ff73b793cda45c934c8695fde9038557f379))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump drizzle-kit from 0.31.4 to 0.31.5 in the drizzle group ([#1812](https://github.com/tambo-ai/tambo-cloud/issues/1812)) ([3370a1c](https://github.com/tambo-ai/tambo-cloud/commit/3370a1cf5246f74ce1e9af197845dd85abb060a1))
+* **deps-dev:** bump the eslint group with 2 updates ([#1813](https://github.com/tambo-ai/tambo-cloud/issues/1813)) ([843eaf4](https://github.com/tambo-ai/tambo-cloud/commit/843eaf49371c7a890ffaa93af60bdb7390b3e3c2))
+* **deps:** bump dompurify from 3.2.6 to 3.2.7 ([#1820](https://github.com/tambo-ai/tambo-cloud/issues/1820)) ([bbb56aa](https://github.com/tambo-ai/tambo-cloud/commit/bbb56aa2e600b42e96278c652ce24bdc68890899))
+* **deps:** bump nextra from 4.4.0 to 4.5.0 ([#1821](https://github.com/tambo-ai/tambo-cloud/issues/1821)) ([9e676b9](https://github.com/tambo-ai/tambo-cloud/commit/9e676b933b9515b3737a627feed90c64e0fa379a))
+* **deps:** bump openai from 5.20.3 to 5.23.1 ([#1819](https://github.com/tambo-ai/tambo-cloud/issues/1819)) ([d9fa4be](https://github.com/tambo-ai/tambo-cloud/commit/d9fa4be2d6a555c19320da774b433ce7a3120f13))
+* **deps:** bump the ag-ui group with 2 updates ([#1818](https://github.com/tambo-ai/tambo-cloud/issues/1818)) ([c05417e](https://github.com/tambo-ai/tambo-cloud/commit/c05417e5e189d445ba772e12ce47e6c3460e42a1))
+* **deps:** bump the small-safe-packages group with 3 updates ([#1817](https://github.com/tambo-ai/tambo-cloud/issues/1817)) ([077e96c](https://github.com/tambo-ai/tambo-cloud/commit/077e96c2db14ddf6120dcc6bb760f021e0f75cf4))
+* **deps:** bump the trpc group with 3 updates ([#1811](https://github.com/tambo-ai/tambo-cloud/issues/1811)) ([5cf4a36](https://github.com/tambo-ai/tambo-cloud/commit/5cf4a36ad83dd8bd3c179e9c184498f8938c3e8f))
+
+
+### Tests
+
+* **agent-client:** Fix tests to actually generate messages ([#1822](https://github.com/tambo-ai/tambo-cloud/issues/1822)) ([0b50073](https://github.com/tambo-ai/tambo-cloud/commit/0b50073f9ebe0eeec7f76715c7467478059d4f8d))
+
 ## [0.109.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.108.0...repo-v0.109.0) (2025-09-26)
 
 
