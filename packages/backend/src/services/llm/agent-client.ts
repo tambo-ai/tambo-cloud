@@ -11,7 +11,7 @@ import {
   ToolCallStartEvent,
 } from "@ag-ui/client";
 import {
-  Message,
+  Message as AGUIMessage,
   StateDeltaEvent,
   ThinkingTextMessageContentEvent,
   ToolCallEndEvent,
@@ -39,7 +39,7 @@ interface WithReasoning {
   reasoning?: string[];
 }
 
-type AgentMessage = Message & WithReasoning;
+type AgentMessage = AGUIMessage & WithReasoning;
 
 export interface AgentResponse {
   type: AgentResponseType;
@@ -122,7 +122,7 @@ export class AgentClient {
       throw new Error("Agent not initialized");
     }
 
-    const agentMessages = params.messages.map((m, msgIndex): Message => {
+    const agentMessages = params.messages.map((m, msgIndex): AGUIMessage => {
       if (m.role === "function") {
         throw new Error("Function messages are not supported");
       }
