@@ -1,4 +1,4 @@
-import { EventType } from "@ag-ui/core";
+import { BaseEvent, EventType } from "@ag-ui/core";
 import { AgentProviderType } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { AgentClient, AgentResponse } from "./agent-client";
@@ -10,6 +10,7 @@ jest.mock("./async-adapters", () => ({
 
 import { RunAgentResult } from "@ag-ui/client";
 import { EventHandlerParams, runStreamingAgent } from "./async-adapters";
+import { CompleteParams } from "./llm-client";
 
 const mockRunStreamingAgent = jest.mocked(runStreamingAgent);
 
@@ -89,7 +90,10 @@ describe("AgentClient", () => {
   });
 
   describe("streamRunAgent", () => {
-    let mockGenerator: any;
+    let mockGenerator: AsyncIterableIterator<
+      EventHandlerParams,
+      RunAgentResult
+    >;
 
     beforeEach(async () => {
       agentClient = await AgentClient.create({
@@ -127,14 +131,14 @@ describe("AgentClient", () => {
         [Symbol.asyncIterator]() {
           return this;
         },
-        pushEvent: (event: any) => {
+        pushEvent: (event: BaseEvent) => {
           events.push({ event } as EventHandlerParams);
         },
         finish: () => {
           // No-op for this mock
         },
       } as AsyncIterableIterator<EventHandlerParams, RunAgentResult> & {
-        pushEvent: (event: any) => void;
+        pushEvent: (event: BaseEvent) => void;
         finish: () => void;
       };
 
@@ -142,7 +146,10 @@ describe("AgentClient", () => {
     });
 
     it("should throw error if agent not initialized", async () => {
-      const client = new (AgentClient as any)("test-chain", undefined);
+      const client: AgentClient = new (AgentClient as any)(
+        "test-chain",
+        undefined,
+      );
 
       await expect(
         client
@@ -295,8 +302,9 @@ describe("AgentClient", () => {
     it("should throw error for function messages", async () => {
       const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
         {
-          role: "function" as any,
+          role: "function",
           content: "Function result",
+          name: "test_tool",
         },
       ];
 
@@ -308,11 +316,13 @@ describe("AgentClient", () => {
     });
 
     it("should throw error for non-function tools", async () => {
-      const tools: any[] = [
+      const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         {
-          type: "code_interpreter",
-          code_interpreter: {},
-        },
+          type: "custom",
+          custom: {
+            name: "test_tool",
+          },
+        } satisfies OpenAI.Chat.Completions.ChatCompletionCustomTool,
       ];
 
       const stream = agentClient.streamRunAgent({ messages: [], tools });
@@ -324,7 +334,14 @@ describe("AgentClient", () => {
   });
 
   describe("Event Processing", () => {
-    let mockGenerator: any;
+    let mockGenerator: AsyncIterableIterator<
+      EventHandlerParams,
+      RunAgentResult
+    > & {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+      pushEvent<T extends BaseEvent>(event: T): void;
+      finish: () => void;
+    };
 
     beforeEach(async () => {
       agentClient = await AgentClient.create({
@@ -335,19 +352,28 @@ describe("AgentClient", () => {
       });
 
       // Create a controllable mock generator
-      const events: any[] = [];
+      const events: { event: BaseEvent }[] = [];
       let isFinished = false;
 
       mockGenerator = {
         async next() {
           if (isFinished) {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           }
           if (events.length === 0) {
             // If no events and not finished, return a wait event
             return {
               done: false,
-              value: { event: { type: "WAIT" } },
+              value: {
+                event: { type: EventType.CUSTOM },
+                messages: [],
+                state: {},
+                agent: {} as any,
+                input: {} as any,
+              } as EventHandlerParams,
             };
           }
           const event = events.shift()!;
@@ -355,20 +381,29 @@ describe("AgentClient", () => {
           if (events.length === 0) {
             isFinished = true;
           }
-          return { done: false, value: event };
+          return {
+            done: false,
+            value: event,
+          } as IteratorYieldResult<EventHandlerParams>;
         },
         async return() {
           isFinished = true;
-          return { done: true, value: undefined };
+          return {
+            done: true,
+            value: { result: null, newMessages: [] },
+          } as IteratorReturnResult<RunAgentResult>;
         },
         async throw() {
           isFinished = true;
-          return { done: true, value: undefined };
+          return {
+            done: true,
+            value: { result: null, newMessages: [] },
+          } as IteratorReturnResult<RunAgentResult>;
         },
         [Symbol.asyncIterator]() {
           return this;
         },
-        pushEvent: (event: any) => {
+        pushEvent: (event: BaseEvent) => {
           events.push({ event });
         },
         finish: () => {
@@ -994,7 +1029,10 @@ describe("AgentClient", () => {
     describe("Error Handling", () => {
       it("should handle missing current message in text content", async () => {
         // Create a new mock generator for this test
-        const errorGenerator: any = {
+        const errorGenerator: AsyncIterableIterator<
+          EventHandlerParams,
+          RunAgentResult
+        > = {
           async next() {
             return {
               done: false,
@@ -1004,14 +1042,24 @@ describe("AgentClient", () => {
                   messageId: "msg-1",
                   delta: "This should fail",
                 },
-              },
+                messages: [],
+                state: {},
+                agent: {} as any,
+                input: {} as any,
+              } as EventHandlerParams,
             };
           },
           async return() {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           },
           async throw() {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           },
           [Symbol.asyncIterator]() {
             return this;
@@ -1035,7 +1083,10 @@ describe("AgentClient", () => {
 
       it("should handle missing tool call in args event", async () => {
         // Create a new mock generator for this test
-        const errorGenerator: any = {
+        const errorGenerator: AsyncIterableIterator<
+          EventHandlerParams,
+          RunAgentResult
+        > = {
           async next() {
             return {
               done: false,
@@ -1045,14 +1096,24 @@ describe("AgentClient", () => {
                   toolCallId: "call-1",
                   delta: '{"param": "value"}',
                 },
-              },
+                messages: [],
+                state: {},
+                agent: {} as any,
+                input: {} as any,
+              } as EventHandlerParams,
             };
           },
           async return() {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           },
           async throw() {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           },
           [Symbol.asyncIterator]() {
             return this;
@@ -1076,7 +1137,10 @@ describe("AgentClient", () => {
 
       it("should handle missing tool call in end event", async () => {
         // Create a new mock generator for this test
-        const errorGenerator: any = {
+        const errorGenerator: AsyncIterableIterator<
+          EventHandlerParams,
+          RunAgentResult
+        > = {
           async next() {
             return {
               done: false,
@@ -1085,14 +1149,24 @@ describe("AgentClient", () => {
                   type: EventType.TOOL_CALL_END,
                   toolCallId: "call-1",
                 },
-              },
+                messages: [],
+                state: {},
+                agent: {} as any,
+                input: {} as any,
+              } as EventHandlerParams,
             };
           },
           async return() {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           },
           async throw() {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           },
           [Symbol.asyncIterator]() {
             return this;
@@ -1116,7 +1190,10 @@ describe("AgentClient", () => {
 
       it("should handle missing current message in thinking content", async () => {
         // Create a new mock generator for this test
-        const errorGenerator: any = {
+        const errorGenerator: AsyncIterableIterator<
+          EventHandlerParams,
+          RunAgentResult
+        > = {
           async next() {
             return {
               done: false,
@@ -1125,14 +1202,24 @@ describe("AgentClient", () => {
                   type: EventType.THINKING_TEXT_MESSAGE_CONTENT,
                   delta: "This should fail",
                 },
-              },
+                messages: [],
+                state: {},
+                agent: {} as any,
+                input: {} as any,
+              } as EventHandlerParams,
             };
           },
           async return() {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           },
           async throw() {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           },
           [Symbol.asyncIterator]() {
             return this;
@@ -1261,11 +1348,14 @@ describe("AgentClient", () => {
 
   describe("nonStreamingComplete", () => {
     it("should throw error if agent not initialized", async () => {
-      const client = new (AgentClient as any)("test-chain", undefined);
-
-      await expect(client.nonStreamingComplete({} as any)).rejects.toThrow(
-        "Agent not initialized",
+      const client: AgentClient = new (AgentClient as any)(
+        "test-chain",
+        undefined,
       );
+
+      await expect(
+        client.nonStreamingComplete({} as CompleteParams),
+      ).rejects.toThrow("Agent not initialized");
     });
 
     it("should throw not implemented error", async () => {
@@ -1276,9 +1366,9 @@ describe("AgentClient", () => {
         headers: { Authorization: "Bearer test" },
       });
 
-      await expect(agentClient.nonStreamingComplete({} as any)).rejects.toThrow(
-        "Method not implemented.",
-      );
+      await expect(
+        agentClient.nonStreamingComplete({} as CompleteParams),
+      ).rejects.toThrow("Method not implemented.");
     });
   });
 });
