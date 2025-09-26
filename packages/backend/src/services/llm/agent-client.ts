@@ -30,7 +30,7 @@ import OpenAI from "openai";
 import { runStreamingAgent } from "./async-adapters";
 import { CompleteParams, LLMResponse } from "./llm-client";
 
-enum AgentResponseType {
+export enum AgentResponseType {
   MESSAGE = "message",
   COMPLETE = "complete",
 }
@@ -39,7 +39,7 @@ interface WithReasoning {
   reasoning?: string[];
 }
 
-type AgentMessage = AGUIMessage & WithReasoning;
+export type AgentMessage = AGUIMessage & WithReasoning;
 
 export interface AgentResponse {
   type: AgentResponseType;
