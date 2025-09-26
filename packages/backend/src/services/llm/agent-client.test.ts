@@ -89,10 +89,7 @@ describe("AgentClient", () => {
   });
 
   describe("streamRunAgent", () => {
-    let mockGenerator: AsyncIterableIterator<
-      EventHandlerParams,
-      RunAgentResult
-    >;
+    let mockGenerator: any;
 
     beforeEach(async () => {
       agentClient = await AgentClient.create({
@@ -103,36 +100,42 @@ describe("AgentClient", () => {
       });
 
       // Create a mock generator that we can control
-      const events: any[] = [];
-      let isDone = false;
+      const events: EventHandlerParams[] = [];
 
       mockGenerator = {
         async next() {
           if (events.length === 0) {
-            return { done: true, value: undefined };
+            return {
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           }
-          return { done: false, value: events.shift() };
+          return { done: false, value: events.shift()! };
         },
         async return() {
-          isDone = true;
-          return { done: true, value: undefined };
+          return {
+            done: true,
+            value: { result: null, newMessages: [] },
+          } as IteratorReturnResult<RunAgentResult>;
         },
         async throw() {
-          isDone = true;
-          return { done: true, value: undefined };
+          return {
+            done: true,
+            value: { result: null, newMessages: [] },
+          } as IteratorReturnResult<RunAgentResult>;
         },
         [Symbol.asyncIterator]() {
           return this;
         },
-      } as AsyncIterableIterator<any>;
-
-      // Add a method to push events for testing
-      (mockGenerator as any).pushEvent = (event: any) => {
-        events.push(event);
-      };
-
-      (mockGenerator as any).finish = () => {
-        isDone = true;
+        pushEvent: (event: any) => {
+          events.push({ event } as EventHandlerParams);
+        },
+        finish: () => {
+          // No-op for this mock
+        },
+      } as AsyncIterableIterator<EventHandlerParams, RunAgentResult> & {
+        pushEvent: (event: any) => void;
+        finish: () => void;
       };
 
       mockRunStreamingAgent.mockReturnValue(mockGenerator);
@@ -199,15 +202,27 @@ describe("AgentClient", () => {
       (agentClient as any).aguiAgent = { setMessages: mockSetMessages };
 
       // Create a mock generator that finishes immediately
-      const mockGenerator = {
+      const mockGenerator: AsyncIterableIterator<
+        EventHandlerParams,
+        RunAgentResult
+      > = {
         async next() {
-          return { done: true, value: undefined };
+          return {
+            done: true,
+            value: { result: null, newMessages: [] },
+          } as IteratorReturnResult<RunAgentResult>;
         },
         async return() {
-          return { done: true, value: undefined };
+          return {
+            done: true,
+            value: { result: null, newMessages: [] },
+          } as IteratorReturnResult<RunAgentResult>;
         },
         async throw() {
-          return { done: true, value: undefined };
+          return {
+            done: true,
+            value: { result: null, newMessages: [] },
+          } as IteratorReturnResult<RunAgentResult>;
         },
         [Symbol.asyncIterator]() {
           return this;
@@ -293,9 +308,9 @@ describe("AgentClient", () => {
     });
 
     it("should throw error for non-function tools", async () => {
-      const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+      const tools: any[] = [
         {
-          type: "code_interpreter" as any,
+          type: "code_interpreter",
           code_interpreter: {},
         },
       ];
@@ -330,9 +345,12 @@ describe("AgentClient", () => {
           }
           if (events.length === 0) {
             // If no events and not finished, return a wait event
-            return { done: false, value: { event: { type: "WAIT" } } };
+            return {
+              done: false,
+              value: { event: { type: "WAIT" } },
+            };
           }
-          const event = events.shift();
+          const event = events.shift()!;
           // If this is the last event, mark as finished for next call
           if (events.length === 0) {
             isFinished = true;
@@ -976,7 +994,7 @@ describe("AgentClient", () => {
     describe("Error Handling", () => {
       it("should handle missing current message in text content", async () => {
         // Create a new mock generator for this test
-        const errorGenerator = {
+        const errorGenerator: any = {
           async next() {
             return {
               done: false,
@@ -1017,7 +1035,7 @@ describe("AgentClient", () => {
 
       it("should handle missing tool call in args event", async () => {
         // Create a new mock generator for this test
-        const errorGenerator = {
+        const errorGenerator: any = {
           async next() {
             return {
               done: false,
@@ -1058,7 +1076,7 @@ describe("AgentClient", () => {
 
       it("should handle missing tool call in end event", async () => {
         // Create a new mock generator for this test
-        const errorGenerator = {
+        const errorGenerator: any = {
           async next() {
             return {
               done: false,
@@ -1098,7 +1116,7 @@ describe("AgentClient", () => {
 
       it("should handle missing current message in thinking content", async () => {
         // Create a new mock generator for this test
-        const errorGenerator = {
+        const errorGenerator: any = {
           async next() {
             return {
               done: false,
