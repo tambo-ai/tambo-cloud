@@ -26,7 +26,8 @@ export const appRouter = createTRPCRouter({
             input.email,
           );
           if (unsubscribed) {
-            // Avoid email enumeration: return a neutral response while skipping the send
+            // Avoid email enumeration: add a small jitter and return a neutral response while skipping the send
+            await new Promise((r) => setTimeout(r, 200 + Math.random() * 400));
             return { success: true };
           }
         } catch {

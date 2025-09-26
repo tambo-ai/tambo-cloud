@@ -92,7 +92,8 @@ export async function POST(req: Request) {
           usersEmail,
         );
         if (unsubscribed) {
-          // Avoid email enumeration: return a neutral response while skipping the send
+          // Avoid email enumeration: add a small jitter and return a neutral response
+          await new Promise((r) => setTimeout(r, 200 + Math.random() * 400));
           return NextResponse.json({ success: true }, { status: 202 });
         }
       } catch {

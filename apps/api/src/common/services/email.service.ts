@@ -101,9 +101,11 @@ export class EmailService {
     try {
       if (await this.isEmailUnsubscribed(userEmail)) {
         // Skip send for unsubscribed recipients but respond neutrally to avoid enumeration
-        console.log(
-          `Welcome email skipped: recipient ${userEmail} is unsubscribed in audience ${this.resendAudienceId}`,
-        );
+        // Avoid logging raw PII: mask the local part of the email and use debug level
+        const masked = userEmail.replace(/(^.).*?(@.*$)/, "$1***$2");
+        console.debug("Welcome email skipped: recipient is unsubscribed", {
+          email: masked,
+        });
         return { success: true };
       }
       const result = await this.resend.emails.send({
@@ -169,9 +171,10 @@ export class EmailService {
     try {
       if (await this.isEmailUnsubscribed(userEmail)) {
         // Skip send for unsubscribed recipients but respond neutrally to avoid enumeration
-        console.log(
-          `Reactivation email skipped: recipient ${userEmail} is unsubscribed in audience ${this.resendAudienceId}`,
-        );
+        const masked = userEmail.replace(/(^.).*?(@.*$)/, "$1***$2");
+        console.debug("Reactivation email skipped: recipient is unsubscribed", {
+          email: masked,
+        });
         return { success: true };
       }
       const result = await this.resend.emails.send({
