@@ -1,13 +1,13 @@
-import { motion } from "framer-motion";
-import { CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AnimatePresence } from "framer-motion";
-import { ParameterSuggestions } from "./parameter-suggestions";
-import { ParameterRow } from "./parameter-row";
-import { shouldUseTextarea, formatValueForDisplay } from "./utils";
+import { CardDescription } from "@/components/ui/card";
+import { JSONValue, LlmParameterUIType } from "@tambo-ai-cloud/core";
+import { AnimatePresence, motion } from "framer-motion";
 import { Plus } from "lucide-react";
-import { PARAMETER_SUGGESTIONS, type ParameterEntry } from "./types";
 import type { FC } from "react";
+import { ParameterRow } from "./parameter-row";
+import { ParameterSuggestions } from "./parameter-suggestions";
+import { PARAMETER_SUGGESTIONS, type ParameterEntry } from "./types";
+import { formatValueForDisplay, shouldUseTextarea } from "./utils";
 
 /**
  *
@@ -94,7 +94,7 @@ export function ViewMode({ parameters, onEdit, isLoading }: ViewModeProps) {
       className="flex items-start justify-between gap-4"
     >
       <div className="flex-1 flex flex-col gap-3">
-        <CardDescription className="text-sm text-foreground max-w-sm">
+        <CardDescription className="text-sm text-foreground">
           Custom parameters sent with each LLM request.
         </CardDescription>
 
@@ -124,7 +124,11 @@ interface EditModeProps {
   onBeginEdit: (index: number) => void;
   onRemoveRow: (index: number) => void;
   onAddParameter: () => void;
-  onApplySuggestion: (suggestion: { key: string; type: string }) => void;
+  onApplySuggestion: (suggestion: {
+    key: string;
+    type: LlmParameterUIType;
+    example?: JSONValue;
+  }) => void;
   onSave: () => void;
   onCancel: () => void;
   allowCustomParameters?: boolean;
@@ -155,7 +159,7 @@ export function EditMode({
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className="flex flex-col"
     >
-      <CardDescription className="text-sm text-foreground max-w-md mb-4">
+      <CardDescription className="text-sm text-foreground mb-4">
         {allowCustomParameters
           ? "Add custom parameters to send with each LLM request."
           : "Add parameters from the suggestions below. Custom parameters are only available for OpenAI-compatible providers."}
