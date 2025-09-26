@@ -354,6 +354,8 @@ describe("AgentClient", () => {
       // Create a controllable mock generator
       const events: { event: BaseEvent }[] = [];
       let isFinished = false;
+      let eventPromise: Promise<void> | null = null;
+      let eventResolve: (() => void) | null = null;
 
       mockGenerator = {
         async next() {
@@ -363,24 +365,30 @@ describe("AgentClient", () => {
               value: { result: null, newMessages: [] },
             } as IteratorReturnResult<RunAgentResult>;
           }
-          if (events.length === 0) {
-            // If no events and not finished, return a wait event
+
+          // Wait for events to be available
+          while (events.length === 0) {
+            if (!eventPromise) {
+              eventPromise = new Promise<void>((resolve) => {
+                eventResolve = resolve;
+              });
+            }
+            await eventPromise;
+            eventPromise = null;
+            eventResolve = null;
+          }
+
+          // After waiting, if finished, return done
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (isFinished) {
             return {
-              done: false,
-              value: {
-                event: { type: EventType.CUSTOM },
-                messages: [],
-                state: {},
-                agent: {} as any,
-                input: {} as any,
-              } as EventHandlerParams,
-            };
+              done: true,
+              value: { result: null, newMessages: [] },
+            } as IteratorReturnResult<RunAgentResult>;
           }
+
           const event = events.shift()!;
-          // If this is the last event, mark as finished for next call
-          if (events.length === 0) {
-            isFinished = true;
-          }
+          // Don't mark as finished when events are empty - wait for explicit finish() call
           return {
             done: false,
             value: event,
@@ -405,9 +413,15 @@ describe("AgentClient", () => {
         },
         pushEvent: (event: BaseEvent) => {
           events.push({ event });
+          if (eventResolve) {
+            eventResolve();
+          }
         },
         finish: () => {
           isFinished = true;
+          if (eventResolve) {
+            eventResolve();
+          }
         },
       };
 
@@ -445,10 +459,17 @@ describe("AgentClient", () => {
           messageId: "msg-1",
         });
 
+        mockGenerator.pushEvent({
+          type: EventType.RUN_FINISHED,
+          result: "Message completed",
+        });
+
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });
@@ -1015,12 +1036,12 @@ describe("AgentClient", () => {
           result: "Conversation completed",
         });
 
-        mockGenerator.finish();
-
         const responses: AgentResponse[] = [];
         for await (const response of stream) {
           responses.push(response);
         }
+
+        mockGenerator.finish();
 
         expect(responses).toMatchSnapshot();
       });

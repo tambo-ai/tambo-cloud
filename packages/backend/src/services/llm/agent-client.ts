@@ -387,10 +387,10 @@ export class AgentClient {
           break;
         }
         case EventType.TOOL_CALL_RESULT: {
+          const e = event as ToolCallResultEvent;
           currentToolCalls = currentToolCalls.filter(
             (t) => t.id !== e.toolCallId,
           );
-          const e = event as ToolCallResultEvent;
           const messageId = e.messageId;
           currentMessage = {
             ...createNewMessage(MessageRole.Tool, messageId),

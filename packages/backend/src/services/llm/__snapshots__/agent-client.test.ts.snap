@@ -5,10 +5,122 @@ exports[`AgentClient Event Processing Complex Conversation Flow should handle a 
   {
     "message": {
       "content": "",
-      "id": "tambo-assistant-complete",
+      "id": "assistant-msg-1",
       "role": "assistant",
     },
-    "type": "complete",
+    "type": "message",
+  },
+  {
+    "message": {
+      "content": "I can help you with that! Let me check the weather for you.",
+      "id": "assistant-msg-1",
+      "role": "assistant",
+    },
+    "type": "message",
+  },
+  {
+    "message": {
+      "content": "I can help you with that! Let me check the weather for you.",
+      "id": "assistant-msg-1",
+      "role": "assistant",
+      "toolCalls": [
+        {
+          "function": {
+            "arguments": "",
+            "name": "get_weather",
+          },
+          "id": "call-weather-1",
+          "type": "function",
+        },
+      ],
+    },
+    "type": "message",
+  },
+  {
+    "message": {
+      "content": "I can help you with that! Let me check the weather for you.",
+      "id": "assistant-msg-1",
+      "role": "assistant",
+      "toolCalls": [
+        {
+          "function": {
+            "arguments": "{"location": "New York"}",
+            "name": "get_weather",
+          },
+          "id": "call-weather-1",
+          "type": "function",
+        },
+      ],
+    },
+    "type": "message",
+  },
+  {
+    "message": {
+      "content": "I can help you with that! Let me check the weather for you.",
+      "id": "assistant-msg-1",
+      "role": "assistant",
+      "toolCalls": [
+        {
+          "function": {
+            "arguments": "{"location": "New York"}",
+            "name": "get_weather",
+          },
+          "id": "call-weather-1",
+          "type": "function",
+        },
+      ],
+    },
+    "type": "message",
+  },
+  {
+    "message": {
+      "content": "{"temperature": 72, "condition": "sunny"}",
+      "id": "tool-msg-1",
+      "role": "tool",
+      "toolCallId": "call-weather-1",
+    },
+    "type": "message",
+  },
+  {
+    "message": {
+      "content": "",
+      "id": "user-msg-1",
+      "role": "user",
+    },
+    "type": "message",
+  },
+  {
+    "message": {
+      "content": "Thanks! What about tomorrow?",
+      "id": "user-msg-1",
+      "role": "user",
+    },
+    "type": "message",
+  },
+  {
+    "message": {
+      "content": "",
+      "id": "assistant-msg-2",
+      "role": "assistant",
+    },
+    "type": "message",
+  },
+  {
+    "message": {
+      "content": "Tomorrow will be partly cloudy with a high of 75°F.",
+      "id": "assistant-msg-2",
+      "role": "assistant",
+    },
+    "type": "message",
+  },
+  {
+    "complete": true,
+    "message": {
+      "content": "Conversation completed",
+      "id": "message-csjtoe8b6xr",
+      "role": "assistant",
+    },
+    "type": "message",
   },
 ]
 `;
@@ -209,12 +321,13 @@ exports[`AgentClient Event Processing Text Message Events should handle text mes
     "type": "message",
   },
   {
+    "complete": true,
     "message": {
-      "content": "",
-      "id": "tambo-assistant-complete",
+      "content": "Message completed",
+      "id": "message-959z4uw34ju",
       "role": "assistant",
     },
-    "type": "complete",
+    "type": "message",
   },
 ]
 `;
