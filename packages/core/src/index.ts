@@ -15,6 +15,7 @@ export * from "./templates";
 export * from "./threads";
 export * from "./tools";
 export type * from "./typeutils";
+export * from "./email";
 // Auth helpers
 export * from "./agent-registry";
 export * from "./ai-providers";

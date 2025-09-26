@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Resend } from "resend";
 import { FREE_MESSAGE_LIMIT } from "../../threads/types/errors";
-import { isResendEmailUnsubscribed } from "@tambo-ai-cloud/core";
+import { isResendEmailUnsubscribed, maskEmail } from "@tambo-ai-cloud/core";
 import { firstMessageEmail } from "../emails/first-message";
 import { messageLimitEmail } from "../emails/message-limit";
 import { reactivationEmail } from "../emails/reactivation";
@@ -100,11 +100,9 @@ export class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       if (await this.isEmailUnsubscribed(userEmail)) {
-        // Skip send for unsubscribed recipients but respond neutrally to avoid enumeration
-        // Avoid logging raw PII: mask the local part of the email and use debug level
-        const masked = userEmail.replace(/(^.).*?(@.*$)/, "$1***$2");
+        // Skip send for unsubscribed recipients; mask PII and keep logs neutral
         console.debug("Welcome email skipped: recipient is unsubscribed", {
-          email: masked,
+          email: maskEmail(userEmail),
         });
         return { success: true };
       }
@@ -170,10 +168,9 @@ export class EmailService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       if (await this.isEmailUnsubscribed(userEmail)) {
-        // Skip send for unsubscribed recipients but respond neutrally to avoid enumeration
-        const masked = userEmail.replace(/(^.).*?(@.*$)/, "$1***$2");
+        // Skip send for unsubscribed recipients; mask PII and keep logs neutral
         console.debug("Reactivation email skipped: recipient is unsubscribed", {
-          email: masked,
+          email: maskEmail(userEmail),
         });
         return { success: true };
       }
