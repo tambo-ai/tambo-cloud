@@ -6,7 +6,13 @@ import {
   toToolSafeName,
   validateToolName,
 } from "./util.js";
-import type { AbstractAgent, AgentSubscriber } from "@ag-ui/client";
+import type { AbstractAgent } from "@ag-ui/client";
+
+// Minimal local typing to avoid depending on non-exported types from @ag-ui/client
+// Matches the shape we consume: a subscriber with an optional onEvent callback.
+type AgentSubscriber = {
+  onEvent?: (evt: unknown) => void | Promise<void>;
+};
 
 export type McpLikeServer = {
   tool?: (
@@ -69,9 +75,7 @@ export function registerAgentTool(
 ): {
   name: string;
   inputSchema: JSONSchema7;
-  handler: (
-    input: MCPToolInput,
-  ) => Promise<{
+  handler: (input: MCPToolInput) => Promise<{
     content: Array<{ type: string; text: string }>;
     isError?: boolean;
   }>;

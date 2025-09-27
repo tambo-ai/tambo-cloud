@@ -66,9 +66,7 @@ async function createAgentFromConfig(
 
 type ToolRegistryEntry = {
   name: string;
-  handler: (
-    input: MCPToolInput,
-  ) => Promise<{
+  handler: (input: MCPToolInput) => Promise<{
     content: Array<{ type: string; text: string }>;
     isError?: boolean;
   }>;
