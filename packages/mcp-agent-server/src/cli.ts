@@ -5,6 +5,7 @@ import path from "node:path";
 import YAML from "yaml";
 import express from "express";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -20,11 +21,7 @@ import type {
 } from "./types.js";
 import type { JSONSchema7 } from "json-schema";
 import { registerAgentTool } from "./register.js";
-import {
-  buildToolInputSchema,
-  toToolSafeName,
-  validateToolName,
-} from "./util.js";
+import { toToolSafeName, validateToolName, hashConfig } from "./util.js";
 
 async function loadYaml(filePath: string): Promise<AgentsYamlConfigV1> {
   const abs = path.resolve(process.cwd(), filePath);
@@ -129,8 +126,14 @@ function asToolName(entry: AgentYamlEntry): string {
     return entry.toolName;
   }
   if (entry.name) return toToolSafeName(entry.name);
-  // last resort: derive from type
-  return toToolSafeName(entry.type);
+  // Stable, collision-resistant fallback across same-type agents
+  const hash = hashConfig({
+    type: entry.type,
+    url: entry.url,
+    params: entry.params,
+    inputSchema: entry.inputSchema,
+  });
+  return `run_agent_${hash}`;
 }
 
 async function main() {
@@ -154,7 +157,7 @@ async function main() {
   }
 
   // Create the MCP server first so our handlers can elicit input
-  const server = new Server(
+  const mcp = new McpServer(
     {
       name: cfg.server?.name ?? "mcp-agent-server",
       version: cfg.server?.version ?? "0.1.0",
@@ -165,21 +168,21 @@ async function main() {
       },
     },
   );
+  const server = mcp.server;
 
   const registry: ToolRegistryEntry[] = [];
   for (const entry of agents) {
     const agent = await createAgentFromConfig(entry);
     const name = asToolName(entry);
-    const inputSchema = buildToolInputSchema(entry.inputSchema);
     const description = entry.description ?? entry.name ?? undefined;
 
-    const { handler } = registerAgentTool(
-      server,
+    const { handler, inputSchema } = registerAgentTool(
+      mcp,
       {
         ...entry,
         toolName: name,
         description,
-        inputSchema,
+        inputSchema: entry.inputSchema,
         staticParams: entry.params,
       },
       agent,

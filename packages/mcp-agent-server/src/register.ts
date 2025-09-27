@@ -1,36 +1,31 @@
 import type { AgentSpec, MCPToolInput, RegisteredAgentTool } from "./types.js";
 import {
-  ACK_REQUESTED_SCHEMA,
   buildToolInputSchema,
   toToolSafeName,
   validateToolName,
   hashConfig,
 } from "./util.js";
 import type { AbstractAgent, RunAgentParameters } from "@ag-ui/client";
-import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import type { ElicitRequest } from "@modelcontextprotocol/sdk/types.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 /** Fire-and-forget; log but don't throw on elicitation errors. */
-async function tryElicitAck(
-  server: Server | McpServer,
-  message: string,
-): Promise<void> {
-  const payload = { message, requestedSchema: ACK_REQUESTED_SCHEMA } as const;
-  const core: Server = server instanceof McpServer ? server.server : server;
-  // Detach to avoid backpressure on the event path
-  void core.elicitInput(payload as ElicitRequest["params"]).catch(() => {});
+async function tryElicitAck(server: McpServer, message: string): Promise<void> {
+  // Keep behavior predictable for now; await the client's response.
+  await server.server.elicitInput({
+    message,
+    // Minimal, empty object schema so clients can "accept" without fields
+    requestedSchema: { type: "object", properties: {} },
+  });
 }
 
 /**
- * Register an AG-UI agent as an MCP tool on an existing server.
+ * Register an AG-UI agent as an MCP tool on an McpServer.
  *
- * This works with both `mcp-handler` style servers (that expose `server.tool()` and
- * an underlying `.server.elicitInput()`), and raw `@modelcontextprotocol/sdk` servers
- * by returning a Tool spec and a handler you can wire up yourself.
+ * Requires an instance of `McpServer` (not a raw `@modelcontextprotocol/sdk` Server).
+ * Returns a tool spec and a handler you can wire up yourself.
  */
 export function registerAgentTool(
-  server: Server | McpServer,
+  server: McpServer,
   agentSpec: AgentSpec,
   agent: AbstractAgent,
 ): RegisteredAgentTool {
@@ -60,10 +55,11 @@ export function registerAgentTool(
     try {
       const { params, agent: agentOpts } = input;
 
-      const subscriber = {
-        onEvent: async (evt: unknown) => {
-          // Forward every AG-UI event as an elicitation (non-blocking)
-          const text = `ag-ui:${JSON.stringify(evt)}`;
+      type SubscriberParam = Parameters<AbstractAgent["runAgent"]>[1];
+      const subscriber: SubscriberParam = {
+        onEvent: async ({ event }) => {
+          // Forward AG-UI events as elicitations; serialize plainly for now
+          const text = `ag-ui:${JSON.stringify(event)}`;
           await tryElicitAck(server, text);
         },
       };
@@ -77,15 +73,10 @@ export function registerAgentTool(
         },
       };
 
-      type SubscriberParam = Parameters<AbstractAgent["runAgent"]>[1];
-      const result = await agent.runAgent(
-        runArgs,
-        subscriber as SubscriberParam,
-      );
+      const result = await agent.runAgent(runArgs, subscriber);
 
-      // Prefer a compact text output if present; otherwise JSON-stringify the whole result
-      const maybe = (result as { result?: unknown }).result;
-      const payload = typeof maybe === "undefined" ? result : maybe;
+      // Agent returns a RunAgentResult; use its `result` field directly
+      const payload = result.result;
       const text =
         typeof payload === "string" ? payload : JSON.stringify(payload ?? {});
       return { content: [{ type: "text", text }] };
