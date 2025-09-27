@@ -39,8 +39,7 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "mcp-agent-server"
+    "packages/*"
   ],
   "engines": {
     "node": ">=22",

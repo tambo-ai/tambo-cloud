@@ -19,7 +19,7 @@ import type {
   MCPToolInput,
 } from "./types.js";
 import type { JSONSchema7 } from "json-schema";
-import { registerAgentTool, type McpLikeServer } from "./register.js";
+import { registerAgentTool } from "./register.js";
 import {
   buildToolInputSchema,
   toToolSafeName,
@@ -148,11 +148,9 @@ async function main() {
 
   const opts = program.opts<{ config: string; port?: number }>();
   const cfg = await loadYaml(opts.config);
-  const agents = cfg.agents ?? cfg.servers ?? [];
+  const agents = cfg.agents ?? [];
   if (!Array.isArray(agents) || agents.length === 0) {
-    throw new Error(
-      "No agents found in YAML (expected 'agents:' or 'servers:')",
-    );
+    throw new Error("No agents found in YAML (expected 'agents:')");
   }
 
   // Create the MCP server first so our handlers can elicit input
@@ -176,7 +174,7 @@ async function main() {
     const description = entry.description ?? entry.name ?? undefined;
 
     const { handler } = registerAgentTool(
-      server as unknown as McpLikeServer,
+      server,
       {
         ...entry,
         toolName: name,

@@ -18,6 +18,20 @@ export function validateToolName(name: string): void {
 }
 
 /**
+ * Compute a short, stable, non-cryptographic hash for use in fallback tool names.
+ * Uses djb2 over UTF-8 bytes and returns a base36 string (8 chars max).
+ */
+export function hashConfig(value: unknown): string {
+  const text = typeof value === "string" ? value : JSON.stringify(value ?? {});
+  let hash = 5381 >>> 0;
+  for (let i = 0; i < text.length; i++) {
+    // hash * 33 ^ char
+    hash = (((hash << 5) + hash) ^ text.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(36).slice(0, 8);
+}
+
+/**
  * Build the MCP tool input schema from an agent's parameter schema, adding a
  * secondary `agent` argument for runtime options like `tools`.
  */

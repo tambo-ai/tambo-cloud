@@ -1,4 +1,5 @@
 import type { JSONSchema7 } from "json-schema";
+import type { RunAgentParameters } from "@ag-ui/client";
 
 export interface AgentSpec {
   /** Optional human-friendly name used in tool description */
@@ -18,31 +19,21 @@ export interface AgentSpec {
   readonly staticParams?: Record<string, unknown>;
 }
 
-export interface AgentRuntimeOptions {
-  /** Optional set of tools the agent may call; passed through to the agent. */
-  readonly tools?: Array<{
-    name: string;
-    description?: string;
-    inputSchema?: JSONSchema7;
-  }>;
-  /** Optional headers or auth data forwarded to HTTP agents. */
-  readonly headers?: Record<string, string>;
-}
-
 export interface MCPToolInput<TParams = Record<string, unknown>> {
   /** The tool-specific parameters for this agent (first argument). */
   params: TParams;
-  /** Generic agent runtime options (second argument). */
-  agent?: AgentRuntimeOptions;
+  /**
+   * Generic agent runtime options (second argument). Borrowed from @ag-ui/client's
+   * `RunAgentParameters` so we don't duplicate shapes.
+   */
+  agent?: RunAgentParameters;
 }
 
 /** YAML-driven CLI configuration */
 export interface AgentsYamlConfigV1 {
   /** List of agents to expose as MCP tools. */
   agents?: AgentYamlEntry[];
-  /** Back-compat: allow `servers` as an alias for `agents`. */
-  servers?: AgentYamlEntry[];
-  /** Optional server name/version metadata. */
+  /** Optional MCP server name/version metadata; forwarded to the SDK Server constructor. */
   server?: {
     name?: string;
     version?: string;
@@ -59,4 +50,13 @@ export interface AgentYamlEntry extends AgentSpec {
   readonly url?: string;
   /** Static parameters that should be sent to the agent on every run. */
   readonly params?: Record<string, unknown>;
+}
+
+export interface RegisteredAgentTool {
+  name: string;
+  inputSchema: JSONSchema7;
+  handler: (input: MCPToolInput) => Promise<{
+    content: Array<{ type: string; text: string }>;
+    isError?: boolean;
+  }>;
 }
