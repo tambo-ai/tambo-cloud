@@ -23,6 +23,7 @@ jobs:
       contents: read
       actions: read
       checks: write
+      packages: write
     env:
       # Use GitHub's Docker layer caching
       DOCKER_BUILDKIT: 1
@@ -125,6 +126,30 @@ jobs:
         run: |
           ./scripts/tambo-stop.sh
         timeout-minutes: 2
+
+      - name: Login to GitHub Container Registry
+        if: success()
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push web image to GHCR
+        if: success()
+        run: |
+          # Tag the tested image for GHCR
+          docker tag tambo-web:test ghcr.io/tambo-ai/tambo-web-server:latest
+          # Push to GHCR
+          docker push ghcr.io/tambo-ai/tambo-web-server:latest
+
+      - name: Push api image to GHCR
+        if: success()
+        run: |
+          # Tag the tested image for GHCR
+          docker tag tambo-api:test ghcr.io/tambo-ai/tambo-api-server:latest
+          # Push to GHCR
+          docker push ghcr.io/tambo-ai/tambo-api-server:latest
 
       - name: Cleanup
         if: always()
