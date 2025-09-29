@@ -42,7 +42,7 @@ docker network create tambo_network 2>/dev/null || true
 
 # Pull latest images
 echo -e "${YELLOW}📦 Pulling latest images...${NC}"
-docker compose --env-file docker.env pull
+docker compose --env-file docker.env pull || true
 
 # Start all services with BuildKit
 echo -e "${BLUE}🎯 Starting Tambo services with BuildKit...${NC}"
