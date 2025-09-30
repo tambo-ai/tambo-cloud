@@ -27,19 +27,15 @@ export const testTools: Tool[] = [
     },
   },
   {
-    name: "call_llm",
-    description: "Send a message to the caller's LLM using MCP sampling",
+    name: "emojify_via_llm",
+    description:
+      "Send a message to the caller's LLM using MCP sampling to transform it into emojis",
     inputSchema: {
       type: "object",
       properties: {
         message: {
           type: "string",
           description: "The message to send to the LLM",
-        },
-        model: {
-          type: "string",
-          description: "Optional model identifier to use for the LLM call",
-          default: "claude-3-5-sonnet-20241022",
         },
       },
       required: ["message"],
@@ -112,11 +108,10 @@ export const testHandlers = {
     }
   },
 
-  call_llm: async (args: unknown) => {
+  emojify_via_llm: async (args: unknown, server: Server) => {
     try {
-      const { message, model = "claude-3-5-sonnet-20241022" } = args as {
+      const { message } = args as {
         message: string;
-        model?: string;
       };
 
       if (!message || typeof message !== "string") {
@@ -130,23 +125,46 @@ export const testHandlers = {
           isError: true,
         };
       }
+      const response = await server.createMessage({
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: `You are a helpful assistant that transforms messages into emojis.
+               Whatever the user sends you, attempt to transform it into emojis. 
+               
+               If there are specific words or phrases cannot be transformed into emojis, leave them as is.
+               
+               Return only the transformed message, no additional text.`,
+            },
+          },
+          {
+            role: "assistant",
+            content: {
+              type: "text",
+              text: `Ok, got it!`,
+            },
+          },
+          {
+            role: "user",
+            content: { type: "text", text: message },
+          },
+        ],
+        maxTokens: 1000,
+      });
 
       // In a real implementation, this would use MCP sampling to call the LLM
       // For now, we'll return a mock response
       return {
-        content: [
-          {
-            type: "text",
-            text: `[MOCK LLM RESPONSE for model "${model}"]\n\nUser message: "${message}"\n\nThis is a mock response. In a real implementation, this would use MCP sampling to send the message to the LLM and return its response.`,
-          },
-        ],
+        content: response.content,
       };
     } catch (error) {
       return {
         content: [
           {
             type: "text",
-            text: `Error in call_llm: ${error}`,
+            text: `Error in emojify_via_llm: ${error}`,
           },
         ],
         isError: true,
