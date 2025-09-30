@@ -16,9 +16,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "paths": {
-    "@tambo-ai-cloud/eslint-config": ["../../packages/eslint-config/src"]
-  },
+  "paths": {},
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }
