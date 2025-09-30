@@ -22,21 +22,19 @@ Asks the user to choose among a list of string options using MCP elicitation.
 }
 ```
 
-### `call_llm`
+### `emojify_via_llm`
 
 Sends a message to the caller's LLM using MCP sampling.
 
 **Parameters:**
 
 - `message` (required): The message to send to the LLM
-- `model` (optional): Model identifier (defaults to "claude-3-5-sonnet-20241022")
 
 **Example:**
 
 ```json
 {
-  "message": "What is the capital of France?",
-  "model": "claude-3-5-sonnet-20241022"
+  "message": "What is the capital of France?"
 }
 ```
 
@@ -110,7 +108,7 @@ To use this server with Claude for Desktop, add it to your `claude_desktop_confi
 The server provides mock implementations of elicitation and sampling. In a real MCP environment:
 
 1. `ask_user_for_choice` would trigger MCP elicitation to get user input
-2. `call_llm` would use MCP sampling to send messages to the LLM
+2. `emojify_via_llm` would use MCP sampling to transform a message into emojis
 
 Currently, both tools return formatted responses showing what would happen in a real implementation.
 
