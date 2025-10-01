@@ -16,6 +16,8 @@ jest.mock("@tambo-ai-cloud/db", () => {
     operations: {
       getProjectMcpServers: jest.fn(),
       getComposioApps: jest.fn(),
+      getMcpThreadSession: jest.fn(),
+      updateMcpThreadSession: jest.fn(),
     },
     schema,
     getDb: jest.fn(),

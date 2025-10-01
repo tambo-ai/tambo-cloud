@@ -600,10 +600,16 @@ export const mcpThreadSession = pgTable(
   ({ text, timestamp, bigserial }) => ({
     id: bigserial("id", { mode: "bigint" }).primaryKey(),
     threadId: text("thread_id")
-      .references(() => threads.id)
+      .references(() => threads.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
       .notNull(),
     toolProviderId: text("tool_provider_id")
-      .references(() => toolProviders.id)
+      .references(() => toolProviders.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
       .notNull(),
     sessionId: text("session_id"),
     createdAt: timestamp("created_at", { withTimezone: true })

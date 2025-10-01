@@ -626,16 +626,22 @@ export async function updateMcpThreadSession(
   threadId: string,
   toolProviderId: string,
   sessionId: string,
-) {
+): Promise<void> {
   // upsert since we may already have an entry for the session
-  return await db
+  await db
     .insert(schema.mcpThreadSession)
-    .values({ threadId, toolProviderId, sessionId, updatedAt: new Date() })
+    .values({
+      threadId,
+      toolProviderId,
+      sessionId,
+      // Use DB time for consistency
+      updatedAt: sql`now()`,
+    })
     .onConflictDoUpdate({
       target: [
         schema.mcpThreadSession.threadId,
         schema.mcpThreadSession.toolProviderId,
       ],
-      set: { sessionId, updatedAt: new Date() },
+      set: { sessionId, updatedAt: sql`now()` },
     });
 }
