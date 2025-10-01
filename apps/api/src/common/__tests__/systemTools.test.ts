@@ -58,7 +58,7 @@ describe("getSystemTools", () => {
     // mockDb.query.toolProviders.findMany.mockResolvedValue([]);
     const mockDb = getDb("");
 
-    const tools = await getSystemTools(mockDb, "project123");
+    const tools = await getSystemTools(mockDb, "project123", "thread123");
     expect(tools).toEqual({
       mcpToolSources: {},
       mcpToolsSchema: [],
@@ -111,7 +111,7 @@ describe("getSystemTools", () => {
     );
     const mockDb = getDb("");
 
-    const tools = await getSystemTools(mockDb, "project123");
+    const tools = await getSystemTools(mockDb, "project123", "thread123");
     expect(tools).toEqual(
       expect.objectContaining({
         mcpToolSources: {

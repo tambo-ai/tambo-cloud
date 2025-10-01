@@ -57,21 +57,24 @@ export class MCPClient {
   }
 
   /**
-   * Creates and initializes a new MCPClient instance.
-   * This is the recommended way to create an MCPClient as it handles both
-   * instantiation and connection setup.
+   * Creates and initializes a new MCPClient instance. This is the recommended
+   * way to create an MCPClient as it handles both instantiation and connection
+   * setup.
    *
    * @param endpoint - The URL of the MCP server to connect to
    * @param headers - Optional custom headers to include in requests
+   * @param authProvider - Optional auth provider to use for authentication
+   * @param sessionId - Optional session id to use for the MCP client - if not
+   *   provided, a new session will be created
    * @returns A connected MCPClient instance ready for use
    * @throws Will throw an error if connection fails
    */
   static async create(
     endpoint: string,
     transport: MCPTransport = MCPTransport.HTTP,
-    headers?: Record<string, string>,
-    authProvider?: OAuthClientProvider,
-    sessionId?: string,
+    headers: Record<string, string> | undefined,
+    authProvider: OAuthClientProvider | undefined,
+    sessionId: string | undefined,
   ): Promise<MCPClient> {
     const mcpClient = new MCPClient(
       endpoint,
