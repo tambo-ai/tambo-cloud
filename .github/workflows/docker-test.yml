@@ -70,10 +70,10 @@ jobs:
           context: .
           file: ./apps/web/Dockerfile
           push: ${{ steps.should_push.outputs.should_push }}
+          load: ${{ steps.should_push.outputs.should_push == 'false' }}
           tags: |
-            tambo-web:latest
-            ghcr.io/tambo-ai/tambo-web-server:${{ github.sha }}
-            ${{ github.ref == 'refs/heads/main' && 'ghcr.io/tambo-ai/tambo-web-server:latest' || '' }}
+            ${{ steps.should_push.outputs.should_push == 'true' && format('ghcr.io/tambo-ai/tambo-web-server:{0}', github.sha) || 'tambo-web:latest' }}
+            ${{ steps.should_push.outputs.should_push == 'true' && github.ref == 'refs/heads/main' && 'ghcr.io/tambo-ai/tambo-web-server:latest' || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -85,10 +85,10 @@ jobs:
           context: .
           file: ./apps/api/Dockerfile
           push: ${{ steps.should_push.outputs.should_push }}
+          load: ${{ steps.should_push.outputs.should_push == 'false' }}
           tags: |
-            tambo-api:latest
-            ghcr.io/tambo-ai/tambo-api-server:${{ github.sha }}
-            ${{ github.ref == 'refs/heads/main' && 'ghcr.io/tambo-ai/tambo-api-server:latest' || '' }}
+            ${{ steps.should_push.outputs.should_push == 'true' && format('ghcr.io/tambo-ai/tambo-api-server:{0}', github.sha) || 'tambo-api:latest' }}
+            ${{ steps.should_push.outputs.should_push == 'true' && github.ref == 'refs/heads/main' && 'ghcr.io/tambo-ai/tambo-api-server:latest' || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
