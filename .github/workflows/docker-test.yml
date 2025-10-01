@@ -94,6 +94,14 @@ jobs:
           build-args: |
             NODE_ENV=production
 
+      - name: Ensure local tags for stack
+        if: steps.should_push.outputs.should_push == 'true'
+        run: |
+          docker pull ghcr.io/tambo-ai/tambo-web-server:${{ github.sha }}
+          docker tag ghcr.io/tambo-ai/tambo-web-server:${{ github.sha }} tambo-web:latest
+          docker pull ghcr.io/tambo-ai/tambo-api-server:${{ github.sha }}
+          docker tag ghcr.io/tambo-ai/tambo-api-server:${{ github.sha }} tambo-api:latest
+
       - name: Start Docker stack
         run: |
           ./scripts/tambo-start.sh
