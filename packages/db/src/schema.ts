@@ -25,6 +25,7 @@ import {
   pgRole,
   pgSchema,
   pgTable,
+  primaryKey,
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -597,8 +598,7 @@ export const toolProviders = pgTable(
 // where we store the MCP session id.
 export const mcpThreadSession = pgTable(
   "mcp_thread_session",
-  ({ text, timestamp, bigserial }) => ({
-    id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  ({ text, timestamp }) => ({
     threadId: text("thread_id")
       .references(() => threads.id, {
         onDelete: "cascade",
@@ -611,7 +611,7 @@ export const mcpThreadSession = pgTable(
         onUpdate: "cascade",
       })
       .notNull(),
-    sessionId: text("session_id"),
+    sessionId: text("session_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -620,10 +620,10 @@ export const mcpThreadSession = pgTable(
       .notNull(),
   }),
   (table) => [
-    unique("mcp_thread_session_thread_id_tool_provider_id_idx").on(
-      table.threadId,
-      table.toolProviderId,
-    ),
+    primaryKey({
+      name: "mcp_thread_session_pk",
+      columns: [table.threadId, table.toolProviderId],
+    }),
   ],
 );
 
