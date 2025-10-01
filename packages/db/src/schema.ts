@@ -614,7 +614,7 @@ export const mcpThreadSession = pgTable(
       .notNull(),
   }),
   (table) => [
-    index("mcp_thread_session_thread_id_tool_provider_id_idx").on(
+    unique("mcp_thread_session_thread_id_tool_provider_id_idx").on(
       table.threadId,
       table.toolProviderId,
     ),
