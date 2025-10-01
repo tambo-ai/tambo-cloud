@@ -593,6 +593,34 @@ export const toolProviders = pgTable(
   (table) => [index("tool_providers_project_id_idx").on(table.projectId)],
 );
 
+// The combination of a thread id and a tool provider id gives us a unique session for an MCP tool,
+// where we store the MCP session id.
+export const mcpThreadSession = pgTable(
+  "mcp_thread_session",
+  ({ text, timestamp, bigserial }) => ({
+    id: bigserial("id", { mode: "bigint" }).primaryKey(),
+    threadId: text("thread_id")
+      .references(() => threads.id)
+      .notNull(),
+    toolProviderId: text("tool_provider_id")
+      .references(() => toolProviders.id)
+      .notNull(),
+    sessionId: text("session_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  }),
+  (table) => [
+    index("mcp_thread_session_thread_id_tool_provider_id_idx").on(
+      table.threadId,
+      table.toolProviderId,
+    ),
+  ],
+);
+
 export const toolProviderRelations = relations(
   toolProviders,
   ({ one, many }) => ({
