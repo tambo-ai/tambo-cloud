@@ -1,2 +1,0 @@
-DROP INDEX "mcp_thread_session_thread_id_tool_provider_id_idx";--> statement-breakpoint
-ALTER TABLE "mcp_thread_session" ADD CONSTRAINT "mcp_thread_session_thread_id_tool_provider_id_idx" UNIQUE("thread_id","tool_provider_id");

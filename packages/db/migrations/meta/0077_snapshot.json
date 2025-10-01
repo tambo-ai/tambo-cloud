@@ -1,5 +1,5 @@
 {
-  "id": "47e2c8a1-5583-4c34-8841-8b5f144ec640",
+  "id": "b2ce9b7d-8c07-41d3-ad17-31a74ce72c54",
   "prevId": "d83e269f-db1f-4c5b-8ea6-c086bc1a0594",
   "version": "7",
   "dialect": "postgresql",
@@ -502,29 +502,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "mcp_thread_session_thread_id_tool_provider_id_idx": {
-          "name": "mcp_thread_session_thread_id_tool_provider_id_idx",
-          "columns": [
-            {
-              "expression": "thread_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "tool_provider_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "mcp_thread_session_thread_id_threads_id_fk": {
           "name": "mcp_thread_session_thread_id_threads_id_fk",
@@ -546,7 +524,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "mcp_thread_session_thread_id_tool_provider_id_idx": {
+          "name": "mcp_thread_session_thread_id_tool_provider_id_idx",
+          "nullsNotDistinct": false,
+          "columns": ["thread_id", "tool_provider_id"]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
