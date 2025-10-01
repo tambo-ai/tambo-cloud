@@ -1,0 +1,45 @@
+{
+  "name": "@tambo-ai/mcp-agent-server",
+  "version": "0.1.0",
+  "description": "Expose AG-UI agents as MCP tools via a small library and CLI.",
+  "type": "module",
+  "private": false,
+  "bin": {
+    "mcp-agent-server": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "Apache-2.0",
+  "author": "Tambo AI",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "lint": "eslint .",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "test": "echo 'no tests'",
+    "start": "node dist/cli.js",
+    "prepack": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@ag-ui/client": "^0.0.39",
+    "@modelcontextprotocol/sdk": "^1.18.0",
+    "express": "^4.19.2",
+    "commander": "^12.1.0",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.9"
+  }
+}
