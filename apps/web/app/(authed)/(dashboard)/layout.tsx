@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Suspense } from "react";
 import { DashboardThemeProvider } from "@/providers/dashboard-theme-provider";
 
-interface SlackLayoutProps {
+interface DashboardGroupLayoutProps {
   children: React.ReactNode;
 }
 
@@ -18,7 +18,9 @@ const fadeInVariants = {
   },
 };
 
-export default function SlackLayout({ children }: SlackLayoutProps) {
+export default function DashboardGroupLayout({
+  children,
+}: DashboardGroupLayoutProps) {
   return (
     <DashboardThemeProvider defaultTheme="light">
       <div className="flex min-h-screen flex-col bg-background">
