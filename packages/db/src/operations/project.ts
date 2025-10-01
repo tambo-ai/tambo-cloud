@@ -219,12 +219,10 @@ export async function updateProject(
     return project;
   }
 
-  // Always bump the project timestamp on any update for consistency
-  updateData.updatedAt = sql`now()` as unknown as Date;
-
   const updated = await db
     .update(schema.projects)
-    .set(updateData)
+    // Always bump the project timestamp on any update for consistency
+    .set({ ...updateData, updatedAt: sql`now()` })
     .where(eq(schema.projects.id, id))
     .returning();
   return updated.length > 0 ? updated[0] : undefined;
