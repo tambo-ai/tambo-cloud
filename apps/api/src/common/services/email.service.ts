@@ -80,16 +80,19 @@ export class EmailService {
   private requireChannel(kind: "default" | "personal") {
     const resend = this.resend;
     if (!resend)
-      return { ok: false, error: "Email service not configured" } as const;
+      return {
+        success: false,
+        error: "Email service not configured",
+      } as const;
 
     if (kind === "default") {
       if (!this.fromEmailDefault || !this.replyToSupport)
         return {
-          ok: false,
+          success: false,
           error: "Default email channel not configured",
         } as const;
       return {
-        ok: true,
+        success: true,
         resend,
         from: this.fromEmailDefault,
         replyTo: this.replyToSupport,
@@ -98,11 +101,11 @@ export class EmailService {
 
     if (!this.fromEmailPersonal || !this.replyToPersonal)
       return {
-        ok: false,
+        success: false,
         error: "Personal email channel not configured",
       } as const;
     return {
-      ok: true,
+      success: true,
       resend,
       from: this.fromEmailPersonal,
       replyTo: this.replyToPersonal,
@@ -126,7 +129,7 @@ export class EmailService {
     projectName: string,
   ): Promise<{ success: boolean; error?: string }> {
     const ch = this.requireChannel("default");
-    if (!ch.ok) {
+    if (!ch.success) {
       const error = ch.error;
       console.warn(
         `EmailService: skipping message limit notification for ${maskEmail(userEmail)}; ${error}.`,
@@ -161,7 +164,7 @@ export class EmailService {
     firstName?: string | null,
   ): Promise<{ success: boolean; error?: string }> {
     const ch = this.requireChannel("personal");
-    if (!ch.ok) {
+    if (!ch.success) {
       const error = ch.error;
       console.warn(
         `EmailService: skipping welcome email for ${maskEmail(userEmail)}; ${error}.`,
@@ -207,7 +210,7 @@ export class EmailService {
     projectName: string = "your project",
   ): Promise<{ success: boolean; error?: string }> {
     const ch = this.requireChannel("default");
-    if (!ch.ok) {
+    if (!ch.success) {
       const error = ch.error;
       console.warn(
         `EmailService: skipping first message email for ${maskEmail(userEmail)}; ${error}.`,
@@ -249,7 +252,7 @@ export class EmailService {
     firstName?: string | null,
   ): Promise<{ success: boolean; error?: string }> {
     const ch = this.requireChannel("personal");
-    if (!ch.ok) {
+    if (!ch.success) {
       const error = ch.error;
       console.warn(
         `EmailService: skipping reactivation email for ${maskEmail(userEmail)}; ${error}.`,
