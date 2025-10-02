@@ -20,45 +20,93 @@ export class EmailService {
   constructor(private readonly configService: ConfigService) {
     const missing: string[] = [];
 
-    const resendApiKey = this.configService.get<string>("RESEND_API_KEY");
+    // Helper to trim and treat empty/whitespace as undefined
+    const getTrimmed = (key: string) =>
+      this.configService.get<string>(key)?.trim() || undefined;
+
+    const resendApiKey = getTrimmed("RESEND_API_KEY");
     if (!resendApiKey) {
       missing.push("RESEND_API_KEY");
     } else {
       this.resend = new Resend(resendApiKey);
     }
 
-    this.fromEmailDefault =
-      this.configService.get<string>("EMAIL_FROM_DEFAULT") || undefined;
+    this.fromEmailDefault = getTrimmed("EMAIL_FROM_DEFAULT");
     if (!this.fromEmailDefault) {
       missing.push("EMAIL_FROM_DEFAULT");
     }
 
-    this.fromEmailPersonal =
-      this.configService.get<string>("EMAIL_FROM_PERSONAL") || undefined;
+    this.fromEmailPersonal = getTrimmed("EMAIL_FROM_PERSONAL");
     if (!this.fromEmailPersonal) {
       missing.push("EMAIL_FROM_PERSONAL");
     }
 
-    this.replyToSupport =
-      this.configService.get<string>("EMAIL_REPLY_TO_SUPPORT") || undefined;
+    this.replyToSupport = getTrimmed("EMAIL_REPLY_TO_SUPPORT");
     if (!this.replyToSupport) {
       missing.push("EMAIL_REPLY_TO_SUPPORT");
     }
 
-    this.replyToPersonal =
-      this.configService.get<string>("EMAIL_REPLY_TO_PERSONAL") || undefined;
+    this.replyToPersonal = getTrimmed("EMAIL_REPLY_TO_PERSONAL");
     if (!this.replyToPersonal) {
       missing.push("EMAIL_REPLY_TO_PERSONAL");
     }
 
-    const audienceId = this.configService.get<string>("RESEND_AUDIENCE_ID");
-    this.resendAudienceId = audienceId || undefined;
+    this.resendAudienceId = getTrimmed("RESEND_AUDIENCE_ID");
 
+    // Log granular configuration status
     if (missing.length > 0) {
+      const hasResend = Boolean(this.resend);
+      const hasDefaultChannel = Boolean(
+        this.fromEmailDefault && this.replyToSupport,
+      );
+      const hasPersonalChannel = Boolean(
+        this.fromEmailPersonal && this.replyToPersonal,
+      );
+
+      const disabled = [
+        !hasResend && "all emails (no RESEND_API_KEY)",
+        hasResend && !hasDefaultChannel && "default/support emails",
+        hasResend && !hasPersonalChannel && "personal emails",
+      ]
+        .filter(Boolean)
+        .join(", ");
+
       console.warn(
-        `EmailService: email notifications disabled (missing ${missing.join(", ")}).`,
+        `EmailService: partial configuration; ${disabled} disabled. Missing: ${missing.join(", ")}`,
       );
     }
+  }
+
+  private requireChannel(kind: "default" | "personal") {
+    const resend = this.resend;
+    if (!resend)
+      return { ok: false, error: "Email service not configured" } as const;
+
+    if (kind === "default") {
+      if (!this.fromEmailDefault || !this.replyToSupport)
+        return {
+          ok: false,
+          error: "Default email channel not configured",
+        } as const;
+      return {
+        ok: true,
+        resend,
+        from: this.fromEmailDefault,
+        replyTo: this.replyToSupport,
+      } as const;
+    }
+
+    if (!this.fromEmailPersonal || !this.replyToPersonal)
+      return {
+        ok: false,
+        error: "Personal email channel not configured",
+      } as const;
+    return {
+      ok: true,
+      resend,
+      from: this.fromEmailPersonal,
+      replyTo: this.replyToPersonal,
+    } as const;
   }
 
   private async isEmailUnsubscribed(userEmail: string): Promise<boolean> {
@@ -76,22 +124,21 @@ export class EmailService {
     projectId: string,
     userEmail: string,
     projectName: string,
-  ) {
-    const resend = this.resend;
-    const fromEmailDefault = this.fromEmailDefault;
-    const replyToSupport = this.replyToSupport;
-    if (!resend || !fromEmailDefault || !replyToSupport) {
+  ): Promise<{ success: boolean; error?: string }> {
+    const ch = this.requireChannel("default");
+    if (!ch.ok) {
+      const error = ch.error;
       console.warn(
-        "EmailService: skipping message limit notification; email notifications disabled.",
+        `EmailService: skipping message limit notification for ${maskEmail(userEmail)}; ${error}.`,
       );
-      return;
+      return { success: false, error };
     }
 
     try {
-      await resend.emails.send({
-        from: fromEmailDefault,
+      await ch.resend.emails.send({
+        from: ch.from,
         to: userEmail,
-        replyTo: replyToSupport,
+        replyTo: ch.replyTo,
         subject: messageLimitEmail.subject,
         html: messageLimitEmail.html({
           projectId,
@@ -99,8 +146,13 @@ export class EmailService {
           messageLimit: FREE_MESSAGE_LIMIT,
         }),
       });
+      return { success: true };
     } catch (error) {
       console.error("Failed to send message limit notification email:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
   }
 
@@ -108,11 +160,9 @@ export class EmailService {
     userEmail: string,
     firstName?: string | null,
   ): Promise<{ success: boolean; error?: string }> {
-    const resend = this.resend;
-    const fromEmailPersonal = this.fromEmailPersonal;
-    const replyToPersonal = this.replyToPersonal;
-    if (!resend || !fromEmailPersonal || !replyToPersonal) {
-      const error = "Email service not configured";
+    const ch = this.requireChannel("personal");
+    if (!ch.ok) {
+      const error = ch.error;
       console.warn(
         `EmailService: skipping welcome email for ${maskEmail(userEmail)}; ${error}.`,
       );
@@ -126,17 +176,20 @@ export class EmailService {
         });
         return { success: true };
       }
-      const result = await resend.emails.send({
-        from: fromEmailPersonal,
+      const result = await ch.resend.emails.send({
+        from: ch.from,
         to: userEmail,
-        replyTo: replyToPersonal,
+        replyTo: ch.replyTo,
         subject: welcomeEmail.subject,
         html: welcomeEmail.html({
           firstName,
         }),
       });
 
-      console.log(`Welcome email sent successfully to ${userEmail}`, result);
+      const masked = maskEmail(userEmail);
+      console.log(`Welcome email sent successfully to ${masked}`, {
+        id: (result as { data?: { id?: string } }).data?.id,
+      });
 
       return { success: true };
     } catch (error) {
@@ -153,11 +206,9 @@ export class EmailService {
     firstName?: string | null,
     projectName: string = "your project",
   ): Promise<{ success: boolean; error?: string }> {
-    const resend = this.resend;
-    const fromEmailDefault = this.fromEmailDefault;
-    const replyToSupport = this.replyToSupport;
-    if (!resend || !fromEmailDefault || !replyToSupport) {
-      const error = "Email service not configured";
+    const ch = this.requireChannel("default");
+    if (!ch.ok) {
+      const error = ch.error;
       console.warn(
         `EmailService: skipping first message email for ${maskEmail(userEmail)}; ${error}.`,
       );
@@ -165,10 +216,10 @@ export class EmailService {
     }
 
     try {
-      const result = await resend.emails.send({
-        from: fromEmailDefault,
+      const result = await ch.resend.emails.send({
+        from: ch.from,
         to: userEmail,
-        replyTo: replyToSupport,
+        replyTo: ch.replyTo,
         subject: firstMessageEmail.subject,
         html: firstMessageEmail.html({
           firstName,
@@ -176,10 +227,10 @@ export class EmailService {
         }),
       });
 
-      console.log(
-        `First message email sent successfully to ${userEmail}`,
-        result,
-      );
+      const masked = maskEmail(userEmail);
+      console.log(`First message email sent successfully to ${masked}`, {
+        id: (result as { data?: { id?: string } }).data?.id,
+      });
 
       return { success: true };
     } catch (error) {
@@ -197,11 +248,9 @@ export class EmailService {
     hasProject: boolean,
     firstName?: string | null,
   ): Promise<{ success: boolean; error?: string }> {
-    const resend = this.resend;
-    const fromEmailPersonal = this.fromEmailPersonal;
-    const replyToPersonal = this.replyToPersonal;
-    if (!resend || !fromEmailPersonal || !replyToPersonal) {
-      const error = "Email service not configured";
+    const ch = this.requireChannel("personal");
+    if (!ch.ok) {
+      const error = ch.error;
       console.warn(
         `EmailService: skipping reactivation email for ${maskEmail(userEmail)}; ${error}.`,
       );
@@ -215,10 +264,10 @@ export class EmailService {
         });
         return { success: true };
       }
-      const result = await resend.emails.send({
-        from: fromEmailPersonal,
+      const result = await ch.resend.emails.send({
+        from: ch.from,
         to: userEmail,
-        replyTo: replyToPersonal,
+        replyTo: ch.replyTo,
         subject: reactivationEmail.subject,
         html: reactivationEmail.html({
           firstName,
@@ -227,10 +276,10 @@ export class EmailService {
         }),
       });
 
-      console.log(
-        `Reactivation email sent successfully to ${userEmail}`,
-        result,
-      );
+      const masked = maskEmail(userEmail);
+      console.log(`Reactivation email sent successfully to ${masked}`, {
+        id: (result as { data?: { id?: string } }).data?.id,
+      });
 
       return { success: true };
     } catch (error) {
