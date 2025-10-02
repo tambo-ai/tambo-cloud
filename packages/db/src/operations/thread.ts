@@ -176,7 +176,7 @@ export async function updateThread(
     .set({
       contextKey,
       metadata,
-      updatedAt: new Date(),
+      updatedAt: sql`now()`,
       generationStage,
       statusMessage,
       name,
@@ -241,7 +241,7 @@ export async function addMessage(
   // Update the thread's updatedAt timestamp
   await db
     .update(schema.threads)
-    .set({ updatedAt: new Date() })
+    .set({ updatedAt: sql`now()` })
     .where(eq(schema.threads.id, message.threadId));
 
   return message;
@@ -293,7 +293,7 @@ export async function updateMessage(
   // Update the thread's updatedAt timestamp
   await db
     .update(schema.threads)
-    .set({ updatedAt: new Date() })
+    .set({ updatedAt: sql`now()` })
     .where(eq(schema.threads.id, updatedMessage.threadId));
 
   return updatedMessage;
@@ -358,7 +358,7 @@ export async function updateThreadGenerationStatus(
     .set({
       generationStage,
       statusMessage,
-      updatedAt: new Date(),
+      updatedAt: sql`now()`,
     })
     .where(eq(schema.threads.id, threadId))
     .returning();
@@ -603,4 +603,45 @@ export async function countThreadsByProjectWithSearch(
     .from(schema.threads)
     .where(and(...whereConditions));
   return count;
+}
+
+export async function getMcpThreadSession(
+  db: HydraDb,
+  threadId: string,
+  toolProviderId: string,
+) {
+  return await db.query.mcpThreadSession.findFirst({
+    where: and(
+      eq(schema.mcpThreadSession.threadId, threadId),
+      eq(schema.mcpThreadSession.toolProviderId, toolProviderId),
+    ),
+    columns: {
+      sessionId: true,
+    },
+  });
+}
+
+export async function updateMcpThreadSession(
+  db: HydraDb,
+  threadId: string,
+  toolProviderId: string,
+  sessionId: string,
+): Promise<void> {
+  // upsert since we may already have an entry for the session
+  await db
+    .insert(schema.mcpThreadSession)
+    .values({
+      threadId,
+      toolProviderId,
+      sessionId,
+      // Use DB time for consistency
+      updatedAt: sql`now()`,
+    })
+    .onConflictDoUpdate({
+      target: [
+        schema.mcpThreadSession.threadId,
+        schema.mcpThreadSession.toolProviderId,
+      ],
+      set: { sessionId, updatedAt: sql`now()` },
+    });
 }

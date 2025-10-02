@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 import { getDb, schema } from "@tambo-ai-cloud/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
@@ -55,21 +55,17 @@ export async function POST(req: Request) {
     if (env.RESEND_API_KEY && env.RESEND_AUDIENCE_ID) {
       try {
         const resend = new Resend(env.RESEND_API_KEY);
-
-        // Add to Resend audience
-        const audienceResponse = await resend.contacts.create({
+        // Create or update contact but do not override unsubscribe
+        const upsert = await resend.contacts.create({
           audienceId: env.RESEND_AUDIENCE_ID,
           email,
-          firstName: firstName,
+          firstName,
           ...(lastName && { lastName }),
-          unsubscribed: false,
         });
-
-        if (audienceResponse.error) {
-          console.error("Resend API error:", audienceResponse.error);
-        } else if (audienceResponse.data?.id) {
-          // Store the Resend contact ID in metadata
-          resendContactId = audienceResponse.data.id;
+        if (upsert.error) {
+          console.error("Resend API error:", upsert.error);
+        } else if (upsert.data?.id) {
+          resendContactId = upsert.data.id;
           metadata.resendContactId = resendContactId;
           console.log(`Added to Resend audience with ID: ${resendContactId}`);
         }
@@ -94,7 +90,7 @@ export async function POST(req: Request) {
             ...existingContact[0].metadata,
             ...metadata,
           },
-          updatedAt: new Date(),
+          updatedAt: sql`now()`,
         })
         .where(eq(schema.contacts.email, email))
         .returning();
