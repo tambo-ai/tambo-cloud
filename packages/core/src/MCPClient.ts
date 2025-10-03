@@ -96,7 +96,6 @@ export class MCPClient {
   static readonly BACKOFF_MAX_MS = 30_000;
   static readonly BACKOFF_JITTER_RATIO = 0.2;
 
-  public elicitation: EventTarget = new EventTarget();
   /**
    * Private constructor to enforce using the static create method.
    * @param endpoint - The URL of the MCP server to connect to
