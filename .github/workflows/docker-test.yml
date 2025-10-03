@@ -9,13 +9,9 @@ on:
     branches:
       - main
       - develop
+  release:
+    types: [published]
   workflow_dispatch:
-  workflow_call:
-    inputs:
-      release_tag:
-        description: "Release tag to use for Docker images (e.g., repo-v0.110.0)"
-        required: false
-        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -56,11 +52,11 @@ jobs:
       - name: Determine if we should push to GHCR
         id: should_push
         run: |
-          # Push to GHCR when called from release-please with a release tag
-          if [[ -n "${{ inputs.release_tag }}" ]]; then
+          # Push to GHCR only when a release is published
+          if [[ "${{ github.event_name }}" == "release" ]]; then
             echo "should_push=true" >> $GITHUB_OUTPUT
-            echo "release_tag=${{ inputs.release_tag }}" >> $GITHUB_OUTPUT
-            echo "Pushing to GHCR with release tag: ${{ inputs.release_tag }}"
+            echo "release_tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+            echo "Pushing to GHCR with release tag: ${{ github.event.release.tag_name }}"
           else
             echo "should_push=false" >> $GITHUB_OUTPUT
             echo "release_tag=" >> $GITHUB_OUTPUT
