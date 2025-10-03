@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -44,6 +45,7 @@ jobs:
           git checkout deploy
           git merge --no-ff main -m "chore: merge main into deploy for release ${{ steps.release.outputs.tag_name }}"
           git push origin deploy
+
       - name: Notify Slack of Deploy Start
         if: ${{ steps.release.outputs.release_created }}
         uses: slackapi/slack-github-action@v2.1.1
@@ -91,3 +93,17 @@ jobs:
           sentry-cli releases new "$VERSION"
           sentry-cli releases set-commits "$VERSION" --auto
           sentry-cli releases finalize "$VERSION"
+
+  build-and-push-docker:
+    name: Build and Push Docker Images
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/docker-test.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      packages: write
+    with:
+      release_tag: ${{ needs.release-please.outputs.tag_name }}
