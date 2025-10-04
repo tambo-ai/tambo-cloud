@@ -1063,7 +1063,8 @@ export class ThreadsService {
       const systemToolsStart = Date.now();
 
       const systemTools =
-        cachedSystemTools ?? (await getSystemTools(db, projectId, thread.id));
+        cachedSystemTools ??
+        (await getSystemTools(db, projectId, thread.id, tamboBackend));
       const systemToolsEnd = Date.now();
       const systemToolsDuration = systemToolsEnd - systemToolsStart;
       if (!cachedSystemTools) {

@@ -1,7 +1,13 @@
 import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import { Logger } from "@nestjs/common";
-import { McpToolRegistry } from "@tambo-ai-cloud/backend";
-import { getToolName, LogLevel, MCPClient } from "@tambo-ai-cloud/core";
+import { ITamboBackend, McpToolRegistry } from "@tambo-ai-cloud/backend";
+import {
+  ChatCompletionContentPartText,
+  ChatCompletionMessageParam,
+  getToolName,
+  LogLevel,
+  MCPClient,
+} from "@tambo-ai-cloud/core";
 import {
   HydraDatabase,
   HydraDb,
@@ -20,11 +26,13 @@ export async function getSystemTools(
   db: HydraDatabase,
   projectId: string,
   threadId: string,
+  tamboBackend: ITamboBackend,
 ): Promise<McpToolRegistry> {
   const { mcpToolsSchema, mcpToolSources } = await getMcpTools(
     db,
     projectId,
     threadId,
+    tamboBackend,
   );
 
   const mcpToolNames = mcpToolsSchema.map((tool) => getToolName(tool));
@@ -50,6 +58,7 @@ async function getMcpTools(
   db: HydraDatabase,
   projectId: string,
   threadId: string,
+  tamboBackend: ITamboBackend,
 ): Promise<McpToolRegistry> {
   const mcpServers = await operations.getProjectMcpServers(db, projectId, null);
 
@@ -96,13 +105,21 @@ async function getMcpTools(
         {
           async sampling(e) {
             console.log("Got sampling request", e.method, e.params.messages[0]);
+            const response = await tamboBackend.llmClient.complete({
+              stream: false,
+              promptTemplateName: "sampling",
+              promptTemplateParams: {},
+              messages: e.params.messages.map(
+                (m): ChatCompletionMessageParam => ({
+                  role: m.role as string as "assistant",
+                  content: [m.content as ChatCompletionContentPartText],
+                }),
+              ),
+            });
             return {
-              role: "assistant",
-              content: {
-                text: "This is a sample test response! It should be very long.",
-                type: "text",
-              },
-              model: "foobar",
+              role: response.message.role,
+              content: { type: "text", text: response.message.content ?? "" },
+              model: tamboBackend.modelOptions.model,
             };
           },
         },
