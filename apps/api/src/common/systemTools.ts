@@ -93,6 +93,19 @@ async function getMcpTools(
         customHeaders,
         authProvider,
         mcpSessionInfo?.sessionId ?? undefined,
+        {
+          async sampling(e) {
+            console.log("Got sampling request", e.method, e.params.messages[0]);
+            return {
+              role: "assistant",
+              content: {
+                text: "This is a sample test response! It should be very long.",
+                type: "text",
+              },
+              model: "foobar",
+            };
+          },
+        },
       );
       if (
         mcpClient.sessionId &&
