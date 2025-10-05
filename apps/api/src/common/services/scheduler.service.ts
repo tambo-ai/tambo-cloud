@@ -80,11 +80,27 @@ export class SchedulerService {
               (1000 * 60 * 60 * 24),
           );
 
+          // Extract first name from user metadata
+          const metadata = user.rawUserMetaData as Record<
+            string,
+            unknown
+          > | null;
+          const firstName = metadata
+            ? (metadata.first_name as string | undefined) ||
+              (typeof metadata.name === "string"
+                ? metadata.name.split(" ")[0]
+                : undefined) ||
+              (typeof metadata.full_name === "string"
+                ? metadata.full_name.split(" ")[0]
+                : undefined)
+            : undefined;
+
           // Send reactivation email
           const result = await this.emailService.sendReactivationEmail(
             user.email ?? "",
             daysSinceSignup,
             lifecycleTracking.hasSetupProject,
+            firstName,
           );
 
           if (result.success) {

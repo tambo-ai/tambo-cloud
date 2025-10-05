@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { type HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
+import { SchedulerService } from "../common/services/scheduler.service";
 import { APIKeyResponse } from "./dto/api-key-response.dto";
 import {
   ProjectResponse,
@@ -18,6 +19,7 @@ export class ProjectsService {
     @Inject(DATABASE)
     private readonly db: HydraDatabase,
     private readonly config: ConfigService,
+    private readonly schedulerService: SchedulerService,
   ) {}
 
   getDb() {
@@ -37,6 +39,12 @@ export class ProjectsService {
       name: createProjectDto.name || "New Project",
       userId: createProjectDto.userId,
     });
+
+    // Update user activity tracking to mark that user has created a project
+    await this.schedulerService.updateUserActivity(
+      createProjectDto.userId,
+      project.id,
+    );
 
     return {
       id: project.id,
