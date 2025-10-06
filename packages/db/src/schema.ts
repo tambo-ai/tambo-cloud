@@ -483,6 +483,7 @@ export const messages = pgTable(
             OR (jsonb_typeof(${table.reasoning}->'json') = 'array' AND
                 jsonb_array_length(${table.reasoning}->'json') <= 200)`,
       ),
+      index("messages_parent_message_id_idx").on(table.parentMessageId),
     ];
   },
 );
