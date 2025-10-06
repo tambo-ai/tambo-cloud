@@ -66,9 +66,9 @@ export class SchedulerService {
           }
 
           // Check if user is inactive
+          const hasProject = user.projects.length > 0;
           const isInactive =
-            lifecycleTracking.lastActivityAt < twoWeeksAgo ||
-            !lifecycleTracking.hasSetupProject;
+            lifecycleTracking.lastActivityAt < twoWeeksAgo || !hasProject;
 
           if (!isInactive) {
             continue;
@@ -81,25 +81,21 @@ export class SchedulerService {
           );
 
           // Extract first name from user metadata
-          const metadata = user.rawUserMetaData as Record<
-            string,
-            unknown
-          > | null;
-          const firstName = metadata
-            ? (metadata.first_name as string | undefined) ||
-              (typeof metadata.name === "string"
-                ? metadata.name.split(" ")[0]
-                : undefined) ||
-              (typeof metadata.full_name === "string"
-                ? metadata.full_name.split(" ")[0]
-                : undefined)
-            : undefined;
+          const metadata = user.rawUserMetaData as {
+            first_name?: string;
+            name?: string;
+            full_name?: string;
+          } | null;
+          const firstName =
+            metadata?.first_name ||
+            metadata?.name?.split(" ")[0] ||
+            metadata?.full_name?.split(" ")[0];
 
           // Send reactivation email
           const result = await this.emailService.sendReactivationEmail(
             user.email ?? "",
             daysSinceSignup,
-            lifecycleTracking.hasSetupProject,
+            hasProject,
             firstName,
           );
 

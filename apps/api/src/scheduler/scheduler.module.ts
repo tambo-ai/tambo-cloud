@@ -9,6 +9,5 @@ import { SchedulerController } from "./scheduler.controller";
   imports: [ScheduleModule.forRoot(), ConfigModule],
   controllers: [SchedulerController],
   providers: [SchedulerService, EmailService, ConfigService],
-  exports: [SchedulerService],
 })
 export class SchedulerModule {}
