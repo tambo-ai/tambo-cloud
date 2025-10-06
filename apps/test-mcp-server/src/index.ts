@@ -4,6 +4,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {
   CallToolRequestSchema,
+  CallToolResult,
   isInitializeRequest,
   ListToolsRequestSchema,
   type CallToolRequest,
@@ -43,7 +44,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 // Handle call tool request
 server.setRequestHandler(
   CallToolRequestSchema,
-  async (request: CallToolRequest) => {
+  async (request: CallToolRequest): Promise<CallToolResult> => {
     const { name, arguments: args } = request.params;
 
     const handler = serviceRegistry.getHandler(name);

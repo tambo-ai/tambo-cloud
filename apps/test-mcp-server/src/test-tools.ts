@@ -1,6 +1,11 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { type Tool } from "@modelcontextprotocol/sdk/types.js";
+import {
+  CallToolResult,
+  CreateMessageResult,
+  type Tool,
+} from "@modelcontextprotocol/sdk/types.js";
 
+//type CreateMessageResult = Awaited<ReturnType<Server["createMessage"]>>;
 // Test tool definitions
 export const testTools: Tool[] = [
   {
@@ -45,7 +50,10 @@ export const testTools: Tool[] = [
 
 // Test tool handlers
 export const testHandlers = {
-  ask_user_for_choice: async (args: unknown, server: Server) => {
+  ask_user_for_choice: async (
+    args: unknown,
+    server: Server,
+  ): Promise<CallToolResult> => {
     try {
       const { choices, prompt = "Please choose from the following options:" } =
         args as {
@@ -108,7 +116,10 @@ export const testHandlers = {
     }
   },
 
-  emojify_via_llm: async (args: unknown, server: Server) => {
+  emojify_via_llm: async (
+    args: unknown,
+    server: Server,
+  ): Promise<CallToolResult> => {
     try {
       const { message } = args as {
         message: string;
@@ -156,8 +167,9 @@ export const testHandlers = {
 
       // In a real implementation, this would use MCP sampling to call the LLM
       // For now, we'll return a mock response
+
       return {
-        content: response.content,
+        content: toTextContentArray(response.content),
       };
     } catch (error) {
       return {
@@ -172,3 +184,22 @@ export const testHandlers = {
     }
   },
 };
+
+function toTextContentArray(
+  content: CreateMessageResult["content"],
+): CallToolResult["content"] {
+  switch (content.type) {
+    case "text":
+      return [{ type: "text", text: content.text }];
+    case "image":
+      return [
+        { type: "image", mimeType: content.mimeType, data: content.data },
+      ];
+    case "audio":
+      return [
+        { type: "audio", mimeType: content.mimeType, data: content.data },
+      ];
+    default:
+      throw new Error(`Unknown content type: ${content}`);
+  }
+}
