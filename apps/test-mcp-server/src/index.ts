@@ -149,10 +149,16 @@ async function main() {
     enableSessionManagement: options.sessionManagement !== false, // Default to true unless explicitly disabled
     enableDnsRebindingProtection: options.enableDnsRebindingProtection || false,
     allowedHosts: options.allowedHosts
-      ? options.allowedHosts.split(",")
+      ? options.allowedHosts
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean)
       : undefined,
     allowedOrigins: options.allowedOrigins
-      ? options.allowedOrigins.split(",")
+      ? options.allowedOrigins
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean)
       : undefined,
   };
 
@@ -249,7 +255,27 @@ async function main() {
       const httpReq = req as any;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const httpRes = res as any;
-      await transport.handleRequest(httpReq, httpRes, req.body);
+      let originalErr: unknown;
+      try {
+        await transport.handleRequest(httpReq, httpRes, req.body);
+      } catch (e) {
+        originalErr = e;
+      } finally {
+        if (!enableSessionManagement) {
+          const maybeClose = (
+            transport as { close?: () => void | Promise<void> }
+          ).close;
+          if (typeof maybeClose === "function") {
+            try {
+              await maybeClose.call(transport);
+            } catch (closeErr) {
+              console.error("Error closing transport", closeErr);
+              if (!originalErr) originalErr = closeErr;
+            }
+          }
+        }
+      }
+      if (originalErr) throw originalErr;
     });
 
     // Reusable handler for GET and DELETE requests
@@ -284,8 +310,9 @@ async function main() {
     // Handle DELETE requests for session termination
     app.delete("/mcp", handleSessionRequest);
 
-    app.listen(port, () => {
-      console.error(`Test MCP server running on http://localhost:${port}/mcp`);
+    const host = process.env.HOST ?? "127.0.0.1";
+    app.listen(port, host, () => {
+      console.error(`Test MCP server running on http://${host}:${port}/mcp`);
       console.error(
         `Session management: ${enableSessionManagement ? "enabled" : "disabled"}`,
       );

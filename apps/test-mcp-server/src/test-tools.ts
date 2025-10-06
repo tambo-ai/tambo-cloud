@@ -80,24 +80,22 @@ export const testHandlers = {
         requestedSchema: {
           type: "object",
           properties: {
-            choice: { type: "string" },
+            choice: { type: "string", enum: choices },
           },
+          required: ["choice"],
         },
-        required: ["choice"],
       });
       console.log("Elicitation response", response);
 
       // Format the choices for display
-      const choicesText = choices
-        .map((choice, index) => `${index + 1}. ${choice}`)
-        .join("\n");
+      const choicesText = choices.map((choice) => `- ${choice}`).join("\n");
 
       // Return the elicitation request
       return {
         content: [
           {
             type: "text",
-            text: `${prompt}\n\n${choicesText}\n\nPlease respond with the number (1-${choices.length}) of your choice.`,
+            text: `${prompt}\n\n${choicesText}\n\nPlease respond with your choice exactly as written.`,
           },
         ],
         // Note: In a real implementation, this would trigger MCP elicitation

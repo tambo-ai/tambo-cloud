@@ -38,7 +38,7 @@ export class McpServiceRegistry {
 
   // Get all registered tools
   getAllTools(): Tool[] {
-    return this.allTools;
+    return [...this.allTools];
   }
 
   // Get handler for a specific tool

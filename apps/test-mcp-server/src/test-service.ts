@@ -1,4 +1,4 @@
-import { type McpService } from "./mcp-service";
+import { type McpService } from "./mcp-service.js";
 import { testHandlers, testTools } from "./test-tools.js";
 
 // Test service implementation
