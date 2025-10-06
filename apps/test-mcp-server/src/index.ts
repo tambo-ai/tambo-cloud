@@ -146,7 +146,7 @@ async function main() {
   // Process command line options
   const parseList = (v?: string): string[] | undefined => {
     const items = v
-      ? (v)
+      ? v
           .split(",")
           .map((s: string) => s.trim())
           .filter(Boolean)
@@ -261,16 +261,11 @@ async function main() {
         originalErr = e;
       } finally {
         if (!enableSessionManagement) {
-          const maybeClose = (
-            transport as { close?: () => void | Promise<void> }
-          ).close;
-          if (typeof maybeClose === "function") {
-            try {
-              await maybeClose.call(transport);
-            } catch (closeErr) {
-              console.error("Error closing transport", closeErr);
-              if (!originalErr) originalErr = closeErr;
-            }
+          try {
+            await transport.close();
+          } catch (closeErr) {
+            // Log cleanup failure but do not convert a successful request into an error
+            console.error("Error closing transport", closeErr);
           }
         }
       }
