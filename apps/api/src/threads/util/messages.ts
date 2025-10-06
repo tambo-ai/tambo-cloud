@@ -57,6 +57,7 @@ export async function addMessage(
     id: message.id,
     threadId: message.threadId,
     role: message.role,
+    parentMessageId: message.parentMessageId ?? undefined,
     metadata: message.metadata ?? undefined,
     actionType: message.actionType ?? undefined,
     toolCallRequest: message.toolCallRequest ?? undefined,
@@ -106,6 +107,7 @@ export async function updateMessage(
 
   return {
     ...message,
+    parentMessageId: message.parentMessageId ?? undefined, // TODO: leave alone
     content: convertContentPartToDto(message.content),
     metadata: message.metadata ?? undefined,
     toolCallRequest: message.toolCallRequest ?? undefined,

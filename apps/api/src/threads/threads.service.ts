@@ -337,6 +337,7 @@ export class ThreadsService {
           id: message.id,
           threadId: message.threadId,
           role: message.role,
+          parentMessageId: message.parentMessageId ?? undefined,
           createdAt: message.createdAt,
           component: message.componentDecision ?? undefined,
           content: convertContentPartToDto(message.content),
@@ -615,6 +616,7 @@ export class ThreadsService {
       .filter((message) => includeSystem || message.role !== MessageRole.System)
       .map((message) => ({
         ...message,
+        parentMessageId: message.parentMessageId ?? undefined, // TODO: leave alone
         content: convertContentPartToDto(message.content),
         metadata: message.metadata ?? undefined,
         toolCallRequest: message.toolCallRequest ?? undefined,
@@ -878,6 +880,7 @@ export class ThreadsService {
     );
     return {
       ...message,
+      parentMessageId: message.parentMessageId ?? undefined, // TODO: leave alone
       content: convertContentPartToDto(message.content),
       metadata: message.metadata ?? undefined,
       componentState: message.componentState ?? {},
