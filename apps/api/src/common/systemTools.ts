@@ -116,6 +116,7 @@ async function getMcpTools(
                 }),
               ),
             });
+            console.log("Got sampling response", response.message);
             return {
               role: response.message.role,
               content: { type: "text", text: response.message.content ?? "" },
