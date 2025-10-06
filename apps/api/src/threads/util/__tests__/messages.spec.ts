@@ -61,6 +61,7 @@ describe("messages utilities", () => {
         id: "msg1",
         threadId: "thread1",
         role: MessageRole.User,
+        parentMessageId: null,
         content: [{ type: "text" as ContentPartType.Text, text: "Hello" }],
         additionalContext: { extra: "context" },
         createdAt: new Date(),
@@ -124,6 +125,7 @@ describe("messages utilities", () => {
         id: "msg1",
         threadId: "thread1",
         role: MessageRole.User,
+        parentMessageId: null,
         content: [
           { type: "text" as ContentPartType.Text, text: "Updated message" },
         ],
@@ -248,6 +250,7 @@ describe("messages utilities", () => {
         id: "msg1",
         threadId: "thread1",
         role: MessageRole.User,
+        parentMessageId: null,
         content: [
           {
             type: "text" as ContentPartType.Text,
@@ -269,6 +272,7 @@ describe("messages utilities", () => {
 
       const newMessage: ThreadMessage = {
         ...mockMessage,
+        parentMessageId: mockMessage.parentMessageId ?? undefined,
         componentState: {},
         actionType: ActionType.ToolCall,
         metadata: {},

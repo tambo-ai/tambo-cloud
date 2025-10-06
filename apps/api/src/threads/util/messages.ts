@@ -107,6 +107,7 @@ export async function updateMessage(
 
   return {
     ...message,
+    parentMessageId: message.parentMessageId ?? undefined,
     content: convertContentPartToDto(message.content),
     metadata: message.metadata ?? undefined,
     toolCallRequest: message.toolCallRequest ?? undefined,
