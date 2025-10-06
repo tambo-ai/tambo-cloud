@@ -14,7 +14,7 @@ import {
 } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
-  ChatCompletionContentPartText,
+  ChatCompletionContentPart,
   ChatCompletionMessageParam,
   ComponentDecisionV2,
   ContentPartType,
@@ -33,6 +33,7 @@ import {
 import type { HydraDatabase, HydraDb } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
+import mimeTypes from "mime-types";
 import OpenAI from "openai";
 import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { AuthService } from "../common/services/auth.service";
@@ -44,7 +45,11 @@ import {
   AdvanceThreadDto,
   AdvanceThreadResponseDto,
 } from "./dto/advance-thread.dto";
-import { MessageRequest, ThreadMessageDto } from "./dto/message.dto";
+import {
+  AudioFormat,
+  MessageRequest,
+  ThreadMessageDto,
+} from "./dto/message.dto";
 import { SuggestionDto } from "./dto/suggestion.dto";
 import { SuggestionsGenerateDto } from "./dto/suggestions-generate.dto";
 import { Thread, ThreadRequest, ThreadWithMessagesDto } from "./dto/thread.dto";
@@ -2197,15 +2202,14 @@ async function syncThreadStatus(
 function createMcpHandlers(tamboBackend: ITamboBackend): MCPHandlers {
   return {
     async sampling(e) {
-      console.log("Got sampling request", e.method, e.params.messages[0]);
       const response = await tamboBackend.llmClient.complete({
         stream: false,
         promptTemplateName: "sampling",
         promptTemplateParams: {},
         messages: e.params.messages.map(
           (m): ChatCompletionMessageParam => ({
-            role: m.role as string as "assistant",
-            content: [m.content as ChatCompletionContentPartText],
+            role: m.role as string as "user",
+            content: [mcpContentToContentPart(m.content)],
           }),
         ),
       });
@@ -2220,4 +2224,36 @@ function createMcpHandlers(tamboBackend: ITamboBackend): MCPHandlers {
       throw new Error("Not implemented yet");
     },
   };
+}
+
+type McpContent = Parameters<
+  MCPHandlers["sampling"]
+>[0]["params"]["messages"][0]["content"];
+
+function mcpContentToContentPart(
+  content: McpContent,
+): ChatCompletionContentPart {
+  switch (content.type) {
+    case "text":
+      return { type: ContentPartType.Text, text: content.text };
+    case "image":
+      // TODO: convert from image to image url?
+      return {
+        type: ContentPartType.ImageUrl,
+        image_url: {
+          url: `data:${content.mimeType};base64,${Buffer.from(content.data).toString("base64")}`,
+        },
+      };
+
+    case "audio":
+      return {
+        type: ContentPartType.InputAudio,
+        input_audio: {
+          data: content.data,
+          format: mimeTypes.extension(content.mimeType) as AudioFormat,
+        },
+      };
+    default:
+      throw new Error(`Unknown content type: ${content}`);
+  }
 }
