@@ -2208,7 +2208,7 @@ function createMcpHandlers(tamboBackend: ITamboBackend): MCPHandlers {
         promptTemplateParams: {},
         messages: e.params.messages.map(
           (m): ChatCompletionMessageParam => ({
-            role: m.role as string as "user",
+            role: m.role as string as "user", // Have to force this to "user" to let audio/image content through
             content: [mcpContentToContentPart(m.content)],
           }),
         ),
@@ -2245,14 +2245,26 @@ function mcpContentToContentPart(
         },
       };
 
-    case "audio":
+    case "audio": {
+      const format = mimeTypes.extension(content.mimeType);
+      if (![AudioFormat.MP3, AudioFormat.WAV].includes(format as AudioFormat)) {
+        console.warn(
+          `Unknown audio format: ${content.mimeType}, returning text content`,
+        );
+        return {
+          type: ContentPartType.Text,
+          text: "[Audio content not supported]",
+        };
+      }
       return {
         type: ContentPartType.InputAudio,
         input_audio: {
           data: content.data,
-          format: mimeTypes.extension(content.mimeType) as AudioFormat,
+          // has to be "mp3" or "wav"
+          format,
         },
       };
+    }
     default:
       throw new Error(`Unknown content type: ${content}`);
   }
