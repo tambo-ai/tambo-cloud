@@ -17,28 +17,28 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
     DISALLOWED_EMAIL_DOMAINS: z.string().min(1).optional(),
-    INTERNAL_SLACK_USER_ID: z.string().min(1).optional(),
-    SLACK_OAUTH_TOKEN: z.string().min(1).optional(),
+    INTERNAL_SLACK_USER_ID: z.string().transform(allowEmptyString).optional(),
+    SLACK_OAUTH_TOKEN: z.string().transform(allowEmptyString).optional(),
     PORT: z.string().min(1).optional(),
     DATABASE_URL: z.string().min(1),
     /** Generate with `openssl rand -hex 32` */
     API_KEY_SECRET: z.string().min(8),
     /** Generate with `openssl rand -hex 32` */
     PROVIDER_KEY_SECRET: z.string().min(8),
-    RESEND_API_KEY: z.string().min(1).optional(),
-    RESEND_AUDIENCE_ID: z.string().min(1).optional(),
+    RESEND_API_KEY: z.string().transform(allowEmptyString).optional(),
+    RESEND_AUDIENCE_ID: z.string().transform(allowEmptyString).optional(),
     // for smoketesting
-    WEATHER_API_KEY: z.string().min(1).optional(),
+    WEATHER_API_KEY: z.string().transform(allowEmptyString).optional(),
     // Dev-only, allow testing server-side MCP servers running locally
     ALLOW_LOCAL_MCP_SERVERS: z.string().min(1).optional(),
-    GITHUB_TOKEN: z.string().min(1).optional(),
+    GITHUB_TOKEN: z.string().transform(allowEmptyString).optional(),
     // NextAuth OAuth providers
     GITHUB_CLIENT_ID: z.string().transform(allowEmptyString).optional(),
     GITHUB_CLIENT_SECRET: z.string().transform(allowEmptyString).optional(),
     GOOGLE_CLIENT_ID: z.string().transform(allowEmptyString).optional(),
     GOOGLE_CLIENT_SECRET: z.string().transform(allowEmptyString).optional(),
     /** Generate with `openssl rand -hex 32` */
-    NEXTAUTH_SECRET: z.string().min(8),
+    NEXTAUTH_SECRET: z.string().transform(allowEmptyString).optional(),
     /** URL of the client app so we can redirect back to it after auth, e.g. https://tambo.co or http://localhost:3000 */
     NEXTAUTH_URL: z.string().url(),
     /** Email address to send emails from. Required if using email authentication. */
@@ -49,7 +49,7 @@ export const env = createEnv({
     TAMBO_WHITELABEL_ORG_LOGO: z.string().url().optional(),
     // Restrict logins to a specific verified email domain when self-hosting.
     // When unset, any verified email is allowed.
-    ALLOWED_LOGIN_DOMAIN: z.string().min(1).optional(),
+    ALLOWED_LOGIN_DOMAIN: z.string().transform(allowEmptyString).optional(),
   },
   /*
    * Environment variables available on the client (and server).
@@ -58,10 +58,13 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-    NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
-    NEXT_PUBLIC_POSTHOG_HOST: z.string().min(1).optional(),
+    NEXT_PUBLIC_POSTHOG_KEY: z.string().transform(allowEmptyString).optional(),
+    NEXT_PUBLIC_POSTHOG_HOST: z.string().transform(allowEmptyString).optional(),
     // for dogfooding our own API
-    NEXT_PUBLIC_TAMBO_API_KEY: z.string().min(1).optional(),
+    NEXT_PUBLIC_TAMBO_API_KEY: z
+      .string()
+      .transform(allowEmptyString)
+      .optional(),
     NEXT_PUBLIC_TAMBO_DASH_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_TAMBO_API_URL: z.string().min(1).optional(),
     NEXT_PUBLIC_SMOKETEST_TAMBO_API_KEY: z.string().min(1).optional(),
