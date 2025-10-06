@@ -51,7 +51,6 @@ export class SchedulerService {
               .insert(schema.tamboUsers)
               .values({
                 userId: user.id,
-                hasSetupProject: user.projects.length > 0,
                 lastActivityAt: user.createdAt || new Date(),
               })
               .returning();
@@ -121,33 +120,6 @@ export class SchedulerService {
       console.log("Reactivation email job completed");
     } catch (error) {
       console.error("Error in reactivation email job:", error);
-    }
-  }
-
-  // Update user activity when they perform actions
-  async updateUserActivity(userId: string, projectId?: string) {
-    try {
-      const tracking = await this.db.query.tamboUsers.findFirst({
-        where: eq(schema.tamboUsers.userId, userId),
-      });
-
-      if (tracking) {
-        await this.db
-          .update(schema.tamboUsers)
-          .set({
-            lastActivityAt: new Date(),
-            hasSetupProject: tracking.hasSetupProject || !!projectId,
-          })
-          .where(eq(schema.tamboUsers.id, tracking.id));
-      } else {
-        await this.db.insert(schema.tamboUsers).values({
-          userId,
-          hasSetupProject: !!projectId,
-          lastActivityAt: new Date(),
-        });
-      }
-    } catch (error) {
-      console.error("Error updating user activity:", error);
     }
   }
 }

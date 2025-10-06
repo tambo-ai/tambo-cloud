@@ -1,0 +1,1 @@
+ALTER TABLE "tambo_users" DROP COLUMN "has_setup_project";
