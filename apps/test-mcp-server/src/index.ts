@@ -144,22 +144,21 @@ async function main() {
   const options = program.opts();
 
   // Process command line options
+  const parseList = (v?: string): string[] | undefined => {
+    const items = v
+      ? (v)
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean)
+      : [];
+    return items.length > 0 ? items : undefined;
+  };
   const serverOptions: ServerOptions = {
     port: options.port,
     enableSessionManagement: options.sessionManagement !== false, // Default to true unless explicitly disabled
     enableDnsRebindingProtection: options.enableDnsRebindingProtection || false,
-    allowedHosts: options.allowedHosts
-      ? options.allowedHosts
-          .split(",")
-          .map((s: string) => s.trim())
-          .filter(Boolean)
-      : undefined,
-    allowedOrigins: options.allowedOrigins
-      ? options.allowedOrigins
-          .split(",")
-          .map((s: string) => s.trim())
-          .filter(Boolean)
-      : undefined,
+    allowedHosts: parseList(options.allowedHosts),
+    allowedOrigins: parseList(options.allowedOrigins),
   };
 
   // Log registered services
