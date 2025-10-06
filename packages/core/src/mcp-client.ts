@@ -35,7 +35,7 @@ export enum MCPTransport {
  * });
  * ```
  */
-interface MCPHandlers {
+export interface MCPHandlers {
   elicitation: (e: ElicitRequest) => Promise<ElicitResult>;
   sampling: (e: CreateMessageRequest) => Promise<CreateMessageResult>;
 }

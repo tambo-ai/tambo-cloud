@@ -1,12 +1,11 @@
 import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import { Logger } from "@nestjs/common";
-import { ITamboBackend, McpToolRegistry } from "@tambo-ai-cloud/backend";
+import { McpToolRegistry } from "@tambo-ai-cloud/backend";
 import {
-  ChatCompletionContentPartText,
-  ChatCompletionMessageParam,
   getToolName,
   LogLevel,
   MCPClient,
+  MCPHandlers,
 } from "@tambo-ai-cloud/core";
 import {
   HydraDatabase,
@@ -26,13 +25,13 @@ export async function getSystemTools(
   db: HydraDatabase,
   projectId: string,
   threadId: string,
-  tamboBackend: ITamboBackend,
+  mcpHandlers: MCPHandlers,
 ): Promise<McpToolRegistry> {
   const { mcpToolsSchema, mcpToolSources } = await getMcpTools(
     db,
     projectId,
     threadId,
-    tamboBackend,
+    mcpHandlers,
   );
 
   const mcpToolNames = mcpToolsSchema.map((tool) => getToolName(tool));
@@ -50,6 +49,7 @@ export async function getSystemTools(
   return {
     mcpToolsSchema,
     mcpToolSources,
+    mcpHandlers,
   };
 }
 
@@ -58,7 +58,7 @@ async function getMcpTools(
   db: HydraDatabase,
   projectId: string,
   threadId: string,
-  tamboBackend: ITamboBackend,
+  mcpHandlers: MCPHandlers,
 ): Promise<McpToolRegistry> {
   const mcpServers = await operations.getProjectMcpServers(db, projectId, null);
 
@@ -102,28 +102,7 @@ async function getMcpTools(
         customHeaders,
         authProvider,
         mcpSessionInfo?.sessionId ?? undefined,
-        {
-          async sampling(e) {
-            console.log("Got sampling request", e.method, e.params.messages[0]);
-            const response = await tamboBackend.llmClient.complete({
-              stream: false,
-              promptTemplateName: "sampling",
-              promptTemplateParams: {},
-              messages: e.params.messages.map(
-                (m): ChatCompletionMessageParam => ({
-                  role: m.role as string as "assistant",
-                  content: [m.content as ChatCompletionContentPartText],
-                }),
-              ),
-            });
-            console.log("Got sampling response", response.message);
-            return {
-              role: response.message.role,
-              content: { type: "text", text: response.message.content ?? "" },
-              model: tamboBackend.modelOptions.model,
-            };
-          },
-        },
+        mcpHandlers,
       );
       if (
         mcpClient.sessionId &&
@@ -184,6 +163,7 @@ async function getMcpTools(
   return {
     mcpToolsSchema: mcpTools,
     mcpToolSources,
+    mcpHandlers,
   };
 }
 

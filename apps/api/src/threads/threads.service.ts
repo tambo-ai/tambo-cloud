@@ -14,6 +14,8 @@ import {
 } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
+  ChatCompletionContentPartText,
+  ChatCompletionMessageParam,
   ComponentDecisionV2,
   ContentPartType,
   decryptProviderKey,
@@ -21,6 +23,7 @@ import {
   GenerationStage,
   getToolName,
   LegacyComponentDecision,
+  MCPHandlers,
   MessageRole,
   ThreadMessage,
   throttle,
@@ -1061,10 +1064,11 @@ export class ThreadsService {
         throw new Error("No messages found");
       }
       const systemToolsStart = Date.now();
+      const mcpHandlers = createMcpHandlers(tamboBackend);
 
       const systemTools =
         cachedSystemTools ??
-        (await getSystemTools(db, projectId, thread.id, tamboBackend));
+        (await getSystemTools(db, projectId, thread.id, mcpHandlers));
       const systemToolsEnd = Date.now();
       const systemToolsDuration = systemToolsEnd - systemToolsStart;
       if (!cachedSystemTools) {
@@ -2188,4 +2192,32 @@ async function syncThreadStatus(
       });
     },
   );
+}
+
+function createMcpHandlers(tamboBackend: ITamboBackend): MCPHandlers {
+  return {
+    async sampling(e) {
+      console.log("Got sampling request", e.method, e.params.messages[0]);
+      const response = await tamboBackend.llmClient.complete({
+        stream: false,
+        promptTemplateName: "sampling",
+        promptTemplateParams: {},
+        messages: e.params.messages.map(
+          (m): ChatCompletionMessageParam => ({
+            role: m.role as string as "assistant",
+            content: [m.content as ChatCompletionContentPartText],
+          }),
+        ),
+      });
+      console.log("Got sampling response", response.message);
+      return {
+        role: response.message.role,
+        content: { type: "text", text: response.message.content ?? "" },
+        model: tamboBackend.modelOptions.model,
+      };
+    },
+    elicitation(_e) {
+      throw new Error("Not implemented yet");
+    },
+  };
 }
