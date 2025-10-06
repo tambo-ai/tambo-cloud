@@ -18,6 +18,7 @@ import {
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
 import {
+  AnyPgColumn,
   check,
   index,
   integer,
@@ -446,6 +447,9 @@ export const messages = pgTable(
     threadId: text("thread_id")
       .references(() => threads.id)
       .notNull(),
+    parentMessageId: text("parent_message_id").references(
+      (): AnyPgColumn => messages.id,
+    ),
     role: text("role", {
       enum: Object.values<string>(MessageRole) as [MessageRole],
     }).notNull(),
@@ -507,6 +511,11 @@ export const messageRelations = relations(messages, ({ one, many }) => ({
     fields: [messages.threadId],
     references: [threads.id],
   }),
+  parentMessage: one(messages, {
+    fields: [messages.parentMessageId],
+    references: [messages.id],
+  }),
+  childMessages: many(messages),
   suggestions: many(suggestions),
 }));
 
