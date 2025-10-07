@@ -2215,7 +2215,7 @@ function createMcpHandlers(
 ): MCPHandlers {
   return {
     async sampling(e) {
-      const parentMessageId = e.params._meta?.tamboParentMessageId as
+      const parentMessageId = e.params._meta?.["tambo.co/parentMessageId"] as
         | string
         | undefined;
       const messages = e.params.messages.map((m) => ({

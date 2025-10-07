@@ -410,7 +410,7 @@ export class MCPClient {
       name,
       arguments: args,
       _meta: {
-        tamboParentMessageId: parentMessageId,
+        ["tambo.co/parentMessageId"]: parentMessageId,
       },
     });
     return result;
