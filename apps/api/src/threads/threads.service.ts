@@ -611,17 +611,17 @@ export class ThreadsService {
 
   async getMessages({
     threadId,
-    includeInternal = false,
     includeSystem = false,
+    includeChildMessages = false,
   }: {
     threadId: string;
-    includeInternal?: boolean;
     includeSystem?: boolean;
+    includeChildMessages?: boolean;
   }): Promise<ThreadMessageDto[]> {
     const messages = await operations.getMessages(
       this.getDb(),
       threadId,
-      includeInternal,
+      includeChildMessages,
     );
     return messages
       .filter((message) => includeSystem || message.role !== MessageRole.System)
