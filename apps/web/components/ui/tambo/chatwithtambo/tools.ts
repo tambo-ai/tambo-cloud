@@ -5,11 +5,12 @@ import { ProjectTableSchema } from "@/components/dashboard-components/project-ta
 import { customLlmParametersSchema } from "@/lib/llm-parameters";
 import { api, useTRPCClient } from "@/trpc/react";
 import {
+  AgentProviderType,
+  AiProviderType,
+  llmProviderConfig,
   MCPTransport,
   OAuthValidationMode,
   type CustomLlmParameters,
-  AgentProviderType,
-  AiProviderType,
 } from "@tambo-ai-cloud/core";
 import { useTambo } from "@tambo-ai/react";
 import { useEffect } from "react";
@@ -72,12 +73,13 @@ export const fetchProjectByIdSchema = z
       agentUrl: z.string().nullable(),
       agentName: z.string().nullable(),
       agentHeaders: z.record(z.string(), z.string()).nullable(),
+      allowSystemPromptOverride: z.boolean(),
     }),
   );
 
 /**
  * Zod schema for the `updateProject` function.
- * Defines the argument as an object containing project update parameters (ID, name, custom instructions, LLM settings)
+ * Defines the argument as an object containing project update parameters (ID, name, custom instructions, LLM settings, agent configuration, and security settings)
  * and the return type as an object representing the updated project details.
  */
 export const updateProjectSchema = z
@@ -113,18 +115,23 @@ export const updateProjectSchema = z
         .describe("The new maximum number of tool calls allowed per response"),
       isTokenRequired: z
         .boolean()
-        .describe("The new is token required for the project"),
+        .describe("Whether API token is required for access to the project"),
       providerType: z
         .nativeEnum(AiProviderType)
-        .describe("The new provider type for the project"),
+        .describe("The AI provider type for the project"),
       agentProviderType: z
         .nativeEnum(AgentProviderType)
-        .describe("The new agent provider type for the project"),
-      agentUrl: z.string().describe("The new agent URL for the project"),
-      agentName: z.string().describe("The new agent name for the project"),
+        .describe("The agent provider type for the project"),
+      agentUrl: z.string().describe("The agent URL for the project"),
+      agentName: z.string().describe("The agent name for the project"),
       agentHeaders: z
         .record(z.string(), z.string())
-        .describe("The new agent headers for the project"),
+        .describe("Custom headers for agent requests"),
+      allowSystemPromptOverride: z
+        .boolean()
+        .describe(
+          "Whether system prompt overrides are allowed for the project",
+        ),
     }),
   )
   .returns(
@@ -147,6 +154,7 @@ export const updateProjectSchema = z
       agentUrl: z.string().nullable(),
       agentName: z.string().nullable(),
       agentHeaders: z.record(z.string(), z.string()).nullable(),
+      allowSystemPromptOverride: z.boolean(),
     }),
   );
 
@@ -292,8 +300,40 @@ export const fetchTotalUsersSchema = z
 /** llm provider settings management */
 
 /**
+ * Zod schema for the `fetchAvailableModels` function.
+ * Lists all available LLM providers and their models with API names.
+ */
+export const fetchAvailableModelsSchema = z
+  .function()
+  .args(
+    z
+      .string()
+      .optional()
+      .describe(
+        "Optional provider name to filter by (e.g., 'openai', 'anthropic'). If not provided, returns all providers.",
+      ),
+  )
+  .returns(
+    z.array(
+      z.object({
+        provider: z.string(),
+        providerDisplayName: z.string(),
+        models: z.array(
+          z.object({
+            apiName: z.string(),
+            displayName: z.string(),
+            status: z.string(),
+          }),
+        ),
+      }),
+    ),
+  );
+
+/**
  * Zod schema for the `fetchProjectLlmSettings` function.
  * Defines the argument as a project ID string and the return type as an object containing LLM settings.
+ * Returns complete LLM configuration including provider settings, model settings, custom parameters,
+ * and agent configuration.
  */
 export const fetchProjectLlmSettingsSchema = z
   .function()
@@ -316,8 +356,9 @@ export const fetchProjectLlmSettingsSchema = z
 
 /**
  * Zod schema for the `updateProjectLlmSettings` function.
- * Defines arguments as the project ID string and an LLM settings object,
+ * Defines arguments as the project ID string and an LLM settings object (with all fields optional for partial updates),
  * and the return type as an object representing the updated LLM settings.
+ * The customLlmParameters field supports partial updates through deep merging.
  */
 export const updateProjectLlmSettingsSchema = z
   .function()
@@ -325,12 +366,17 @@ export const updateProjectLlmSettingsSchema = z
     z.string().describe("The project ID"),
     z
       .object({
-        defaultLlmProviderName: z.string(),
-        defaultLlmModelName: z.string().nullable(),
-        customLlmModelName: z.string().nullable(),
-        customLlmBaseURL: z.string().nullable(),
-        customLlmParameters: customLlmParametersSchema,
-        maxInputTokens: z.number().nullable(),
+        defaultLlmProviderName: z.string().nullable().optional(),
+        defaultLlmModelName: z.string().nullable().optional(),
+        customLlmModelName: z.string().nullable().optional(),
+        customLlmBaseURL: z.string().nullable().optional(),
+        customLlmParameters: customLlmParametersSchema
+          .nullable()
+          .optional()
+          .describe(
+            "PARTIAL updates supported - will be deep merged with existing parameters. Example: to set thinking=true for gpt-4o, pass { openai: { 'gpt-4o': { thinking: true } } }. Structure: { [provider]: { [model]: { [paramName]: value } } }. Common params: temperature, thinking, maxOutputTokens, topP, topK, presencePenalty, frequencyPenalty.",
+          ),
+        maxInputTokens: z.number().nullable().optional(),
       })
       .describe("The LLM settings to update"),
   )
@@ -340,7 +386,7 @@ export const updateProjectLlmSettingsSchema = z
       defaultLlmModelName: z.string().nullable(),
       customLlmModelName: z.string().nullable(),
       customLlmBaseURL: z.string().nullable(),
-      customLlmParameters: customLlmParametersSchema,
+      customLlmParameters: customLlmParametersSchema.nullable(),
       maxInputTokens: z.number().nullable(),
     }),
   );
@@ -584,22 +630,30 @@ export function useTamboManagementTools() {
 
     /**
      * Registers a tool to update an existing project's configuration.
-     * Updates project name, custom instructions, and LLM provider settings.
+     * Updates project name, custom instructions, LLM provider settings, agent configuration, and security settings.
      * @param {Object} params - Project update parameters
-     * @param {string} params.projectId - The ID of the project to update
-     * @param {string} params.projectName - The new name for the project
+     * @param {string} params.id - The ID of the project to update
+     * @param {string} params.name - The new name for the project
      * @param {string} params.customInstructions - Custom AI instructions for the project
      * @param {string} params.defaultLlmProviderName - Default LLM provider name
      * @param {string} params.defaultLlmModelName - Default LLM model name
      * @param {string} params.customLlmModelName - Custom LLM model name
      * @param {string} params.customLlmBaseURL - Custom LLM base URL
+     * @param {CustomLlmParameters} params.customLlmParameters - Custom LLM parameters (provider -> model -> parameter structure)
      * @param {number} params.maxInputTokens - Maximum input tokens for the project
      * @param {number} params.maxToolCallLimit - Maximum tool calls allowed per response (optional)
+     * @param {boolean} params.isTokenRequired - Whether API token is required for access
+     * @param {AiProviderType} params.providerType - The AI provider type (e.g., LLM, agent)
+     * @param {AgentProviderType} params.agentProviderType - The agent provider type
+     * @param {string} params.agentUrl - URL for agent provider
+     * @param {string} params.agentName - Name of the agent
+     * @param {Record<string, string>} params.agentHeaders - Custom headers for agent requests
+     * @param {boolean} params.allowSystemPromptOverride - Whether system prompt overrides are allowed
      * @returns {Object} Updated project details
      */
     registerTool({
       name: "updateProject",
-      description: "Updates a project.",
+      description: "Updates a project, and every settings associated with it.",
       tool: async (params: {
         id: string;
         name: string;
@@ -617,6 +671,7 @@ export function useTamboManagementTools() {
         agentUrl: string;
         agentName: string;
         agentHeaders: Record<string, string>;
+        allowSystemPromptOverride: boolean;
       }) => {
         const result = await trpcClient.project.updateProject.mutate({
           projectId: params.id,
@@ -637,6 +692,7 @@ export function useTamboManagementTools() {
           agentUrl: params.agentUrl,
           agentName: params.agentName,
           agentHeaders: params.agentHeaders,
+          allowSystemPromptOverride: params.allowSystemPromptOverride,
         });
 
         // Invalidate the project cache to refresh the component
@@ -814,6 +870,36 @@ export function useTamboManagementTools() {
     /* llm provider settings management */
 
     /**
+     * Registers a tool to fetch available LLM models from all providers.
+     * IMPORTANT: When users want to change models, you MUST use the exact apiName from this list.
+     * @param {string} providerName - Optional provider name to filter (e.g., 'openai', 'anthropic')
+     * @returns {Array} List of providers with their available models and apiNames
+     */
+    registerTool({
+      name: "fetchAvailableModels",
+      description:
+        "Lists all available LLM providers and models. CRITICAL: When setting a model, you MUST use the exact 'apiName' field (e.g., 'gpt-5-2025-08-07', not 'gpt-5'). Users will say friendly names like 'gpt-5' or 'claude sonnet', but you must translate these to the correct apiName from this list.",
+      tool: async (providerName?: string) => {
+        const providers = Object.entries(llmProviderConfig)
+          .filter(([key]) => !providerName || key === providerName)
+          .map(([key, config]) => ({
+            provider: key,
+            providerDisplayName: config.displayName,
+            models: Object.entries(config.models || {}).map(
+              ([_modelKey, modelConfig]) => ({
+                apiName: modelConfig.apiName,
+                displayName: modelConfig.displayName,
+                status: modelConfig.status,
+              }),
+            ),
+          }));
+
+        return providers;
+      },
+      toolSchema: fetchAvailableModelsSchema,
+    });
+
+    /**
      * Registers a tool to fetch LLM configuration settings for a project.
      * Returns the current LLM provider, model, and custom settings.
      * @param {string} projectId - The project ID to fetch LLM settings for
@@ -832,45 +918,65 @@ export function useTamboManagementTools() {
 
     /**
      * Registers a tool to update LLM configuration settings for a project.
-     * Updates the default LLM provider, model, and custom configurations.
-     * Note: Always show ProviderKeySection component after calling this tool.
+     * Updates the default LLM provider, model, custom configurations, and custom LLM parameters.
+     * CRITICAL: ALWAYS call fetchAvailableModels FIRST to get the correct model apiName.
+     * Supports partial updates for customLlmParameters - they will be deep merged with existing values.
      * @param {string} projectId - The project ID to update
      * @param {Object} settings - LLM configuration settings to update
-     * @param {string} settings.defaultLlmProviderName - The LLM provider name (e.g., 'openai', 'anthropic')
-     * @param {string|null} settings.defaultLlmModelName - The default model name
+     * @param {string|null} settings.defaultLlmProviderName - The LLM provider name (e.g., 'openai', 'anthropic')
+     * @param {string|null} settings.defaultLlmModelName - The model apiName (MUST use exact apiName from fetchAvailableModels, not display name!)
      * @param {string|null} settings.customLlmModelName - Custom model name if using custom provider
      * @param {string|null} settings.customLlmBaseURL - Custom base URL for LLM API
+     * @param {number|null} settings.maxInputTokens - Maximum input tokens for the project
+     * @param {CustomLlmParameters|null} settings.customLlmParameters - Custom LLM parameters (provider -> model -> parameter structure)
      * @returns {Object} Updated LLM configuration settings
      */
     registerTool({
       name: "updateProjectLlmSettings",
       description:
-        "Updates LLM configuration settings for a project. Always show ProviderKeySection component after calling this tool.",
+        "Updates LLM configuration settings for a project. CRITICAL: Before setting defaultLlmModelName, you MUST call fetchAvailableModels to get the exact apiName (e.g., 'gpt-5-2025-08-07' not 'gpt-5'). For customLlmParameters, you can provide partial updates - they will be merged with existing parameters. Example: to turn on thinking for gpt-4o, just pass { openai: { 'gpt-4o': { thinking: true } } }.",
       tool: async (
         projectId: string,
         settings: {
-          defaultLlmProviderName: string;
-          defaultLlmModelName: string | null;
-          customLlmModelName: string | null;
-          customLlmBaseURL: string | null;
-          maxInputTokens: number | null;
-          customLlmParameters: CustomLlmParameters;
+          defaultLlmProviderName?: string | null;
+          defaultLlmModelName?: string | null;
+          customLlmModelName?: string | null;
+          customLlmBaseURL?: string | null;
+          maxInputTokens?: number | null;
+          customLlmParameters?: CustomLlmParameters | null;
         },
       ) => {
-        const result = await trpcClient.project.updateProjectLlmSettings.mutate(
-          {
-            projectId: projectId,
-            defaultLlmProviderName: settings.defaultLlmProviderName,
-            defaultLlmModelName: settings.defaultLlmModelName,
-            customLlmModelName: settings.customLlmModelName,
-            customLlmBaseURL: settings.customLlmBaseURL,
-            maxInputTokens: settings.maxInputTokens,
-            customLlmParameters: settings.customLlmParameters,
-          },
-        );
+        // Merge customLlmParameters if provided (deep merge at model level)
+        let customLlmParameters = settings.customLlmParameters;
+        if (customLlmParameters) {
+          const projects = await trpcClient.project.getUserProjects.query();
+          const current =
+            projects.find((p) => p.id === projectId)?.customLlmParameters || {};
 
-        // Invalidate the llm settings cache to refresh the component
+          const merged = { ...current };
+          for (const [provider, models] of Object.entries(
+            customLlmParameters,
+          )) {
+            merged[provider] = merged[provider] || {};
+            for (const [model, params] of Object.entries(models)) {
+              merged[provider][model] = {
+                ...merged[provider][model],
+                ...params,
+              };
+            }
+          }
+          customLlmParameters = merged;
+        }
+
+        const result = await trpcClient.project.updateProject.mutate({
+          projectId,
+          ...settings,
+          customLlmParameters,
+        });
+
+        // Invalidate caches to refresh UI
         await utils.project.getProjectLlmSettings.invalidate({ projectId });
+        await utils.project.getUserProjects.invalidate();
 
         return result;
       },
