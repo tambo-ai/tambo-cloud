@@ -27,6 +27,7 @@ export function initializeOpenTelemetry() {
   const sdkConfig: Partial<NodeSDKConfiguration> = {
     // resource,
     instrumentations,
+    spanProcessors: [new LangfuseSpanProcessor()],
   };
 
   // this isn't quite working yet
@@ -62,3 +63,5 @@ const tracerProvider = new NodeTracerProvider({
 });
 
 tracerProvider.register();
+
+export const sdk = initializeOpenTelemetry();
