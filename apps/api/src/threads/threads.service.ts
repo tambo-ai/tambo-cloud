@@ -1172,6 +1172,7 @@ export class ThreadsService {
         return await this.handleSystemToolCall(
           toolCallRequest,
           responseMessage.toolCallId ?? "",
+          responseMessageDto.id,
           allTools,
           responseMessage,
           advanceRequestDto,
@@ -1212,6 +1213,7 @@ export class ThreadsService {
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
+    toolCallMessageId: string,
     allTools: McpToolRegistry,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
@@ -1223,6 +1225,7 @@ export class ThreadsService {
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
+    toolCallMessageId: string,
     allTools: McpToolRegistry,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
@@ -1234,6 +1237,7 @@ export class ThreadsService {
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
+    toolCallMessageId: string,
     allTools: McpToolRegistry,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
@@ -1260,6 +1264,7 @@ export class ThreadsService {
         await this.handleSystemToolCall_(
           toolCallRequest,
           toolCallId,
+          toolCallMessageId,
           allTools,
           componentDecision,
           advanceRequestDto,
@@ -1274,6 +1279,7 @@ export class ThreadsService {
   private async handleSystemToolCall_(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
+    toolCallMessageId: string,
     allTools: McpToolRegistry,
     componentDecision: LegacyComponentDecision,
     advanceRequestDto: AdvanceThreadDto,
@@ -1297,6 +1303,7 @@ export class ThreadsService {
         allTools,
         toolCallRequest,
         toolCallId,
+        toolCallMessageId,
         componentDecision,
         advanceRequestDto,
       );
@@ -1867,6 +1874,7 @@ export class ThreadsService {
         const toolResponseMessageStream = await this.handleSystemToolCall(
           toolCallRequest,
           toolCallId ?? "",
+          finalThreadMessage.id,
           allTools,
           componentDecision,
           originalRequest,

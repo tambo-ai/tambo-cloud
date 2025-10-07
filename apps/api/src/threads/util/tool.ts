@@ -44,6 +44,7 @@ export async function callSystemTool(
   systemTools: McpToolRegistry,
   toolCallRequest: ToolCallRequest,
   toolCallId: string,
+  toolCallMessageId: string,
   componentDecision: LegacyComponentDecision,
   advanceRequestDto: AdvanceThreadDto,
 ) {
@@ -59,7 +60,7 @@ export async function callSystemTool(
     const result = await toolSource.callTool(
       toolCallRequest.toolName,
       params,
-      componentDecision.id,
+      toolCallMessageId,
     );
     const responseContent = buildToolResponseContent(result);
 
