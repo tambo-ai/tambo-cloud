@@ -755,7 +755,7 @@ export class ThreadsService {
       );
 
       if (!suggestions.suggestions.length) {
-        throw new SuggestionGenerationError(messageId);
+        throw new SuggestionGenerationError(`No suggestions for ${messageId}`);
       }
 
       const savedSuggestions = await operations.createSuggestions(
@@ -854,7 +854,6 @@ export class ThreadsService {
 
     const messages = await this.getMessages({
       threadId,
-      includeInternal: false,
     });
     if (messages.length === 0) {
       throw new NotFoundException("No messages found for thread");
@@ -1082,7 +1081,6 @@ export class ThreadsService {
 
       const messages = await this.getMessages({
         threadId: thread.id,
-        includeInternal: true,
         includeSystem: true,
       });
       const project = await operations.getProject(db, projectId);
