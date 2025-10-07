@@ -15,7 +15,6 @@ import {
 import {
   ActionType,
   ChatCompletionContentPart,
-  ChatCompletionMessageParam,
   ComponentDecisionV2,
   ContentPartType,
   decryptProviderKey,
@@ -1079,7 +1078,7 @@ export class ThreadsService {
         throw new Error("No messages found");
       }
       const systemToolsStart = Date.now();
-      const mcpHandlers = createMcpHandlers(tamboBackend);
+      const mcpHandlers = createMcpHandlers(db, tamboBackend, thread.id);
 
       const systemTools =
         cachedSystemTools ??
@@ -2209,19 +2208,45 @@ async function syncThreadStatus(
   );
 }
 
-function createMcpHandlers(tamboBackend: ITamboBackend): MCPHandlers {
+function createMcpHandlers(
+  db: HydraDb,
+  tamboBackend: ITamboBackend,
+  threadId: string,
+): MCPHandlers {
   return {
     async sampling(e) {
+      const parentMessageId = e.params._meta?.tamboParentMessageId as
+        | string
+        | undefined;
+      const messages = e.params.messages.map((m) => ({
+        role: m.role as string as "user", // Have to force this to "user" to let audio/image content through
+        content: [mcpContentToContentPart(m.content)],
+      }));
+      // add serially for now
+      for (const m of messages) {
+        await operations.addMessage(db, {
+          threadId,
+          role: m.role as MessageRole,
+          content: m.content,
+          parentMessageId,
+        });
+      }
       const response = await tamboBackend.llmClient.complete({
         stream: false,
         promptTemplateName: "sampling",
         promptTemplateParams: {},
-        messages: e.params.messages.map(
-          (m): ChatCompletionMessageParam => ({
-            role: m.role as string as "user", // Have to force this to "user" to let audio/image content through
-            content: [mcpContentToContentPart(m.content)],
-          }),
-        ),
+        messages: messages,
+      });
+      await operations.addMessage(db, {
+        threadId,
+        role: response.message.role as MessageRole,
+        content: [
+          {
+            type: "text",
+            text: response.message.content ?? "",
+          },
+        ],
+        parentMessageId,
       });
       return {
         role: response.message.role,

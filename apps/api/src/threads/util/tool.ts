@@ -56,7 +56,11 @@ export async function callSystemTool(
         p.parameterValue,
       ]),
     );
-    const result = await toolSource.callTool(toolCallRequest.toolName, params);
+    const result = await toolSource.callTool(
+      toolCallRequest.toolName,
+      params,
+      componentDecision.id,
+    );
     const responseContent = buildToolResponseContent(result);
 
     // TODO: handle cases where MCP server returns *only* resource types
