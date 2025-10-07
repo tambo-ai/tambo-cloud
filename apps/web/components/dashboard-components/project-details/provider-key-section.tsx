@@ -24,6 +24,42 @@ export const ProviderKeySectionSchema = z
   .object({
     id: z.string().describe("The unique identifier for the project."),
     name: z.string().describe("The name of the project."),
+    defaultLlmProviderName: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("The default LLM provider name."),
+    defaultLlmModelName: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("The default LLM model name."),
+    customLlmModelName: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("Custom LLM model name for openai-compatible providers."),
+    customLlmBaseURL: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("Custom base URL for openai-compatible providers."),
+    maxInputTokens: z
+      .number()
+      .nullable()
+      .optional()
+      .describe("Maximum input tokens for the model."),
+    customLlmParameters: z
+      .record(z.string(), z.record(z.string(), z.record(z.string(), z.any())))
+      .nullable()
+      .optional()
+      .describe(
+        "Custom LLM parameters organized by provider -> model -> parameters (e.g., temperature, thinking, maxOutputTokens).",
+      ),
+    providerType: z
+      .string()
+      .optional()
+      .describe("The AI provider type (LLM or AGENT)."),
   })
   .describe("Project data from the router output.");
 

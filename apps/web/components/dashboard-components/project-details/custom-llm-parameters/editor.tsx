@@ -18,13 +18,37 @@ import {
   getDefaultValueForType,
   validateValue,
 } from "./utils";
+import { z } from "zod";
 
 interface CustomLlmParametersEditorProps {
   project?: RouterOutputs["project"]["getUserProjects"][number];
   selectedProvider?: string | null;
   selectedModel?: string | null;
   onEdited?: () => void;
+  isChatMode?: boolean;
 }
+
+export const CustomLlmParametersEditorSchema = z.object({
+  project: z.any().optional().describe("The project object"),
+  selectedProvider: z
+    .string()
+    .nullable()
+    .optional()
+    .describe("The provider name"),
+  selectedModel: z.string().nullable().optional().describe("The model name"),
+  onEdited: z
+    .function()
+    .args()
+    .returns(z.void())
+    .optional()
+    .describe("The callback function"),
+  isChatMode: z
+    .boolean()
+    .optional()
+    .describe(
+      "Whether the editor is in chat mode, always true when in chat mode",
+    ),
+});
 
 /**
  * CustomLlmParametersEditor Component
@@ -46,6 +70,7 @@ export function CustomLlmParametersEditor({
   selectedProvider,
   selectedModel,
   onEdited,
+  isChatMode = false,
 }: CustomLlmParametersEditorProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
@@ -258,7 +283,9 @@ export function CustomLlmParametersEditor({
   }, [providerName, currentModel]);
 
   return (
-    <div className="relative">
+    <div
+      className={`relative${isChatMode ? " border border-border rounded-md p-4" : ""}`}
+    >
       <AnimatePresence mode="wait">
         {isEditing ? (
           <EditMode

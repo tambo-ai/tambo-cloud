@@ -2,8 +2,15 @@
 
 import { APIKeySchema } from "@/components/dashboard-components/project-details/api-key-list";
 import { ProjectTableSchema } from "@/components/dashboard-components/project-table";
+import { customLlmParametersSchema } from "@/lib/llm-parameters";
 import { api, useTRPCClient } from "@/trpc/react";
-import { MCPTransport, OAuthValidationMode } from "@tambo-ai-cloud/core";
+import {
+  MCPTransport,
+  OAuthValidationMode,
+  type CustomLlmParameters,
+  AgentProviderType,
+  AiProviderType,
+} from "@tambo-ai-cloud/core";
 import { useTambo } from "@tambo-ai/react";
 import { useEffect } from "react";
 import { z } from "zod";
@@ -56,9 +63,15 @@ export const fetchProjectByIdSchema = z
       defaultLlmModelName: z.string().nullable(),
       customLlmModelName: z.string().nullable(),
       customLlmBaseURL: z.string().nullable(),
+      customLlmParameters: customLlmParametersSchema,
       maxInputTokens: z.number().nullable(),
       maxToolCallLimit: z.number(),
       isTokenRequired: z.boolean(),
+      providerType: z.nativeEnum(AiProviderType),
+      agentProviderType: z.nativeEnum(AgentProviderType),
+      agentUrl: z.string().nullable(),
+      agentName: z.string().nullable(),
+      agentHeaders: z.record(z.string(), z.string()).nullable(),
     }),
   );
 
@@ -88,6 +101,9 @@ export const updateProjectSchema = z
       customLlmBaseURL: z
         .string()
         .describe("The new custom LLM base URL for the project"),
+      customLlmParameters: customLlmParametersSchema.describe(
+        "The new custom LLM parameters for the project",
+      ),
       maxInputTokens: z
         .number()
         .describe("The new max input tokens for the project"),
@@ -95,6 +111,20 @@ export const updateProjectSchema = z
         .number()
         .optional()
         .describe("The new maximum number of tool calls allowed per response"),
+      isTokenRequired: z
+        .boolean()
+        .describe("The new is token required for the project"),
+      providerType: z
+        .nativeEnum(AiProviderType)
+        .describe("The new provider type for the project"),
+      agentProviderType: z
+        .nativeEnum(AgentProviderType)
+        .describe("The new agent provider type for the project"),
+      agentUrl: z.string().describe("The new agent URL for the project"),
+      agentName: z.string().describe("The new agent name for the project"),
+      agentHeaders: z
+        .record(z.string(), z.string())
+        .describe("The new agent headers for the project"),
     }),
   )
   .returns(
@@ -108,9 +138,15 @@ export const updateProjectSchema = z
       defaultLlmModelName: z.string().nullable(),
       customLlmModelName: z.string().nullable(),
       customLlmBaseURL: z.string().nullable(),
+      customLlmParameters: customLlmParametersSchema,
       maxInputTokens: z.number().nullable(),
       maxToolCallLimit: z.number(),
       isTokenRequired: z.boolean(),
+      providerType: z.nativeEnum(AiProviderType),
+      agentProviderType: z.nativeEnum(AgentProviderType),
+      agentUrl: z.string().nullable(),
+      agentName: z.string().nullable(),
+      agentHeaders: z.record(z.string(), z.string()).nullable(),
     }),
   );
 
@@ -126,6 +162,7 @@ export const createProjectSchema = z
       id: z.string(),
       name: z.string(),
       userId: z.string(),
+      providerType: z.nativeEnum(AiProviderType),
     }),
   );
 
@@ -267,7 +304,13 @@ export const fetchProjectLlmSettingsSchema = z
       defaultLlmModelName: z.string().nullable(),
       customLlmModelName: z.string().nullable(),
       customLlmBaseURL: z.string().nullable(),
+      customLlmParameters: customLlmParametersSchema,
       maxInputTokens: z.number().nullable(),
+      providerType: z.nativeEnum(AiProviderType),
+      agentProviderType: z.nativeEnum(AgentProviderType),
+      agentUrl: z.string().nullable(),
+      agentName: z.string().nullable(),
+      agentHeaders: z.record(z.string(), z.string()).nullable(),
     }),
   );
 
@@ -286,6 +329,7 @@ export const updateProjectLlmSettingsSchema = z
         defaultLlmModelName: z.string().nullable(),
         customLlmModelName: z.string().nullable(),
         customLlmBaseURL: z.string().nullable(),
+        customLlmParameters: customLlmParametersSchema,
         maxInputTokens: z.number().nullable(),
       })
       .describe("The LLM settings to update"),
@@ -296,6 +340,7 @@ export const updateProjectLlmSettingsSchema = z
       defaultLlmModelName: z.string().nullable(),
       customLlmModelName: z.string().nullable(),
       customLlmBaseURL: z.string().nullable(),
+      customLlmParameters: customLlmParametersSchema,
       maxInputTokens: z.number().nullable(),
     }),
   );
@@ -565,6 +610,13 @@ export function useTamboManagementTools() {
         customLlmBaseURL: string;
         maxInputTokens: number;
         maxToolCallLimit?: number;
+        isTokenRequired: boolean;
+        providerType: AiProviderType;
+        customLlmParameters: CustomLlmParameters;
+        agentProviderType: AgentProviderType;
+        agentUrl: string;
+        agentName: string;
+        agentHeaders: Record<string, string>;
       }) => {
         const result = await trpcClient.project.updateProject.mutate({
           projectId: params.id,
@@ -578,6 +630,13 @@ export function useTamboManagementTools() {
           ...(params.maxToolCallLimit !== undefined && {
             maxToolCallLimit: params.maxToolCallLimit,
           }),
+          isTokenRequired: params.isTokenRequired,
+          providerType: params.providerType,
+          customLlmParameters: params.customLlmParameters,
+          agentProviderType: params.agentProviderType,
+          agentUrl: params.agentUrl,
+          agentName: params.agentName,
+          agentHeaders: params.agentHeaders,
         });
 
         // Invalidate the project cache to refresh the component
@@ -795,6 +854,7 @@ export function useTamboManagementTools() {
           customLlmModelName: string | null;
           customLlmBaseURL: string | null;
           maxInputTokens: number | null;
+          customLlmParameters: CustomLlmParameters;
         },
       ) => {
         const result = await trpcClient.project.updateProjectLlmSettings.mutate(
@@ -805,6 +865,7 @@ export function useTamboManagementTools() {
             customLlmModelName: settings.customLlmModelName,
             customLlmBaseURL: settings.customLlmBaseURL,
             maxInputTokens: settings.maxInputTokens,
+            customLlmParameters: settings.customLlmParameters,
           },
         );
 

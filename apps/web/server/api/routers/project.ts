@@ -11,6 +11,7 @@ import {
   MCPTransport,
   OAuthValidationMode,
   validateMcpServer,
+  type CustomLlmParameters,
 } from "@tambo-ai-cloud/core";
 import type { HydraDb } from "@tambo-ai-cloud/db";
 import { operations, schema } from "@tambo-ai-cloud/db";
@@ -383,6 +384,7 @@ export const projectRouter = createTRPCRouter({
           agentUrl: true,
           agentName: true,
           agentHeaders: true,
+          customLlmParameters: true,
         },
       });
 
@@ -403,6 +405,7 @@ export const projectRouter = createTRPCRouter({
         agentUrl: project.agentUrl ?? null,
         agentName: project.agentName ?? null,
         agentHeaders: project.agentHeaders,
+        customLlmParameters: project.customLlmParameters,
       };
     }),
 
@@ -604,6 +607,7 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: z.string().nullable().optional(),
         customLlmBaseURL: z.string().nullable().optional(),
         maxInputTokens: z.number().nullable().optional(),
+        customLlmParameters: customLlmParametersSchema.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -613,6 +617,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
+        customLlmParameters,
       } = input;
 
       // Ensure the user has access to the project before performing any further
@@ -654,6 +659,7 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: string | null;
         customLlmBaseURL: string | null;
         maxInputTokens: number | null;
+        customLlmParameters: CustomLlmParameters | null;
       }> = {};
 
       if ("defaultLlmProviderName" in input) {
@@ -669,6 +675,9 @@ export const projectRouter = createTRPCRouter({
         // Store the trimmed value (or null if blank/undefined)
         updateData.customLlmBaseURL =
           sanitizedBaseURL && sanitizedBaseURL !== "" ? sanitizedBaseURL : null;
+      }
+      if ("customLlmParameters" in input) {
+        updateData.customLlmParameters = customLlmParameters ?? null;
       }
       if ("maxInputTokens" in input) {
         if (defaultLlmProviderName && defaultLlmModelName) {
@@ -710,6 +719,7 @@ export const projectRouter = createTRPCRouter({
             customLlmModelName: true,
             customLlmBaseURL: true,
             maxInputTokens: true,
+            customLlmParameters: true,
           },
         });
         if (!currentProject)
@@ -723,6 +733,7 @@ export const projectRouter = createTRPCRouter({
           customLlmModelName: currentProject.customLlmModelName ?? null,
           customLlmBaseURL: currentProject.customLlmBaseURL ?? null,
           maxInputTokens: currentProject.maxInputTokens ?? null,
+          customLlmParameters: currentProject.customLlmParameters ?? null,
         };
       }
 
@@ -732,6 +743,7 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: updateData.customLlmModelName,
         customLlmBaseURL: updateData.customLlmBaseURL,
         maxInputTokens: updateData.maxInputTokens,
+        customLlmParameters: updateData.customLlmParameters,
       });
 
       if (!updatedProject) {
@@ -746,6 +758,7 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: updatedProject.customLlmModelName ?? null,
         customLlmBaseURL: updatedProject.customLlmBaseURL ?? null,
         maxInputTokens: updatedProject.maxInputTokens ?? null,
+        customLlmParameters: updatedProject.customLlmParameters ?? null,
       };
     }),
 
