@@ -63,8 +63,6 @@ export interface LLMClient {
     params: StreamingCompleteParams,
   ): Promise<AsyncIterableIterator<Partial<LLMResponse>>>;
   complete(params: CompleteParams): Promise<LLMResponse>;
-
-  complete(params: CompleteParams): Promise<LLMResponse>;
 }
 
 type LLMChatCompletionChoice = Omit<
