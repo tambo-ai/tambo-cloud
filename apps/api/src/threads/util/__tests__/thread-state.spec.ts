@@ -348,6 +348,7 @@ describe("Thread State", () => {
       const mockUserMessage: typeof schema.messages.$inferSelect = {
         id: "msg-1",
         threadId: "thread-1",
+        parentMessageId: null,
         role: MessageRole.User,
         content: [{ type: ContentPartType.Text, text: "test" }],
         componentState: {},
@@ -362,6 +363,7 @@ describe("Thread State", () => {
       const mockAssistantMessage: typeof schema.messages.$inferSelect = {
         id: "msg-2",
         threadId: "thread-1",
+        parentMessageId: null,
         role: MessageRole.Assistant,
         content: [{ type: ContentPartType.Text, text: "initial" }],
         componentState: {},
@@ -391,7 +393,7 @@ describe("Thread State", () => {
         .mockResolvedValue([mockAssistantMessage, mockUserMessage]);
       jest.mocked(operations.updateMessage).mockResolvedValue({
         ...mockFinalMessage,
-        parentMessageId: mockFinalMessage.parentMessageId ?? null,
+        parentMessageId: null,
         componentState: mockFinalMessage.componentState ?? {},
         toolCallId: null,
         componentDecision: null,

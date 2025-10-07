@@ -18,7 +18,6 @@ import {
 } from "@tambo-ai-cloud/core";
 import { relations, sql } from "drizzle-orm";
 import {
-  AnyPgColumn,
   check,
   index,
   integer,
@@ -29,6 +28,7 @@ import {
   primaryKey,
   unique,
   uuid,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole, authUid } from "drizzle-orm/supabase";
 import type OpenAI from "openai";
@@ -447,9 +447,7 @@ export const messages = pgTable(
     threadId: text("thread_id")
       .references(() => threads.id)
       .notNull(),
-    parentMessageId: text("parent_message_id").references(
-      (): AnyPgColumn => messages.id,
-    ),
+    parentMessageId: text("parent_message_id"),
     role: text("role", {
       enum: Object.values<string>(MessageRole) as [MessageRole],
     }).notNull(),
@@ -477,6 +475,11 @@ export const messages = pgTable(
   (table) => {
     return [
       index("messages_thread_id_idx").on(table.threadId),
+      // Prevent direct cycles: a message cannot be its own parent
+      check(
+        "chk_messages_parent_not_self",
+        sql`${table.parentMessageId} IS NULL OR ${table.parentMessageId} <> ${table.id}`,
+      ),
       check(
         "chk_messages_reasoning_max_len",
         sql`${table.reasoning} IS NULL
@@ -484,6 +487,21 @@ export const messages = pgTable(
                 jsonb_array_length(${table.reasoning}->'json') <= 200)`,
       ),
       index("messages_parent_message_id_idx").on(table.parentMessageId),
+      index("messages_thread_id_parent_message_id_idx").on(
+        table.threadId,
+        table.parentMessageId,
+      ),
+      // Ensure a parent belongs to the same thread by:
+      // 1) creating a unique constraint on (thread_id, id)
+      // 2) adding a composite FK (thread_id, parent_message_id) -> (thread_id, id)
+      unique("messages_thread_id_id_uniq").on(table.threadId, table.id),
+      foreignKey({
+        name: "messages_parent_same_thread_fk",
+        columns: [table.threadId, table.parentMessageId],
+        foreignColumns: [table.threadId, table.id],
+      })
+        .onDelete("cascade")
+        .onUpdate("cascade"),
     ];
   },
 );
@@ -515,8 +533,9 @@ export const messageRelations = relations(messages, ({ one, many }) => ({
   parentMessage: one(messages, {
     fields: [messages.parentMessageId],
     references: [messages.id],
+    relationName: "messageParent",
   }),
-  childMessages: many(messages),
+  childMessages: many(messages, { relationName: "messageParent" }),
   suggestions: many(suggestions),
 }));
 
