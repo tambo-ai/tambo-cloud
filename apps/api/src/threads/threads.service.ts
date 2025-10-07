@@ -2213,7 +2213,6 @@ function createMcpHandlers(tamboBackend: ITamboBackend): MCPHandlers {
           }),
         ),
       });
-      console.log("Got sampling response", response.message);
       return {
         role: response.message.role,
         content: { type: "text", text: response.message.content ?? "" },
@@ -2241,7 +2240,8 @@ function mcpContentToContentPart(
       return {
         type: ContentPartType.ImageUrl,
         image_url: {
-          url: `data:${content.mimeType};base64,${Buffer.from(content.data).toString("base64")}`,
+          // this is already base64 encoded
+          url: `data:${content.mimeType};base64,${content.data}`,
         },
       };
 
@@ -2259,6 +2259,7 @@ function mcpContentToContentPart(
       return {
         type: ContentPartType.InputAudio,
         input_audio: {
+          // this is already base64 encoded
           data: content.data,
           // has to be "mp3" or "wav"
           format,
@@ -2266,6 +2267,12 @@ function mcpContentToContentPart(
       };
     }
     default:
-      throw new Error(`Unknown content type: ${content}`);
+      // content is `never` at this point, but we don't want to fully break
+      // the app, so we just return a text content part with a warning
+      console.warn(`Unknown content type: ${String((content as any)?.type)}`);
+      return {
+        type: ContentPartType.Text,
+        text: `[Unsupported content type: ${String((content as any)?.type)}]`,
+      };
   }
 }
