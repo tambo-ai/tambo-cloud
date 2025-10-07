@@ -60,20 +60,20 @@ describe("getSystemTools", () => {
     // mockDb.query.toolProviders.findMany.mockResolvedValue([]);
     const mockDb = getDb("");
 
-    const tools = await getSystemTools(mockDb, "project123", "thread123", {
-      llmClient: {
-        complete: jest.fn<any>().mockResolvedValue({
-          message: {
-            role: "assistant",
-            content: "This is a sample test response! It should be very long.",
-          },
-        }),
-        chainId: "chain123",
-      },
-    } as any);
+    const mcpHandlers = {
+      elicitation: jest.fn<any>(),
+      sampling: jest.fn<any>(),
+    };
+    const tools = await getSystemTools(
+      mockDb,
+      "project123",
+      "thread123",
+      mcpHandlers,
+    );
     expect(tools).toEqual({
       mcpToolSources: {},
       mcpToolsSchema: [],
+      mcpHandlers,
     });
   });
 
