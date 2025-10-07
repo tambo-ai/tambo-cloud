@@ -1,7 +1,7 @@
 {
-  "name": "@tambo-ai-cloud/mcp-proxy",
+  "name": "@tambo-ai-cloud/test-mcp-server",
   "version": "0.0.1",
-  "description": "A proxy for Tambo that connects to all known MCP servers for a given project",
+  "description": "A test MCP server with elicitation and sampling tools for testing purposes",
   "type": "module",
   "main": "dist/index.js",
   "exports": {
@@ -12,8 +12,8 @@
   },
   "scripts": {
     "build": "tsc --project tsconfig.json",
-    "build:esm": "tsc --project tsconfig.esm.json",
     "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
     "lint": "eslint",
     "test": "jest --passWithNoTests",
     "check-types": "tsc --noEmit"
@@ -21,12 +21,15 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.19.1",
+    "@modelcontextprotocol/sdk": "^1.18.2",
     "commander": "^14.0.1",
     "express": "^5.1.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.0",
     "@types/node": "^22.15.32",
-    "typescript": "^5.9.3"
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.2",
+    "@tambo-ai-cloud/eslint-config": "*"
   }
 }
