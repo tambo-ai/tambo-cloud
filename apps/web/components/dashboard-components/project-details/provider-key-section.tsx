@@ -1153,7 +1153,7 @@ export function ProviderKeySection({
                     <div className="space-y-2">
                       <Label>Custom LLM Parameters</Label>
                       <CustomLlmParametersEditor
-                        project={project}
+                        projectId={project.id}
                         selectedProvider={parsedSelection.provider}
                         selectedModel={parsedSelection.model}
                         onEdited={onEdited}

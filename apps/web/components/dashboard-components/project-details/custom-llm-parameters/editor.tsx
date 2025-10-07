@@ -1,7 +1,7 @@
 "use client";
 
 import { useToast } from "@/hooks/use-toast";
-import { api, RouterOutputs } from "@/trpc/react";
+import { api } from "@/trpc/react";
 import {
   JSONValue,
   LlmParameterUIType,
@@ -21,7 +21,7 @@ import {
 import { z } from "zod";
 
 interface CustomLlmParametersEditorProps {
-  project?: RouterOutputs["project"]["getUserProjects"][number];
+  projectId: string;
   selectedProvider?: string | null;
   selectedModel?: string | null;
   onEdited?: () => void;
@@ -29,7 +29,7 @@ interface CustomLlmParametersEditorProps {
 }
 
 export const CustomLlmParametersEditorSchema = z.object({
-  project: z.any().optional().describe("The project object"),
+  projectId: z.string().describe("The project ID to load settings for"),
   selectedProvider: z
     .string()
     .nullable()
@@ -66,7 +66,7 @@ export const CustomLlmParametersEditorSchema = z.object({
  * but it provides better UX for power users who need model-specific configs.
  */
 export function CustomLlmParametersEditor({
-  project,
+  projectId,
   selectedProvider,
   selectedModel,
   onEdited,
@@ -76,6 +76,12 @@ export function CustomLlmParametersEditor({
   const [isEditing, setIsEditing] = useState(false);
   const [parameters, setParameters] = useState<ParameterEntry[]>([]);
   const [activeEditIndex, setActiveEditIndex] = useState<number | null>(null);
+
+  const { data: projects } = api.project.getUserProjects.useQuery();
+  const project = useMemo(
+    () => projects?.find((p) => p.id === projectId),
+    [projects, projectId],
+  );
 
   const providerName =
     selectedProvider || project?.defaultLlmProviderName || "openai";

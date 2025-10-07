@@ -128,7 +128,7 @@ export const tamboRegisteredComponents = [
   {
     name: "CustomLlmParametersEditor",
     description:
-      "Advanced LLM parameter configuration editor for fine-tuning model behavior. Allows users to set model-specific parameters like temperature, thinking mode, maxOutputTokens, topP, topK, presencePenalty, frequencyPenalty, stopSequences, seed, and other provider-specific parameters. Features inline editing with parameter suggestions, type validation, and support for nested parameter structures organized by provider and model. Use when users want to configure advanced parameters like 'turn on thinking for GPT-4o' or 'set temperature to 0.7 for Claude'.",
+      "Advanced LLM parameter configuration editor for fine-tuning model behavior. This component automatically fetches project data and allows users to set model-specific parameters like temperature, thinking mode, maxOutputTokens, topP, topK, presencePenalty, frequencyPenalty, stopSequences, seed, and other provider-specific parameters. Features inline editing with parameter suggestions, type validation, and support for nested parameter structures organized by provider and model. IMPORTANT: This component requires a valid project ID and fetches its own data - simply provide the projectId. Use when users want to configure advanced parameters like 'turn on thinking for GPT-4o' or 'set temperature to 0.7 for Claude'.",
     component: CustomLlmParametersEditor,
     propsSchema: CustomLlmParametersEditorSchema,
   },
