@@ -150,7 +150,11 @@ export async function getInactiveTamboUsers(
 
   for (const user of users) {
     const tracking = trackingByUserId.get(user.id);
-    if (!tracking || tracking.lastActivityAt < inactiveDate) {
+    if (
+      !tracking ||
+      tracking.lastActivityAt < inactiveDate ||
+      !tracking.deprecatedHasSetupProject
+    ) {
       results.push({ user, tracking });
     }
   }

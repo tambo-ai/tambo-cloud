@@ -51,6 +51,7 @@ export class SchedulerService {
               .insert(schema.tamboUsers)
               .values({
                 userId: user.id,
+                deprecatedHasSetupProject: user.projects.length > 0,
                 lastActivityAt: user.createdAt || new Date(),
               })
               .returning();

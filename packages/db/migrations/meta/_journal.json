@@ -547,13 +547,6 @@
       "when": 1759360338553,
       "tag": "0077_sloppy_penance",
       "breakpoints": true
-    },
-    {
-      "idx": 78,
-      "version": "7",
-      "when": 1759783529377,
-      "tag": "0078_flippant_psylocke",
-      "breakpoints": true
     }
   ]
 }
