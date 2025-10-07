@@ -609,11 +609,15 @@ export class ThreadsService {
     return await addMessage(this.getDb(), threadId, messageDto);
   }
 
-  async getMessages(
-    threadId: string,
-    includeInternal: boolean = false,
-    includeSystem: boolean = false,
-  ): Promise<ThreadMessageDto[]> {
+  async getMessages({
+    threadId,
+    includeInternal = false,
+    includeSystem = false,
+  }: {
+    threadId: string;
+    includeInternal?: boolean;
+    includeSystem?: boolean;
+  }): Promise<ThreadMessageDto[]> {
     const messages = await operations.getMessages(
       this.getDb(),
       threadId,
@@ -734,7 +738,9 @@ export class ThreadsService {
         data: { messageId, threadId: message.threadId },
       });
 
-      const threadMessages = await this.getMessages(message.threadId);
+      const threadMessages = await this.getMessages({
+        threadId: message.threadId,
+      });
       const tamboBackend = await this.createTamboBackendForThread(
         message.threadId,
         contextKey,
@@ -846,7 +852,10 @@ export class ThreadsService {
       throw new NotFoundException("Thread not found");
     }
 
-    const messages = await this.getMessages(threadId, false);
+    const messages = await this.getMessages({
+      threadId,
+      includeInternal: false,
+    });
     if (messages.length === 0) {
       throw new NotFoundException("No messages found for thread");
     }
@@ -1071,7 +1080,11 @@ export class ThreadsService {
         `${projectId}-${contextKey ?? TAMBO_ANON_CONTEXT_KEY}`,
       );
 
-      const messages = await this.getMessages(thread.id, true, true);
+      const messages = await this.getMessages({
+        threadId: thread.id,
+        includeInternal: true,
+        includeSystem: true,
+      });
       const project = await operations.getProject(db, projectId);
 
       if (messages.length === 0) {
