@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FC, ReactNode, useCallback, useMemo, useState } from "react";
+import { useCopyToClipboard } from "usehooks-ts";
 import { isSameDay } from "../utils";
 import { ComponentMessage } from "./component-message";
 import { DateSeparator } from "./date-separator";
@@ -139,12 +140,16 @@ export function ThreadMessages({
   searchMatches = [],
 }: Readonly<ThreadMessagesProps>) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [, copyToClipboard] = useCopyToClipboard();
 
-  const handleCopyId = useCallback(async (id: string) => {
-    await navigator.clipboard.writeText(id);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  }, []);
+  const handleCopyId = useCallback(
+    async (id: string) => {
+      await copyToClipboard(id);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    },
+    [copyToClipboard],
+  );
 
   // Check if a message has a search match
   const hasSearchMatch = useCallback(

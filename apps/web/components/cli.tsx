@@ -1,5 +1,6 @@
 "use client";
 
+import { useClipboard } from "@/hooks/use-clipboard";
 import { cn } from "@/lib/utils";
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
@@ -27,10 +28,12 @@ export function CLI({
   defaultActiveItemId,
   onItemChange,
 }: CLIProps) {
-  const [copied, setCopied] = useState(false);
   const [activeItemId, setActiveItemId] = useState<string>(
     defaultActiveItemId || (items.length > 0 ? items[0].id : ""),
   );
+
+  const activeItem = items.find((item) => item.id === activeItemId) || items[0];
+  const [copied, copy] = useClipboard(activeItem?.command ?? "");
 
   // Guard against empty items array
   if (items.length === 0) {
@@ -44,15 +47,12 @@ export function CLI({
     }
   };
 
-  const activeItem = items.find((item) => item.id === activeItemId) || items[0];
   const hasTabs = items.length > 1;
   const isLightMode = theme === "light";
 
   const copyToClipboard = async () => {
-    if (activeItem.command) {
-      await navigator.clipboard.writeText(activeItem.command);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    if (activeItem?.command) {
+      await copy();
     }
   };
 

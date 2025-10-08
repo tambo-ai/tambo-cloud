@@ -17,6 +17,7 @@ import { AnimatePresence, motion, Variants } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, Copy } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useCopyToClipboard } from "usehooks-ts";
 import { CreateProjectDialog } from "./create-project-dialog";
 
 interface OnboardingWizardProps {
@@ -202,6 +203,7 @@ export function OnboardingWizard({
     useState<OnboardingStepId>("welcome");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
+  const [, copyToClipboard] = useCopyToClipboard();
 
   // Reset state when dialog opens to ensure users always start from the beginning
   useEffect(() => {
@@ -227,7 +229,7 @@ export function OnboardingWizard({
 
   const copyCommand = async (command: string) => {
     try {
-      await navigator.clipboard.writeText(command);
+      await copyToClipboard(command);
       setCopiedCommand(command);
       setTimeout(() => setCopiedCommand(null), 2000);
     } catch (err) {

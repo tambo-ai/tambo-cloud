@@ -6,6 +6,7 @@ import { api, type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import { Check, Copy, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useCopyToClipboard } from "usehooks-ts";
 import { z } from "zod";
 import {
   DeleteConfirmationDialog,
@@ -84,6 +85,7 @@ export function APIKeyList({
     id: "",
     copied: false,
   });
+  const [, copy] = useCopyToClipboard();
   const { toast } = useToast();
   const utils = api.useUtils();
 
@@ -209,7 +211,7 @@ export function APIKeyList({
   };
 
   const copyToClipboard = async (text: string, id: string) => {
-    await navigator.clipboard.writeText(text);
+    await copy(text);
     setCopyState({ id, copied: true });
     setTimeout(() => {
       setCopyState({ id: "", copied: false });

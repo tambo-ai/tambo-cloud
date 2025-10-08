@@ -7,8 +7,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useClipboard } from "@/hooks/use-clipboard";
 import { Check, Copy } from "lucide-react";
-import { useState } from "react";
 
 interface APIKeyDialogProps {
   open: boolean;
@@ -21,14 +21,10 @@ export function APIKeyDialog({
   onOpenChange,
   apiKey,
 }: APIKeyDialogProps) {
-  const [copied, setCopied] = useState(false);
+  const [copied, copy] = useClipboard(apiKey);
 
-  const copyToClipboard = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
+  const copyToClipboard = async () => {
+    await copy();
   };
 
   return (
@@ -53,7 +49,7 @@ export function APIKeyDialog({
           <Button
             className="w-full font-sans"
             onClick={async () => {
-              await copyToClipboard(apiKey);
+              await copyToClipboard();
             }}
           >
             {copied ? (
