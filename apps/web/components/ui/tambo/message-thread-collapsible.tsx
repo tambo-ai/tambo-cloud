@@ -6,6 +6,7 @@ import { Message, MessageContent } from "@/components/ui/tambo/message";
 import {
   MessageInput,
   MessageInputError,
+  MessageInputFileButton,
   MessageInputSubmitButton,
   MessageInputTextarea,
   MessageInputToolbar,
@@ -284,6 +285,7 @@ export const MessageThreadCollapsible = React.forwardRef<
             <MessageInput contextKey={contextKey}>
               <MessageInputTextarea />
               <MessageInputToolbar>
+                <MessageInputFileButton />
                 <MessageInputSubmitButton />
               </MessageInputToolbar>
               <MessageInputError />

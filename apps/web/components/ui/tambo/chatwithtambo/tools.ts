@@ -515,6 +515,60 @@ export const getMcpServerToolsSchema = z
     }),
   );
 
+/** thread and message management */
+
+/**
+ * Zod schema for the `fetchProjectThreads` function.
+ * Defines arguments as project ID and optional filters,
+ * and the return type as an object containing threads array and total count.
+ */
+export const fetchProjectThreadsSchema = z
+  .function()
+  .args(
+    z.object({
+      projectId: z.string().describe("The project ID to fetch threads for"),
+      limit: z
+        .number()
+        .optional()
+        .default(10)
+        .describe("Maximum number of threads to return (1-100, default: 10)"),
+      sortField: z
+        .enum([
+          "created",
+          "updated",
+          "threadId",
+          "threadName",
+          "contextKey",
+          "messages",
+          "errors",
+        ])
+        .optional()
+        .default("created")
+        .describe("Field to sort threads by (default: created)"),
+      sortDirection: z
+        .enum(["asc", "desc"])
+        .optional()
+        .default("desc")
+        .describe("Sort direction (default: desc for newest first)"),
+    }),
+  )
+  .returns(
+    z.object({
+      threads: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string().nullable(),
+          createdAt: z.date(),
+          updatedAt: z.date(),
+          contextKey: z.string().nullable(),
+          messageCount: z.number(),
+          errorCount: z.number(),
+        }),
+      ),
+      totalCount: z.number(),
+    }),
+  );
+
 /** oauth validation settings management */
 
 /**
@@ -1161,6 +1215,50 @@ export function useTamboManagementTools() {
         return result;
       },
       toolSchema: updateOAuthValidationSettingsSchema,
+    });
+
+    /* thread and message management */
+
+    /**
+     * Registers a tool to fetch threads for a specific project.
+     * Returns thread list with message counts, errors, and metadata.
+     * Useful for finding the latest thread or listing all threads in a project.
+     * @param {Object} params - Fetch parameters
+     * @param {string} params.projectId - The project ID to fetch threads for
+     * @param {number} params.limit - Maximum number of threads to return (1-100, default: 10)
+     * @param {string} params.sortField - Field to sort by (default: created)
+     * @param {string} params.sortDirection - Sort direction (default: desc for newest first)
+     * @returns {Object} Object containing threads array and total count
+     */
+    registerTool({
+      name: "fetchProjectThreads",
+      description:
+        "Fetches threads for a specific project. By default returns the 10 most recent threads sorted by creation date (newest first). Use this to find the latest thread or list threads in a project. IMPORTANT: To show the last message in a project, call this with limit=1 and sortField='created' to get the most recent thread. The response includes the COMPLETE thread ID (e.g., 'thr_AjVDAowI.646605') - you MUST use the ENTIRE ID string when passing it to ThreadMessagesInline component. DO NOT truncate or shorten the thread ID.",
+      tool: async (params: {
+        projectId: string;
+        limit?: number;
+        sortField?:
+          | "created"
+          | "updated"
+          | "threadId"
+          | "threadName"
+          | "contextKey"
+          | "messages"
+          | "errors";
+        sortDirection?: "asc" | "desc";
+      }) => {
+        const result = await trpcClient.thread.getThreads.query({
+          projectId: params.projectId,
+          offset: 0,
+          limit: params.limit || 10,
+          includeMessages: false,
+          sortField: params.sortField || "created",
+          sortDirection: params.sortDirection || "desc",
+        });
+
+        return result;
+      },
+      toolSchema: fetchProjectThreadsSchema,
     });
   }, [registerTool, trpcClient, utils]);
 }

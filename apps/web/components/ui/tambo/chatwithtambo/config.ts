@@ -42,6 +42,10 @@ import {
   ProjectTableContainerSchema,
 } from "@/components/dashboard-components/project-table-container";
 import {
+  ThreadMessagesInline,
+  ThreadMessagesInlineSchema,
+} from "@/components/observability/messages/thread-messages-inline";
+import {
   ThreadTableContainer,
   ThreadTableContainerSchema,
 } from "@/components/observability/thread-table/thread-table-container";
@@ -110,6 +114,13 @@ export const tamboRegisteredComponents = [
       "Displays a comprehensive table of all threads for a specific project with full functionality including search, sorting, deletion, and message viewing. Features responsive design with smooth animations, loading states, and empty state handling. Shows thread ID, creation date, message count, tools, components, and errors. Supports compact mode which hides Updated, Context Key, and Thread Name columns for a cleaner view. IMPORTANT: This component requires a valid project ID (not project name). Always set compact=true for a cleaner interface. Use when users want to view and manage all threads for a specific project.",
     component: ThreadTableContainer,
     propsSchema: ThreadTableContainerSchema,
+  },
+  {
+    name: "ThreadMessagesInline",
+    description:
+      "Lightweight self-contained component that fetches and displays recent messages from a specific thread inline in the conversation. Automatically handles its own data fetching via tRPC. Shows up to 10 most recent messages (default: 3) with user/assistant roles, timestamps, and message content. Truncates long messages at 2000 characters for performance. Includes thread metadata and tool/component indicators. IMPORTANT: This component fetches its own data - just provide projectId (not project name) AND threadId. Use fetchProjectThreads tool first to get the threadId, then call this component directly with both IDs. Perfect for showing 'the last message in this project' or 'recent conversation in this thread'. Use this when users ask to see specific messages rather than the full thread table.",
+    component: ThreadMessagesInline,
+    propsSchema: ThreadMessagesInlineSchema,
   },
   {
     name: "OAuthSettings",

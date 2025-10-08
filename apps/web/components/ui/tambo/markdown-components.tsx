@@ -2,14 +2,13 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import type { Components } from "react-markdown";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import DOMPurify from "dompurify";
 
 /**
- * Markdown Components for React-Markdown
+ * Markdown Components for Streamdown
  *
  * This module provides customized components for rendering markdown content with syntax highlighting.
  * It uses highlight.js for code syntax highlighting and supports streaming content updates.
@@ -17,11 +16,11 @@ import DOMPurify from "dompurify";
  * @example
  * ```tsx
  * import { createMarkdownComponents } from './markdown-components';
- * import ReactMarkdown from 'react-markdown';
+ * import { Streamdown } from 'streamdown';
  *
  * const MarkdownRenderer = ({ content }) => {
- *   const components = createMarkdownComponents('light');
- *   return <ReactMarkdown components={components}>{content}</ReactMarkdown>;
+ *   const components = createMarkdownComponents();
+ *   return <Streamdown components={components}>{content}</Streamdown>;
  * };
  * ```
  */
@@ -86,11 +85,13 @@ const CodeHeader = ({
 };
 
 /**
- * Creates a set of components for use with react-markdown
- * @param theme - The theme to use ('light' or 'dark')
- * @returns Components object for react-markdown
+ * Creates a set of components for use with streamdown
+ * @returns Components object for streamdown
  */
-export const createMarkdownComponents = (): Components => ({
+export const createMarkdownComponents = (): Record<
+  string,
+  React.ComponentType<any>
+> => ({
   code: function Code({ className, children, ...props }) {
     const match = /language-(\w+)/.exec(className ?? "");
     const content = String(children).replace(/\n$/, "");
@@ -256,3 +257,8 @@ export const createMarkdownComponents = (): Components => ({
     <td className="border border-border px-4 py-2">{children}</td>
   ),
 });
+
+/**
+ * Pre-created markdown components instance for use across the application.
+ */
+export const markdownComponents = createMarkdownComponents();
