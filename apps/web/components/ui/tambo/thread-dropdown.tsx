@@ -42,10 +42,12 @@ export const ThreadDropdown = React.forwardRef<
     error,
     refetch,
   } = useTamboThreadList({ contextKey });
-  const { switchCurrentThread, startNewThread } = useTamboThread();
+  const { switchCurrentThread, startNewThread, generateThreadName } =
+    useTamboThread();
   const isMac =
     typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
   const modKey = isMac ? "⌥" : "Alt";
+  const attemptedGenerationRef = React.useRef<Set<string>>(new Set());
 
   const handleNewThread = useCallback(
     async (e?: React.MouseEvent) => {
@@ -78,6 +80,35 @@ export const ThreadDropdown = React.forwardRef<
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [handleNewThread]);
+
+  // Automatically generate names for threads without names
+  React.useEffect(() => {
+    const generateMissingNames = async () => {
+      if (!threads?.items || isLoading) return;
+
+      for (const thread of threads.items) {
+        // Skip if thread already has a name or we've already attempted generation
+        if (thread.name || attemptedGenerationRef.current.has(thread.id)) {
+          continue;
+        }
+
+        // Mark as attempted
+        attemptedGenerationRef.current.add(thread.id);
+
+        try {
+          await generateThreadName(thread.id);
+          await refetch();
+        } catch (error) {
+          console.error(
+            `Failed to generate name for thread ${thread.id}:`,
+            error,
+          );
+        }
+      }
+    };
+
+    void generateMissingNames();
+  }, [threads, isLoading, generateThreadName, refetch]);
 
   const handleSwitchThread = async (threadId: string, e?: React.MouseEvent) => {
     if (e) {
@@ -165,7 +196,7 @@ export const ThreadDropdown = React.forwardRef<
                   }}
                 >
                   <span className="truncate max-w-[180px]">
-                    {`Thread ${thread.id.substring(0, 8)}`}
+                    {thread.name || `Thread ${thread.id.substring(0, 8)}`}
                   </span>
                 </DropdownMenu.Item>
               ))
