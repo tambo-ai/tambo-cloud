@@ -1,7 +1,13 @@
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FC, ReactNode, useCallback, useMemo } from "react";
+import { ChevronDown } from "lucide-react";
+import { FC, ReactNode, useCallback, useMemo, useState } from "react";
 import { isSameDay } from "../utils";
 import { ComponentMessage } from "./component-message";
 import { DateSeparator } from "./date-separator";
@@ -128,6 +134,19 @@ export function ThreadMessages({
   currentMatchMessageId,
   searchMatches = [],
 }: Readonly<ThreadMessagesProps>) {
+  // Track which parent groups are open (default to false/collapsed)
+  const [openParentGroups, setOpenParentGroups] = useState<
+    Record<string, boolean>
+  >({});
+
+  // Toggle a parent group's open/closed state
+  const toggleParentGroup = useCallback((parentId: string) => {
+    setOpenParentGroups((prev) => ({
+      ...prev,
+      [parentId]: !prev[parentId],
+    }));
+  }, []);
+
   // Check if a message has a search match
   const hasSearchMatch = useCallback(
     (messageId: string) => {
@@ -304,15 +323,34 @@ export function ThreadMessages({
         }
       });
 
-      // Wrap messages with same parentMessageId in a container
+      // Wrap messages with same parentMessageId in a collapsible container
       if (shouldWrapInContainer && containerElements.length > 0) {
+        const parentId = parentGroup.parentMessageId!;
+        const isOpen = openParentGroups[parentId] ?? false;
+
         elements.push(
-          <div
-            key={`parent-${parentGroup.parentMessageId}`}
-            className="rounded-lg border border-border bg-muted/30 p-3 space-y-4"
+          <Collapsible
+            key={`parent-${parentId}`}
+            open={isOpen}
+            onOpenChange={() => toggleParentGroup(parentId)}
           >
-            {containerElements}
-          </div>,
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-4">
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      isOpen && "rotate-180",
+                    )}
+                  />
+                  Child messages
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4">
+                {containerElements}
+              </CollapsibleContent>
+            </div>
+          </Collapsible>,
         );
       }
     });
@@ -325,6 +363,8 @@ export function ThreadMessages({
     messageRefs,
     searchQuery,
     hasSearchMatch,
+    openParentGroups,
+    toggleParentGroup,
   ]);
 
   return (
