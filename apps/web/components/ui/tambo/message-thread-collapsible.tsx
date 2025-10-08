@@ -21,6 +21,7 @@ import {
   ThreadContent,
   ThreadContentMessages,
 } from "@/components/ui/tambo/thread-content";
+import { ThreadDropdown } from "@/components/ui/tambo/thread-dropdown";
 import { OPEN_CHAT_EVENT, type OpenChatEvent } from "@/lib/chat-control";
 import { cn } from "@/lib/utils";
 import {
@@ -134,6 +135,8 @@ interface CollapsibleTriggerProps {
 const CollapsibleTrigger = ({
   isOpen,
   onClose,
+  contextKey,
+  onThreadChange,
   config,
 }: CollapsibleTriggerProps) => {
   if (!isOpen) {
@@ -171,6 +174,10 @@ const CollapsibleTrigger = ({
             className="w-4 h-4"
           />
           <span>{config.labels.openState}</span>
+          <ThreadDropdown
+            contextKey={contextKey}
+            onThreadChange={onThreadChange}
+          />
         </div>
         <div
           role="button"
@@ -191,6 +198,7 @@ export const MessageThreadCollapsible = React.forwardRef<
   MessageThreadCollapsibleProps
 >(({ className, contextKey, defaultOpen = false, variant, ...props }, ref) => {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+
   useTamboManagementTools();
   const { setValue, submit } = useTamboThreadInput();
 

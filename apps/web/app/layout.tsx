@@ -59,6 +59,9 @@ export default async function RootLayout({
   const organizationSchema = generateOrganizationSchema();
   const session = await getServerSession(authOptions);
 
+  // Generate a random context key for each session
+  const sessionContextKey = `session-${crypto.randomUUID()}`;
+
   return (
     <html
       lang="en"
@@ -96,6 +99,7 @@ export default async function RootLayout({
                     <MessageThreadCollapsible
                       className="z-50"
                       defaultOpen={false}
+                      contextKey={sessionContextKey}
                     />
                   </ComponentsThemeProvider>
                   <TailwindIndicator />

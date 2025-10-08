@@ -647,7 +647,15 @@ export function useTamboManagementTools() {
       description:
         "Fetches the current user. If the user is not logged in, return a link that leads to the login page at /login",
       tool: async () => {
-        return await trpcClient.user.getUser.query();
+        try {
+          return await trpcClient.user.getUser.query();
+        } catch (_error) {
+          return {
+            error: "User not logged in",
+            loginUrl: "/login",
+            message: "Please log in to access your account",
+          };
+        }
       },
       toolSchema: fetchCurrentUserSchema,
     });

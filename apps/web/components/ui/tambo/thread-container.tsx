@@ -24,7 +24,7 @@ export const ThreadContainer = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { hasCanvasSpace, canvasIsOnLeft } = useCanvasDetection(containerRef);
-  const { isLeftPanel, historyPosition } = usePositioning(
+  const { isLeftPanel } = usePositioning(
     className,
     canvasIsOnLeft,
     hasCanvasSpace,
@@ -42,11 +42,6 @@ export const ThreadContainer = React.forwardRef<
         // Add smooth transitions for layout changes
         "transition-all duration-200 ease-in-out",
 
-        // Sidebar spacing based on history position
-        historyPosition === "right"
-          ? "mr-[var(--sidebar-width,16rem)]"
-          : "ml-[var(--sidebar-width,16rem)]",
-
         // Width constraints based on canvas presence
         hasCanvasSpace
           ? "max-w-3xl"
@@ -58,6 +53,7 @@ export const ThreadContainer = React.forwardRef<
 
         // Right alignment when specified
         !isLeftPanel && "ml-auto",
+        "w-full",
 
         // Custom classes passed via props
         className,

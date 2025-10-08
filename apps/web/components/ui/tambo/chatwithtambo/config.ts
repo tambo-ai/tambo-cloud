@@ -1,6 +1,6 @@
 "use client";
 
-import { NextAuthAuthForm } from "@/components/auth/nextauth-auth-form";
+import { TamboLoginRedirect } from "@/components/auth/tambo-login-redirect";
 import {
   APIKeyList,
   APIKeyListProps,
@@ -95,10 +95,10 @@ export const tamboRegisteredComponents = [
     propsSchema: AvailableMcpServersProps,
   },
   {
-    name: "AuthForm",
+    name: "LoginPrompt",
     description:
-      "A form that allows users to authenticate with GitHub or Google. Use when users are not authenticated and need to log in to access features or when the fetchCurrentUser tool indicates the user is not logged in.",
-    component: NextAuthAuthForm,
+      "A prompt with a button that redirects users to the login page. Use when users are not authenticated and need to log in to access features or when the fetchCurrentUser tool indicates the user is not logged in.",
+    component: TamboLoginRedirect,
     propsSchema: z.object({}),
   },
   {

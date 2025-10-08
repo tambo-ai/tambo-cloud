@@ -94,7 +94,7 @@ export const ThreadDropdown = React.forwardRef<
 
   return (
     <div className={cn("relative", className)} ref={ref} {...props}>
-      <DropdownMenu.Root>
+      <DropdownMenu.Root modal={false}>
         <DropdownMenu.Trigger asChild>
           <div
             role="button"
@@ -107,7 +107,7 @@ export const ThreadDropdown = React.forwardRef<
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content
-            className="z-50 min-w-[200px] overflow-hidden rounded-md border border-gray-200 bg-popover p-1 text-popover-foreground shadow-md"
+            className="components-theme z-50 min-w-[200px] overflow-hidden rounded-md border border-gray-200 bg-popover p-1 text-popover-foreground shadow-md"
             side="right"
             align="start"
             sideOffset={5}

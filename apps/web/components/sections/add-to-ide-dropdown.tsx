@@ -25,7 +25,7 @@ export function AddToIdeDropdown() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.9, duration: 0.6, ease: "easeOut" }}
     >
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button className="flex items-center rounded-xl bg-slate-50 dark:bg-slate-900 p-4 lg:p-5 border border-slate-200 dark:border-border shadow-sm hover:shadow-md transition-shadow duration-300">
             <Code2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-800 dark:text-slate-200 mr-1.5 sm:mr-2" />
