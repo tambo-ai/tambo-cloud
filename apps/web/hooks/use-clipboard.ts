@@ -24,7 +24,7 @@ import { useCopyToClipboard } from "usehooks-ts";
 export function useClipboard(text: string, timeout = 2000) {
   const [copied, setCopied] = useState(false);
   const [, copyToClipboard] = useCopyToClipboard();
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const copy = useCallback(async () => {
     // Clear any existing timeout
