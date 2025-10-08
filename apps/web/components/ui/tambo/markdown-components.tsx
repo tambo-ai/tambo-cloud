@@ -1,13 +1,12 @@
 "use client";
 
-import { useClipboard } from "@/hooks/use-clipboard";
+import * as React from "react";
 import { cn } from "@/lib/utils";
-import DOMPurify from "dompurify";
+import type { Components } from "react-markdown";
+import { Copy, Check, ExternalLink } from "lucide-react";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
-import { Check, Copy, ExternalLink } from "lucide-react";
-import * as React from "react";
-import type { Components } from "react-markdown";
+import DOMPurify from "dompurify";
 
 /**
  * Markdown Components for React-Markdown
@@ -59,11 +58,13 @@ const CodeHeader = ({
   language?: string;
   code?: string;
 }) => {
-  const [copied, copy] = useClipboard(code ?? "");
+  const [copied, setCopied] = React.useState(false);
 
   const copyToClipboard = async () => {
     if (!code) return;
-    await copy();
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
