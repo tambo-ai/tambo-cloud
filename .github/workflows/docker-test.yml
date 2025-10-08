@@ -78,6 +78,7 @@ jobs:
           file: ./apps/web/Dockerfile
           push: ${{ steps.should_push.outputs.should_push }}
           load: ${{ steps.should_push.outputs.should_push == 'false' }}
+          platforms: ${{ steps.should_push.outputs.should_push == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           tags: |
             ${{ steps.should_push.outputs.should_push == 'true' && format('ghcr.io/tambo-ai/tambo-web-server:{0}', steps.should_push.outputs.release_tag) || 'tambo-web:latest' }}
             ${{ steps.should_push.outputs.should_push == 'true' && 'ghcr.io/tambo-ai/tambo-web-server:latest' || '' }}
@@ -93,6 +94,7 @@ jobs:
           file: ./apps/api/Dockerfile
           push: ${{ steps.should_push.outputs.should_push }}
           load: ${{ steps.should_push.outputs.should_push == 'false' }}
+          platforms: ${{ steps.should_push.outputs.should_push == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
           tags: |
             ${{ steps.should_push.outputs.should_push == 'true' && format('ghcr.io/tambo-ai/tambo-api-server:{0}', steps.should_push.outputs.release_tag) || 'tambo-api:latest' }}
             ${{ steps.should_push.outputs.should_push == 'true' && 'ghcr.io/tambo-ai/tambo-api-server:latest' || '' }}
