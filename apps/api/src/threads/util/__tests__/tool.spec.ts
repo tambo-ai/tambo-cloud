@@ -150,7 +150,7 @@ describe("tool utilities", () => {
           param1: "value1",
           param2: "value2",
         },
-        "tool-call-msg-1",
+        { "tambo.co/parentMessageId": "tool-call-msg-1" },
       );
 
       expect(result).toEqual({
@@ -200,6 +200,7 @@ describe("tool utilities", () => {
           mockSystemTools,
           toolCallRequest,
           "tool-call-1",
+          "tool-call-msg-1",
           componentDecision,
           advanceRequestDto,
         ),
