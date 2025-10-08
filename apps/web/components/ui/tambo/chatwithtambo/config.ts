@@ -83,7 +83,7 @@ export const tamboRegisteredComponents = [
   {
     name: "CustomInstructionsEditor",
     description:
-      "Allows users to create and edit custom instructions that are automatically included in every AI conversation for their project. Features inline editing with save/cancel functionality, preview mode, and handles empty states. Use when users want to set project-wide AI behavior guidelines, context, or specific instructions that should apply to all interactions.",
+      "Displays an interactive editor for project custom instructions with Save/Cancel buttons. The component automatically opens in editing mode by default, allowing users to review and save/cancel changes. Simply provide the project object with id, name, and customInstructions properties. Example: {project: {id: 'project-id', name: 'Project Name', customInstructions: 'new instructions text'}}. NOTE: This component does NOT auto-save - users must click Save.",
     component: CustomInstructionsEditor,
     propsSchema: CustomInstructionsEditorProps,
   },

@@ -470,6 +470,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
               <CustomInstructionsEditor
                 project={project}
                 onEdited={handleRefreshProject}
+                isChatMode={false}
               />
             </div>
 

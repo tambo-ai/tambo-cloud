@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
@@ -23,6 +24,11 @@ export const CustomInstructionsEditorSchema = z.object({
     .nullable()
     .optional()
     .describe("Custom instructions for the AI assistant."),
+  allowSystemPromptOverride: z
+    .boolean()
+    .nullable()
+    .optional()
+    .describe("Whether the system prompt override is allowed."),
 });
 
 export const CustomInstructionsEditorProps = z.object({
@@ -37,6 +43,11 @@ export const CustomInstructionsEditorProps = z.object({
     .describe(
       "Optional callback function triggered when instructions are successfully updated.",
     ),
+  isChatMode: z
+    .boolean()
+    .default(true)
+    .optional()
+    .describe("Keep this true in all cases."),
 });
 
 interface CustomInstructionsEditorProps {
@@ -47,13 +58,18 @@ interface CustomInstructionsEditorProps {
     allowSystemPromptOverride?: boolean | null;
   };
   onEdited?: () => void;
+  isChatMode?: boolean;
 }
 
 export function CustomInstructionsEditor({
   project,
   onEdited,
+  isChatMode = true,
 }: CustomInstructionsEditorProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  // Only start in editing mode if in chat mode AND no instructions exist yet
+  const [isEditing, setIsEditing] = useState(
+    isChatMode && !project?.customInstructions,
+  );
   const [customInstructions, setCustomInstructions] = useState(
     project?.customInstructions || "",
   );
@@ -77,13 +93,28 @@ export function CustomInstructionsEditor({
     }
   }, [project]);
 
+  const utils = api.useUtils();
+
   const updateProject = api.project.updateProject.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       setIsEditing(false);
-      // Call the onEdited callback to refresh the project data
+      toast({
+        title: "Saved",
+        description: "Custom instructions updated successfully",
+      });
+      // Invalidate cache to refresh all components showing this project
+      await utils.project.getUserProjects.invalidate();
+      // Call the onEdited callback if provided (for dashboard)
       if (onEdited) {
         onEdited();
       }
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save custom instructions",
+        variant: "destructive",
+      });
     },
   });
 
@@ -220,7 +251,7 @@ export function CustomInstructionsEditor({
                   >
                     {updateProject.isPending ? (
                       <span className="flex items-center gap-1">
-                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-current" />
+                        <Loader2 className="h-3 w-3 animate-spin" />
                         Saving...
                       </span>
                     ) : (
