@@ -11,7 +11,7 @@ import {
 } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import {
   CustomInstructionsEditor,
-  CustomInstructionsEditorProps,
+  CustomInstructionsEditorSchema,
 } from "@/components/dashboard-components/project-details/custom-instructions-editor";
 import {
   CustomLlmParametersEditor,
@@ -83,9 +83,9 @@ export const tamboRegisteredComponents = [
   {
     name: "CustomInstructionsEditor",
     description:
-      "Displays an interactive editor for project custom instructions with Save/Cancel buttons. The component automatically opens in editing mode by default, allowing users to review and save/cancel changes. Simply provide the project object with id, name, and customInstructions properties. Example: {project: {id: 'project-id', name: 'Project Name', customInstructions: 'new instructions text'}}. NOTE: This component does NOT auto-save - users must click Save.",
+      "NEVER RENDER THIS COMPONENT INLINE. This editor is only available on the project settings page. When users ask to view, edit, or improve custom instructions, direct them to the project settings page instead of rendering this component. If you need to suggest improved instructions, provide them as text in your response and tell the user they can copy them to the settings page.",
     component: CustomInstructionsEditor,
-    propsSchema: CustomInstructionsEditorProps,
+    propsSchema: CustomInstructionsEditorSchema,
   },
   {
     name: "AvailableMcpServers",

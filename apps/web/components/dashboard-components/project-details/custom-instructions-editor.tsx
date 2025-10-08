@@ -10,31 +10,32 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { openChat } from "@/lib/chat-control";
 import { api } from "@/trpc/react";
+import { withInteractable } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
 export const CustomInstructionsEditorSchema = z.object({
-  id: z.string().describe("The unique identifier for the project."),
-  name: z.string().describe("The name of the project."),
-  customInstructions: z
-    .string()
-    .nullable()
+  project: z
+    .object({
+      id: z.string().describe("The unique identifier for the project."),
+      name: z.string().describe("The name of the project."),
+      customInstructions: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("Custom instructions for the AI assistant."),
+      allowSystemPromptOverride: z
+        .boolean()
+        .nullable()
+        .optional()
+        .describe("Whether the system prompt override is allowed."),
+    })
     .optional()
-    .describe("Custom instructions for the AI assistant."),
-  allowSystemPromptOverride: z
-    .boolean()
-    .nullable()
-    .optional()
-    .describe("Whether the system prompt override is allowed."),
-});
-
-export const CustomInstructionsEditorProps = z.object({
-  project: CustomInstructionsEditorSchema.optional().describe(
-    "The project to edit custom instructions for.",
-  ),
+    .describe("The project to edit custom instructions for."),
   onEdited: z
     .function()
     .args()
@@ -50,18 +51,11 @@ export const CustomInstructionsEditorProps = z.object({
     .describe("Keep this true in all cases."),
 });
 
-interface CustomInstructionsEditorProps {
-  project?: {
-    id: string;
-    name: string;
-    customInstructions?: string | null;
-    allowSystemPromptOverride?: boolean | null;
-  };
-  onEdited?: () => void;
-  isChatMode?: boolean;
-}
+type CustomInstructionsEditorProps = z.infer<
+  typeof CustomInstructionsEditorSchema
+>;
 
-export function CustomInstructionsEditor({
+function CustomInstructionsEditorBase({
   project,
   onEdited,
   isChatMode = true,
@@ -71,27 +65,31 @@ export function CustomInstructionsEditor({
     isChatMode && !project?.customInstructions,
   );
   const [customInstructions, setCustomInstructions] = useState(
-    project?.customInstructions || "",
+    project?.customInstructions ?? "",
   );
   const { toast } = useToast();
-  const [allowSystemPromptOverride, setAllowSystemPromptOverride] = useState<
-    boolean | undefined
-  >(
-    project?.allowSystemPromptOverride === undefined
-      ? undefined
-      : Boolean(project?.allowSystemPromptOverride),
+  const [allowSystemPromptOverride, setAllowSystemPromptOverride] = useState(
+    !!project?.allowSystemPromptOverride,
   );
 
   // Update the instructions when the project changes (e.g., after loading)
   useEffect(() => {
     if (project?.customInstructions !== undefined) {
-      setCustomInstructions(project.customInstructions || "");
+      const newInstructions = project.customInstructions ?? "";
+      setCustomInstructions(newInstructions);
+      // If instructions changed externally and we're in chat mode, enter editing mode
+      if (isChatMode && newInstructions) {
+        setIsEditing(true);
+      }
     }
-    if (project) {
-      // initialize local switch state from project
-      setAllowSystemPromptOverride(Boolean(project.allowSystemPromptOverride));
+    if (project?.allowSystemPromptOverride !== undefined) {
+      setAllowSystemPromptOverride(!!project.allowSystemPromptOverride);
     }
-  }, [project]);
+  }, [
+    project?.customInstructions,
+    project?.allowSystemPromptOverride,
+    isChatMode,
+  ]);
 
   const utils = api.useUtils();
 
@@ -105,9 +103,7 @@ export function CustomInstructionsEditor({
       // Invalidate cache to refresh all components showing this project
       await utils.project.getUserProjects.invalidate();
       // Call the onEdited callback if provided (for dashboard)
-      if (onEdited) {
-        onEdited();
-      }
+      onEdited?.();
     },
     onError: (error) => {
       toast({
@@ -124,12 +120,12 @@ export function CustomInstructionsEditor({
     updateProject.mutate(
       {
         projectId: project.id,
-        allowSystemPromptOverride: Boolean(val),
+        allowSystemPromptOverride: val,
       },
       {
         onSuccess: () => {
           toast({ title: "Saved", description: "Updated project setting" });
-          if (onEdited) onEdited();
+          onEdited?.();
         },
         onError: () => {
           toast({
@@ -137,9 +133,7 @@ export function CustomInstructionsEditor({
             description: "Failed to update project setting",
             variant: "destructive",
           });
-          setAllowSystemPromptOverride(
-            Boolean(project.allowSystemPromptOverride),
-          );
+          setAllowSystemPromptOverride(!!project.allowSystemPromptOverride);
         },
       },
     );
@@ -155,8 +149,32 @@ export function CustomInstructionsEditor({
   };
 
   const handleCancel = () => {
-    setCustomInstructions(project?.customInstructions || "");
+    setCustomInstructions(project?.customInstructions ?? "");
     setIsEditing(false);
+  };
+
+  const handleImprovePrompt = () => {
+    if (!project) return;
+
+    const currentInstructions = project.customInstructions ?? "";
+    const message = currentInstructions
+      ? "Improve the custom instructions for this project."
+      : "Create effective custom instructions for this project.";
+
+    openChat({
+      message,
+      context: {
+        component: "CustomInstructionsEditor",
+        props: {
+          project: {
+            id: project.id,
+            name: project.name,
+            customInstructions: currentInstructions,
+            allowSystemPromptOverride: project.allowSystemPromptOverride,
+          },
+        },
+      },
+    });
   };
 
   // If project is undefined, show a loading state
@@ -191,9 +209,22 @@ export function CustomInstructionsEditor({
   return (
     <Card className="border rounded-md overflow-hidden">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">
-          Custom Instructions
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold">
+            Custom Instructions
+          </CardTitle>
+          {!isChatMode && project.customInstructions !== "" && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="font-sans"
+              onClick={handleImprovePrompt}
+            >
+              <Sparkles className="h-3 w-3 mr-1" />
+              Improve
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="flex items-start justify-between gap-4 mb-4">
@@ -208,14 +239,14 @@ export function CustomInstructionsEditor({
           </div>
           <div className="flex items-center">
             <Switch
-              checked={!!allowSystemPromptOverride}
-              onCheckedChange={(val) => updateAllowOverride(Boolean(val))}
+              checked={allowSystemPromptOverride}
+              onCheckedChange={updateAllowOverride}
               aria-label="Allow system prompt override"
             />
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative border-t border-muted pt-4">
           <AnimatePresence mode="wait">
             {isEditing ? (
               <motion.div
@@ -249,14 +280,12 @@ export function CustomInstructionsEditor({
                     onClick={handleSave}
                     disabled={updateProject.isPending}
                   >
-                    {updateProject.isPending ? (
-                      <span className="flex items-center gap-1">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        Saving...
-                      </span>
-                    ) : (
-                      <span>Save Instructions</span>
+                    {updateProject.isPending && (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
                     )}
+                    {updateProject.isPending
+                      ? "Saving..."
+                      : "Save Instructions"}
                   </Button>
                   <Button
                     size="sm"
@@ -314,3 +343,13 @@ export function CustomInstructionsEditor({
     </Card>
   );
 }
+
+export const CustomInstructionsEditor = withInteractable(
+  CustomInstructionsEditorBase,
+  {
+    componentName: "CustomInstructionsEditor",
+    description:
+      "An interactive editor for project custom instructions with Save/Cancel buttons and an 'Improve' button. The component automatically opens in editing mode when no instructions exist and can be updated in-place when AI provides improved instructions. Simply provide the project object with id, name, and customInstructions properties.",
+    propsSchema: CustomInstructionsEditorSchema,
+  },
+);

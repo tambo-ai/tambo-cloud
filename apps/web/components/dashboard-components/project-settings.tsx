@@ -469,7 +469,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             <div ref={customInstructionsRef} className="p-2">
               <CustomInstructionsEditor
                 project={project}
-                onEdited={handleRefreshProject}
+                onEdited={() => void handleRefreshProject()}
                 isChatMode={false}
               />
             </div>
