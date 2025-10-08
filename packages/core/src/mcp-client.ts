@@ -404,14 +404,12 @@ export class MCPClient {
   async callTool(
     name: string,
     args: Record<string, unknown>,
-    parentMessageId?: string,
+    _meta?: Record<string, unknown>,
   ): Promise<MCPToolCallResult> {
     const result = await this.client.callTool({
       name,
       arguments: args,
-      _meta: {
-        ["tambo.co/parentMessageId"]: parentMessageId,
-      },
+      _meta,
     });
     return result;
   }

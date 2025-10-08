@@ -80,6 +80,7 @@ import {
   callSystemTool,
   extractToolResponse,
   isSystemToolCall,
+  MCP_PARENT_MESSAGE_ID_META_KEY,
 } from "./util/tool";
 import {
   checkToolCallLimitViolation,
@@ -2234,9 +2235,9 @@ function createMcpHandlers(
 ): MCPHandlers {
   return {
     async sampling(e) {
-      const parentMessageId = e.params._meta?.["tambo.co/parentMessageId"] as
-        | string
-        | undefined;
+      const parentMessageId = e.params._meta?.[
+        MCP_PARENT_MESSAGE_ID_META_KEY
+      ] as string | undefined;
       const messages = e.params.messages.map((m) => ({
         // Have pretend this is "user" to let audio/image content through to
         // ChatCompletionContentPart
