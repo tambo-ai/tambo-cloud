@@ -199,9 +199,9 @@ describe("MessageContent", () => {
       <MessageContent message={messageWithContext} isUserMessage={true} />,
     );
 
-    const toggleButton = screen
-      .getByText("Additional Context")
-      .closest("button");
+    const toggleButton = screen.getByRole("button", {
+      name: /^additional context$/i,
+    });
     expect(toggleButton).toBeInTheDocument();
 
     // With animations skipped, the content is visible by default
@@ -209,7 +209,7 @@ describe("MessageContent", () => {
     expect(screen.getByText(/"key": "value"/)).toBeInTheDocument();
 
     // Test that the button is interactive
-    await user.click(toggleButton!);
+    await user.click(toggleButton);
     // The button should still be there after clicking
     expect(toggleButton).toBeInTheDocument();
   });
@@ -249,10 +249,10 @@ describe("MessageContent", () => {
     );
 
     // Expand context first
-    const toggleButton = screen
-      .getByText("Additional Context")
-      .closest("button");
-    await user.click(toggleButton!);
+    const toggleButton = screen.getByRole("button", {
+      name: /^additional context$/i,
+    });
+    await user.click(toggleButton);
 
     expect(screen.getByTestId("highlighted-json")).toBeInTheDocument();
   });

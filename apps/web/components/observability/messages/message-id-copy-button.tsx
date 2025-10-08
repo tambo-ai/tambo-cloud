@@ -31,9 +31,7 @@ export function MessageIdCopyButton({
         type="button"
         aria-label={`Copy message ID ${messageId}`}
         className={cn(
-          // Match previous span styling exactly
           "font-medium inline-flex items-center gap-1 cursor-pointer bg-muted/50 rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1",
-          // Ensure native button styles don't leak through
           "appearance-none border-0",
         )}
         onClick={copy}
