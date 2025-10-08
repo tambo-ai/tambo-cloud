@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { openChat } from "@/lib/chat-control";
+import { toDateKeyUTC } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { withInteractable } from "@tambo-ai/react";
 import { motion } from "framer-motion";
@@ -142,7 +143,7 @@ function DailyMessagesChartBase({
       for (let i = 0; i < config.periods; i++) {
         const date = new Date();
         date.setDate(date.getDate() - (config.periods - 1 - i));
-        const dateString = date.toISOString().split("T")[0];
+        const dateString = toDateKeyUTC(date);
 
         result.push({
           label: formatChartLabel(date, timeRange),
@@ -159,7 +160,7 @@ function DailyMessagesChartBase({
         for (let day = 0; day < 7; day++) {
           const date = new Date(weekStart);
           date.setDate(weekStart.getDate() + day);
-          total += messagesMap.get(date.toISOString().split("T")[0]) || 0;
+          total += messagesMap.get(toDateKeyUTC(date)) || 0;
         }
 
         result.push({ label: formatChartLabel(weekStart, timeRange), total });
@@ -171,14 +172,10 @@ function DailyMessagesChartBase({
         monthDate.setMonth(monthDate.getMonth() - (config.periods - 1 - i));
         monthDate.setDate(1);
 
-        const monthStart = monthDate.toISOString().split("T")[0];
-        const monthEnd = new Date(
-          monthDate.getFullYear(),
-          monthDate.getMonth() + 1,
-          1,
-        )
-          .toISOString()
-          .split("T")[0];
+        const monthStart = toDateKeyUTC(monthDate);
+        const monthEnd = toDateKeyUTC(
+          new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1),
+        );
 
         let total = 0;
         messagesMap.forEach((count, dateString) => {

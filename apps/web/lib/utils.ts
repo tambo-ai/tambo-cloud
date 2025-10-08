@@ -65,6 +65,19 @@ export function constructMetadata({
   };
 }
 
+/**
+ * Converts a Date to a UTC date key string (YYYY-MM-DD) for consistent aggregation.
+ * This ensures dates are normalized to UTC midnight, avoiding timezone drift issues
+ * where dates might shift by a day based on the user's local timezone.
+ *
+ * @param d - The date to convert
+ * @returns A date key string in YYYY-MM-DD format
+ */
+export function toDateKeyUTC(d: Date): string {
+  const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  return utc.toISOString().slice(0, 10);
+}
+
 export function formatDate(date: string) {
   const currentDate = new Date().getTime();
   if (!date.includes("T")) {

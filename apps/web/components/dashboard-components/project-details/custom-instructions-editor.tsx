@@ -77,7 +77,7 @@ function CustomInstructionsEditorBase({
     if (project?.customInstructions !== undefined) {
       const newInstructions = project.customInstructions ?? "";
       setCustomInstructions(newInstructions);
-      // If instructions changed externally and we're in chat mode, enter editing mode
+      // If there are existing instructions and we're in chat mode, enter editing mode
       if (isChatMode && newInstructions) {
         setIsEditing(true);
       }

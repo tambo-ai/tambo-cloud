@@ -206,7 +206,7 @@ export function ThreadMessagesInline({
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold">
-                        {isUser ? "👤 User" : "🤖 Assistant"}
+                        {isUser ? "User" : "Assistant"}
                       </span>
                     </div>
                     <span className="text-xs text-gray-500 font-mono">
@@ -223,7 +223,6 @@ export function ThreadMessagesInline({
                     {isTruncated && (
                       <div className="mt-3 pt-2 border-t border-gray-200">
                         <p className="text-xs text-gray-500 italic flex items-center gap-1">
-                          <span>📄</span>
                           <span>
                             Message truncated, showing first {MAX_LENGTH}{" "}
                             characters
@@ -239,7 +238,7 @@ export function ThreadMessagesInline({
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-2 px-2 py-1 bg-blue-100 border border-blue-300 rounded-md">
                           <span className="text-xs font-semibold text-blue-700">
-                            🔧 Tool Call
+                            Tool Call
                           </span>
                         </div>
                         <span className="text-sm font-medium text-gray-700">
@@ -279,7 +278,7 @@ export function ThreadMessagesInline({
                                   : "text-green-700"
                               }`}
                             >
-                              {toolResponse.error ? "❌ Error" : "✅ Response"}
+                              {toolResponse.error ? "Error" : "Response"}
                             </span>
                           </div>
                           <pre
@@ -300,7 +299,7 @@ export function ThreadMessagesInline({
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <div className="inline-flex items-center gap-2 px-2 py-1 bg-purple-100 border border-purple-300 rounded-md">
                         <span className="text-xs font-semibold text-purple-700">
-                          📦 Component
+                          Component
                         </span>
                         <span className="text-xs text-purple-600">
                           {message.componentDecision.componentName}
