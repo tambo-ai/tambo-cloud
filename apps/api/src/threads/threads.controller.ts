@@ -226,7 +226,7 @@ export class ThreadsController {
     @Param("id") threadId: string,
     @Query("includeInternal") includeInternal?: boolean,
   ): Promise<ThreadMessageDto[]> {
-    if (!includeInternal === false) {
+    if (includeInternal === false) {
       throw new BadRequestException(
         "includeInternal is deprecated, if passed, it can only be `true`",
       );

@@ -2238,7 +2238,9 @@ function createMcpHandlers(
         | string
         | undefined;
       const messages = e.params.messages.map((m) => ({
-        role: m.role as string as "user", // Have to force this to "user" to let audio/image content through
+        // Have pretend this is "user" to let audio/image content through to
+        // ChatCompletionContentPart
+        role: m.role as "user",
         content: [mcpContentToContentPart(m.content)],
       }));
       // add serially for now
