@@ -27,9 +27,16 @@ export function MessageIdCopyButton({
       animate={{ opacity: 1 }}
       transition={{ delay: 0.7 }}
     >
-      <span
-        className="font-medium flex items-center gap-1 cursor-pointer bg-muted/50 rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1"
-        onClick={async () => await copy()}
+      <button
+        type="button"
+        aria-label={`Copy message ID ${messageId}`}
+        className={cn(
+          // Match previous span styling exactly
+          "font-medium inline-flex items-center gap-1 cursor-pointer bg-muted/50 rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1",
+          // Ensure native button styles don't leak through
+          "appearance-none border-0",
+        )}
+        onClick={copy}
       >
         <span className="max-w-[100px] sm:max-w-none truncate">
           {messageId}
@@ -39,7 +46,7 @@ export function MessageIdCopyButton({
         ) : (
           <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-1 opacity-50" />
         )}
-      </span>
+      </button>
     </motion.div>
   );
 }
