@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -75,7 +76,11 @@ export class ThreadsController {
   @ProjectIdParameterKey("projectId")
   @UseGuards(ProjectAccessOwnGuard)
   @Get("project/:projectId")
-  @ApiQuery({ name: "contextKey", required: false })
+  @ApiQuery({
+    name: "contextKey",
+    description: "Unique user identifier for the thread",
+    required: false,
+  })
   @ApiQuery({ name: "offset", required: false, type: Number, default: 0 })
   @ApiQuery({ name: "limit", required: false, type: Number, default: 10 })
   async findAllForProject(
@@ -214,21 +219,42 @@ export class ThreadsController {
 
   @UseGuards(ThreadInProjectGuard)
   @Get(":id/messages")
+  @ApiParam({
+    name: "id",
+    description: "Id of the thread to get messages for",
+    example: "thr_123.456",
+  })
   @ApiQuery({
     name: "includeInternal",
-    description: "Whether to include internal messages",
+    description: "Whether to include internal messages, must be `true`",
     required: false,
     type: Boolean,
+    deprecated: true,
   })
   async getMessages(
     @Param("id") threadId: string,
     @Query("includeInternal") includeInternal?: boolean,
   ): Promise<ThreadMessageDto[]> {
-    return await this.threadsService.getMessages(threadId, includeInternal);
+    if (includeInternal === false) {
+      throw new BadRequestException(
+        "includeInternal is deprecated, if passed, it can only be `true`",
+      );
+    }
+    return await this.threadsService.getMessages({ threadId });
   }
 
   @UseGuards(ThreadInProjectGuard)
   @Delete(":id/messages/:messageId")
+  @ApiParam({
+    name: "id",
+    description: "Id of the thread that contains the message",
+    example: "thr_123.456",
+  })
+  @ApiParam({
+    name: "messageId",
+    description: "Id of the message to delete",
+    example: "msg_123.456",
+  })
   async deleteMessage(
     @Param("id") _threadId: string,
     @Param("messageId") messageId: string,
@@ -318,6 +344,16 @@ export class ThreadsController {
 
   @UseGuards(ThreadInProjectGuard)
   @Put(":id/messages/:messageId/component-state")
+  @ApiParam({
+    name: "id",
+    description: "Id of the thread that contains the message",
+    example: "thr_123.456",
+  })
+  @ApiParam({
+    name: "messageId",
+    description: "Id of the message to update component state for",
+    example: "msg_123.456",
+  })
   async updateComponentState(
     @Param("id") threadId: string,
     @Param("messageId") messageId: string,
@@ -335,6 +371,15 @@ export class ThreadsController {
    */
   @UseGuards(ThreadInProjectGuard)
   @Post(":id/advance")
+  @ApiOperation({
+    summary: "Advance a thread",
+    description: "Generates the response message for an existing thread",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Id of an existing thread to advance",
+    example: "thr_123.456",
+  })
   async advanceThread(
     @Param("id") threadId: string,
     @Req() request: Request,
@@ -359,6 +404,16 @@ export class ThreadsController {
 
   @UseGuards(ThreadInProjectGuard)
   @Post(":id/advancestream")
+  @ApiOperation({
+    summary: "Advance a thread stream",
+    description:
+      "Generates the response message for an existing thread, and streams the response message(s)",
+  })
+  @ApiParam({
+    name: "id",
+    description: "Id of an existing thread to advance",
+    example: "thr_123.456",
+  })
   async advanceThreadStream(
     @Param("id") threadId: string,
     @Req() request: Request,
@@ -395,6 +450,10 @@ export class ThreadsController {
    * Create a new thread and advance it, optionally appending a message before generation.
    */
   @Post("advance")
+  @ApiOperation({
+    summary: "Create and advance a thread",
+    description: "Creates a new thread and advances it",
+  })
   async createAndAdvanceThread(
     @Req() request: Request,
     @Body() advanceRequestDto: AdvanceThreadDto,
@@ -417,6 +476,11 @@ export class ThreadsController {
   }
 
   @Post("advancestream")
+  @ApiOperation({
+    summary: "Create and advance a thread stream",
+    description:
+      "Creates a new thread and advances it, and streams the response message(s)",
+  })
   async createAndAdvanceThreadStream(
     @Req() request: Request,
     @Body() advanceRequestDto: AdvanceThreadDto,
@@ -469,7 +533,11 @@ export class ThreadsController {
     description: "Thread not found",
     type: ProblemDetailsDto,
   })
-  @ApiQuery({ name: "contextKey", required: false })
+  @ApiQuery({
+    name: "contextKey",
+    description: "Unique user identifier for the thread",
+    required: false,
+  })
   async generateName(
     @Param("id") threadId: string,
     @Req() request: Request,
