@@ -2245,6 +2245,7 @@ function createMcpHandlers(
         content: [mcpContentToContentPart(m.content)],
       }));
       // add serially for now
+      // TODO: add messages in a batch
       for (const m of messages) {
         await operations.addMessage(db, {
           threadId,
