@@ -349,7 +349,7 @@ export const CustomInstructionsEditor = withInteractable(
   {
     componentName: "CustomInstructionsEditor",
     description:
-      "An interactive editor for project custom instructions with Save/Cancel buttons and an 'Improve' button. The component automatically opens in editing mode when no instructions exist and can be updated in-place when AI provides improved instructions. Simply provide the project object with id, name, and customInstructions properties.",
+      "INTERACTABLE: Updates ONLY the custom instructions TEXT/SYSTEM PROMPT field (the natural language instructions that guide the AI's behavior). Use the update_interactable_component tool to modify the customInstructions text content when providing improved wording for the system prompt. This is ONLY for the instructions text field - NOT for technical model configuration like temperature, thinking mode, or the customLlmParameters field. For model configuration, use the updateProjectModelConfig tool instead.",
     propsSchema: CustomInstructionsEditorSchema,
   },
 );

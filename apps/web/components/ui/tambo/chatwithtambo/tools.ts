@@ -355,12 +355,12 @@ export const fetchProjectLlmSettingsSchema = z
   );
 
 /**
- * Zod schema for the `updateProjectLlmSettings` function.
- * Defines arguments as the project ID string and an LLM settings object (with all fields optional for partial updates),
- * and the return type as an object representing the updated LLM settings.
+ * Zod schema for the `updateProjectModelConfig` function.
+ * Defines arguments as the project ID string and a model configuration object (with all fields optional for partial updates),
+ * and the return type as an object representing the updated model configuration.
  * The customLlmParameters field supports partial updates through deep merging.
  */
-export const updateProjectLlmSettingsSchema = z
+export const updateProjectModelConfigSchema = z
   .function()
   .args(
     z.string().describe("The project ID"),
@@ -378,7 +378,7 @@ export const updateProjectLlmSettingsSchema = z
           ),
         maxInputTokens: z.number().nullable().optional(),
       })
-      .describe("The LLM settings to update"),
+      .describe("The model configuration to update"),
   )
   .returns(
     z.object({
@@ -971,27 +971,28 @@ export function useTamboManagementTools() {
     });
 
     /**
-     * Registers a tool to update LLM configuration settings for a project.
-     * Updates the default LLM provider, model, custom configurations, and custom LLM parameters.
+     * Registers a tool to update LLM model configuration for a project.
+     * Updates model configuration like provider, model name, and technical settings (temperature, thinking mode, topP, etc.).
+     * This is for TECHNICAL MODEL CONFIGURATION ONLY - NOT for custom instructions text.
      * CRITICAL: ALWAYS call fetchAvailableModels FIRST to get the correct model apiName.
      * Supports partial updates for customLlmParameters - they will be deep merged with existing values.
      * @param {string} projectId - The project ID to update
-     * @param {Object} settings - LLM configuration settings to update
-     * @param {string|null} settings.defaultLlmProviderName - The LLM provider name (e.g., 'openai', 'anthropic')
-     * @param {string|null} settings.defaultLlmModelName - The model apiName (MUST use exact apiName from fetchAvailableModels, not display name!)
-     * @param {string|null} settings.customLlmModelName - Custom model name if using custom provider
-     * @param {string|null} settings.customLlmBaseURL - Custom base URL for LLM API
-     * @param {number|null} settings.maxInputTokens - Maximum input tokens for the project
-     * @param {CustomLlmParameters|null} settings.customLlmParameters - Custom LLM parameters (provider -> model -> parameter structure)
-     * @returns {Object} Updated LLM configuration settings
+     * @param {Object} config - Model configuration to update
+     * @param {string|null} config.defaultLlmProviderName - The LLM provider name (e.g., 'openai', 'anthropic')
+     * @param {string|null} config.defaultLlmModelName - The model apiName (MUST use exact apiName from fetchAvailableModels, not display name!)
+     * @param {string|null} config.customLlmModelName - Custom model name if using custom provider
+     * @param {string|null} config.customLlmBaseURL - Custom base URL for LLM API
+     * @param {number|null} config.maxInputTokens - Maximum input tokens for the project
+     * @param {CustomLlmParameters|null} config.customLlmParameters - Custom LLM parameters (provider -> model -> parameter structure)
+     * @returns {Object} Updated model configuration
      */
     registerTool({
-      name: "updateProjectLlmSettings",
+      name: "updateProjectModelConfig",
       description:
-        "Updates LLM configuration settings for a project. CRITICAL: Before setting defaultLlmModelName, you MUST call fetchAvailableModels to get the exact apiName (e.g., 'gpt-5-2025-08-07' not 'gpt-5'). For customLlmParameters, you can provide partial updates - they will be merged with existing parameters. Example: to turn on thinking for gpt-4o, just pass { openai: { 'gpt-4o': { thinking: true } } }.",
+        "TOOL: Updates ONLY the technical LLM MODEL CONFIGURATION like provider, model selection, temperature, thinking mode, maxOutputTokens, topP, topK, presencePenalty, frequencyPenalty, etc. Use this for CHANGING MODEL SETTINGS, NOT for updating custom instructions text. CRITICAL: Before setting defaultLlmModelName, you MUST call fetchAvailableModels to get the exact apiName (e.g., 'gpt-5-2025-08-07' not 'gpt-5'). For customLlmParameters field, you can provide partial updates - they will be merged with existing values. Example: to turn on thinking for gpt-4o, just pass { openai: { 'gpt-4o': { thinking: true } } }.",
       tool: async (
         projectId: string,
-        settings: {
+        config: {
           defaultLlmProviderName?: string | null;
           defaultLlmModelName?: string | null;
           customLlmModelName?: string | null;
@@ -1001,7 +1002,7 @@ export function useTamboManagementTools() {
         },
       ) => {
         // Merge customLlmParameters if provided (deep merge at model level)
-        let customLlmParameters = settings.customLlmParameters;
+        let customLlmParameters = config.customLlmParameters;
         if (customLlmParameters) {
           const projects = await trpcClient.project.getUserProjects.query();
           const current =
@@ -1024,7 +1025,7 @@ export function useTamboManagementTools() {
 
         const result = await trpcClient.project.updateProject.mutate({
           projectId,
-          ...settings,
+          ...config,
           customLlmParameters,
         });
 
@@ -1034,7 +1035,7 @@ export function useTamboManagementTools() {
 
         return result;
       },
-      toolSchema: updateProjectLlmSettingsSchema,
+      toolSchema: updateProjectModelConfigSchema,
     });
 
     /* mcp server management */
