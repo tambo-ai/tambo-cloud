@@ -1,8 +1,7 @@
 import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FC, ReactNode, useCallback, useMemo, useState } from "react";
-import { useCopyToClipboard } from "usehooks-ts";
+import { FC, ReactNode, useCallback, useMemo } from "react";
 import { isSameDay } from "../utils";
 import { ComponentMessage } from "./component-message";
 import { DateSeparator } from "./date-separator";
@@ -63,8 +62,6 @@ interface MessageRendererProps {
   group: MessageGroup;
   isUserMessage: boolean;
   isHighlighted: boolean;
-  copiedId: string | null;
-  onCopyId: (id: string) => void;
   searchQuery?: string;
 }
 
@@ -72,8 +69,6 @@ const MessageRenderer: FC<MessageRendererProps> = ({
   group,
   isUserMessage,
   isHighlighted,
-  copiedId,
-  onCopyId,
   searchQuery,
 }) => {
   if (group.type === "tool_call") {
@@ -82,8 +77,6 @@ const MessageRenderer: FC<MessageRendererProps> = ({
         message={group.message}
         toolResponse={group.toolResponse}
         isHighlighted={isHighlighted}
-        copiedId={copiedId}
-        onCopyId={onCopyId}
         searchQuery={searchQuery}
       />
     );
@@ -94,8 +87,6 @@ const MessageRenderer: FC<MessageRendererProps> = ({
       <ComponentMessage
         message={group.message}
         isHighlighted={isHighlighted}
-        copiedId={copiedId}
-        onCopyId={onCopyId}
         searchQuery={searchQuery}
       />
     );
@@ -106,8 +97,6 @@ const MessageRenderer: FC<MessageRendererProps> = ({
       message={group.message}
       isUserMessage={isUserMessage}
       isHighlighted={isHighlighted}
-      copiedId={copiedId}
-      onCopyId={onCopyId}
       searchQuery={searchQuery}
     />
   );
@@ -139,18 +128,6 @@ export function ThreadMessages({
   currentMatchMessageId,
   searchMatches = [],
 }: Readonly<ThreadMessagesProps>) {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [, copyToClipboard] = useCopyToClipboard();
-
-  const handleCopyId = useCallback(
-    async (id: string) => {
-      await copyToClipboard(id);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    },
-    [copyToClipboard],
-  );
-
   // Check if a message has a search match
   const hasSearchMatch = useCallback(
     (messageId: string) => {
@@ -259,8 +236,6 @@ export function ThreadMessages({
             group={group}
             isUserMessage={isUserMessage}
             isHighlighted={isHighlighted}
-            copiedId={copiedId}
-            onCopyId={handleCopyId}
             searchQuery={searchQuery}
           />
         </motion.div>,
@@ -273,8 +248,6 @@ export function ThreadMessages({
     highlightedMessageId,
     currentMatchMessageId,
     messageRefs,
-    copiedId,
-    handleCopyId,
     searchQuery,
     hasSearchMatch,
   ]);

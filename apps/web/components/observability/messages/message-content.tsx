@@ -1,4 +1,5 @@
 import { createMarkdownComponents } from "@/components/ui/tambo/markdown-components";
+import { useClipboard } from "@/hooks/use-clipboard";
 import { getSafeContent } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
@@ -8,6 +9,7 @@ import { FC, isValidElement, memo, ReactNode, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { formatTime } from "../utils";
 import { HighlightedJson, HighlightText } from "./highlight";
+import { MessageIdCopyButton } from "./message-id-copy-button";
 
 type ThreadType = RouterOutputs["thread"]["getThread"];
 type MessageType = ThreadType["messages"][0];
@@ -91,8 +93,6 @@ interface AdditionalContextSectionProps {
   message: MessageType;
   showAdditionalContext: boolean;
   setShowAdditionalContext: (show: boolean) => void;
-  copiedId: string | null;
-  onCopyId: (id: string) => void;
   searchQuery?: string;
 }
 
@@ -100,11 +100,9 @@ const AdditionalContextSection: FC<AdditionalContextSectionProps> = ({
   message,
   showAdditionalContext,
   setShowAdditionalContext,
-  copiedId,
-  onCopyId,
   searchQuery,
 }) => {
-  const formatAdditionalContext = (context: Record<string, any>) => {
+  const formatAdditionalContext = (context: Record<string, unknown>) => {
     try {
       return JSON.stringify(context, null, 2);
     } catch {
@@ -115,11 +113,11 @@ const AdditionalContextSection: FC<AdditionalContextSectionProps> = ({
   const contextString = formatAdditionalContext(
     message.additionalContext || {},
   );
-  const isContextCopied = copiedId === contextString;
+  const [copied, copy] = useClipboard(contextString);
 
-  const handleCopyContext = (e: React.MouseEvent) => {
+  const handleCopyContext = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    onCopyId(contextString);
+    await copy();
   };
 
   const toggleContext = () => {
@@ -143,7 +141,7 @@ const AdditionalContextSection: FC<AdditionalContextSectionProps> = ({
             onClick={handleCopyContext}
             className="h-5 w-5 sm:h-6 sm:w-6 p-0 flex items-center justify-center cursor-pointer hover:bg-muted rounded-sm transition-colors"
           >
-            {isContextCopied ? (
+            {copied ? (
               <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-500" />
             ) : (
               <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary" />
@@ -181,49 +179,6 @@ const AdditionalContextSection: FC<AdditionalContextSectionProps> = ({
   );
 };
 
-// Subcomponent for message ID section
-interface MessageIdSectionProps {
-  message: MessageType;
-  copiedId: string | null;
-  onCopyId: (id: string) => void;
-  isUserMessage: boolean;
-}
-
-const MessageIdSection: FC<MessageIdSectionProps> = ({
-  message,
-  copiedId,
-  onCopyId,
-  isUserMessage,
-}) => {
-  const isIdCopied = copiedId === message.id;
-
-  return (
-    <motion.div
-      className={cn(
-        "flex items-center gap-2 mt-2 text-[10px] sm:text-[11px] text-foreground px-1",
-        isUserMessage ? "flex-row-reverse" : "flex-row",
-      )}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.7 }}
-    >
-      <span
-        className="font-medium flex items-center gap-1 cursor-pointer bg-muted/50 rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1"
-        onClick={() => onCopyId(message.id)}
-      >
-        <span className="max-w-[100px] sm:max-w-none truncate">
-          {message.id}
-        </span>
-        {isIdCopied ? (
-          <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-1 text-green-500" />
-        ) : (
-          <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3 ml-1 opacity-50" />
-        )}
-      </span>
-    </motion.div>
-  );
-};
-
 interface MessageContentProps {
   message: MessageType;
   isUserMessage: boolean;
@@ -231,8 +186,6 @@ interface MessageContentProps {
 }
 
 interface MessageContentComponentProps extends MessageContentProps {
-  copiedId: string | null;
-  onCopyId: (id: string) => void;
   searchQuery?: string;
 }
 
@@ -241,8 +194,6 @@ export const MessageContent = memo(
     message,
     isUserMessage,
     isHighlighted = false,
-    copiedId,
-    onCopyId,
     searchQuery,
   }: MessageContentComponentProps) => {
     const [showAdditionalContext, setShowAdditionalContext] = useState(false);
@@ -300,8 +251,6 @@ export const MessageContent = memo(
                   message={message}
                   showAdditionalContext={showAdditionalContext}
                   setShowAdditionalContext={setShowAdditionalContext}
-                  copiedId={copiedId}
-                  onCopyId={onCopyId}
                   searchQuery={searchQuery}
                 />
               )}
@@ -310,10 +259,8 @@ export const MessageContent = memo(
         </motion.div>
 
         {/* Bottom metadata */}
-        <MessageIdSection
-          message={message}
-          copiedId={copiedId}
-          onCopyId={onCopyId}
+        <MessageIdCopyButton
+          messageId={message.id}
           isUserMessage={isUserMessage}
         />
       </>
