@@ -23,10 +23,6 @@ export function APIKeyDialog({
 }: APIKeyDialogProps) {
   const [copied, copy] = useClipboard(apiKey);
 
-  const copyToClipboard = async () => {
-    await copy();
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -46,12 +42,7 @@ export function APIKeyDialog({
           </p>
         </div>
         <DialogFooter className="mt-4">
-          <Button
-            className="w-full font-sans"
-            onClick={async () => {
-              await copyToClipboard();
-            }}
-          >
+          <Button className="w-full font-sans" onClick={copy}>
             {copied ? (
               <span className="flex items-center gap-1">
                 <Check className="h-3 w-3" />

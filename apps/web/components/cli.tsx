@@ -50,12 +50,6 @@ export function CLI({
   const hasTabs = items.length > 1;
   const isLightMode = theme === "light";
 
-  const copyToClipboard = async () => {
-    if (activeItem?.command) {
-      await copy();
-    }
-  };
-
   return (
     <div
       className={cn(
@@ -119,7 +113,7 @@ export function CLI({
 
         {/* Copy Button */}
         <button
-          onClick={copyToClipboard}
+          onClick={copy}
           className={cn(
             "transition-colors ml-2",
             isLightMode
