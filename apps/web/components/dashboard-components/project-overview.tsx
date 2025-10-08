@@ -44,8 +44,7 @@ export function ProjectOverview({ projectId }: ProjectOverviewProps) {
         createdAt={new Date(project.createdAt).toLocaleDateString()}
       />
       <div>
-        <DailyMessagesChart projectIds={[projectId]} days={30} />
-
+        <DailyMessagesChart projectId={projectId} />
         {/* TODO: Add back in when we have error tracking */}
         {/* <DailyThreadErrorsChart projectId={projectId} /> */}
       </div>

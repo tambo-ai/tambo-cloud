@@ -104,7 +104,7 @@ export const tamboRegisteredComponents = [
   {
     name: "DailyMessagesChart",
     description:
-      "Displays a bar chart showing daily message activity for one or more projects over a configurable time period (1-90 days, default 30). Accepts either a single project ID or an array of project IDs to show combined activity across multiple projects. Features responsive design with smooth animations, loading states, and empty state handling. Shows date-formatted labels and message counts with visual indicators. Use when users want to view message activity trends and usage patterns for their project analytics or across all their projects.",
+      "INTERACTABLE COMPONENT: An interactive bar chart showing message activity for a project that can be updated in-place. IMPORTANT: Requires a complete, valid project ID (e.g., 'p_abc123.def456') - do NOT use partial or incomplete IDs. Supports three view modes via the initialTimeRange prop: 'daily' (last 30 days), 'weekly' (last 12 weeks), or 'monthly' (last 3 months). Defaults to daily if not specified. When users ask to change the view (e.g., 'show weekly' or 'switch to monthly'), use the update_interactable_component tool to modify the initialTimeRange prop of the existing component on the page - do NOT re-render a new component. The chart will automatically update in place with the new view. Features responsive design with smooth animations, loading states, and empty state handling. Use when users want to view message activity trends and usage patterns for their project analytics.",
     component: DailyMessagesChart,
     propsSchema: DailyMessagesChartSchema,
   },

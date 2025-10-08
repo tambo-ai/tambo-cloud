@@ -21,9 +21,11 @@ import {
   ThreadContent,
   ThreadContentMessages,
 } from "@/components/ui/tambo/thread-content";
+import { OPEN_CHAT_EVENT, type OpenChatEvent } from "@/lib/chat-control";
 import { cn } from "@/lib/utils";
 import {
   useTambo,
+  useTamboThreadInput,
   type Suggestion,
   type TamboThreadMessage,
 } from "@tambo-ai/react";
@@ -190,10 +192,40 @@ export const MessageThreadCollapsible = React.forwardRef<
 >(({ className, contextKey, defaultOpen = false, variant, ...props }, ref) => {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   useTamboManagementTools();
+  const { setValue, submit } = useTamboThreadInput();
 
   const handleThreadChange = React.useCallback(() => {
     setIsOpen(true);
   }, [setIsOpen]);
+
+  // Listen for custom events to open the chat
+  React.useEffect(() => {
+    const handleOpenChat = (event: Event) => {
+      const customEvent = event as CustomEvent<OpenChatEvent>;
+      const { message } = customEvent.detail || {};
+
+      setIsOpen(true);
+
+      // Set initial message and submit if provided
+      if (message) {
+        // Small delay to ensure the chat is opened first
+        setTimeout(() => {
+          setValue(message);
+          // Submit the message automatically to show the component
+          setTimeout(() => {
+            void submit();
+            // Clear the input after submitting
+            setTimeout(() => {
+              setValue("");
+            }, 100);
+          }, 50);
+        }, 100);
+      }
+    };
+
+    window.addEventListener(OPEN_CHAT_EVENT, handleOpenChat);
+    return () => window.removeEventListener(OPEN_CHAT_EVENT, handleOpenChat);
+  }, [setValue, submit]);
 
   /**
    * Configuration for the MessageThreadCollapsible component
