@@ -186,9 +186,9 @@ export const ThreadDropdown = React.forwardRef<
                 No previous threads
               </DropdownMenu.Item>
             ) : (
-              threads?.items.map((thread) => (
+              threads?.items.map((thread, index) => (
                 <DropdownMenu.Item
-                  key={thread.id}
+                  key={`${thread.id}.${index}`}
                   className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                   onSelect={async (e: Event) => {
                     e.preventDefault();
