@@ -1,94 +1,10 @@
 import { AbstractAgent } from "@ag-ui/client";
+import { AsyncQueue } from "./async-queue";
 
 export type AgentSubscriber = AbstractAgent["subscribers"][number];
 export type EventHandlerParams = Parameters<
   NonNullable<AgentSubscriber["onEvent"]>
 >[0];
-
-/**
- * Generic queue-backed AsyncIterator you can push values into.
- * Call `finish()` to end the stream, or `fail(err)` to error it.
- */
-function createPushAsyncIterator<T>() {
-  type Resolver = (r: IteratorResult<T>) => void;
-  type Rejecter = (reason?: unknown) => void;
-
-  const queue: T[] = [];
-  const waiters: { resolve: Resolver; reject: Rejecter }[] = [];
-  let done = false;
-  let failed: unknown | null = null;
-
-  function push(v: T) {
-    if (done || failed !== null) return;
-    if (waiters.length) {
-      const { resolve } = waiters.shift()!;
-      resolve({ value: v, done: false });
-    } else {
-      queue.push(v);
-    }
-  }
-
-  function finish() {
-    if (done || failed !== null) return;
-    done = true;
-    while (waiters.length) {
-      const { resolve } = waiters.shift()!;
-      resolve({ value: undefined, done: true });
-    }
-  }
-
-  function fail(err: unknown) {
-    if (done || failed !== null) return;
-    // Normalize once so every consumer sees the same error instance
-    const error = err ?? new Error("Unknown error");
-    failed = error;
-    while (waiters.length) {
-      const { reject } = waiters.shift()!;
-      // Reject the promise immediately to propagate the same normalized error
-      reject(error);
-    }
-  }
-
-  async function next(): Promise<IteratorResult<T>> {
-    if (failed !== null) {
-      // Throw on pull to propagate the error to the consumer `for await`
-      const err = failed;
-      failed = null; // avoid throwing repeatedly
-      throw err;
-    }
-    if (queue.length) {
-      return { value: queue.shift()!, done: false };
-    }
-    if (done) return { value: undefined, done: true };
-
-    const promise = new Promise<IteratorResult<T>>((resolve, reject) =>
-      waiters.push({ resolve, reject }),
-    );
-    return await promise;
-  }
-
-  async function return_(): Promise<IteratorResult<T>> {
-    finish();
-    return await Promise.resolve({ value: undefined, done: true });
-  }
-
-  return {
-    push,
-    finish,
-    fail,
-    iterator: {
-      next,
-      return: return_,
-      throw: async (e?: unknown) => {
-        fail(e ?? new Error("Stream aborted"));
-        return { value: undefined, done: true };
-      },
-      [Symbol.asyncIterator]() {
-        return this;
-      },
-    } satisfies AsyncIterableIterator<T>,
-  };
-}
 
 /**
  * Adapts your client's event callbacks into an AsyncIterableIterator<LLMResponse>.
@@ -99,26 +15,23 @@ function eventsToAsyncIterator(
   subscribe: (agentSubcriber: AgentSubscriber) => { unsubscribe: () => void },
   opts?: { signal?: AbortSignal },
 ): AsyncIterableIterator<EventHandlerParams> {
-  const { push, finish, fail, iterator } =
-    createPushAsyncIterator<EventHandlerParams>();
+  const queue = new AsyncQueue<EventHandlerParams>();
 
   const { unsubscribe } = subscribe({
     onEvent(params) {
-      push(params);
+      queue.push(params);
     },
     onRunErrorEvent(params) {
-      push(params);
+      queue.push(params);
       // Propagate the error to consumers; pending/next pulls will reject
-      fail(params.event);
-      finish(); // close out the iterator; error is delivered via rejection
+      queue.fail(params.event); // fail() also closes the iterator
     },
     onRunFinishedEvent(params) {
-      push(params);
-      finish();
+      queue.push(params);
+      queue.finish();
     },
     onRunFailed({ error }) {
-      fail(error);
-      finish();
+      queue.fail(error); // fail() also closes the iterator
     },
   });
 
@@ -129,7 +42,7 @@ function eventsToAsyncIterator(
     } catch {
       console.warn("Failed to unsubscribe");
     }
-    fail(new Error("Aborted"));
+    queue.fail(new Error("Aborted"));
   };
   if (opts?.signal) {
     if (opts.signal.aborted) onAbort();
@@ -137,8 +50,8 @@ function eventsToAsyncIterator(
   }
 
   // Ensure iterator.return() cleans up
-  const origReturn = iterator.return.bind(iterator);
-  iterator.return = async () => {
+  const origReturn = queue.return.bind(queue);
+  queue.return = async () => {
     try {
       unsubscribe();
     } catch {
@@ -148,7 +61,7 @@ function eventsToAsyncIterator(
     return await origReturn();
   };
 
-  return iterator;
+  return queue;
 }
 
 type RunAgentResult = Awaited<ReturnType<AbstractAgent["runAgent"]>>;
