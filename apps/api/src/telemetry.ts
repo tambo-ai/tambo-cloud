@@ -1,5 +1,4 @@
 import { LangfuseSpanProcessor, ShouldExportSpan } from "@langfuse/otel";
-import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { ExpressInstrumentation } from "@opentelemetry/instrumentation-express";
@@ -27,14 +26,7 @@ export function initializeOpenTelemetry() {
   const sdkConfig: Partial<NodeSDKConfiguration> = {
     // resource,
     instrumentations,
-    spanProcessors: [
-      new LangfuseSpanProcessor({
-        shouldExportSpan: ({ otelSpan }) => {
-          console.log("shouldExportSpan 1", otelSpan.instrumentationScope.name);
-          return otelSpan.instrumentationScope.name !== "next.js";
-        },
-      }),
-    ],
+    spanProcessors: [langfuseSpanProcessor],
   };
 
   // Initialize the SDK
@@ -52,7 +44,7 @@ export function initializeOpenTelemetry() {
 export async function shutdownOpenTelemetry(sdk: NodeSDK) {
   return await sdk.shutdown();
 }
-// Optional: filter our NextJS infra spans
+
 const shouldExportSpan: ShouldExportSpan = (span) => {
   return ![
     // for now just manually exclude these because we do not want them to go to
@@ -67,13 +59,6 @@ const shouldExportSpan: ShouldExportSpan = (span) => {
 
 export const langfuseSpanProcessor = new LangfuseSpanProcessor({
   shouldExportSpan,
-  flushInterval: 1,
 });
-
-const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [langfuseSpanProcessor],
-});
-
-tracerProvider.register();
 
 export const sdk = initializeOpenTelemetry();
