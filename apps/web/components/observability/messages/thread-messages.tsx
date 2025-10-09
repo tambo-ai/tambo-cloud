@@ -1,6 +1,12 @@
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import { FC, ReactNode, useCallback, useMemo, useState } from "react";
 import { isSameDay } from "../utils";
 import { ComponentMessage } from "./component-message";
@@ -62,8 +68,6 @@ interface MessageRendererProps {
   group: MessageGroup;
   isUserMessage: boolean;
   isHighlighted: boolean;
-  copiedId: string | null;
-  onCopyId: (id: string) => void;
   searchQuery?: string;
 }
 
@@ -71,8 +75,6 @@ const MessageRenderer: FC<MessageRendererProps> = ({
   group,
   isUserMessage,
   isHighlighted,
-  copiedId,
-  onCopyId,
   searchQuery,
 }) => {
   if (group.type === "tool_call") {
@@ -81,8 +83,6 @@ const MessageRenderer: FC<MessageRendererProps> = ({
         message={group.message}
         toolResponse={group.toolResponse}
         isHighlighted={isHighlighted}
-        copiedId={copiedId}
-        onCopyId={onCopyId}
         searchQuery={searchQuery}
       />
     );
@@ -93,8 +93,6 @@ const MessageRenderer: FC<MessageRendererProps> = ({
       <ComponentMessage
         message={group.message}
         isHighlighted={isHighlighted}
-        copiedId={copiedId}
-        onCopyId={onCopyId}
         searchQuery={searchQuery}
       />
     );
@@ -105,8 +103,6 @@ const MessageRenderer: FC<MessageRendererProps> = ({
       message={group.message}
       isUserMessage={isUserMessage}
       isHighlighted={isHighlighted}
-      copiedId={copiedId}
-      onCopyId={onCopyId}
       searchQuery={searchQuery}
     />
   );
@@ -138,12 +134,17 @@ export function ThreadMessages({
   currentMatchMessageId,
   searchMatches = [],
 }: Readonly<ThreadMessagesProps>) {
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  // Track which parent groups are open (default to false/collapsed)
+  const [openParentGroups, setOpenParentGroups] = useState<
+    Record<string, boolean>
+  >({});
 
-  const handleCopyId = useCallback(async (id: string) => {
-    await navigator.clipboard.writeText(id);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  // Toggle a parent group's open/closed state
+  const toggleParentGroup = useCallback((parentId: string) => {
+    setOpenParentGroups((prev) => ({
+      ...prev,
+      [parentId]: !prev[parentId],
+    }));
   }, []);
 
   // Check if a message has a search match
@@ -201,77 +202,169 @@ export function ThreadMessages({
     return groups;
   }, [thread.messages]);
 
+  // Group sequential messages by parentMessageId
+  const parentGroupedMessages = useMemo(() => {
+    const grouped: Array<{
+      parentMessageId: string | null;
+      groups: MessageGroup[];
+    }> = [];
+
+    let currentParentId: string | null = null;
+    let currentGroupSet: MessageGroup[] = [];
+
+    messageGroups.forEach((group) => {
+      const parentId = group.message.parentMessageId ?? null;
+
+      if (parentId && parentId === currentParentId) {
+        // Same parent as previous, add to current group
+        currentGroupSet.push(group);
+      } else {
+        // Different parent (or no parent), save previous group and start new one
+        if (currentGroupSet.length > 0) {
+          grouped.push({
+            parentMessageId: currentParentId,
+            groups: currentGroupSet,
+          });
+        }
+        currentParentId = parentId;
+        currentGroupSet = [group];
+      }
+    });
+
+    // Don't forget the last group
+    if (currentGroupSet.length > 0) {
+      grouped.push({
+        parentMessageId: currentParentId,
+        groups: currentGroupSet,
+      });
+    }
+
+    return grouped;
+  }, [messageGroups]);
+
   // highlight matches in messages
   const elementsWithDateSeparators = useMemo(() => {
     const elements: ReactNode[] = [];
 
-    messageGroups.forEach((group, index) => {
-      const message = group.message;
-      const prevMessage = index > 0 ? messageGroups[index - 1].message : null;
+    parentGroupedMessages.forEach((parentGroup, parentGroupIndex) => {
+      const shouldWrapInContainer = !!parentGroup.parentMessageId;
+      const containerElements: ReactNode[] = [];
 
-      // Add date separator if this is the first message or if the date changed
-      if (
-        !prevMessage ||
-        !isSameDay(prevMessage.createdAt, message.createdAt)
-      ) {
+      parentGroup.groups.forEach((group, index) => {
+        const message = group.message;
+        const prevMessage =
+          index > 0
+            ? parentGroup.groups[index - 1].message
+            : parentGroupIndex > 0
+              ? parentGroupedMessages[parentGroupIndex - 1].groups[
+                  parentGroupedMessages[parentGroupIndex - 1].groups.length - 1
+                ].message
+              : null;
+
+        // Add date separator if this is the first message or if the date changed
+        if (
+          !prevMessage ||
+          !isSameDay(prevMessage.createdAt, message.createdAt)
+        ) {
+          const separator = (
+            <DateSeparator
+              key={`date-${message.createdAt}`}
+              date={message.createdAt}
+            />
+          );
+          if (shouldWrapInContainer) {
+            containerElements.push(separator);
+          } else {
+            elements.push(separator);
+          }
+        }
+
+        const isUserMessage = message.role === "user";
+        const isHighlighted = highlightedMessageId === message.id;
+        const isCurrentMatch = currentMatchMessageId === message.id;
+        const hasMatch = hasSearchMatch(message.id);
+        const key = getMessageKey(group);
+
+        const messageElement = (
+          <motion.div
+            key={key}
+            ref={(el) => {
+              if (el && messageRefs) messageRefs.current[message.id] = el;
+            }}
+            initial={{ height: 0, opacity: 0, y: 20 }}
+            animate={{ height: "auto", opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: -20 }}
+            transition={{
+              duration: 0.3,
+              ease: [0.4, 0.0, 0.2, 1],
+              layout: { duration: 0.2 },
+            }}
+            className={getContainerClasses(
+              group,
+              isUserMessage,
+              searchQuery,
+              hasMatch,
+              isCurrentMatch,
+            )}
+          >
+            <MessageRenderer
+              group={group}
+              isUserMessage={isUserMessage}
+              isHighlighted={isHighlighted}
+              searchQuery={searchQuery}
+            />
+          </motion.div>
+        );
+
+        if (shouldWrapInContainer) {
+          containerElements.push(messageElement);
+        } else {
+          elements.push(messageElement);
+        }
+      });
+
+      // Wrap messages with same parentMessageId in a collapsible container
+      if (shouldWrapInContainer && containerElements.length > 0) {
+        const parentId = parentGroup.parentMessageId!;
+        const isOpen = openParentGroups[parentId] ?? false;
+
         elements.push(
-          <DateSeparator
-            key={`date-${message.createdAt}`}
-            date={message.createdAt}
-          />,
+          <Collapsible
+            key={`parent-${parentId}`}
+            open={isOpen}
+            onOpenChange={() => toggleParentGroup(parentId)}
+          >
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-4">
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      isOpen && "rotate-180",
+                    )}
+                  />
+                  Child messages
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4">
+                {containerElements}
+              </CollapsibleContent>
+            </div>
+          </Collapsible>,
         );
       }
-
-      const isUserMessage = message.role === "user";
-      const isHighlighted = highlightedMessageId === message.id;
-      const isCurrentMatch = currentMatchMessageId === message.id;
-      const hasMatch = hasSearchMatch(message.id);
-      const key = getMessageKey(group);
-
-      elements.push(
-        <motion.div
-          key={key}
-          ref={(el) => {
-            if (el && messageRefs) messageRefs.current[message.id] = el;
-          }}
-          initial={{ height: 0, opacity: 0, y: 20 }}
-          animate={{ height: "auto", opacity: 1, y: 0 }}
-          exit={{ height: 0, opacity: 0, y: -20 }}
-          transition={{
-            duration: 0.3,
-            ease: [0.4, 0.0, 0.2, 1],
-            layout: { duration: 0.2 },
-          }}
-          className={getContainerClasses(
-            group,
-            isUserMessage,
-            searchQuery,
-            hasMatch,
-            isCurrentMatch,
-          )}
-        >
-          <MessageRenderer
-            group={group}
-            isUserMessage={isUserMessage}
-            isHighlighted={isHighlighted}
-            copiedId={copiedId}
-            onCopyId={handleCopyId}
-            searchQuery={searchQuery}
-          />
-        </motion.div>,
-      );
     });
 
     return elements;
   }, [
-    messageGroups,
+    parentGroupedMessages,
     highlightedMessageId,
     currentMatchMessageId,
     messageRefs,
-    copiedId,
-    handleCopyId,
     searchQuery,
     hasSearchMatch,
+    openParentGroups,
+    toggleParentGroup,
   ]);
 
   return (
