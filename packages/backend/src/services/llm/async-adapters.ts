@@ -1,5 +1,5 @@
 import { AbstractAgent } from "@ag-ui/client";
-import { AsyncQueue } from "./async-queue";
+import { AsyncQueue, ItemSink } from "./async-queue";
 
 export type AgentSubscriber = AbstractAgent["subscribers"][number];
 export type EventHandlerParams = Parameters<
@@ -11,26 +11,26 @@ export type EventHandlerParams = Parameters<
  * - Pass an optional AbortSignal to stop streaming.
  * - The `subscribe` function must return an `unsubscribe()` cleanup.
  */
-function eventsToAsyncIterator(
-  queue: AsyncQueue<EventHandlerParams>,
-  subscribe: (agentSubcriber: AgentSubscriber) => { unsubscribe: () => void },
+function subscribeToEvents(
+  sink: ItemSink<EventHandlerParams>,
+  agent: AbstractAgent,
   opts?: { signal?: AbortSignal },
-): AsyncIterableIterator<EventHandlerParams> {
-  const { unsubscribe } = subscribe({
+) {
+  const { unsubscribe } = agent.subscribe({
     onEvent(params) {
-      queue.push(params);
+      sink.push(params);
     },
     onRunErrorEvent(params) {
-      queue.push(params);
+      sink.push(params);
       // Propagate the error to consumers; pending/next pulls will reject
-      queue.fail(params.event); // fail() also closes the iterator
+      sink.fail(params.event); // fail() also closes the iterator
     },
     onRunFinishedEvent(params) {
-      queue.push(params);
-      queue.finish();
+      sink.push(params);
+      sink.finish();
     },
     onRunFailed({ error }) {
-      queue.fail(error); // fail() also closes the iterator
+      sink.fail(error); // fail() also closes the iterator
     },
   });
 
@@ -41,26 +41,14 @@ function eventsToAsyncIterator(
     } catch {
       console.warn("Failed to unsubscribe");
     }
-    queue.fail(new Error("Aborted"));
+    sink.fail(new Error("Aborted"));
   };
   if (opts?.signal) {
     if (opts.signal.aborted) onAbort();
     else opts.signal.addEventListener("abort", onAbort, { once: true });
   }
 
-  // Ensure iterator.return() cleans up
-  const origReturn = queue.return.bind(queue);
-  queue.return = async () => {
-    try {
-      unsubscribe();
-    } catch {
-      console.warn("Failed to unsubscribe");
-    }
-    if (opts?.signal) opts.signal.removeEventListener("abort", onAbort);
-    return await origReturn();
-  };
-
-  return queue;
+  return unsubscribe;
 }
 
 type RunAgentResult = Awaited<ReturnType<AbstractAgent["runAgent"]>>;
@@ -73,8 +61,7 @@ export async function* runStreamingAgent(
   args?: Parameters<AbstractAgent["runAgent"]>,
   opts?: { signal?: AbortSignal },
 ): AsyncIterableIterator<EventHandlerParams, RunAgentResult> {
-  // Build the iterator first so early events are captured
-  const iter = eventsToAsyncIterator(queue, agent.subscribe.bind(agent), {
+  const unsubscribe = subscribeToEvents(queue, agent, {
     signal: opts?.signal,
   });
 
@@ -91,8 +78,12 @@ export async function* runStreamingAgent(
   // Note that we are doing a manual iteration instead of `yield* iter` because
   // we need to capture any errors with stack traces to here, as they happen
   // inside this iterator
-  for await (const event of iter) {
-    yield event;
+  try {
+    for await (const event of queue) {
+      yield event;
+    }
+  } finally {
+    unsubscribe();
   }
 
   // the final result is not part of the iterator, so we need to await it,

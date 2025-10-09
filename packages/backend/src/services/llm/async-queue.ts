@@ -1,4 +1,14 @@
 /**
+ * This interface is used to represent something to push values into, i.e. to be
+ * used by producers.
+ */
+export interface ItemSink<T> {
+  push(v: T): void;
+  finish(): void;
+  fail(err: unknown): void;
+}
+
+/**
  * Generic queue-backed AsyncIterator you can push values into.
  *
  * Usage is something like:
@@ -14,7 +24,7 @@
  *
  * Call `finish()` to end the stream, or `fail(err)` to error it.
  */
-export class AsyncQueue<T> implements AsyncIterableIterator<T> {
+export class AsyncQueue<T> implements AsyncIterableIterator<T>, ItemSink<T> {
   private queue: T[] = [];
   private waiters: Array<{
     resolve: (r: IteratorResult<T>) => void;
