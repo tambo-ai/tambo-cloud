@@ -12,11 +12,10 @@ export type EventHandlerParams = Parameters<
  * - The `subscribe` function must return an `unsubscribe()` cleanup.
  */
 function eventsToAsyncIterator(
+  queue: AsyncQueue<EventHandlerParams>,
   subscribe: (agentSubcriber: AgentSubscriber) => { unsubscribe: () => void },
   opts?: { signal?: AbortSignal },
 ): AsyncIterableIterator<EventHandlerParams> {
-  const queue = new AsyncQueue<EventHandlerParams>();
-
   const { unsubscribe } = subscribe({
     onEvent(params) {
       queue.push(params);
@@ -70,11 +69,12 @@ type RunAgentResult = Awaited<ReturnType<AbstractAgent["runAgent"]>>;
  */
 export async function* runStreamingAgent(
   agent: AbstractAgent,
+  queue: AsyncQueue<EventHandlerParams>,
   args?: Parameters<AbstractAgent["runAgent"]>,
   opts?: { signal?: AbortSignal },
 ): AsyncIterableIterator<EventHandlerParams, RunAgentResult> {
   // Build the iterator first so early events are captured
-  const iter = eventsToAsyncIterator(agent.subscribe.bind(agent), {
+  const iter = eventsToAsyncIterator(queue, agent.subscribe.bind(agent), {
     signal: opts?.signal,
   });
 
