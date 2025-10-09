@@ -35,7 +35,6 @@ async function bootstrap() {
     // we need to flush sentry first because it uses open telemetry
     await Sentry.close(2000);
     await shutdownOpenTelemetry(sdk);
-    process.exit(1);
   });
   process.on("SIGINT", async () => {
     console.log("SIGINT received, flushing Sentry and OpenTelemetry...");
@@ -43,7 +42,6 @@ async function bootstrap() {
     // we need to flush sentry first because it uses open telemetry
     await Sentry.close(2000);
     await shutdownOpenTelemetry(sdk);
-    process.exit(1);
   });
 
   // Add unhandled rejection handler
