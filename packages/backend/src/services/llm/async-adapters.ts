@@ -7,9 +7,8 @@ export type EventHandlerParams = Parameters<
 >[0];
 
 /**
- * Adapts your client's event callbacks into an AsyncIterableIterator<LLMResponse>.
- * - Pass an optional AbortSignal to stop streaming.
- * - The `subscribe` function must return an `unsubscribe()` cleanup.
+ * Subscribe to events from an agent and push them to a sink, with proper error
+ * handling.
  */
 function subscribeToEvents(
   sink: ItemSink<EventHandlerParams>,

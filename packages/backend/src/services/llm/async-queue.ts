@@ -11,18 +11,25 @@ export interface ItemSink<T> {
 /**
  * Generic queue-backed AsyncIterator you can push values into.
  *
+ * Consumers can simple treat this as an AsyncIterableIterator<T> using `for await`
+ *
+ * Producers can use the ItemSink interface to push values into the queue.
+ *
  * Usage is something like:
  * ```
  * const queue = new AsyncQueue<T>();
+ *
+ * // Producers - write values to the queue
  * queue.push(value);
  * queue.finish();
  *
+ * // Consumers - read values from the queue
  * for await (const value of queue) {
  *   console.log(value);
  * }
  * ```
  *
- * Call `finish()` to end the stream, or `fail(err)` to error it.
+ * Producers should call `finish()` to end the stream, or `fail(err)` to error it.
  */
 export class AsyncQueue<T> implements AsyncIterableIterator<T>, ItemSink<T> {
   private queue: T[] = [];
