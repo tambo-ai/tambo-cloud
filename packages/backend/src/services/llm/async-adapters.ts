@@ -14,7 +14,6 @@ export type EventHandlerParams = Parameters<
 function subscribeToEvents(
   sink: ItemSink<EventHandlerParams>,
   agent: AbstractAgent,
-  opts?: { signal?: AbortSignal },
 ) {
   const { unsubscribe } = agent.subscribe({
     onEvent(params) {
@@ -34,20 +33,6 @@ function subscribeToEvents(
     },
   });
 
-  // Support external cancellation
-  const onAbort = () => {
-    try {
-      unsubscribe();
-    } catch {
-      console.warn("Failed to unsubscribe");
-    }
-    sink.fail(new Error("Aborted"));
-  };
-  if (opts?.signal) {
-    if (opts.signal.aborted) onAbort();
-    else opts.signal.addEventListener("abort", onAbort, { once: true });
-  }
-
   return unsubscribe;
 }
 
@@ -61,9 +46,20 @@ export async function* runStreamingAgent(
   args?: Parameters<AbstractAgent["runAgent"]>,
   opts?: { signal?: AbortSignal },
 ): AsyncIterableIterator<EventHandlerParams, RunAgentResult> {
-  const unsubscribe = subscribeToEvents(queue, agent, {
-    signal: opts?.signal,
-  });
+  const unsubscribe = subscribeToEvents(queue, agent);
+  // Support external cancellation
+  const onAbort = () => {
+    try {
+      unsubscribe();
+    } catch {
+      console.warn("Failed to unsubscribe");
+    }
+    queue.fail(new Error("Aborted"));
+  };
+  if (opts?.signal) {
+    if (opts.signal.aborted) onAbort();
+    else opts.signal.addEventListener("abort", onAbort, { once: true });
+  }
 
   // Kick off the underlying process (non-blocking)
   // If this can throw synchronously, you might want to catch and fail the iterator.
@@ -83,6 +79,7 @@ export async function* runStreamingAgent(
       yield event;
     }
   } finally {
+    opts?.signal?.removeEventListener("abort", onAbort);
     unsubscribe();
   }
 
