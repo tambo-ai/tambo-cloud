@@ -39,7 +39,10 @@ async function bootstrap() {
   });
   process.on("SIGINT", async () => {
     console.log("SIGINT received, flushing Sentry and OpenTelemetry...");
-    await Promise.all([Sentry.close(2000), shutdownOpenTelemetry(sdk)]);
+
+    // we need to flush sentry first because it uses open telemetry
+    await Sentry.close(2000);
+    await shutdownOpenTelemetry(sdk);
     process.exit(1);
   });
 
