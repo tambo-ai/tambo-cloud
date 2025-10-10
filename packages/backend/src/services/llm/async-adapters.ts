@@ -46,25 +46,46 @@ export async function* runStreamingAgent(
   opts?: { signal?: AbortSignal },
 ): AsyncIterableIterator<EventHandlerParams, RunAgentResult> {
   const unsubscribe = subscribeToEvents(queue, agent);
-  // Support external cancellation
+  // Guard to ensure we only signal a terminal state once
+  let terminated = false;
+  const failOnce = (e: unknown) => {
+    if (terminated) return;
+    terminated = true;
+    queue.fail(e instanceof Error ? e : new Error(String(e)));
+  };
+
   const onAbort = () => {
+    // Only signal failure; centralize unsubscribe in finally for idempotent cleanup
+    failOnce(new Error("Aborted"));
+  };
+
+  const cleanup = () => {
+    opts?.signal?.removeEventListener("abort", onAbort);
     try {
       unsubscribe();
     } catch {
       console.warn("Failed to unsubscribe");
     }
-    queue.fail(new Error("Aborted"));
   };
+
   if (opts?.signal) {
     if (opts.signal.aborted) onAbort();
     else opts.signal.addEventListener("abort", onAbort, { once: true });
   }
 
   // Kick off the underlying process (non-blocking)
-  // If this can throw synchronously, you might want to catch and fail the iterator.
-  const resultPromise = agent.runAgent(...(args ?? []));
-  // Prevent unhandled rejections if iteration aborts early due to a failure
-  void resultPromise.catch(() => undefined);
+  // If this can throw synchronously, catch and fail the iterator so consumers get a terminal signal.
+  let resultPromise: Promise<RunAgentResult>;
+  try {
+    resultPromise = agent.runAgent(...(args ?? []));
+    // Prevent unhandled rejections if iteration ends early
+    void resultPromise.catch(() => undefined);
+  } catch (err) {
+    // Ensure consumers are notified and resources are cleaned up on sync throw
+    cleanup();
+    failOnce(err);
+    throw err;
+  }
 
   // Before we return, we need to yield all the events from the agent
   // This is important because the agent may emit events after the runAgent call
@@ -78,8 +99,7 @@ export async function* runStreamingAgent(
       yield event;
     }
   } finally {
-    opts?.signal?.removeEventListener("abort", onAbort);
-    unsubscribe();
+    cleanup();
   }
 
   // the final result is not part of the iterator, so we need to await it,
