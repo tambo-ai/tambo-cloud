@@ -4,8 +4,10 @@ import { createTamboBackend } from "@tambo-ai-cloud/backend";
 import {
   AgentProviderType,
   AiProviderType,
+  AsyncQueue,
   ContentPartType,
   GenerationStage,
+  LegacyComponentDecision,
   MessageRole,
   OAuthValidationMode,
 } from "@tambo-ai-cloud/core";
@@ -310,9 +312,18 @@ describe("ThreadsService.advanceThread initialization", () => {
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
       });
-
+    const queue = new AsyncQueue<LegacyComponentDecision>();
     await expect(
-      service.advanceThread(projectId, dto, undefined, true),
+      service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        true,
+        undefined,
+        undefined,
+        undefined,
+        queue,
+      ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
     // Ensure system tools were retrieved via DB-backed implementation
@@ -342,9 +353,18 @@ describe("ThreadsService.advanceThread initialization", () => {
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
       });
-
+    const queue = new AsyncQueue<LegacyComponentDecision>();
     await expect(
-      service.advanceThread(projectId, dto, undefined, true),
+      service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        true,
+        undefined,
+        undefined,
+        undefined,
+        queue,
+      ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
     expect(operations.getProjectMcpServers).toHaveBeenCalled();
@@ -370,9 +390,18 @@ describe("ThreadsService.advanceThread initialization", () => {
     __testRunDecisionLoop__.mockImplementationOnce(() => {
       throw new Error("STOP_AFTER_INIT");
     });
-
+    const queue = new AsyncQueue<LegacyComponentDecision>();
     await expect(
-      service.advanceThread(projectId, dto, undefined, true),
+      service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        true,
+        undefined,
+        undefined,
+        undefined,
+        queue,
+      ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
     expect(__testRunDecisionLoop__).toHaveBeenCalledTimes(1);
@@ -392,9 +421,18 @@ describe("ThreadsService.advanceThread initialization", () => {
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
       });
-
+    const queue = new AsyncQueue<LegacyComponentDecision>();
     await expect(
-      service.advanceThread(projectId, dto, undefined, true),
+      service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        true,
+        undefined,
+        undefined,
+        undefined,
+        queue,
+      ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
     expect(generateStreamingResponse).toHaveBeenCalled();
@@ -408,6 +446,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       .mockImplementation(async () => {
         throw new Error("STOP_AFTER_INIT");
       });
+    const queue = new AsyncQueue<LegacyComponentDecision>();
 
     await expect(
       service.advanceThread(
@@ -418,6 +457,7 @@ describe("ThreadsService.advanceThread initialization", () => {
         {},
         undefined,
         contextKey,
+        queue,
       ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
