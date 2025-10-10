@@ -74,6 +74,11 @@ Rules:
   if (messages.length > 0) {
     const recentMessages = messages.slice(-2);
     recentMessages.forEach((msg) => {
+      // Skip tool messages
+      if (msg.role === MessageRole.Tool) {
+        return;
+      }
+
       const content = msg.content
         .map((c) => ("text" in c ? c.text : ""))
         .join("");
