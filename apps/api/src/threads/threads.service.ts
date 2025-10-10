@@ -91,6 +91,32 @@ import {
 } from "./util/tool-call-tracking";
 
 const TAMBO_ANON_CONTEXT_KEY = "tambo:anon-user";
+
+/**
+ * Helper function to bridge an async stream into an ItemSink (queue).
+ * Consumes all events from the stream and pushes them into the sink,
+ * then finishes the sink when the stream completes.
+ * @param stream - The async iterable stream to consume
+ * @param sink - The sink to push events into
+ * @param logger - Optional logger for error handling
+ * @returns A promise that resolves when bridging completes or rejects on error
+ */
+async function pushStreamEventsIntoSink<T>(
+  stream: AsyncIterableIterator<T>,
+  sink: ItemSink<T>,
+  onError?: (error: Error) => void,
+): Promise<void> {
+  try {
+    for await (const event of stream) {
+      sink.push(event);
+    }
+    sink.finish();
+  } catch (error) {
+    sink.fail(error);
+    onError?.(error as Error);
+  }
+}
+
 @Injectable()
 export class ThreadsService {
   constructor(
@@ -937,6 +963,7 @@ export class ThreadsService {
     toolCallCounts?: Record<string, number>,
     cachedSystemTools?: McpToolRegistry,
     contextKey?: string,
+    queue?: ItemQueue<LegacyComponentDecision>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   async advanceThread(
     projectId: string,
@@ -945,6 +972,8 @@ export class ThreadsService {
     stream?: false,
     toolCallCounts?: Record<string, number>,
     cachedSystemTools?: McpToolRegistry,
+    contextKey?: string,
+    queue?: ItemQueue<LegacyComponentDecision>,
   ): Promise<AdvanceThreadResponseDto>;
   async advanceThread(
     projectId: string,
@@ -954,6 +983,7 @@ export class ThreadsService {
     toolCallCounts?: Record<string, number>,
     cachedSystemTools?: McpToolRegistry,
     contextKey?: string,
+    queue?: ItemQueue<LegacyComponentDecision>,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   >;
@@ -965,6 +995,7 @@ export class ThreadsService {
     toolCallCounts: Record<string, number> = {},
     cachedSystemTools?: McpToolRegistry,
     contextKey?: string,
+    queue?: ItemQueue<LegacyComponentDecision>,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -989,6 +1020,7 @@ export class ThreadsService {
           toolCallCounts,
           cachedSystemTools,
           contextKey,
+          queue,
         ),
     );
   }
@@ -1001,6 +1033,7 @@ export class ThreadsService {
     toolCallCounts: Record<string, number> = {},
     cachedSystemTools?: McpToolRegistry,
     contextKey?: string,
+    queue?: ItemQueue<LegacyComponentDecision>,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -1092,7 +1125,8 @@ export class ThreadsService {
         throw new Error("No messages found");
       }
       const systemToolsStart = Date.now();
-      const mcpHandlers = createMcpHandlers(db, tamboBackend, thread.id);
+
+      const mcpHandlers = createMcpHandlers(db, tamboBackend, thread.id, queue);
 
       const systemTools =
         cachedSystemTools ??
@@ -1118,6 +1152,9 @@ export class ThreadsService {
       );
 
       if (stream) {
+        if (!queue) {
+          throw new Error("Event sink must be provided when streaming");
+        }
         return await this.generateStreamingResponse(
           projectId,
           thread.id,
@@ -1130,6 +1167,7 @@ export class ThreadsService {
           allTools,
           mcpAccessToken,
           project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
+          queue,
         );
       }
 
@@ -1365,6 +1403,7 @@ export class ThreadsService {
     allTools: ToolRegistry,
     mcpAccessToken: string,
     maxToolCallLimit: number,
+    eventSink: ItemQueue<LegacyComponentDecision>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
     return await Sentry.startSpan(
       {
@@ -1393,6 +1432,7 @@ export class ThreadsService {
           allTools,
           mcpAccessToken,
           maxToolCallLimit,
+          eventSink,
         ),
     );
   }
@@ -1409,6 +1449,7 @@ export class ThreadsService {
     allTools: ToolRegistry,
     mcpAccessToken: string,
     maxToolCallLimit: number,
+    eventSink: ItemQueue<LegacyComponentDecision>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
     try {
       const latestMessage = messages[messages.length - 1];
@@ -1479,10 +1520,25 @@ export class ThreadsService {
 
         decisionLoopSpan.end();
 
+        // Start bridging stream to queue - don't await, as we need to return immediately to start consuming the queue
+        const bridgePromise = pushStreamEventsIntoSink(
+          messageStream,
+          eventSink,
+          (error) =>
+            this.logger.error(
+              `Error pushing stream events into sink: ${error.stack}`,
+              error.stack,
+            ),
+        );
+
+        bridgePromise.catch(() => {
+          // Error is already logged by pushStreamEventsIntoSink
+        });
+
         return this.handleAdvanceThreadStream(
           projectId,
           threadId,
-          messageStream,
+          eventSink,
           messages,
           userMessage,
           allTools,
@@ -1558,10 +1614,26 @@ export class ThreadsService {
         },
       });
 
+      // Start bridging stream to queue - don't await, as we need to return immediately to start consuming the queue
+      const bridgePromise = pushStreamEventsIntoSink(
+        streamedResponseMessages,
+        eventSink,
+        (error) =>
+          this.logger.error(
+            `Error pushing stream events into sink: ${error.stack}`,
+            error.stack,
+          ),
+      );
+
+      // Ensure we handle any unhandled rejection from the bridge
+      bridgePromise.catch(() => {
+        // Error is already logged by pushStreamEventsIntoSink
+      });
+
       return this.handleAdvanceThreadStream(
         projectId,
         threadId,
-        streamedResponseMessages,
+        eventSink,
         messages,
         userMessage,
         allTools,
@@ -2234,6 +2306,7 @@ function createMcpHandlers(
   db: HydraDb,
   tamboBackend: ITamboBackend,
   threadId: string,
+  eventSink?: ItemSink<LegacyComponentDecision>,
 ): MCPHandlers {
   return {
     async sampling(e) {
@@ -2249,11 +2322,26 @@ function createMcpHandlers(
       // add serially for now
       // TODO: add messages in a batch
       for (const m of messages) {
-        await operations.addMessage(db, {
+        const savedMessage = await operations.addMessage(db, {
           threadId,
           role: m.role as MessageRole,
           content: m.content,
           parentMessageId,
+        });
+
+        // Push to sink so it appears in stream
+        eventSink?.push({
+          id: savedMessage.id,
+          role: m.role as MessageRole,
+          parentMessageId,
+          componentName: null,
+          props: null,
+          message:
+            m.content[0]?.type === ContentPartType.Text
+              ? m.content[0].text
+              : "",
+          componentState: null,
+          reasoning: [],
         });
       }
       const response = await tamboBackend.llmClient.complete({
@@ -2262,7 +2350,7 @@ function createMcpHandlers(
         promptTemplateParams: {},
         messages: messages,
       });
-      await operations.addMessage(db, {
+      const responseMessage = await operations.addMessage(db, {
         threadId,
         role: response.message.role as MessageRole,
         content: [
@@ -2273,14 +2361,81 @@ function createMcpHandlers(
         ],
         parentMessageId,
       });
+
+      // Push response to sink
+      if (eventSink) {
+        eventSink.push({
+          id: responseMessage.id,
+          role: response.message.role as MessageRole,
+          parentMessageId,
+          componentName: null,
+          props: null,
+          message: response.message.content ?? "",
+          componentState: null,
+          reasoning: [],
+        });
+      }
+
       return {
         role: response.message.role,
         content: { type: "text", text: response.message.content ?? "" },
         model: tamboBackend.modelOptions.model,
       };
     },
-    elicitation(_e) {
-      throw new Error("Not implemented yet");
+    async elicitation(e) {
+      const parentMessageId = e.params._meta?.[
+        MCP_PARENT_MESSAGE_ID_META_KEY
+      ] as string | undefined;
+
+      const prompt = String(e.params.prompt);
+
+      // Add the elicitation prompt to DB and sink
+      const promptMessage = await operations.addMessage(db, {
+        threadId,
+        role: MessageRole.Assistant,
+        content: [{ type: ContentPartType.Text, text: prompt }],
+        parentMessageId,
+      });
+
+      if (eventSink) {
+        eventSink.push({
+          id: promptMessage.id,
+          role: MessageRole.Assistant,
+          parentMessageId,
+          componentName: null,
+          props: null,
+          message: prompt,
+          componentState: null,
+          reasoning: [],
+        });
+      }
+
+      // For now, return a placeholder response
+      // In production, this would wait for user input
+      const userResponse = "User response placeholder";
+
+      const responseMessage = await operations.addMessage(db, {
+        threadId,
+        role: MessageRole.User,
+        content: [{ type: ContentPartType.Text, text: userResponse }],
+        parentMessageId,
+      });
+
+      eventSink?.push({
+        id: responseMessage.id,
+        role: MessageRole.User,
+        parentMessageId,
+        componentName: null,
+        props: null,
+        message: userResponse,
+        componentState: null,
+        reasoning: [],
+      });
+
+      return {
+        action: "accept" as const,
+        content: { type: "text", text: userResponse },
+      };
     },
   };
 }

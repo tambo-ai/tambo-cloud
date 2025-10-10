@@ -399,8 +399,7 @@ export class ThreadsController {
       undefined,
       contextKey,
     );
-    // Since stream=false, result will be AdvanceThreadResponseDto
-    return result as AdvanceThreadResponseDto;
+    return result;
   }
 
   @UseGuards(ThreadInProjectGuard)
@@ -430,6 +429,9 @@ export class ThreadsController {
     response.setHeader("Connection", "keep-alive");
 
     try {
+      // Create queue for streaming - ensures one queue per HTTP request
+      const eventSink = new AsyncQueue<LegacyComponentDecision>();
+
       const stream = await this.threadsService.advanceThread(
         projectId,
         advanceRequestDto,
@@ -438,6 +440,7 @@ export class ThreadsController {
         advanceRequestDto.toolCallCounts ?? {},
         undefined,
         contextKey,
+        eventSink,
       );
 
       await this.handleAdvanceStream(response, stream);
@@ -472,8 +475,7 @@ export class ThreadsController {
       undefined,
       contextKey,
     );
-    // Since stream=false, result will be AdvanceThreadResponseDto
-    return result as AdvanceThreadResponseDto;
+    return result;
   }
 
   @Post("advancestream")
@@ -496,6 +498,9 @@ export class ThreadsController {
     response.setHeader("Connection", "keep-alive");
 
     try {
+      // Create queue for streaming - ensures one queue per HTTP request
+      const eventSink = new AsyncQueue<LegacyComponentDecision>();
+
       const stream = await this.threadsService.advanceThread(
         projectId,
         advanceRequestDto,
@@ -504,6 +509,7 @@ export class ThreadsController {
         {},
         undefined,
         contextKey,
+        eventSink,
       );
       await this.handleAdvanceStream(response, stream);
     } catch (error: any) {
