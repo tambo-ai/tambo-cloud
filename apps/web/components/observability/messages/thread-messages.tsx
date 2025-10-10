@@ -3,6 +3,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { getSafeContent } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -60,6 +61,26 @@ const getContainerClasses = (
     searchQuery && !hasMatch && "opacity-40",
     // highlight current match
     isCurrentMatch && "ring-2 ring-yellow-400 rounded-lg p-2",
+  );
+};
+
+// Configuration for system message collapsing
+const SYSTEM_MESSAGE_COLLAPSE_CONFIG = {
+  maxChars: 500,
+  maxLines: 10,
+} as const;
+
+// Helper function to determine if message content is "big"
+const isMessageContentBig = (message: MessageType): boolean => {
+  const safeContent = getSafeContent(message.content as any);
+  const textContent = typeof safeContent === "string" ? safeContent : "";
+
+  const charCount = textContent.length;
+  const lineCount = textContent.split("\n").length;
+
+  return (
+    charCount > SYSTEM_MESSAGE_COLLAPSE_CONFIG.maxChars ||
+    lineCount > SYSTEM_MESSAGE_COLLAPSE_CONFIG.maxLines
   );
 };
 
@@ -139,12 +160,21 @@ export function ThreadMessages({
     Record<string, boolean>
   >({});
 
+  // Track if system message is collapsed (default to false/collapsed)
+  const [isSystemMessageCollapsed, setIsSystemMessageCollapsed] =
+    useState(true);
+
   // Toggle a parent group's open/closed state
   const toggleParentGroup = useCallback((parentId: string) => {
     setOpenParentGroups((prev) => ({
       ...prev,
       [parentId]: !prev[parentId],
     }));
+  }, []);
+
+  // Toggle system message collapse state
+  const toggleSystemMessage = useCallback(() => {
+    setIsSystemMessageCollapsed((prev) => !prev);
   }, []);
 
   // Check if a message has a search match
@@ -285,6 +315,13 @@ export function ThreadMessages({
         const hasMatch = hasSearchMatch(message.id);
         const key = getMessageKey(group);
 
+        // Check if this is the first system message in the thread
+        const isFirstSystemMessage =
+          message.role === "system" && message.id === thread.messages[0]?.id;
+
+        const shouldCollapseSystemMessage =
+          isFirstSystemMessage && isMessageContentBig(message);
+
         const messageElement = (
           <motion.div
             key={key}
@@ -307,12 +344,41 @@ export function ThreadMessages({
               isCurrentMatch,
             )}
           >
-            <MessageRenderer
-              group={group}
-              isUserMessage={isUserMessage}
-              isHighlighted={isHighlighted}
-              searchQuery={searchQuery}
-            />
+            {shouldCollapseSystemMessage ? (
+              <Collapsible
+                open={!isSystemMessageCollapsed}
+                onOpenChange={toggleSystemMessage}
+              >
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-4">
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform duration-200",
+                          !isSystemMessageCollapsed && "rotate-180",
+                        )}
+                      />
+                      System prompt (click to expand)
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-4">
+                    <MessageRenderer
+                      group={group}
+                      isUserMessage={isUserMessage}
+                      isHighlighted={isHighlighted}
+                      searchQuery={searchQuery}
+                    />
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+            ) : (
+              <MessageRenderer
+                group={group}
+                isUserMessage={isUserMessage}
+                isHighlighted={isHighlighted}
+                searchQuery={searchQuery}
+              />
+            )}
           </motion.div>
         );
 
@@ -365,6 +431,9 @@ export function ThreadMessages({
     hasSearchMatch,
     openParentGroups,
     toggleParentGroup,
+    isSystemMessageCollapsed,
+    toggleSystemMessage,
+    thread.messages,
   ]);
 
   return (

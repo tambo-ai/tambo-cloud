@@ -99,7 +99,10 @@ export const ThreadDropdown = React.forwardRef<
           <div
             role="button"
             tabIndex={0}
-            className="rounded-md px-1 flex items-center gap-2 text-sm border border-gray-200 bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+            className={cn(
+              "rounded-md px-1 flex items-center gap-2 text-sm border border-gray-200 bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors",
+              className,
+            )}
             aria-label="Thread History"
           >
             <ChevronDownIcon className="h-4 w-4" />
@@ -107,13 +110,19 @@ export const ThreadDropdown = React.forwardRef<
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content
-            className="z-50 min-w-[200px] overflow-hidden rounded-md border border-gray-200 bg-popover p-1 text-popover-foreground shadow-md"
+            className={cn(
+              "z-50 min-w-[200px] overflow-hidden rounded-md border border-gray-200 bg-popover p-1 text-popover-foreground shadow-md",
+              className,
+            )}
             side="right"
             align="start"
             sideOffset={5}
           >
             <DropdownMenu.Item
-              className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+              className={cn(
+                "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                className,
+              )}
               onSelect={async (e: Event) => {
                 e.preventDefault();
                 await handleNewThread();
@@ -135,21 +144,30 @@ export const ThreadDropdown = React.forwardRef<
 
             {isLoading ? (
               <DropdownMenu.Item
-                className="px-2 py-1.5 text-sm text-muted-foreground"
+                className={cn(
+                  "px-2 py-1.5 text-sm text-muted-foreground",
+                  className,
+                )}
                 disabled
               >
                 Loading threads...
               </DropdownMenu.Item>
             ) : error ? (
               <DropdownMenu.Item
-                className="px-2 py-1.5 text-sm text-destructive"
+                className={cn(
+                  "px-2 py-1.5 text-sm text-destructive",
+                  className,
+                )}
                 disabled
               >
                 Error loading threads
               </DropdownMenu.Item>
             ) : threads?.items.length === 0 ? (
               <DropdownMenu.Item
-                className="px-2 py-1.5 text-sm text-muted-foreground"
+                className={cn(
+                  "px-2 py-1.5 text-sm text-muted-foreground",
+                  className,
+                )}
                 disabled
               >
                 No previous threads
@@ -158,7 +176,10 @@ export const ThreadDropdown = React.forwardRef<
               threads?.items.map((thread) => (
                 <DropdownMenu.Item
                   key={thread.id}
-                  className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                  className={cn(
+                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                    className,
+                  )}
                   onSelect={async (e: Event) => {
                     e.preventDefault();
                     await handleSwitchThread(thread.id);

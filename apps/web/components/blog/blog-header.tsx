@@ -1,5 +1,8 @@
+"use client";
+
 import { Icons } from "@/components/icons";
 import { buttonVariants } from "@/components/ui/button";
+import { MessageThreadPanelTrigger } from "@/components/ui/tambo/message-thread-panel-trigger";
 import { WhitelabelBadge } from "@/components/whitelabel-badge";
 import { siteConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
@@ -36,7 +39,8 @@ export function BlogHeader({
           </Link>
 
           {/* Dashboard button - visible on all screen sizes */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <MessageThreadPanelTrigger />
             <Link
               href="/dashboard"
               className={cn(
