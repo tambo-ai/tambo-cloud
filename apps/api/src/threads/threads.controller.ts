@@ -21,7 +21,8 @@ import {
   ApiSecurity,
   ApiTags,
 } from "@nestjs/swagger";
-import { GenerationStage } from "@tambo-ai-cloud/core";
+import { AsyncQueue } from "@tambo-ai-cloud/backend";
+import { GenerationStage, LegacyComponentDecision } from "@tambo-ai-cloud/core";
 import { Request } from "express";
 import { extractContextInfo } from "../common/utils/extract-context-info";
 import { ApiKeyGuard } from "../projects/guards/apikey.guard";
