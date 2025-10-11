@@ -958,44 +958,44 @@ export class ThreadsService {
   async advanceThread(
     projectId: string,
     advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
-    unresolvedThreadId?: string,
-    stream?: true,
-    toolCallCounts?: Record<string, number>,
-    cachedSystemTools?: McpToolRegistry,
-    contextKey?: string,
-    queue?: ItemQueue<LegacyComponentDecision>,
+    unresolvedThreadId: string | undefined,
+    stream: true,
+    toolCallCounts: Record<string, number>,
+    cachedSystemTools: McpToolRegistry | undefined,
+    contextKey: string | undefined,
+    queue: ItemQueue<LegacyComponentDecision>,
   ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
   async advanceThread(
     projectId: string,
     advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
-    unresolvedThreadId?: string,
-    stream?: false,
-    toolCallCounts?: Record<string, number>,
-    cachedSystemTools?: McpToolRegistry,
-    contextKey?: string,
-    queue?: ItemQueue<LegacyComponentDecision>,
+    unresolvedThreadId: string | undefined,
+    stream: false,
+    toolCallCounts: Record<string, number>,
+    cachedSystemTools: McpToolRegistry | undefined,
+    contextKey: string | undefined,
+    queue?: undefined,
   ): Promise<AdvanceThreadResponseDto>;
   async advanceThread(
     projectId: string,
     advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
-    unresolvedThreadId?: string,
-    stream?: boolean,
-    toolCallCounts?: Record<string, number>,
-    cachedSystemTools?: McpToolRegistry,
-    contextKey?: string,
-    queue?: ItemQueue<LegacyComponentDecision>,
+    unresolvedThreadId: string | undefined,
+    stream: boolean,
+    toolCallCounts: Record<string, number>,
+    cachedSystemTools: McpToolRegistry | undefined,
+    contextKey: string | undefined,
+    queue: ItemQueue<LegacyComponentDecision> | undefined,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   >;
   async advanceThread(
     projectId: string,
     advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
-    unresolvedThreadId?: string,
-    stream?: boolean,
-    toolCallCounts: Record<string, number> = {},
-    cachedSystemTools?: McpToolRegistry,
-    contextKey?: string,
-    queue?: ItemQueue<LegacyComponentDecision>,
+    unresolvedThreadId: string | undefined,
+    stream: boolean,
+    toolCallCounts: Record<string, number>,
+    cachedSystemTools: McpToolRegistry | undefined,
+    contextKey: string | undefined,
+    queue: ItemQueue<LegacyComponentDecision> | undefined,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -1028,12 +1028,12 @@ export class ThreadsService {
   private async advanceThread_(
     projectId: string,
     advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
-    unresolvedThreadId?: string,
-    stream?: boolean,
-    toolCallCounts: Record<string, number> = {},
-    cachedSystemTools?: McpToolRegistry,
-    contextKey?: string,
-    queue?: ItemQueue<LegacyComponentDecision>,
+    unresolvedThreadId: string | undefined,
+    stream: boolean,
+    toolCallCounts: Record<string, number>,
+    cachedSystemTools: McpToolRegistry | undefined,
+    contextKey: string | undefined,
+    queue: ItemQueue<LegacyComponentDecision> | undefined,
   ): Promise<
     AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
   > {
@@ -1378,6 +1378,8 @@ export class ThreadsService {
         stream,
         updatedToolCallCounts,
         allTools,
+        undefined,
+        undefined,
       );
     } catch (error) {
       Sentry.captureException(error, {

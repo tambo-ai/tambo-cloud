@@ -319,7 +319,7 @@ describe("ThreadsService.advanceThread initialization", () => {
         dto,
         undefined,
         true,
-        undefined,
+        {},
         undefined,
         undefined,
         queue,
@@ -360,7 +360,7 @@ describe("ThreadsService.advanceThread initialization", () => {
         dto,
         undefined,
         true,
-        undefined,
+        {},
         undefined,
         undefined,
         queue,
@@ -397,7 +397,7 @@ describe("ThreadsService.advanceThread initialization", () => {
         dto,
         undefined,
         true,
-        undefined,
+        {},
         undefined,
         undefined,
         queue,
@@ -428,7 +428,7 @@ describe("ThreadsService.advanceThread initialization", () => {
         dto,
         undefined,
         true,
-        undefined,
+        {},
         undefined,
         undefined,
         queue,
@@ -494,7 +494,15 @@ describe("ThreadsService.advanceThread initialization", () => {
       });
 
     await expect(
-      service.advanceThread(projectId, dto, undefined, false),
+      service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        false,
+        {},
+        undefined,
+        undefined,
+      ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
     expect(operations.getProjectMcpServers).toHaveBeenCalled();
@@ -526,7 +534,15 @@ describe("ThreadsService.advanceThread initialization", () => {
     });
 
     await expect(
-      service.advanceThread(projectId, dto, undefined, false),
+      service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        false,
+        {},
+        undefined,
+        undefined,
+      ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
     expect(__testRunDecisionLoop__).toHaveBeenCalledTimes(1);
@@ -560,7 +576,15 @@ describe("ThreadsService.advanceThread initialization", () => {
       });
 
     await expect(
-      service.advanceThread(projectId, dto, undefined, false),
+      service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        false,
+        {},
+        undefined,
+        undefined,
+      ),
     ).rejects.toThrow("STOP_AFTER_INIT");
 
     expect(advanceThread).toHaveBeenCalled();
