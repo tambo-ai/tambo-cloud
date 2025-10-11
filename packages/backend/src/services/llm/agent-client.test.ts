@@ -14,7 +14,7 @@ import { AgentProviderType } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
 import { AgentClient, AgentResponse } from "./agent-client";
 
-import { RunAgentResult } from "@ag-ui/client";
+import { AbstractAgent, RunAgentResult } from "@ag-ui/client";
 import { MastraAgent } from "@ag-ui/mastra";
 import { AsyncQueue } from "@tambo-ai-cloud/core";
 import { EventHandlerParams, runStreamingAgent } from "./async-adapters";
@@ -81,7 +81,7 @@ describe("AgentClient", () => {
 
     it("should create a Mastra agent with name", async () => {
       jest.spyOn(MastraAgent, "getRemoteAgents").mockResolvedValue({
-        "test-name": {} as any,
+        "test-name": {} as AbstractAgent,
       });
       const client = await AgentClient.create({
         agentProviderType: AgentProviderType.MASTRA,

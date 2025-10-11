@@ -401,7 +401,6 @@ export class ThreadsController {
       advanceRequestDto.toolCallCounts ?? {},
       undefined,
       contextKey,
-      undefined,
     );
     return result;
   }
