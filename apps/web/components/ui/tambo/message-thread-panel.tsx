@@ -61,16 +61,29 @@ export interface MessageThreadPanelProps
 interface ResizablePanelProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Children elements to render inside the container */
   children: React.ReactNode;
+  /** Whether the panel should be open (affects width animation) */
+  isOpen?: boolean;
 }
 
 /**
  * A resizable panel component with a draggable divider
  */
 const ResizablePanel = React.forwardRef<HTMLDivElement, ResizablePanelProps>(
-  ({ className, children, ...props }, ref) => {
-    const [width, setWidth] = React.useState(400);
+  ({ className, children, isOpen = true, ...props }, ref) => {
+    const [width, setWidth] = React.useState(isOpen ? 400 : 0);
     const isResizing = React.useRef(false);
     const lastUpdateRef = React.useRef(0);
+
+    // Animate width when isOpen changes
+    React.useEffect(() => {
+      if (isOpen) {
+        // When opening, animate from 0 to 400
+        setWidth(400);
+      } else {
+        // When closing, animate to 0
+        setWidth(0);
+      }
+    }, [isOpen]);
 
     const handleMouseMove = React.useCallback((e: MouseEvent) => {
       if (!isResizing.current) return;
@@ -103,7 +116,7 @@ const ResizablePanel = React.forwardRef<HTMLDivElement, ResizablePanelProps>(
         ref={ref}
         className={cn(
           "h-full flex flex-col bg-background relative",
-          "transition-[width] duration-75 ease-out",
+          !isResizing.current && "transition-[width] duration-300 ease-in-out",
           "overflow-x-auto border-l border-border",
           className,
         )}
@@ -161,6 +174,30 @@ export const MessageThreadPanel = React.forwardRef<
   const isUserLoggedIn = !!session;
   const { thread } = useTambo();
   const { isOpen, setIsOpen } = useMessageThreadPanel();
+  const inputRef = React.useRef<HTMLTextAreaElement>(null);
+
+  // Update CSS variable and focus input when panel opens/closes
+  React.useEffect(() => {
+    if (isOpen) {
+      // Set the panel width CSS variable for layout adjustments
+      document.documentElement.style.setProperty(
+        "--panel-right-width",
+        "400px",
+      );
+
+      // Small delay to ensure the panel has finished animating before focusing
+      const timeoutId = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 320); // Slightly longer than the animation duration
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Reset the panel width CSS variable when closed
+      document.documentElement.style.setProperty("--panel-right-width", "0px");
+    }
+  }, [isOpen]);
 
   // Add keyboard shortcut Cmd/Ctrl + K to toggle panel
   React.useEffect(() => {
@@ -238,13 +275,8 @@ export const MessageThreadPanel = React.forwardRef<
     },
   ];
 
-  // Don't render if not open
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <ResizablePanel ref={ref} className={className} {...props}>
+    <ResizablePanel ref={ref} className={className} isOpen={isOpen} {...props}>
       {/* Header */}
       <div className="flex items-center justify-between w-full p-4 border-b border-gray-200 shadow-sm">
         <div className="flex items-center space-x-2">
@@ -290,7 +322,7 @@ export const MessageThreadPanel = React.forwardRef<
 
         {/* Message input */}
         <div className="p-4 flex-shrink-0">
-          <MessageInput contextKey={contextKey}>
+          <MessageInput contextKey={contextKey} inputRef={inputRef}>
             <MessageInputTextarea placeholder="Type your message or paste images..." />
             <MessageInputToolbar>
               <MessageInputFileButton />
