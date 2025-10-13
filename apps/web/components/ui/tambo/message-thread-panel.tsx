@@ -32,7 +32,6 @@ import {
 import type { VariantProps } from "class-variance-authority";
 import { XIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
 import * as React from "react";
 
 /**
@@ -249,13 +248,6 @@ export const MessageThreadPanel = React.forwardRef<
       {/* Header */}
       <div className="flex items-center justify-between w-full p-4 border-b border-gray-200 shadow-sm">
         <div className="flex items-center space-x-2">
-          <Image
-            src="/logo/icon/Octo-Icon.svg"
-            width={24}
-            height={24}
-            alt="Octo Icon"
-            className="w-4 h-4"
-          />
           <span>{THREAD_CONFIG.labels.openState}</span>
         </div>
         <div className="flex items-center gap-2">
