@@ -261,7 +261,9 @@ export const MessageThreadPanel = React.forwardRef<
         <div className="flex items-center gap-2">
           <ThreadDropdown
             contextKey={contextKey}
-            className="components-theme"
+            triggerClassName="components-theme"
+            contentClassName="components-theme"
+            itemClassName="components-theme"
           />
           <div
             role="button"
