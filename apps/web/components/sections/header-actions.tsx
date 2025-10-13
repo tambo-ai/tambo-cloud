@@ -4,7 +4,7 @@ import { NextAuthLogoutButton } from "@/components/auth/nextauth-logout-button";
 import { buttonVariants } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/discord-link";
 // import { GitHubLink } from "@/components/ui/github-link";
-import { MessageThreadPanelTrigger } from "@/components/ui/tambo/message-thread-panel-trigger";
+import { TamboChatTrigger } from "@/components/tambo-chat-trigger";
 import { siteConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -58,7 +58,7 @@ export function HeaderActions({
       >
         Blog
       </Link>
-      <MessageThreadPanelTrigger />
+      <TamboChatTrigger />
       {/* <GitHubLink href={siteConfig.links.github} text="Github" /> */}
       {showDiscordButton && (
         <DiscordLink href={siteConfig.links.discord} text="Discord" />

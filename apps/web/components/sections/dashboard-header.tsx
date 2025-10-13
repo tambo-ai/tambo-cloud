@@ -4,7 +4,7 @@ import { Icons } from "@/components/icons";
 import { MobileDashboardNavigation } from "@/components/sections/mobile-dashboard-navigation";
 import { ProjectDropdown } from "@/components/sections/project-dropdown";
 import { UserProfileDropdown } from "@/components/sections/user-profile-dropdown";
-import { MessageThreadPanelTrigger } from "@/components/ui/tambo/message-thread-panel-trigger";
+import { TamboChatTrigger } from "@/components/tambo-chat-trigger";
 import { siteConfig } from "@/lib/config";
 import { cn } from "@/lib/utils";
 // Whitelabel badge
@@ -75,7 +75,7 @@ export function DashboardHeader({ className }: DashboardHeaderProps) {
             <div className="flex items-center gap-2">
               {/* Tambo Assistant Trigger - Desktop only */}
               <div className="hidden md:block">
-                <MessageThreadPanelTrigger />
+                <TamboChatTrigger />
               </div>
 
               {/* Desktop Profile Dropdown */}

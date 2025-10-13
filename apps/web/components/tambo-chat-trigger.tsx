@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { useMessageThreadPanel } from "@/providers/message-thread-panel-provider";
 import * as React from "react";
 
-export interface MessageThreadPanelTriggerProps
+export interface TamboChatTriggerProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Additional CSS classes */
   className?: string;
@@ -14,9 +14,9 @@ export interface MessageThreadPanelTriggerProps
  * Trigger button to open the message thread panel
  * Features a search bar design with "Ask Tambo" text and keyboard shortcut
  */
-export const MessageThreadPanelTrigger = React.forwardRef<
+export const TamboChatTrigger = React.forwardRef<
   HTMLButtonElement,
-  MessageThreadPanelTriggerProps
+  TamboChatTriggerProps
 >(({ className, ...props }, ref) => {
   const { togglePanel } = useMessageThreadPanel();
 
@@ -46,4 +46,4 @@ export const MessageThreadPanelTrigger = React.forwardRef<
     </button>
   );
 });
-MessageThreadPanelTrigger.displayName = "MessageThreadPanelTrigger";
+TamboChatTrigger.displayName = "TamboChatTrigger";
