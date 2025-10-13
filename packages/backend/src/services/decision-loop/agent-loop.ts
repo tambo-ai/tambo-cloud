@@ -1,5 +1,6 @@
 import { Message } from "@ag-ui/core";
 import {
+  AsyncQueue,
   LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
@@ -8,9 +9,11 @@ import {
 import OpenAI from "openai";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
 import { AgentClient } from "../llm/agent-client";
+import { EventHandlerParams } from "../llm/async-adapters";
 
 export async function* runAgentLoop(
   agentClient: AgentClient,
+  queue: AsyncQueue<EventHandlerParams>,
   messages: ThreadMessage[],
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   //   customInstructions: string | undefined,
@@ -21,7 +24,7 @@ export async function* runAgentLoop(
   //     ? { custom_instructions: customInstructions }
   //     : {};
 
-  const stream = agentClient.streamRunAgent({
+  const stream = agentClient.streamRunAgent(queue, {
     messages: chatCompletionMessages,
     tools: strictTools,
     // promptTemplateName: "decision-loop",
