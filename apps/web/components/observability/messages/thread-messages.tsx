@@ -3,7 +3,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { getSafeContent } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -61,26 +60,6 @@ const getContainerClasses = (
     searchQuery && !hasMatch && "opacity-40",
     // highlight current match
     isCurrentMatch && "ring-2 ring-yellow-400 rounded-lg p-2",
-  );
-};
-
-// Configuration for system message collapsing
-const SYSTEM_MESSAGE_COLLAPSE_CONFIG = {
-  maxChars: 500,
-  maxLines: 10,
-} as const;
-
-// Helper function to determine if message content is "big"
-const isMessageContentBig = (message: MessageType): boolean => {
-  const safeContent = getSafeContent(message.content as any);
-  const textContent = typeof safeContent === "string" ? safeContent : "";
-
-  const charCount = textContent.length;
-  const lineCount = textContent.split("\n").length;
-
-  return (
-    charCount > SYSTEM_MESSAGE_COLLAPSE_CONFIG.maxChars ||
-    lineCount > SYSTEM_MESSAGE_COLLAPSE_CONFIG.maxLines
   );
 };
 
@@ -319,9 +298,6 @@ export function ThreadMessages({
         const isFirstSystemMessage =
           message.role === "system" && message.id === thread.messages[0]?.id;
 
-        const shouldCollapseSystemMessage =
-          isFirstSystemMessage && isMessageContentBig(message);
-
         const messageElement = (
           <motion.div
             key={key}
@@ -344,7 +320,7 @@ export function ThreadMessages({
               isCurrentMatch,
             )}
           >
-            {shouldCollapseSystemMessage ? (
+            {isFirstSystemMessage ? (
               <Collapsible
                 open={!isSystemMessageCollapsed}
                 onOpenChange={toggleSystemMessage}
@@ -361,7 +337,7 @@ export function ThreadMessages({
                       System prompt (click to expand)
                     </button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-4">
+                  <CollapsibleContent className="space-y-4 overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                     <MessageRenderer
                       group={group}
                       isUserMessage={isUserMessage}

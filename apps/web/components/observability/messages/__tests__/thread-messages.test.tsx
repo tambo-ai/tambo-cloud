@@ -305,7 +305,7 @@ describe("ThreadMessages", () => {
     }).not.toThrow();
   });
 
-  it("renders small system message normally (not collapsed)", () => {
+  it("renders first system message collapsed by default", () => {
     const mockMessageRefs = createMessageRefs();
     const threadWithSmallSystem = createMockThreadWithSmallSystemMessage();
 
@@ -316,11 +316,13 @@ describe("ThreadMessages", () => {
       />,
     );
 
-    // Should render system message normally (not collapsed)
-    expect(screen.getByText("system: Small system prompt")).toBeInTheDocument();
-    // Should not show collapse trigger
+    // Should show collapse trigger instead of the actual content
     expect(
-      screen.queryByText("System prompt (click to expand)"),
+      screen.getByText("System prompt (click to expand)"),
+    ).toBeInTheDocument();
+    // Should not show the actual content by default
+    expect(
+      screen.queryByText("system: Small system prompt"),
     ).not.toBeInTheDocument();
   });
 
