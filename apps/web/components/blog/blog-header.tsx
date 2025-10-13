@@ -1,5 +1,3 @@
-"use client";
-
 import { Icons } from "@/components/icons";
 import { TamboChatTrigger } from "@/components/tambo-chat-trigger";
 import { buttonVariants } from "@/components/ui/button";
