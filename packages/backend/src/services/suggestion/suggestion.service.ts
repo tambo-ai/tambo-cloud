@@ -55,7 +55,6 @@ export async function generateSuggestions(
   const suggestionLlmClient = (llmClient as AISdkClient).clone(
     SUGGESTION_MODEL,
     SUGGESTION_PROVIDER,
-    `${llmClient.chainId}-suggestions`,
   );
 
   try {
@@ -70,7 +69,7 @@ export async function generateSuggestions(
         function: { name: "generate_suggestions" },
       },
       // Make sure that the suggestions are not mixed up with other chains
-      chainId: `${suggestionLlmClient.chainId}-suggestions`,
+      chainId: `${llmClient.chainId}-suggestions`,
     });
 
     // Handle tool call in the response
