@@ -445,7 +445,6 @@ export class ThreadsController {
 
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
     try {
-      const now = Date.now();
       void this.threadsService
         .advanceThread(
           projectId,
@@ -461,8 +460,6 @@ export class ThreadsController {
           console.error("Error while advancing thread", error);
           throw error;
         });
-
-      console.log("advanceThread took", Date.now() - now, "ms");
 
       await this.handleAdvanceStream(response, queue);
     } catch (error: any) {
@@ -535,7 +532,6 @@ export class ThreadsController {
 
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
     try {
-      const now = Date.now();
       void this.threadsService
         .advanceThread(
           projectId,
@@ -551,10 +547,7 @@ export class ThreadsController {
           console.error("Error while advancing thread", error);
           throw error;
         });
-      console.log("advanceThread took", Date.now() - now, "ms");
-      console.log("calling handleAdvanceStream... starting");
       await this.handleAdvanceStream(response, queue);
-      console.log("handleAdvanceStream completed");
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
       response.end();
@@ -609,9 +602,6 @@ export class ThreadsController {
     }>,
     shouldThrottle = true, // used mainly for debugging
   ) {
-    console.log(
-      `ThreadsController: handleAdvanceStream... starting with ${stream}`,
-    );
     try {
       if (shouldThrottle) {
         for await (const chunk of throttleChunks(
