@@ -1186,7 +1186,7 @@ export class ThreadsService {
             "warning",
           );
         }
-        return await this.handleSystemToolCall(
+        await this.handleSystemToolCall(
           toolCallRequest,
           responseMessage.toolCallId ?? "",
           responseMessageDto.id,
@@ -1199,6 +1199,7 @@ export class ThreadsService {
           toolCallCounts,
           queue,
         );
+        return;
       }
 
       queue.push({
@@ -2271,6 +2272,7 @@ function createMcpHandlers(
         queue.push({
           responseMessageDto: {
             id: message.id,
+            parentMessageId,
             role: message.role,
             content: convertContentPartToDto(message.content),
             componentState: message.componentState ?? {},
@@ -2303,6 +2305,7 @@ function createMcpHandlers(
       queue.push({
         responseMessageDto: {
           id: message.id,
+          parentMessageId,
           role: message.role,
           content: convertContentPartToDto(message.content),
           componentState: message.componentState ?? {},
