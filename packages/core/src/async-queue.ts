@@ -42,12 +42,23 @@ export class AsyncQueue<T> implements ItemQueue<T> {
   private done = false;
   private failed: unknown | null = null;
 
+  toString() {
+    return `${this.constructor.name}(${this.queue.length} items, ${this.waiters.length} waiters, ${this.done ? "done" : "not done"}, ${this.failed ? "failed" : "not failed"})`;
+  }
+
   /**
    * Push a value into the queue.
    * Called by: Producer (the code writing values to the queue)
    */
   push(v: T) {
-    if (this.done || this.failed !== null) return;
+    if (this.done || this.failed !== null) {
+      if (this.done) {
+        console.warn(`${this.constructor.name} already done, ignoring push`);
+      } else {
+        console.warn(`${this.constructor.name} already failed, ignoring push`);
+      }
+      return;
+    }
     if (this.waiters.length) {
       const { resolve } = this.waiters.shift()!;
       resolve({ value: v, done: false });
@@ -61,7 +72,17 @@ export class AsyncQueue<T> implements ItemQueue<T> {
    * Called by: Producer (when it's done sending values)
    */
   finish() {
-    if (this.done || this.failed !== null) return;
+    if (this.done || this.failed !== null) {
+      if (this.done) {
+        console.warn(`${this.constructor.name} already done, ignoring finish`);
+      } else {
+        console.warn(
+          `${this.constructor.name} already failed, ignoring finish`,
+        );
+      }
+      return;
+    }
+    console.trace(`XXX ${this.constructor.name} finishing`);
     this.done = true;
     while (this.waiters.length) {
       const { resolve } = this.waiters.shift()!;
@@ -74,7 +95,14 @@ export class AsyncQueue<T> implements ItemQueue<T> {
    * Called by: Producer (when it encounters an error)
    */
   fail(err: unknown) {
-    if (this.done || this.failed !== null) return;
+    if (this.done || this.failed !== null) {
+      if (this.done) {
+        console.warn(`${this.constructor.name} already done, ignoring fail`);
+      } else {
+        console.warn(`${this.constructor.name} already failed, ignoring fail`);
+      }
+      return;
+    }
     // Normalize once so every consumer sees the same error instance
     const error = err ?? new Error("Unknown error");
     this.failed = error;
@@ -129,4 +157,41 @@ export class AsyncQueue<T> implements ItemQueue<T> {
   [Symbol.asyncIterator]() {
     return this;
   }
+}
+
+class TeeQueue<T> extends AsyncQueue<T> {
+  constructor(private parentQueue: ItemSink<T>) {
+    super();
+  }
+
+  push(v: T) {
+    this.parentQueue.push(v);
+    super.push(v);
+  }
+}
+
+/**
+ * Create a new AsyncQueue that is a copy of the original, but when the child is finished, the parent stays open
+ *
+ * Usage:
+ * ```
+ * const parentQueue = new AsyncQueue<T>();
+ * const childQueue = await tee(parentQueue);
+ * fillChildQueue(childQueue);
+ * for await (const item of childQueue) {
+ *   console.log(item);
+ * }
+ * // child is finished, parent stays open
+ * parentQueue.push(newItem1);
+ * parentQueue.push(newItem2);
+ *
+ * // and now the parent is done.
+ * parentQueue.finish();
+ * ```
+ * @param parentQueue
+ */
+export async function teeQueue<T>(
+  parentQueue: ItemSink<T>,
+): Promise<AsyncQueue<T>> {
+  return new TeeQueue(parentQueue);
 }
