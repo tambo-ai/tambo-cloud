@@ -417,6 +417,7 @@ describe("ThreadsService.advanceThread initialization", () => {
         true,
         {},
         undefined,
+        undefined, // queue
         contextKey,
       ),
     ).rejects.toThrow("STOP_AFTER_INIT");
