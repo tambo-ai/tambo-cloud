@@ -140,26 +140,6 @@ export class AISdkClient implements LLMClient {
     this.customLlmParameters = customLlmParameters;
   }
 
-  /**
-   * Creates a new AISdkClient with the same configuration but with optional overrides
-   * @param model Optional model override
-   * @param provider Optional provider override
-   * @param chainId Optional chainId override
-   * @returns A new AISdkClient instance
-   */
-  clone(model?: string, provider?: Provider, chainId?: string): AISdkClient {
-    return new AISdkClient(
-      this.apiKey,
-      model ?? this.model,
-      provider ?? this.provider,
-      chainId ?? this.chainId,
-      this.userId,
-      this.baseURL,
-      this.maxInputTokens,
-      this.customLlmParameters,
-    );
-  }
-
   async complete(
     params: StreamingCompleteParams,
   ): Promise<AsyncIterableIterator<LLMResponse>>;

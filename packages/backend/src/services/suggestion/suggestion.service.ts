@@ -52,9 +52,16 @@ export async function generateSuggestions(
   }
 
   // Create a suggestion-specific LLMClient which ensures faster response times by using a lighter model for suggestions
-  const suggestionLlmClient = (llmClient as AISdkClient).clone(
+  const client = llmClient as unknown as {
+    apiKey: string | undefined;
+    userId: string;
+  };
+  const suggestionLlmClient = new AISdkClient(
+    client.apiKey,
     SUGGESTION_MODEL,
     SUGGESTION_PROVIDER,
+    llmClient.chainId,
+    client.userId,
   );
 
   try {
