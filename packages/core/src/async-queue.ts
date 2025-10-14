@@ -68,21 +68,28 @@ export class AsyncQueue<T> implements ItemQueue<T> {
   }
 
   /**
-   * Signal that no more values will be pushed (graceful completion).
-   * Called by: Producer (when it's done sending values)
+   * Signal that no more values will be pushed (graceful completion). Called by:
+   * Producer (when it's done sending values)
+   *
+   * @param quietly - if true, no warning will be logged if the queue is already
+   *   done or failed. This is useful for calling finish() in a `finally` block,
+   *   where we may have already marked the queue as done or failed.
    */
-  finish() {
+  finish(quietly = false) {
     if (this.done || this.failed !== null) {
-      if (this.done) {
-        console.warn(`${this.constructor.name} already done, ignoring finish`);
-      } else {
-        console.warn(
-          `${this.constructor.name} already failed, ignoring finish`,
-        );
+      if (!quietly) {
+        if (this.done) {
+          console.warn(
+            `${this.constructor.name} already done, ignoring finish`,
+          );
+        } else {
+          console.warn(
+            `${this.constructor.name} already failed, ignoring finish`,
+          );
+        }
       }
       return;
     }
-    console.trace(`XXX ${this.constructor.name} finishing`);
     this.done = true;
     while (this.waiters.length) {
       const { resolve } = this.waiters.shift()!;

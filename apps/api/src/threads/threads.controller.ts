@@ -23,7 +23,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { AsyncQueue, GenerationStage } from "@tambo-ai-cloud/core";
-import { Request } from "express";
+import { Request, Response } from "express";
 import { extractContextInfo } from "../common/utils/extract-context-info";
 import { ApiKeyGuard } from "../projects/guards/apikey.guard";
 import { BearerTokenGuard } from "../projects/guards/bearer-token.guard";
@@ -391,16 +391,21 @@ export class ThreadsController {
       advanceRequestDto.contextKey,
     );
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
-    await this.threadsService.advanceThread(
-      projectId,
-      advanceRequestDto,
-      threadId,
-      false,
-      advanceRequestDto.toolCallCounts ?? {},
-      undefined,
-      queue,
-      contextKey,
-    );
+    void this.threadsService
+      .advanceThread(
+        projectId,
+        advanceRequestDto,
+        threadId,
+        false,
+        advanceRequestDto.toolCallCounts ?? {},
+        undefined,
+        queue,
+        contextKey,
+      )
+      .catch((error) => {
+        console.error("Error while advancing thread", error);
+        throw error;
+      });
 
     let lastMessage: AdvanceThreadResponseDto | null = null;
     for await (const message of queue) {
@@ -428,7 +433,7 @@ export class ThreadsController {
     @Param("id") threadId: string,
     @Req() request: Request,
     @Body() advanceRequestDto: AdvanceThreadDto,
-    @Res() response,
+    @Res() response: Response,
   ): Promise<void> {
     const { projectId, contextKey } = extractContextInfo(
       request,
@@ -440,16 +445,24 @@ export class ThreadsController {
 
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
     try {
-      await this.threadsService.advanceThread(
-        projectId,
-        advanceRequestDto,
-        threadId,
-        true,
-        advanceRequestDto.toolCallCounts ?? {},
-        undefined,
-        queue,
-        contextKey,
-      );
+      const now = Date.now();
+      void this.threadsService
+        .advanceThread(
+          projectId,
+          advanceRequestDto,
+          threadId,
+          true,
+          advanceRequestDto.toolCallCounts ?? {},
+          undefined,
+          queue,
+          contextKey,
+        )
+        .catch((error) => {
+          console.error("Error while advancing thread", error);
+          throw error;
+        });
+
+      console.log("advanceThread took", Date.now() - now, "ms");
 
       await this.handleAdvanceStream(response, queue);
     } catch (error: any) {
@@ -475,16 +488,21 @@ export class ThreadsController {
       advanceRequestDto.contextKey,
     );
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
-    await this.threadsService.advanceThread(
-      projectId,
-      advanceRequestDto,
-      undefined,
-      false,
-      advanceRequestDto.toolCallCounts ?? {},
-      undefined,
-      queue,
-      contextKey,
-    );
+    void this.threadsService
+      .advanceThread(
+        projectId,
+        advanceRequestDto,
+        undefined,
+        false,
+        advanceRequestDto.toolCallCounts ?? {},
+        undefined,
+        queue,
+        contextKey,
+      )
+      .catch((error) => {
+        console.error("Error while advancing thread", error);
+        throw error;
+      });
     let lastMessage: AdvanceThreadResponseDto | null = null;
     for await (const message of queue) {
       lastMessage = message;
@@ -517,17 +535,26 @@ export class ThreadsController {
 
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
     try {
-      await this.threadsService.advanceThread(
-        projectId,
-        advanceRequestDto,
-        undefined,
-        true,
-        {},
-        undefined,
-        queue,
-        contextKey,
-      );
+      const now = Date.now();
+      void this.threadsService
+        .advanceThread(
+          projectId,
+          advanceRequestDto,
+          undefined,
+          true,
+          {},
+          undefined,
+          queue,
+          contextKey,
+        )
+        .catch((error) => {
+          console.error("Error while advancing thread", error);
+          throw error;
+        });
+      console.log("advanceThread took", Date.now() - now, "ms");
+      console.log("calling handleAdvanceStream... starting");
       await this.handleAdvanceStream(response, queue);
+      console.log("handleAdvanceStream completed");
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
       response.end();
@@ -582,6 +609,9 @@ export class ThreadsController {
     }>,
     shouldThrottle = true, // used mainly for debugging
   ) {
+    console.log(
+      `ThreadsController: handleAdvanceStream... starting with ${stream}`,
+    );
     try {
       if (shouldThrottle) {
         for await (const chunk of throttleChunks(

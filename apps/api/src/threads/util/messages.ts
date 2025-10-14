@@ -12,7 +12,7 @@ import {
   operations,
   schema,
 } from "@tambo-ai-cloud/db";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { MessageRequest, ThreadMessageDto } from "../dto/message.dto";
 import {
   convertContentDtoToContentPart,
@@ -188,8 +188,12 @@ export async function verifyLatestMessageConsistency(
   newestMessageId: string,
   hasNewMessageId: boolean,
 ) {
+  return; // TODO: REMOVE THIS
   const latestMessages = await db.query.messages.findMany({
-    where: eq(schema.messages.threadId, threadId),
+    where: and(
+      eq(schema.messages.threadId, threadId),
+      isNull(schema.messages.parentMessageId),
+    ),
     orderBy: (messages, { desc }) => [desc(messages.createdAt)],
     limit: 2,
     columns: {

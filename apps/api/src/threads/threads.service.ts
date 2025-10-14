@@ -1133,6 +1133,7 @@ export class ThreadsService {
           mcpAccessToken,
           project?.maxToolCallLimit ?? DEFAULT_MAX_TOTAL_TOOL_CALLS,
         );
+        return;
       }
 
       const responseMessage = await processThreadMessage(
@@ -1212,8 +1213,10 @@ export class ThreadsService {
         statusMessage: resultingStatusMessage,
         mcpAccessToken,
       });
+
       return;
     } catch (error) {
+      queue.fail(error);
       // Capture any errors with full context
       Sentry.withScope((scope) => {
         scope.setTag("operation", "advanceThread");
@@ -1227,6 +1230,8 @@ export class ThreadsService {
         Sentry.captureException(error);
       });
       throw error;
+    } finally {
+      queue.finish(true);
     }
   }
 
@@ -1624,6 +1629,7 @@ export class ThreadsService {
   ): Promise<void> {
     const db = this.getDb();
     const logger = this.logger;
+    console.log("ThreadsService: handleAdvanceThreadStream... starting");
 
     // Start a span for the entire streaming operation
     const span = Sentry.startInactiveSpan({
@@ -2253,6 +2259,7 @@ function createMcpHandlers(
       const parentMessageId = e.params._meta?.[
         MCP_PARENT_MESSAGE_ID_META_KEY
       ] as string | undefined;
+      console.log("SAMPLING: sampling... starting");
       const messages = e.params.messages.map((m) => ({
         // Have pretend this is "user" to let audio/image content through to
         // ChatCompletionContentPart
@@ -2269,6 +2276,7 @@ function createMcpHandlers(
           parentMessageId,
         });
 
+        console.log("SAMPLING: adding message to queue", message.id);
         queue.push({
           responseMessageDto: {
             id: message.id,
@@ -2290,6 +2298,7 @@ function createMcpHandlers(
         promptTemplateParams: {},
         messages: messages,
       });
+
       const message = await operations.addMessage(db, {
         threadId,
         role: response.message.role as MessageRole,
@@ -2301,6 +2310,7 @@ function createMcpHandlers(
         ],
         parentMessageId,
       });
+      console.log("SAMPLING: adding response message to queue", message.id);
 
       queue.push({
         responseMessageDto: {
@@ -2317,6 +2327,7 @@ function createMcpHandlers(
         mcpAccessToken: "",
       });
 
+      console.log("SAMPLING: returning response message");
       return {
         role: response.message.role,
         content: { type: "text", text: response.message.content ?? "" },
