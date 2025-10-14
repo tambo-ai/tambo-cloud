@@ -14,6 +14,7 @@ import {
 } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
+  AsyncQueue,
   ChatCompletionContentPart,
   ComponentDecisionV2,
   ContentPartType,
@@ -934,8 +935,9 @@ export class ThreadsService {
     stream?: true,
     toolCallCounts?: Record<string, number>,
     cachedSystemTools?: McpToolRegistry,
+    queue?: AsyncQueue<AdvanceThreadResponseDto>,
     contextKey?: string,
-  ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
+  ): Promise<void>;
   async advanceThread(
     projectId: string,
     advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
@@ -943,7 +945,8 @@ export class ThreadsService {
     stream?: false,
     toolCallCounts?: Record<string, number>,
     cachedSystemTools?: McpToolRegistry,
-  ): Promise<AdvanceThreadResponseDto>;
+    queue?: AsyncQueue<AdvanceThreadResponseDto>,
+  ): Promise<void>;
   async advanceThread(
     projectId: string,
     advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
@@ -951,10 +954,9 @@ export class ThreadsService {
     stream?: boolean,
     toolCallCounts?: Record<string, number>,
     cachedSystemTools?: McpToolRegistry,
+    queue?: AsyncQueue<AdvanceThreadResponseDto>,
     contextKey?: string,
-  ): Promise<
-    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
-  >;
+  ): Promise<void>;
   async advanceThread(
     projectId: string,
     advanceRequestDto: Omit<AdvanceThreadDto, "contextKey">,
@@ -962,11 +964,10 @@ export class ThreadsService {
     stream?: boolean,
     toolCallCounts: Record<string, number> = {},
     cachedSystemTools?: McpToolRegistry,
+    queue?: AsyncQueue<AdvanceThreadResponseDto>,
     contextKey?: string,
-  ): Promise<
-    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
-  > {
-    return await Sentry.startSpan(
+  ): Promise<void> {
+    await Sentry.startSpan(
       {
         name: "threads.advance",
         op: "threads.process",
@@ -986,6 +987,7 @@ export class ThreadsService {
           stream,
           toolCallCounts,
           cachedSystemTools,
+          queue,
           contextKey,
         ),
     );
@@ -998,11 +1000,11 @@ export class ThreadsService {
     stream?: boolean,
     toolCallCounts: Record<string, number> = {},
     cachedSystemTools?: McpToolRegistry,
+    queue?: AsyncQueue<AdvanceThreadResponseDto>,
     contextKey?: string,
-  ): Promise<
-    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
-  > {
+  ): Promise<void> {
     const db = this.getDb();
+    queue = queue ?? new AsyncQueue<AdvanceThreadResponseDto>();
 
     try {
       // Add breadcrumb for thread advancement
@@ -1051,7 +1053,7 @@ export class ThreadsService {
         this.logger.log(
           `Ignoring tool response due to cancellation for thread ${thread.id}`,
         );
-        return {
+        queue.push({
           responseMessageDto: {
             id: "",
             role: MessageRole.Assistant,
@@ -1063,7 +1065,8 @@ export class ThreadsService {
           generationStage: GenerationStage.COMPLETE,
           statusMessage: "",
           mcpAccessToken: "",
-        };
+        });
+        return;
       }
 
       // Ensure only one request per thread adds its user message and continues
@@ -1090,7 +1093,7 @@ export class ThreadsService {
         throw new Error("No messages found");
       }
       const systemToolsStart = Date.now();
-      const mcpHandlers = createMcpHandlers(db, tamboBackend, thread.id);
+      const mcpHandlers = createMcpHandlers(db, tamboBackend, thread.id, queue);
 
       const systemTools =
         cachedSystemTools ??
@@ -1116,11 +1119,12 @@ export class ThreadsService {
       );
 
       if (stream) {
-        return await this.generateStreamingResponse(
+        await this.generateStreamingResponse(
           projectId,
           thread.id,
           db,
           tamboBackend,
+          queue,
           threadMessageDtoToThreadMessage(messages),
           userMessage,
           advanceRequestDto,
@@ -1168,7 +1172,8 @@ export class ThreadsService {
         mcpAccessToken,
       );
       if (toolLimitErrorMessage) {
-        return toolLimitErrorMessage;
+        queue.push(toolLimitErrorMessage);
+        return;
       }
 
       if (isSystemToolCall(toolCallRequest, allTools)) {
@@ -1192,10 +1197,11 @@ export class ThreadsService {
           thread.id,
           false,
           toolCallCounts,
+          queue,
         );
       }
 
-      return {
+      queue.push({
         responseMessageDto: {
           ...responseMessageDto,
           content: convertContentPartToDto(responseMessageDto.content),
@@ -1204,7 +1210,8 @@ export class ThreadsService {
         generationStage: resultingGenerationStage,
         statusMessage: resultingStatusMessage,
         mcpAccessToken,
-      };
+      });
+      return;
     } catch (error) {
       // Capture any errors with full context
       Sentry.withScope((scope) => {
@@ -1233,7 +1240,8 @@ export class ThreadsService {
     threadId: string,
     stream: boolean,
     toolCallCounts: Record<string, number>,
-  ): Promise<AdvanceThreadResponseDto>;
+    queue: AsyncQueue<AdvanceThreadResponseDto>,
+  ): Promise<void>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
@@ -1245,7 +1253,8 @@ export class ThreadsService {
     threadId: string,
     stream: true,
     toolCallCounts: Record<string, number>,
-  ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>>;
+    queue: AsyncQueue<AdvanceThreadResponseDto>,
+  ): Promise<void>;
   private async handleSystemToolCall(
     toolCallRequest: ToolCallRequest,
     toolCallId: string,
@@ -1257,10 +1266,9 @@ export class ThreadsService {
     threadId: string,
     stream: boolean,
     toolCallCounts: Record<string, number>,
-  ): Promise<
-    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
-  > {
-    return await Sentry.startSpan(
+    queue: AsyncQueue<AdvanceThreadResponseDto>,
+  ): Promise<void> {
+    await Sentry.startSpan(
       {
         name: "threads.handleSystemToolCall",
         op: "tools.system",
@@ -1284,6 +1292,7 @@ export class ThreadsService {
           threadId,
           stream,
           toolCallCounts,
+          queue,
         ),
     );
   }
@@ -1299,9 +1308,8 @@ export class ThreadsService {
     threadId: string,
     stream: boolean,
     toolCallCounts: Record<string, number>,
-  ): Promise<
-    AdvanceThreadResponseDto | AsyncIterableIterator<AdvanceThreadResponseDto>
-  > {
+    queue: AsyncQueue<AdvanceThreadResponseDto>,
+  ): Promise<void> {
     try {
       // Add breadcrumb for tool call
       Sentry.addBreadcrumb({
@@ -1331,13 +1339,14 @@ export class ThreadsService {
       );
 
       // This effectively recurses back into the decision loop with the tool response
-      return await this.advanceThread(
+      await this.advanceThread(
         projectId,
         messageWithToolResponse,
         threadId,
         stream,
         updatedToolCallCounts,
         allTools,
+        queue,
       );
     } catch (error) {
       Sentry.captureException(error, {
@@ -1356,6 +1365,7 @@ export class ThreadsService {
     threadId: string,
     db: HydraDatabase,
     tamboBackend: ITamboBackend,
+    queue: AsyncQueue<AdvanceThreadResponseDto>,
     messages: ThreadMessage[],
     userMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
@@ -1363,7 +1373,7 @@ export class ThreadsService {
     allTools: ToolRegistry,
     mcpAccessToken: string,
     maxToolCallLimit: number,
-  ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
+  ): Promise<void> {
     return await Sentry.startSpan(
       {
         name: "threads.generateStreamingResponse",
@@ -1384,6 +1394,7 @@ export class ThreadsService {
           threadId,
           db,
           tamboBackend,
+          queue,
           messages,
           userMessage,
           advanceRequestDto,
@@ -1400,6 +1411,7 @@ export class ThreadsService {
     threadId: string,
     db: HydraDatabase,
     tamboBackend: ITamboBackend,
+    queue: AsyncQueue<AdvanceThreadResponseDto>,
     messages: ThreadMessage[],
     userMessage: ThreadMessage,
     advanceRequestDto: AdvanceThreadDto,
@@ -1407,7 +1419,7 @@ export class ThreadsService {
     allTools: ToolRegistry,
     mcpAccessToken: string,
     maxToolCallLimit: number,
-  ): Promise<AsyncIterableIterator<AdvanceThreadResponseDto>> {
+  ): Promise<void> {
     try {
       const latestMessage = messages[messages.length - 1];
 
@@ -1477,10 +1489,11 @@ export class ThreadsService {
 
         decisionLoopSpan.end();
 
-        return this.handleAdvanceThreadStream(
+        await this.handleAdvanceThreadStream(
           projectId,
           threadId,
           messageStream,
+          queue,
           messages,
           userMessage,
           allTools,
@@ -1556,10 +1569,11 @@ export class ThreadsService {
         },
       });
 
-      return this.handleAdvanceThreadStream(
+      await this.handleAdvanceThreadStream(
         projectId,
         threadId,
         streamedResponseMessages,
+        queue,
         messages,
         userMessage,
         allTools,
@@ -1592,10 +1606,11 @@ export class ThreadsService {
     }
   }
 
-  private async *handleAdvanceThreadStream(
+  private async handleAdvanceThreadStream(
     projectId: string,
     threadId: string,
     stream: AsyncIterableIterator<LegacyComponentDecision>,
+    queue: AsyncQueue<AdvanceThreadResponseDto>,
     threadMessages: ThreadMessage[],
     userMessage: ThreadMessage,
     allTools: McpToolRegistry,
@@ -1605,7 +1620,7 @@ export class ThreadsService {
     mcpAccessToken: string,
     maxToolCallLimit: number,
     modelOptions: ModelOptions,
-  ): AsyncIterableIterator<AdvanceThreadResponseDto> {
+  ): Promise<void> {
     const db = this.getDb();
     const logger = this.logger;
 
@@ -1652,7 +1667,7 @@ export class ThreadsService {
           data: { threadId },
         });
 
-        yield {
+        queue.push({
           responseMessageDto: {
             id: "",
             role: MessageRole.Assistant,
@@ -1664,7 +1679,7 @@ export class ThreadsService {
           generationStage: GenerationStage.CANCELLED,
           statusMessage: "Thread cancelled",
           mcpAccessToken,
-        };
+        });
         ttfbSpan.end();
         ttfbEnded = true;
         return;
@@ -1744,7 +1759,7 @@ export class ThreadsService {
           logger,
         );
         if (cancelledMessage) {
-          yield cancelledMessage;
+          queue.push(cancelledMessage);
           return;
         }
 
@@ -1759,7 +1774,7 @@ export class ThreadsService {
           tool_call_id: _tool_call_id, // may be undefined
           ...messageWithoutToolCall
         } = currentThreadMessage;
-        yield {
+        queue.push({
           responseMessageDto: {
             ...messageWithoutToolCall,
             content: convertContentPartToDto(messageWithoutToolCall.content),
@@ -1768,7 +1783,7 @@ export class ThreadsService {
           generationStage: GenerationStage.STREAMING_RESPONSE,
           statusMessage: `Streaming response...`,
           mcpAccessToken,
-        };
+        });
 
         finalThreadMessage = currentThreadMessage;
       }
@@ -1828,7 +1843,7 @@ export class ThreadsService {
         );
 
         if (toolLimitErrorMessage) {
-          yield toolLimitErrorMessage;
+          queue.push(toolLimitErrorMessage);
           return;
         }
       }
@@ -1871,7 +1886,7 @@ export class ThreadsService {
           statusMessage: resultingStatusMessage,
           mcpAccessToken,
         };
-        yield finalThreadMessageDto;
+        queue.push(finalThreadMessageDto);
 
         const toolCallId = finalThreadMessage.tool_call_id;
 
@@ -1883,7 +1898,7 @@ export class ThreadsService {
         }
 
         // Note that this effectively consumes nonStrictToolCallRequest and finalToolCallId
-        const toolResponseMessageStream = await this.handleSystemToolCall(
+        await this.handleSystemToolCall(
           toolCallRequest,
           toolCallId ?? "",
           finalThreadMessage.id,
@@ -1894,16 +1909,14 @@ export class ThreadsService {
           threadId,
           true,
           toolCallCounts,
+          queue,
         );
 
-        for await (const chunk of toolResponseMessageStream) {
-          yield chunk;
-        }
         return;
       }
 
       // We only yield the final response with the tool call request and tool call id set if we did not call a system tool
-      yield {
+      queue.push({
         responseMessageDto: {
           ...finalThreadMessage,
           content: convertContentPartToDto(finalThreadMessage.content),
@@ -1912,7 +1925,7 @@ export class ThreadsService {
         generationStage: resultingGenerationStage,
         statusMessage: resultingStatusMessage,
         mcpAccessToken,
-      };
+      });
     } catch (error) {
       // Capture streaming errors with full context
       Sentry.withScope((scope) => {
@@ -2232,6 +2245,7 @@ function createMcpHandlers(
   db: HydraDb,
   tamboBackend: ITamboBackend,
   threadId: string,
+  queue: AsyncQueue<AdvanceThreadResponseDto>,
 ): MCPHandlers {
   return {
     async sampling(e) {
@@ -2247,11 +2261,25 @@ function createMcpHandlers(
       // add serially for now
       // TODO: add messages in a batch
       for (const m of messages) {
-        await operations.addMessage(db, {
+        const message = await operations.addMessage(db, {
           threadId,
           role: m.role as MessageRole,
           content: m.content,
           parentMessageId,
+        });
+
+        queue.push({
+          responseMessageDto: {
+            id: message.id,
+            role: message.role,
+            content: convertContentPartToDto(message.content),
+            componentState: message.componentState ?? {},
+            threadId: message.threadId,
+            createdAt: message.createdAt,
+          },
+          generationStage: GenerationStage.STREAMING_RESPONSE,
+          statusMessage: `Streaming response...`,
+          mcpAccessToken: "",
         });
       }
       const response = await tamboBackend.llmClient.complete({
@@ -2260,7 +2288,7 @@ function createMcpHandlers(
         promptTemplateParams: {},
         messages: messages,
       });
-      await operations.addMessage(db, {
+      const message = await operations.addMessage(db, {
         threadId,
         role: response.message.role as MessageRole,
         content: [
@@ -2271,6 +2299,21 @@ function createMcpHandlers(
         ],
         parentMessageId,
       });
+
+      queue.push({
+        responseMessageDto: {
+          id: message.id,
+          role: message.role,
+          content: convertContentPartToDto(message.content),
+          componentState: message.componentState ?? {},
+          threadId: message.threadId,
+          createdAt: message.createdAt,
+        },
+        generationStage: GenerationStage.STREAMING_RESPONSE,
+        statusMessage: `Streaming response...`,
+        mcpAccessToken: "",
+      });
+
       return {
         role: response.message.role,
         content: { type: "text", text: response.message.content ?? "" },

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  InternalServerErrorException,
   Logger,
   Param,
   Post,
@@ -21,7 +22,7 @@ import {
   ApiSecurity,
   ApiTags,
 } from "@nestjs/swagger";
-import { GenerationStage } from "@tambo-ai-cloud/core";
+import { AsyncQueue, GenerationStage } from "@tambo-ai-cloud/core";
 import { Request } from "express";
 import { extractContextInfo } from "../common/utils/extract-context-info";
 import { ApiKeyGuard } from "../projects/guards/apikey.guard";
@@ -389,17 +390,26 @@ export class ThreadsController {
       request,
       advanceRequestDto.contextKey,
     );
-    const result = await this.threadsService.advanceThread(
+    const queue = new AsyncQueue<AdvanceThreadResponseDto>();
+    await this.threadsService.advanceThread(
       projectId,
       advanceRequestDto,
       threadId,
       false,
       advanceRequestDto.toolCallCounts ?? {},
       undefined,
+      queue,
       contextKey,
     );
-    // Since stream=false, result will be AdvanceThreadResponseDto
-    return result as AdvanceThreadResponseDto;
+
+    let lastMessage: AdvanceThreadResponseDto | null = null;
+    for await (const message of queue) {
+      lastMessage = message;
+    }
+    if (!lastMessage) {
+      throw new InternalServerErrorException("No message found in queue");
+    }
+    return lastMessage;
   }
 
   @UseGuards(ThreadInProjectGuard)
@@ -428,18 +438,20 @@ export class ThreadsController {
     response.setHeader("Cache-Control", "no-cache");
     response.setHeader("Connection", "keep-alive");
 
+    const queue = new AsyncQueue<AdvanceThreadResponseDto>();
     try {
-      const stream = await this.threadsService.advanceThread(
+      await this.threadsService.advanceThread(
         projectId,
         advanceRequestDto,
         threadId,
         true,
         advanceRequestDto.toolCallCounts ?? {},
         undefined,
+        queue,
         contextKey,
       );
 
-      await this.handleAdvanceStream(response, stream);
+      await this.handleAdvanceStream(response, queue);
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
       response.end();
@@ -462,17 +474,26 @@ export class ThreadsController {
       request,
       advanceRequestDto.contextKey,
     );
-    const result = await this.threadsService.advanceThread(
+    const queue = new AsyncQueue<AdvanceThreadResponseDto>();
+    await this.threadsService.advanceThread(
       projectId,
       advanceRequestDto,
       undefined,
       false,
       advanceRequestDto.toolCallCounts ?? {},
       undefined,
+      queue,
       contextKey,
     );
+    let lastMessage: AdvanceThreadResponseDto | null = null;
+    for await (const message of queue) {
+      lastMessage = message;
+    }
+    if (!lastMessage) {
+      throw new InternalServerErrorException("No message found in queue");
+    }
     // Since stream=false, result will be AdvanceThreadResponseDto
-    return result as AdvanceThreadResponseDto;
+    return lastMessage;
   }
 
   @Post("advancestream")
@@ -494,17 +515,19 @@ export class ThreadsController {
     response.setHeader("Cache-Control", "no-cache");
     response.setHeader("Connection", "keep-alive");
 
+    const queue = new AsyncQueue<AdvanceThreadResponseDto>();
     try {
-      const stream = await this.threadsService.advanceThread(
+      await this.threadsService.advanceThread(
         projectId,
         advanceRequestDto,
         undefined,
         true,
         {},
         undefined,
+        queue,
         contextKey,
       );
-      await this.handleAdvanceStream(response, stream);
+      await this.handleAdvanceStream(response, queue);
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
       response.end();
