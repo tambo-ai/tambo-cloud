@@ -207,7 +207,6 @@ export async function verifyLatestMessageConsistency(
     : latestMessages[0]; // Check latest message directly
 
   if (!(messageToCheck.id === newestMessageId)) {
-    console.trace("messageToCheck.id", messageToCheck.id);
     throw new Error(
       `Latest message before write is not the same as the added user message: ${messageToCheck.id} !== ${newestMessageId}`,
     );
