@@ -391,6 +391,7 @@ export class ThreadsController {
       advanceRequestDto.contextKey,
     );
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
+    // This method will resolve when the queue is done or failed
     void this.threadsService
       .advanceThread(
         projectId,

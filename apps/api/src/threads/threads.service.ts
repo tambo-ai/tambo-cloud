@@ -918,15 +918,25 @@ export class ThreadsService {
   }
 
   /**
-   * Advance the thread by one step.
+   * Advance the thread by one step/message.
+   *
+   * Note that this async method will resolve when the queue is done or failed,
+   * but while it is running, it will push messages to the queue. For proper
+   * streaming, *DO NOT AWAIT* this method, but instead iterate the queue.
+   * It is safe to await the result of this method after the queue is complete.
+   *
    * @param projectId - The project ID.
-   * @param advanceRequestDto - The advance request DTO, including optional message to append, context key, and available components.
+   * @param advanceRequestDto - The advance request DTO, including optional
+   *   message to append, context key, and available components.
    * @param unresolvedThreadId - The thread ID, if any
    * @param stream - Whether to stream the response.
-   * @param toolCallCounts - Dictionary mapping tool call signatures to their counts for loop prevention.
-   * @param cachedSystemTools - The system tools loaded from MCP - if included, it is a cache to avoid re-fetching them.
+   * @param toolCallCounts - Dictionary mapping tool call signatures to their
+   *   counts for loop prevention.
+   * @param cachedSystemTools - The system tools loaded from MCP - if included,
+   *   it is a cache to avoid re-fetching them.
    * @param contextKey - The context key, if any
-   * @returns The the generated response thread message, generation stage, and status message.
+   * @returns The the generated response thread message, generation stage, and
+   *   status message.
    */
   async advanceThread(
     projectId: string,
@@ -1510,6 +1520,8 @@ export class ThreadsService {
           maxToolCallLimit,
           tamboBackend.modelOptions,
         );
+
+        return;
       }
 
       // From this point forward, we are not handling tool calls

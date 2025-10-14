@@ -188,7 +188,6 @@ export async function verifyLatestMessageConsistency(
   newestMessageId: string,
   hasNewMessageId: boolean,
 ) {
-  return; // TODO: REMOVE THIS
   const latestMessages = await db.query.messages.findMany({
     where: and(
       eq(schema.messages.threadId, threadId),
