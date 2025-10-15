@@ -131,18 +131,13 @@ export class ThreadsController {
     @Param("id") threadId: string,
     @Req() request: Request,
     @Query("contextKey") apiContextKey?: string,
-    @Query("includeInternal") includeInternal?: boolean,
+    @Query("includeInternal") _includeInternal?: boolean,
   ): Promise<ThreadWithMessagesDto> {
     const { projectId, contextKey } = extractContextInfo(
       request,
       apiContextKey,
     );
-    return await this.threadsService.findOne(
-      threadId,
-      projectId,
-      contextKey,
-      includeInternal,
-    );
+    return await this.threadsService.findOne(threadId, projectId, contextKey);
   }
 
   @UseGuards(ThreadInProjectGuard)

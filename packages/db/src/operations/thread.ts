@@ -1,4 +1,4 @@
-import { GenerationStage, MessageRole } from "@tambo-ai-cloud/core";
+import { GenerationStage } from "@tambo-ai-cloud/core";
 import {
   and,
   count,
@@ -7,7 +7,6 @@ import {
   ilike,
   inArray,
   isNull,
-  ne,
   or,
   type SQL,
   sql,
@@ -78,7 +77,6 @@ export async function getThreadForProjectId(
   db: HydraDb,
   threadId: string,
   projectId: string,
-  includeInternal: boolean = false,
   contextKey?: string,
 ): Promise<schema.DBThreadWithMessages | undefined> {
   return await db.query.threads.findFirst({
@@ -94,12 +92,6 @@ export async function getThreadForProjectId(
         ),
     with: {
       messages: {
-        where: includeInternal
-          ? undefined
-          : or(
-              ne(schema.messages.role, MessageRole.Assistant),
-              isNull(schema.messages.toolCallRequest),
-            ),
         orderBy: (messages, { asc }) => [asc(messages.createdAt)],
         with: {
           suggestions: true,
@@ -339,7 +331,6 @@ export async function ensureThreadByProjectId(
     db,
     threadId,
     projectId,
-    false,
     contextKey,
   );
   if (!thread) {

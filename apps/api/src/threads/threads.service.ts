@@ -319,14 +319,16 @@ export class ThreadsService {
     id: string,
     projectId: string,
     contextKey?: string,
-    includeInternal: boolean = false,
   ): Promise<ThreadWithMessagesDto> {
     const thread = await operations.getThreadForProjectId(
       this.getDb(),
       id,
       projectId,
-      includeInternal,
       contextKey,
+    );
+    console.log(
+      "got messages: ",
+      thread?.messages.map((m) => `${m.id} ${m.role} ${m.toolCallRequest}`),
     );
     if (!thread) {
       throw new NotFoundException("Thread not found");
@@ -849,7 +851,6 @@ export class ThreadsService {
       this.getDb(),
       threadId,
       projectId,
-      false,
       contextKey,
     );
     if (!thread) {
