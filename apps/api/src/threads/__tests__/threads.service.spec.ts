@@ -10,6 +10,7 @@ import {
   GenerationStage,
   MessageRole,
   OAuthValidationMode,
+  type ChatCompletionContentPart,
 } from "@tambo-ai-cloud/core";
 import { schema, type operations as dbOperations } from "@tambo-ai-cloud/db";
 import {
@@ -26,13 +27,13 @@ import {
   AdvanceThreadDto,
   AdvanceThreadResponseDto,
 } from "../dto/advance-thread.dto";
+import { ThreadsService } from "../threads.service";
 import {
   FreeLimitReachedError,
   InvalidSuggestionRequestError,
   SuggestionGenerationError,
   SuggestionNotFoundException,
 } from "../types/errors";
-import { ThreadsService } from "../threads.service";
 
 // Mock backend pieces (TamboBackend and helpers)
 jest.mock("@tambo-ai-cloud/backend", () => {
@@ -75,6 +76,66 @@ const {
 
 const { __testRunDecisionLoop__ }: { __testRunDecisionLoop__: jest.Mock } =
   jest.requireMock("@tambo-ai-cloud/backend");
+
+// Helper function to create a properly-typed DBMessageWithSuggestions
+function createDBMessageWithSuggestions(
+  id: string,
+  threadId: string,
+  role: MessageRole,
+  content: ChatCompletionContentPart[],
+  suggestions: schema.DBSuggestion[] = [],
+): schema.DBMessage & { suggestions: schema.DBSuggestion[] } {
+  return {
+    ...createMockDBMessage(id, threadId, role, content),
+    suggestions,
+  };
+}
+
+// Helper function to create a properly-typed DBThreadWithMessages
+function createDBThreadWithMessages(
+  threadId: string,
+  projectId: string,
+  generationStage: GenerationStage,
+  messages: (schema.DBMessage & { suggestions: schema.DBSuggestion[] })[] = [],
+): schema.DBThread & {
+  messages: (schema.DBMessage & { suggestions: schema.DBSuggestion[] })[];
+} {
+  return {
+    ...createMockDBThread(threadId, projectId, generationStage),
+    messages,
+  };
+}
+
+// Helper function to create a properly-typed DBSuggestion
+function createDBSuggestion(
+  id: string,
+  messageId: string,
+  title: string,
+  detailedSuggestion: string,
+): schema.DBSuggestion {
+  return {
+    id,
+    messageId,
+    title,
+    detailedSuggestion,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
+// Helper function to create a properly-typed DBMessageWithThread
+function createDBMessageWithThread(
+  id: string,
+  threadId: string,
+  role: MessageRole,
+  content: ChatCompletionContentPart[],
+  thread: schema.DBThread,
+): schema.DBMessage & { thread: schema.DBThread } {
+  return {
+    ...createMockDBMessage(id, threadId, role, content),
+    thread,
+  };
+}
 
 // Mock DB operations used by the service
 jest.mock("@tambo-ai-cloud/db", () => {
@@ -389,7 +450,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     });
     // Ensure backend instance is properly returned for this test
     jest
-      .spyOn<any, any>(service as any, "createTamboBackendForThread")
+      .spyOn<any, any>(service, "createTamboBackendForThread")
       .mockResolvedValue({
         runDecisionLoop: __testRunDecisionLoop__,
         generateSuggestions: jest.fn(),
@@ -400,7 +461,7 @@ describe("ThreadsService.advanceThread initialization", () => {
           baseURL: undefined,
           maxInputTokens: undefined,
         },
-      } as any);
+      });
     __testRunDecisionLoop__.mockImplementationOnce(() => {
       throw new Error("STOP_AFTER_INIT");
     });
@@ -777,17 +838,22 @@ describe("ThreadsService.advanceThread initialization", () => {
 
     describe("findOne", () => {
       it("should return thread with messages", async () => {
-        const mockThread = {
-          ...createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
-          messages: [
-            createMockDBMessage("m1", threadId, MessageRole.User, [
+        const mockThread = createDBThreadWithMessages(
+          threadId,
+          projectId,
+          GenerationStage.COMPLETE,
+          [
+            createDBMessageWithSuggestions("m1", threadId, MessageRole.User, [
               { type: "text", text: "Hello" },
             ]),
-            createMockDBMessage("m2", threadId, MessageRole.Assistant, [
-              { type: "text", text: "Hi there" },
-            ]),
+            createDBMessageWithSuggestions(
+              "m2",
+              threadId,
+              MessageRole.Assistant,
+              [{ type: "text", text: "Hi there" }],
+            ),
           ],
-        };
+        );
 
         operations.getThreadForProjectId.mockResolvedValue(mockThread);
 
@@ -802,7 +868,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       });
 
       it("should throw NotFoundException when thread not found", async () => {
-        operations.getThreadForProjectId.mockResolvedValue(null);
+        operations.getThreadForProjectId.mockResolvedValue(undefined);
 
         await expect(service.findOne(threadId, projectId)).rejects.toThrow(
           NotFoundException,
@@ -810,17 +876,19 @@ describe("ThreadsService.advanceThread initialization", () => {
       });
 
       it("should filter out system messages by default", async () => {
-        const mockThread = {
-          ...createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
-          messages: [
-            createMockDBMessage("m1", threadId, MessageRole.System, [
+        const mockThread = createDBThreadWithMessages(
+          threadId,
+          projectId,
+          GenerationStage.COMPLETE,
+          [
+            createDBMessageWithSuggestions("m1", threadId, MessageRole.System, [
               { type: "text", text: "System prompt" },
             ]),
-            createMockDBMessage("m2", threadId, MessageRole.User, [
+            createDBMessageWithSuggestions("m2", threadId, MessageRole.User, [
               { type: "text", text: "User message" },
             ]),
           ],
-        };
+        );
 
         operations.getThreadForProjectId.mockResolvedValue(mockThread);
 
@@ -832,10 +900,12 @@ describe("ThreadsService.advanceThread initialization", () => {
       });
 
       it("should support contextKey parameter", async () => {
-        const mockThread = {
-          ...createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
-          messages: [],
-        };
+        const mockThread = createDBThreadWithMessages(
+          threadId,
+          projectId,
+          GenerationStage.COMPLETE,
+          [],
+        );
 
         operations.getThreadForProjectId.mockResolvedValue(mockThread);
 
@@ -858,10 +928,13 @@ describe("ThreadsService.advanceThread initialization", () => {
           name: "Updated Thread",
         };
 
-        const updatedThread = {
-          ...createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
-          ...updateData,
-        };
+        const updatedThread = createDBThreadWithMessages(
+          threadId,
+          projectId,
+          GenerationStage.COMPLETE,
+        );
+        updatedThread.metadata = updateData.metadata;
+        updatedThread.name = updateData.name;
 
         operations.updateThread.mockResolvedValue(updatedThread);
 
@@ -882,20 +955,18 @@ describe("ThreadsService.advanceThread initialization", () => {
 
     describe("updateGenerationStage", () => {
       it("should update generation stage and status message", async () => {
-        const updatedThread = {
-          ...createMockDBThread(
-            threadId,
-            projectId,
-            GenerationStage.GENERATING,
-          ),
-          statusMessage: "Processing...",
-        };
+        const updatedThread = createDBThreadWithMessages(
+          threadId,
+          projectId,
+          GenerationStage.STREAMING_RESPONSE,
+        );
+        updatedThread.statusMessage = "Processing...";
 
         operations.updateThread.mockResolvedValue(updatedThread);
 
         await service.updateGenerationStage(
           threadId,
-          GenerationStage.GENERATING,
+          GenerationStage.STREAMING_RESPONSE,
           "Processing...",
         );
 
@@ -903,7 +974,7 @@ describe("ThreadsService.advanceThread initialization", () => {
           fakeDb,
           threadId,
           expect.objectContaining({
-            generationStage: GenerationStage.GENERATING,
+            generationStage: GenerationStage.STREAMING_RESPONSE,
             statusMessage: "Processing...",
           }),
         );
@@ -919,10 +990,14 @@ describe("ThreadsService.advanceThread initialization", () => {
           [{ type: "text", text: "Question?" }],
         );
 
-        operations.updateThread.mockResolvedValue({
-          ...createMockDBThread(threadId, projectId, GenerationStage.CANCELLED),
-          statusMessage: "Thread advancement cancelled",
-        });
+        const cancelledThread = createDBThreadWithMessages(
+          threadId,
+          projectId,
+          GenerationStage.CANCELLED,
+        );
+        cancelledThread.statusMessage = "Thread advancement cancelled";
+
+        operations.updateThread.mockResolvedValue(cancelledThread);
         operations.getLatestMessage.mockResolvedValue(mockMessage);
         operations.updateMessage.mockResolvedValue(mockMessage);
         operations.addMessage.mockResolvedValue(
@@ -956,14 +1031,18 @@ describe("ThreadsService.advanceThread initialization", () => {
           ]),
           toolCallRequest: {
             toolName: "test_tool",
-            arguments: {},
+            parameters: [],
           },
           toolCallId: "tc_123",
         };
 
-        operations.updateThread.mockResolvedValue({
-          ...createMockDBThread(threadId, projectId, GenerationStage.CANCELLED),
-        });
+        const cancelledThread = createDBThreadWithMessages(
+          threadId,
+          projectId,
+          GenerationStage.CANCELLED,
+        );
+
+        operations.updateThread.mockResolvedValue(cancelledThread);
         operations.getLatestMessage.mockResolvedValue(mockToolCallMessage);
         operations.updateMessage.mockResolvedValue(mockToolCallMessage);
         operations.addMessage.mockResolvedValue(
@@ -990,7 +1069,12 @@ describe("ThreadsService.advanceThread initialization", () => {
 
     describe("remove", () => {
       it("should delete thread", async () => {
-        operations.deleteThread.mockResolvedValue(undefined);
+        const deletedThread = createMockDBThread(
+          threadId,
+          projectId,
+          GenerationStage.COMPLETE,
+        );
+        operations.deleteThread.mockResolvedValue(deletedThread);
 
         await service.remove(threadId);
 
@@ -1064,7 +1148,13 @@ describe("ThreadsService.advanceThread initialization", () => {
 
     describe("deleteMessage", () => {
       it("should delete message by ID", async () => {
-        operations.deleteMessage.mockResolvedValue(undefined);
+        const deletedMessage = createMockDBMessage(
+          "msg_1",
+          threadId,
+          MessageRole.User,
+          [{ type: "text", text: "test" }],
+        );
+        operations.deleteMessage.mockResolvedValue(deletedMessage);
 
         await service.deleteMessage("msg_1");
 
@@ -1077,12 +1167,13 @@ describe("ThreadsService.advanceThread initialization", () => {
         const messageId = "msg_1";
         const newState = { counter: 5, expanded: true };
 
-        const updatedMessage = {
-          ...createMockDBMessage(messageId, threadId, MessageRole.Assistant, [
-            { type: "text", text: "Response" },
-          ]),
-          componentState: newState,
-        };
+        const updatedMessage = createMockDBMessage(
+          messageId,
+          threadId,
+          MessageRole.Assistant,
+          [{ type: "text", text: "Response" }],
+        );
+        updatedMessage.componentState = newState;
 
         operations.updateMessageComponentState.mockResolvedValue(
           updatedMessage,
@@ -1207,8 +1298,8 @@ describe("ThreadsService.advanceThread initialization", () => {
         createMockDBProject(projectId, { name: "New Project" }),
       );
 
-      // First call returns null (no usage), second call returns the created usage
-      operations.getProjectMessageUsage.mockResolvedValue(null);
+      // First call returns undefined (no usage)
+      operations.getProjectMessageUsage.mockResolvedValue(undefined);
 
       // Mock the updateProjectMessageUsage calls
       operations.updateProjectMessageUsage
@@ -1288,38 +1379,32 @@ describe("ThreadsService.advanceThread initialization", () => {
 
     describe("getSuggestions", () => {
       it("should return suggestions for a message", async () => {
-        const mockMessage = createMockDBMessage(
+        const mockSuggestions = [
+          createDBSuggestion(
+            "s1",
+            messageId,
+            "Follow up question",
+            "Ask about details",
+          ),
+          createDBSuggestion(
+            "s2",
+            messageId,
+            "Different approach",
+            "Try another way",
+          ),
+        ];
+
+        const mockMessageWithThread = createDBMessageWithThread(
           messageId,
           threadId,
           MessageRole.Assistant,
           [{ type: "text", text: "Response" }],
+          createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
         );
 
-        const mockSuggestions = [
-          {
-            id: "s1",
-            messageId,
-            title: "Follow up question",
-            detailedSuggestion: "Ask about details",
-            createdAt: new Date(),
-          },
-          {
-            id: "s2",
-            messageId,
-            title: "Different approach",
-            detailedSuggestion: "Try another way",
-            createdAt: new Date(),
-          },
-        ];
-
-        operations.getMessageWithAccess.mockResolvedValue({
-          ...mockMessage,
-          thread: createMockDBThread(
-            threadId,
-            projectId,
-            GenerationStage.COMPLETE,
-          ),
-        });
+        operations.getMessageWithAccess.mockResolvedValue(
+          mockMessageWithThread,
+        );
         operations.getSuggestions.mockResolvedValue(mockSuggestions);
 
         const result = await service.getSuggestions(messageId);
@@ -1333,21 +1418,17 @@ describe("ThreadsService.advanceThread initialization", () => {
       });
 
       it("should throw SuggestionNotFoundException when no suggestions exist", async () => {
-        const mockMessage = createMockDBMessage(
+        const mockMessageWithThread = createDBMessageWithThread(
           messageId,
           threadId,
           MessageRole.Assistant,
           [{ type: "text", text: "Response" }],
+          createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
         );
 
-        operations.getMessageWithAccess.mockResolvedValue({
-          ...mockMessage,
-          thread: createMockDBThread(
-            threadId,
-            projectId,
-            GenerationStage.COMPLETE,
-          ),
-        });
+        operations.getMessageWithAccess.mockResolvedValue(
+          mockMessageWithThread,
+        );
         operations.getSuggestions.mockResolvedValue([]);
 
         await expect(service.getSuggestions(messageId)).rejects.toThrow(
@@ -1356,7 +1437,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       });
 
       it("should throw InvalidSuggestionRequestError when message not found", async () => {
-        operations.getMessageWithAccess.mockResolvedValue(null);
+        operations.getMessageWithAccess.mockResolvedValue(undefined);
 
         await expect(service.getSuggestions(messageId)).rejects.toThrow(
           InvalidSuggestionRequestError,
@@ -1364,21 +1445,17 @@ describe("ThreadsService.advanceThread initialization", () => {
       });
 
       it("should wrap database errors in SuggestionGenerationError", async () => {
-        const mockMessage = createMockDBMessage(
+        const mockMessageWithThread = createDBMessageWithThread(
           messageId,
           threadId,
           MessageRole.Assistant,
           [{ type: "text", text: "Response" }],
+          createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
         );
 
-        operations.getMessageWithAccess.mockResolvedValue({
-          ...mockMessage,
-          thread: createMockDBThread(
-            threadId,
-            projectId,
-            GenerationStage.COMPLETE,
-          ),
-        });
+        operations.getMessageWithAccess.mockResolvedValue(
+          mockMessageWithThread,
+        );
         operations.getSuggestions.mockRejectedValue(
           new Error("Database connection error"),
         );
@@ -1411,38 +1488,53 @@ describe("ThreadsService.advanceThread initialization", () => {
               },
             ],
           }),
+          runDecisionLoop: jest.fn(),
+          generateThreadName: jest.fn(),
+          modelOptions: {
+            provider: "openai",
+            model: "gpt-4o",
+          },
+          llmClient: {} as any,
         };
 
         mockedCreateTamboBackend.mockResolvedValue(mockBackend as any);
 
-        operations.getMessageWithAccess.mockResolvedValue({
-          ...mockMessage,
-          thread: {
-            ...createMockDBThread(
-              threadId,
-              projectId,
-              GenerationStage.COMPLETE,
-            ),
-            contextKey: "ctx_test",
-          },
-        });
+        const threadWithContext = createMockDBThread(
+          threadId,
+          projectId,
+          GenerationStage.COMPLETE,
+        );
+        threadWithContext.contextKey = "ctx_test";
+
+        const mockMessageWithThread = createDBMessageWithThread(
+          messageId,
+          threadId,
+          MessageRole.Assistant,
+          [{ type: "text", text: "Response" }],
+          threadWithContext,
+        );
+
+        operations.getMessageWithAccess.mockResolvedValue(
+          mockMessageWithThread,
+        );
         operations.getMessages.mockResolvedValue([mockMessage]);
-        operations.createSuggestions.mockResolvedValue([
-          {
-            id: "s1",
+
+        const mockSuggestions = [
+          createDBSuggestion(
+            "s1",
             messageId,
-            title: "Generated suggestion 1",
-            detailedSuggestion: "Details 1",
-            createdAt: new Date(),
-          },
-          {
-            id: "s2",
+            "Generated suggestion 1",
+            "Details 1",
+          ),
+          createDBSuggestion(
+            "s2",
             messageId,
-            title: "Generated suggestion 2",
-            detailedSuggestion: "Details 2",
-            createdAt: new Date(),
-          },
-        ]);
+            "Generated suggestion 2",
+            "Details 2",
+          ),
+        ];
+
+        operations.createSuggestions.mockResolvedValue(mockSuggestions);
 
         jest.mocked(fakeDb.query.threads.findFirst).mockResolvedValue({
           id: threadId,
@@ -1479,18 +1571,28 @@ describe("ThreadsService.advanceThread initialization", () => {
           generateSuggestions: jest.fn().mockResolvedValue({
             suggestions: [],
           }),
+          runDecisionLoop: jest.fn(),
+          generateThreadName: jest.fn(),
+          modelOptions: {
+            provider: "openai",
+            model: "gpt-4o",
+          },
+          llmClient: {} as any,
         };
 
         mockedCreateTamboBackend.mockResolvedValue(mockBackend as any);
 
-        operations.getMessageWithAccess.mockResolvedValue({
-          ...mockMessage,
-          thread: createMockDBThread(
-            threadId,
-            projectId,
-            GenerationStage.COMPLETE,
-          ),
-        });
+        const mockMessageWithThread = createDBMessageWithThread(
+          messageId,
+          threadId,
+          MessageRole.Assistant,
+          [{ type: "text", text: "Response" }],
+          createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
+        );
+
+        operations.getMessageWithAccess.mockResolvedValue(
+          mockMessageWithThread,
+        );
         operations.getMessages.mockResolvedValue([mockMessage]);
 
         jest.mocked(fakeDb.query.threads.findFirst).mockResolvedValue({
@@ -1508,29 +1610,49 @@ describe("ThreadsService.advanceThread initialization", () => {
   describe("generateThreadName", () => {
     it("should generate and update thread name", async () => {
       const mockMessages = [
-        createMockDBMessage("m1", threadId, MessageRole.User, [
+        createDBMessageWithSuggestions("m1", threadId, MessageRole.User, [
           { type: "text", text: "How do I build a web app?" },
         ]),
-        createMockDBMessage("m2", threadId, MessageRole.Assistant, [
+        createDBMessageWithSuggestions("m2", threadId, MessageRole.Assistant, [
           { type: "text", text: "Here's how to build a web app..." },
         ]),
       ];
 
       const mockBackend = {
         generateThreadName: jest.fn().mockResolvedValue("Web App Development"),
+        runDecisionLoop: jest.fn(),
+        generateSuggestions: jest.fn(),
+        modelOptions: {
+          provider: "openai",
+          model: "gpt-4o",
+        },
+        llmClient: {} as any,
       };
 
       mockedCreateTamboBackend.mockResolvedValue(mockBackend as any);
 
-      operations.getThreadForProjectId.mockResolvedValue({
-        ...createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
-        messages: mockMessages,
-      });
-      operations.getMessages.mockResolvedValue(mockMessages);
-      operations.updateThread.mockResolvedValue({
-        ...createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
-        name: "Web App Development",
-      });
+      const threadWithMessages = createDBThreadWithMessages(
+        threadId,
+        projectId,
+        GenerationStage.COMPLETE,
+        mockMessages,
+      );
+
+      operations.getThreadForProjectId.mockResolvedValue(threadWithMessages);
+      operations.getMessages.mockResolvedValue(
+        mockMessages.map((m) =>
+          createMockDBMessage(m.id, threadId, m.role, m.content),
+        ),
+      );
+
+      const updatedThread = createDBThreadWithMessages(
+        threadId,
+        projectId,
+        GenerationStage.COMPLETE,
+      );
+      updatedThread.name = "Web App Development";
+
+      operations.updateThread.mockResolvedValue(updatedThread);
 
       jest.mocked(fakeDb.query.threads.findFirst).mockResolvedValue({
         id: threadId,
@@ -1551,7 +1673,7 @@ describe("ThreadsService.advanceThread initialization", () => {
     });
 
     it("should throw NotFoundException when thread not found", async () => {
-      operations.getThreadForProjectId.mockResolvedValue(null);
+      operations.getThreadForProjectId.mockResolvedValue(undefined);
 
       await expect(
         service.generateThreadName(threadId, projectId),
@@ -1559,10 +1681,14 @@ describe("ThreadsService.advanceThread initialization", () => {
     });
 
     it("should throw NotFoundException when no messages exist", async () => {
-      operations.getThreadForProjectId.mockResolvedValue({
-        ...createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
-        messages: [],
-      });
+      const emptyThread = createDBThreadWithMessages(
+        threadId,
+        projectId,
+        GenerationStage.COMPLETE,
+        [],
+      );
+
+      operations.getThreadForProjectId.mockResolvedValue(emptyThread);
       operations.getMessages.mockResolvedValue([]);
 
       await expect(
