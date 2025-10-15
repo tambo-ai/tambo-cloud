@@ -325,6 +325,7 @@ export class ThreadsService {
       id,
       projectId,
       contextKey,
+      false,
     );
     console.log(
       "got messages: ",
@@ -342,26 +343,24 @@ export class ThreadsService {
       statusMessage: thread.statusMessage ?? undefined,
       projectId: thread.projectId,
       name: thread.name ?? undefined,
-      messages: thread.messages
-        .filter((message) => message.role !== MessageRole.System)
-        .map((message) => ({
-          id: message.id,
-          threadId: message.threadId,
-          role: message.role,
-          parentMessageId: message.parentMessageId ?? undefined,
-          createdAt: message.createdAt,
-          component: message.componentDecision ?? undefined,
-          content: convertContentPartToDto(message.content),
-          metadata: message.metadata ?? undefined,
-          componentState: message.componentState ?? {},
-          toolCallRequest: message.toolCallRequest ?? undefined,
-          actionType: message.actionType ?? undefined,
-          tool_call_id: message.toolCallId ?? undefined,
-          error: message.error ?? undefined,
-          isCancelled: message.isCancelled,
-          reasoning: message.reasoning ?? undefined,
-          reasoningDurationMS: message.reasoningDurationMS ?? undefined,
-        })),
+      messages: thread.messages.map((message) => ({
+        id: message.id,
+        threadId: message.threadId,
+        role: message.role,
+        parentMessageId: message.parentMessageId ?? undefined,
+        createdAt: message.createdAt,
+        component: message.componentDecision ?? undefined,
+        content: convertContentPartToDto(message.content),
+        metadata: message.metadata ?? undefined,
+        componentState: message.componentState ?? {},
+        toolCallRequest: message.toolCallRequest ?? undefined,
+        actionType: message.actionType ?? undefined,
+        tool_call_id: message.toolCallId ?? undefined,
+        error: message.error ?? undefined,
+        isCancelled: message.isCancelled,
+        reasoning: message.reasoning ?? undefined,
+        reasoningDurationMS: message.reasoningDurationMS ?? undefined,
+      })),
     };
   }
 
@@ -627,28 +626,27 @@ export class ThreadsService {
       this.getDb(),
       threadId,
       includeChildMessages,
+      includeSystem,
     );
-    return messages
-      .filter((message) => includeSystem || message.role !== MessageRole.System)
-      .map((message) => ({
-        id: message.id,
-        threadId: message.threadId,
-        role: message.role,
-        parentMessageId: message.parentMessageId ?? undefined,
-        content: convertContentPartToDto(message.content),
-        metadata: message.metadata ?? undefined,
-        toolCallRequest: message.toolCallRequest ?? undefined,
-        tool_call_id: message.toolCallId ?? undefined,
-        actionType: message.actionType ?? undefined,
-        componentState: message.componentState ?? {},
-        component: message.componentDecision as ComponentDecisionV2 | undefined,
-        error: message.error ?? undefined,
-        isCancelled: message.isCancelled,
-        createdAt: message.createdAt,
-        additionalContext: message.additionalContext ?? {},
-        reasoning: message.reasoning ?? undefined,
-        reasoningDurationMS: message.reasoningDurationMS ?? undefined,
-      }));
+    return messages.map((message) => ({
+      id: message.id,
+      threadId: message.threadId,
+      role: message.role,
+      parentMessageId: message.parentMessageId ?? undefined,
+      content: convertContentPartToDto(message.content),
+      metadata: message.metadata ?? undefined,
+      toolCallRequest: message.toolCallRequest ?? undefined,
+      tool_call_id: message.toolCallId ?? undefined,
+      actionType: message.actionType ?? undefined,
+      componentState: message.componentState ?? {},
+      component: message.componentDecision as ComponentDecisionV2 | undefined,
+      error: message.error ?? undefined,
+      isCancelled: message.isCancelled,
+      createdAt: message.createdAt,
+      additionalContext: message.additionalContext ?? {},
+      reasoning: message.reasoning ?? undefined,
+      reasoningDurationMS: message.reasoningDurationMS ?? undefined,
+    }));
   }
 
   async deleteMessage(messageId: string) {
