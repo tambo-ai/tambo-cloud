@@ -327,10 +327,6 @@ export class ThreadsService {
       contextKey,
       false,
     );
-    console.log(
-      "got messages: ",
-      thread?.messages.map((m) => `${m.id} ${m.role} ${m.toolCallRequest}`),
-    );
     if (!thread) {
       throw new NotFoundException("Thread not found");
     }
