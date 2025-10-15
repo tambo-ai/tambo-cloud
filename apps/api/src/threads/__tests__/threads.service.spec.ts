@@ -4,6 +4,7 @@ import { createTamboBackend } from "@tambo-ai-cloud/backend";
 import {
   AgentProviderType,
   AiProviderType,
+  AsyncQueue,
   ContentPartType,
   GenerationStage,
   MessageRole,
@@ -20,7 +21,10 @@ import { AuthService } from "../../common/services/auth.service";
 import { EmailService } from "../../common/services/email.service";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
 import { ProjectsService } from "../../projects/projects.service";
-import { AdvanceThreadDto } from "../dto/advance-thread.dto";
+import {
+  AdvanceThreadDto,
+  AdvanceThreadResponseDto,
+} from "../dto/advance-thread.dto";
 import { ThreadsService } from "../threads.service";
 
 // Mock backend pieces (TamboBackend and helpers)
@@ -219,6 +223,9 @@ describe("ThreadsService.advanceThread initialization", () => {
       }),
     );
     operations.getProjectMcpServers.mockResolvedValue([]);
+    operations.getThreadForProjectId.mockResolvedValue(
+      createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
+    );
     operations.getMessages.mockResolvedValue([
       createMockDBMessage("m1", threadId, MessageRole.User, [
         { type: "text", text: "hi" },
@@ -392,5 +399,259 @@ describe("ThreadsService.advanceThread initialization", () => {
         forceToolChoice: "someTool",
       }),
     );
+  });
+
+  describe("Queue-based streaming behavior", () => {
+    test("pushes messages to queue during streaming execution", async () => {
+      const dto = makeDto({ withComponents: false, withClientTools: false });
+      const queue = new AsyncQueue<AdvanceThreadResponseDto>();
+
+      // Mock generateStreamingResponse to push messages to the queue
+      jest
+        .spyOn<any, any>(service, "generateStreamingResponse")
+        .mockImplementation(async (_p, _t, _db, _tb, providedQueue) => {
+          // Simulate streaming multiple messages
+          providedQueue.push({
+            responseMessageDto: {
+              id: "msg-1",
+              role: MessageRole.Assistant,
+              content: [{ type: ContentPartType.Text, text: "Hello" }],
+              threadId,
+              componentState: {},
+              createdAt: new Date(),
+            },
+            generationStage: GenerationStage.STREAMING_RESPONSE,
+            mcpAccessToken: "token-1",
+          });
+          providedQueue.push({
+            responseMessageDto: {
+              id: "msg-2",
+              role: MessageRole.Assistant,
+              content: [{ type: ContentPartType.Text, text: "World" }],
+              threadId,
+              componentState: {},
+              createdAt: new Date(),
+            },
+            generationStage: GenerationStage.COMPLETE,
+            mcpAccessToken: "token-1",
+          });
+        });
+
+      // Start the operation (don't await - it will run concurrently)
+      // Pass undefined for threadId to avoid complex thread lookup mocking
+      const advancePromise = service.advanceThread(
+        projectId,
+        dto,
+        undefined, // let service create new thread
+        true,
+        {},
+        undefined,
+        queue,
+      );
+
+      // Consume from the queue
+      const messages: any[] = [];
+      for await (const msg of queue) {
+        messages.push(msg);
+      }
+
+      // Wait for the advance operation to complete
+      await advancePromise;
+
+      // Verify we received both messages in order
+      expect(messages).toHaveLength(2);
+      expect(messages[0].responseMessageDto.content[0].text).toBe("Hello");
+      expect(messages[0].generationStage).toBe(
+        GenerationStage.STREAMING_RESPONSE,
+      );
+      expect(messages[1].responseMessageDto.content[0].text).toBe("World");
+      expect(messages[1].generationStage).toBe(GenerationStage.COMPLETE);
+    });
+
+    test("properly finishes queue on successful completion", async () => {
+      const dto = makeDto({ withComponents: false, withClientTools: false });
+      const queue = new AsyncQueue<AdvanceThreadResponseDto>();
+
+      jest
+        .spyOn<any, any>(service, "generateStreamingResponse")
+        .mockImplementation(async (_p, _t, _db, _tb, providedQueue) => {
+          providedQueue.push({
+            responseMessageDto: {
+              id: "msg-1",
+              role: MessageRole.Assistant,
+              content: [{ type: ContentPartType.Text, text: "Done" }],
+              threadId,
+              componentState: {},
+              createdAt: new Date(),
+            },
+            generationStage: GenerationStage.COMPLETE,
+            mcpAccessToken: "token-1",
+          });
+        });
+
+      const advancePromise = service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        true,
+        {},
+        undefined,
+        queue,
+      );
+
+      const messages: any[] = [];
+      for await (const msg of queue) {
+        messages.push(msg);
+      }
+
+      await advancePromise;
+
+      // Verify queue completed normally
+      expect(messages).toHaveLength(1);
+
+      // Try to iterate again - should complete immediately with no items
+      const secondIteration: any[] = [];
+      for await (const msg of queue) {
+        secondIteration.push(msg);
+      }
+      expect(secondIteration).toHaveLength(0);
+    });
+
+    test("properly fails queue on error", async () => {
+      const dto = makeDto({ withComponents: false, withClientTools: false });
+      const queue = new AsyncQueue<AdvanceThreadResponseDto>();
+      const testError = new Error("Test error during generation");
+
+      jest
+        .spyOn<any, any>(service, "generateStreamingResponse")
+        .mockImplementation(async () => {
+          throw testError;
+        });
+
+      // Start the operation
+      const advancePromise = service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        true,
+        {},
+        undefined,
+        queue,
+      );
+
+      // Try to consume from queue - should receive the error
+      await expect(async () => {
+        for await (const _msg of queue) {
+          // Should not receive any messages
+        }
+      }).rejects.toThrow("Test error during generation");
+
+      // The advance operation itself should also complete (not hang)
+      await expect(advancePromise).rejects.toThrow(
+        "Test error during generation",
+      );
+    });
+
+    test("queue works with single final message", async () => {
+      const dto = makeDto({ withComponents: false, withClientTools: false });
+      const queue = new AsyncQueue<AdvanceThreadResponseDto>();
+
+      // Mock to push only one final message (similar to non-streaming behavior)
+      jest
+        .spyOn<any, any>(service, "generateStreamingResponse")
+        .mockImplementation(async (_p, _t, _db, _tb, providedQueue) => {
+          providedQueue.push({
+            responseMessageDto: {
+              id: "msg-final",
+              role: MessageRole.Assistant,
+              content: [{ type: ContentPartType.Text, text: "Final result" }],
+              threadId,
+              componentState: {},
+              createdAt: new Date(),
+            },
+            generationStage: GenerationStage.COMPLETE,
+            mcpAccessToken: "token-1",
+          });
+        });
+
+      const advancePromise = service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        true, // streaming enabled (but only one message pushed)
+        {},
+        undefined,
+        queue,
+      );
+
+      // Consume from queue
+      const messages: any[] = [];
+      for await (const msg of queue) {
+        messages.push(msg);
+      }
+
+      await advancePromise;
+
+      // Should receive exactly one message
+      expect(messages).toHaveLength(1);
+      expect(messages[0].responseMessageDto.content[0].text).toBe(
+        "Final result",
+      );
+      expect(messages[0].generationStage).toBe(GenerationStage.COMPLETE);
+    });
+
+    test("queue receives messages with correct structure", async () => {
+      const dto = makeDto({ withComponents: true, withClientTools: true });
+      const queue = new AsyncQueue<AdvanceThreadResponseDto>();
+
+      jest
+        .spyOn<any, any>(service, "generateStreamingResponse")
+        .mockImplementation(async (_p, _t, _db, _tb, providedQueue) => {
+          providedQueue.push({
+            responseMessageDto: {
+              id: "msg-test",
+              role: MessageRole.Assistant,
+              content: [{ type: ContentPartType.Text, text: "Response" }],
+              threadId,
+              componentState: { someState: "value" },
+              createdAt: new Date(),
+            },
+            generationStage: GenerationStage.COMPLETE,
+            statusMessage: "Complete",
+            mcpAccessToken: "test-token",
+          });
+        });
+
+      const advancePromise = service.advanceThread(
+        projectId,
+        dto,
+        undefined,
+        true,
+        {},
+        undefined,
+        queue,
+      );
+
+      const messages: any[] = [];
+      for await (const msg of queue) {
+        messages.push(msg);
+      }
+
+      await advancePromise;
+
+      // Verify message structure
+      expect(messages[0]).toMatchObject({
+        responseMessageDto: expect.objectContaining({
+          id: expect.any(String),
+          role: MessageRole.Assistant,
+          content: expect.any(Array),
+          threadId: expect.any(String),
+          componentState: expect.any(Object),
+          createdAt: expect.any(Date),
+        }),
+        generationStage: expect.any(String),
+        mcpAccessToken: expect.any(String),
+      });
+    });
   });
 });
