@@ -40,6 +40,8 @@ export async function addMessage(
     error: messageDto.error,
     isCancelled: messageDto.isCancelled ?? false,
     additionalContext: messageDto.additionalContext ?? {},
+    reasoning: messageDto.reasoning ?? undefined,
+    reasoningDurationMS: messageDto.reasoningDurationMS ?? undefined,
   });
 
   if (messageDto.role === MessageRole.Tool && messageDto.error) {
@@ -176,6 +178,7 @@ export async function addAssistantMessageToThread(
     tool_call_id: component.toolCallId,
     componentState: component.componentState ?? {},
     reasoning: component.reasoning,
+    reasoningDurationMS: component.reasoningDurationMS,
   });
 }
 
