@@ -1,8 +1,10 @@
 import { BadRequestException, UnauthorizedException } from "@nestjs/common";
 import {
   decryptOAuthSecretKey,
+  McpAccessTokenPayload,
   OAuthValidationMode,
   OidcProviderConfig,
+  TAMBO_MCP_ACCESS_KEY_CLAIM,
 } from "@tambo-ai-cloud/core";
 import {
   createRemoteJWKSet,
@@ -307,4 +309,22 @@ async function readPublicKey(publicKeyString: string) {
   }
   // Covers "BEGIN PUBLIC KEY", "BEGIN RSA PUBLIC KEY", "BEGIN EC PUBLIC KEY"
   return await importSPKI(trimmed, "RS256");
+}
+
+export async function extractAndVerifyMcpAccessToken(
+  token: string,
+  secret: string,
+): Promise<McpAccessTokenPayload> {
+  const payload = decodeJwt(token);
+  if (!payload.iss || !payload.sub) {
+    throw new Error("MCP access token missing required claims (iss or sub)");
+  }
+  const signingKey = new TextEncoder().encode(secret);
+  const { payload: verifiedPayload } = await jwtVerify(token, signingKey, {
+    algorithms: ALLOWED_SYMMETRIC_ALGORITHMS,
+  });
+  if (!verifiedPayload[TAMBO_MCP_ACCESS_KEY_CLAIM]) {
+    throw new Error("MCP access token missing required claim");
+  }
+  return verifiedPayload as McpAccessTokenPayload;
 }

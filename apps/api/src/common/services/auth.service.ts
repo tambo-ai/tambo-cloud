@@ -5,7 +5,7 @@ import {
   TAMBO_MCP_ACCESS_KEY_CLAIM,
 } from "@tambo-ai-cloud/core";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
-import * as jwt from "jsonwebtoken";
+import { SignJWT } from "jose";
 import { DATABASE } from "../middleware/db-transaction-middleware";
 
 @Injectable()
@@ -67,6 +67,10 @@ export class AuthService {
       },
     };
 
-    return jwt.sign(payload, secret);
+    // TODO: use a per-project, maybe per-thread, signing secret?
+    const signedJwt = await new SignJWT(payload)
+      .setProtectedHeader({ alg: "HS256" })
+      .sign(new TextEncoder().encode(secret));
+    return signedJwt;
   }
 }
