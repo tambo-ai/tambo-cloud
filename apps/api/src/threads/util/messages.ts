@@ -94,6 +94,7 @@ export async function updateMessage(
     isCancelled: messageDto.isCancelled,
     additionalContext: messageDto.additionalContext ?? {},
     reasoning: messageDto.reasoning ?? undefined,
+    reasoningDurationMS: messageDto.reasoningDurationMS ?? undefined,
   });
 
   if (messageDto.role === MessageRole.Tool && messageDto.error) {
@@ -123,6 +124,7 @@ export async function updateMessage(
     createdAt: message.createdAt,
     additionalContext: message.additionalContext ?? {},
     reasoning: message.reasoning ?? undefined,
+    reasoningDurationMS: message.reasoningDurationMS ?? undefined,
   };
 }
 
