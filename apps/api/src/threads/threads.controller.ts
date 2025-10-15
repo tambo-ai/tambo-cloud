@@ -528,7 +528,7 @@ export class ThreadsController {
         advanceRequestDto,
         undefined,
         true,
-        {},
+        advanceRequestDto.toolCallCounts ?? {},
         undefined,
         queue,
         contextKey,
