@@ -583,7 +583,7 @@ describe("ThreadsService.advanceThread initialization", () => {
         queue,
       );
 
-      const messages: any[] = [];
+      const messages: AdvanceThreadResponseDto[] = [];
       for await (const msg of queue) {
         messages.push(msg);
       }
@@ -594,7 +594,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       expect(messages).toHaveLength(1);
 
       // Try to iterate again - should complete immediately with no items
-      const secondIteration: any[] = [];
+      const secondIteration: AdvanceThreadResponseDto[] = [];
       for await (const msg of queue) {
         secondIteration.push(msg);
       }
@@ -671,7 +671,7 @@ describe("ThreadsService.advanceThread initialization", () => {
       );
 
       // Consume from queue
-      const messages: any[] = [];
+      const messages: AdvanceThreadResponseDto[] = [];
       for await (const msg of queue) {
         messages.push(msg);
       }
@@ -720,7 +720,7 @@ describe("ThreadsService.advanceThread initialization", () => {
         queue,
       );
 
-      const messages: any[] = [];
+      const messages: AdvanceThreadResponseDto[] = [];
       for await (const msg of queue) {
         messages.push(msg);
       }
@@ -1205,7 +1205,10 @@ describe("ThreadsService.advanceThread initialization", () => {
         name: "Test Project",
         defaultLlmProviderName: "openai",
         defaultLlmModelName: "gpt-4.1-2025-04-14",
-      } as any);
+        userId: "user_1",
+        isTokenRequired: false,
+        providerType: AiProviderType.LLM,
+      });
 
       jest.mocked(projectsService.findOneWithKeys).mockResolvedValue({
         getProviderKeys: () => [],
@@ -1250,7 +1253,10 @@ describe("ThreadsService.advanceThread initialization", () => {
         name: "Test Project",
         defaultLlmProviderName: "openai",
         defaultLlmModelName: "gpt-4.1-2025-04-14",
-      } as any);
+        userId: "user_1",
+        isTokenRequired: false,
+        providerType: AiProviderType.LLM,
+      });
 
       const checkLimit = (service as any).checkMessageLimit_.bind(service);
 
