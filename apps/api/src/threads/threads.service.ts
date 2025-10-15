@@ -922,8 +922,27 @@ export class ThreadsService {
    *
    * Note that this async method will resolve when the queue is done or failed,
    * but while it is running, it will push messages to the queue. For proper
-   * streaming, *DO NOT AWAIT* this method, but instead iterate the queue.
-   * It is safe to await the result of this method after the queue is complete.
+   * streaming, delay the `await` for the response to this method until the
+   * queue is finished. something like:
+   *
+   * ```
+   * const queue = new AsyncQueue<AdvanceThreadResponseDto>();
+   * const p = this.threadsService.advanceThread(
+   *   projectId,
+   *   advanceRequestDto,
+   *   threadId,
+   *   false,
+   *   advanceRequestDto.toolCallCounts ?? {},
+   *   undefined,
+   *   queue,
+   *   contextKey,
+   * );
+   * for await (const message of queue) {
+   *   console.log(message);
+   * }
+   * // queue is finished, now await the promise
+   * await p;
+   * ```
    *
    * @param projectId - The project ID.
    * @param advanceRequestDto - The advance request DTO, including optional

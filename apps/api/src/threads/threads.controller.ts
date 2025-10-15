@@ -392,21 +392,16 @@ export class ThreadsController {
     );
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
     // This method will resolve when the queue is done or failed
-    void this.threadsService
-      .advanceThread(
-        projectId,
-        advanceRequestDto,
-        threadId,
-        false,
-        advanceRequestDto.toolCallCounts ?? {},
-        undefined,
-        queue,
-        contextKey,
-      )
-      .catch((error) => {
-        console.error("Error while advancing thread", error);
-        throw error;
-      });
+    const p = this.threadsService.advanceThread(
+      projectId,
+      advanceRequestDto,
+      threadId,
+      false,
+      advanceRequestDto.toolCallCounts ?? {},
+      undefined,
+      queue,
+      contextKey,
+    );
 
     let lastMessage: AdvanceThreadResponseDto | null = null;
     for await (const message of queue) {
@@ -415,6 +410,8 @@ export class ThreadsController {
     if (!lastMessage) {
       throw new InternalServerErrorException("No message found in queue");
     }
+    // await the promise to ensure the queue is finished
+    await p;
     return lastMessage;
   }
 
@@ -446,7 +443,7 @@ export class ThreadsController {
 
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
     try {
-      void this.threadsService
+      const p = this.threadsService
         .advanceThread(
           projectId,
           advanceRequestDto,
@@ -463,6 +460,7 @@ export class ThreadsController {
         });
 
       await this.handleAdvanceStream(response, queue);
+      await p;
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
       response.end();
@@ -486,7 +484,7 @@ export class ThreadsController {
       advanceRequestDto.contextKey,
     );
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
-    void this.threadsService
+    const p = this.threadsService
       .advanceThread(
         projectId,
         advanceRequestDto,
@@ -508,6 +506,8 @@ export class ThreadsController {
     if (!lastMessage) {
       throw new InternalServerErrorException("No message found in queue");
     }
+    // await the promise to ensure the queue is finished
+    await p;
     // Since stream=false, result will be AdvanceThreadResponseDto
     return lastMessage;
   }
@@ -533,7 +533,7 @@ export class ThreadsController {
 
     const queue = new AsyncQueue<AdvanceThreadResponseDto>();
     try {
-      void this.threadsService
+      const p = this.threadsService
         .advanceThread(
           projectId,
           advanceRequestDto,
@@ -549,6 +549,7 @@ export class ThreadsController {
           throw error;
         });
       await this.handleAdvanceStream(response, queue);
+      await p;
     } catch (error: any) {
       response.write(`error: ${error.message}\n\n`);
       response.end();
