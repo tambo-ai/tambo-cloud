@@ -223,9 +223,10 @@ describe("ThreadsService.advanceThread initialization", () => {
       }),
     );
     operations.getProjectMcpServers.mockResolvedValue([]);
-    operations.getThreadForProjectId.mockResolvedValue(
-      createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
-    );
+    operations.getThreadForProjectId.mockResolvedValue({
+      ...createMockDBThread(threadId, projectId, GenerationStage.COMPLETE),
+      messages: [],
+    });
     operations.getMessages.mockResolvedValue([
       createMockDBMessage("m1", threadId, MessageRole.User, [
         { type: "text", text: "hi" },
@@ -409,33 +410,35 @@ describe("ThreadsService.advanceThread initialization", () => {
       // Mock generateStreamingResponse to push messages to the queue
       jest
         .spyOn<any, any>(service, "generateStreamingResponse")
-        .mockImplementation(async (_p, _t, _db, _tb, providedQueue) => {
-          // Simulate streaming multiple messages
-          providedQueue.push({
-            responseMessageDto: {
-              id: "msg-1",
-              role: MessageRole.Assistant,
-              content: [{ type: ContentPartType.Text, text: "Hello" }],
-              threadId,
-              componentState: {},
-              createdAt: new Date(),
-            },
-            generationStage: GenerationStage.STREAMING_RESPONSE,
-            mcpAccessToken: "token-1",
-          });
-          providedQueue.push({
-            responseMessageDto: {
-              id: "msg-2",
-              role: MessageRole.Assistant,
-              content: [{ type: ContentPartType.Text, text: "World" }],
-              threadId,
-              componentState: {},
-              createdAt: new Date(),
-            },
-            generationStage: GenerationStage.COMPLETE,
-            mcpAccessToken: "token-1",
-          });
-        });
+        .mockImplementation(
+          async (_p: any, _t: any, _db: any, _tb: any, providedQueue: any) => {
+            // Simulate streaming multiple messages
+            providedQueue.push({
+              responseMessageDto: {
+                id: "msg-1",
+                role: MessageRole.Assistant,
+                content: [{ type: ContentPartType.Text, text: "Hello" }],
+                threadId,
+                componentState: {},
+                createdAt: new Date(),
+              },
+              generationStage: GenerationStage.STREAMING_RESPONSE,
+              mcpAccessToken: "token-1",
+            });
+            providedQueue.push({
+              responseMessageDto: {
+                id: "msg-2",
+                role: MessageRole.Assistant,
+                content: [{ type: ContentPartType.Text, text: "World" }],
+                threadId,
+                componentState: {},
+                createdAt: new Date(),
+              },
+              generationStage: GenerationStage.COMPLETE,
+              mcpAccessToken: "token-1",
+            });
+          },
+        );
 
       // Start the operation (don't await - it will run concurrently)
       // Pass undefined for threadId to avoid complex thread lookup mocking
@@ -474,20 +477,22 @@ describe("ThreadsService.advanceThread initialization", () => {
 
       jest
         .spyOn<any, any>(service, "generateStreamingResponse")
-        .mockImplementation(async (_p, _t, _db, _tb, providedQueue) => {
-          providedQueue.push({
-            responseMessageDto: {
-              id: "msg-1",
-              role: MessageRole.Assistant,
-              content: [{ type: ContentPartType.Text, text: "Done" }],
-              threadId,
-              componentState: {},
-              createdAt: new Date(),
-            },
-            generationStage: GenerationStage.COMPLETE,
-            mcpAccessToken: "token-1",
-          });
-        });
+        .mockImplementation(
+          async (_p: any, _t: any, _db: any, _tb: any, providedQueue: any) => {
+            providedQueue.push({
+              responseMessageDto: {
+                id: "msg-1",
+                role: MessageRole.Assistant,
+                content: [{ type: ContentPartType.Text, text: "Done" }],
+                threadId,
+                componentState: {},
+                createdAt: new Date(),
+              },
+              generationStage: GenerationStage.COMPLETE,
+              mcpAccessToken: "token-1",
+            });
+          },
+        );
 
       const advancePromise = service.advanceThread(
         projectId,
@@ -559,20 +564,22 @@ describe("ThreadsService.advanceThread initialization", () => {
       // Mock to push only one final message (similar to non-streaming behavior)
       jest
         .spyOn<any, any>(service, "generateStreamingResponse")
-        .mockImplementation(async (_p, _t, _db, _tb, providedQueue) => {
-          providedQueue.push({
-            responseMessageDto: {
-              id: "msg-final",
-              role: MessageRole.Assistant,
-              content: [{ type: ContentPartType.Text, text: "Final result" }],
-              threadId,
-              componentState: {},
-              createdAt: new Date(),
-            },
-            generationStage: GenerationStage.COMPLETE,
-            mcpAccessToken: "token-1",
-          });
-        });
+        .mockImplementation(
+          async (_p: any, _t: any, _db: any, _tb: any, providedQueue: any) => {
+            providedQueue.push({
+              responseMessageDto: {
+                id: "msg-final",
+                role: MessageRole.Assistant,
+                content: [{ type: ContentPartType.Text, text: "Final result" }],
+                threadId,
+                componentState: {},
+                createdAt: new Date(),
+              },
+              generationStage: GenerationStage.COMPLETE,
+              mcpAccessToken: "token-1",
+            });
+          },
+        );
 
       const advancePromise = service.advanceThread(
         projectId,
@@ -606,21 +613,23 @@ describe("ThreadsService.advanceThread initialization", () => {
 
       jest
         .spyOn<any, any>(service, "generateStreamingResponse")
-        .mockImplementation(async (_p, _t, _db, _tb, providedQueue) => {
-          providedQueue.push({
-            responseMessageDto: {
-              id: "msg-test",
-              role: MessageRole.Assistant,
-              content: [{ type: ContentPartType.Text, text: "Response" }],
-              threadId,
-              componentState: { someState: "value" },
-              createdAt: new Date(),
-            },
-            generationStage: GenerationStage.COMPLETE,
-            statusMessage: "Complete",
-            mcpAccessToken: "test-token",
-          });
-        });
+        .mockImplementation(
+          async (_p: any, _t: any, _db: any, _tb: any, providedQueue: any) => {
+            providedQueue.push({
+              responseMessageDto: {
+                id: "msg-test",
+                role: MessageRole.Assistant,
+                content: [{ type: ContentPartType.Text, text: "Response" }],
+                threadId,
+                componentState: { someState: "value" },
+                createdAt: new Date(),
+              },
+              generationStage: GenerationStage.COMPLETE,
+              statusMessage: "Complete",
+              mcpAccessToken: "test-token",
+            });
+          },
+        );
 
       const advancePromise = service.advanceThread(
         projectId,
