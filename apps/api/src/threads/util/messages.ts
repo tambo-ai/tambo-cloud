@@ -12,7 +12,7 @@ import {
   operations,
   schema,
 } from "@tambo-ai-cloud/db";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { MessageRequest, ThreadMessageDto } from "../dto/message.dto";
 import {
   convertContentDtoToContentPart,
@@ -40,6 +40,8 @@ export async function addMessage(
     error: messageDto.error,
     isCancelled: messageDto.isCancelled ?? false,
     additionalContext: messageDto.additionalContext ?? {},
+    reasoning: messageDto.reasoning ?? undefined,
+    reasoningDurationMS: messageDto.reasoningDurationMS ?? undefined,
   });
 
   if (messageDto.role === MessageRole.Tool && messageDto.error) {
@@ -92,6 +94,7 @@ export async function updateMessage(
     isCancelled: messageDto.isCancelled,
     additionalContext: messageDto.additionalContext ?? {},
     reasoning: messageDto.reasoning ?? undefined,
+    reasoningDurationMS: messageDto.reasoningDurationMS ?? undefined,
   });
 
   if (messageDto.role === MessageRole.Tool && messageDto.error) {
@@ -121,6 +124,7 @@ export async function updateMessage(
     createdAt: message.createdAt,
     additionalContext: message.additionalContext ?? {},
     reasoning: message.reasoning ?? undefined,
+    reasoningDurationMS: message.reasoningDurationMS ?? undefined,
   };
 }
 
@@ -176,6 +180,7 @@ export async function addAssistantMessageToThread(
     tool_call_id: component.toolCallId,
     componentState: component.componentState ?? {},
     reasoning: component.reasoning,
+    reasoningDurationMS: component.reasoningDurationMS,
   });
 }
 
@@ -189,7 +194,10 @@ export async function verifyLatestMessageConsistency(
   hasNewMessageId: boolean,
 ) {
   const latestMessages = await db.query.messages.findMany({
-    where: eq(schema.messages.threadId, threadId),
+    where: and(
+      eq(schema.messages.threadId, threadId),
+      isNull(schema.messages.parentMessageId),
+    ),
     orderBy: (messages, { desc }) => [desc(messages.createdAt)],
     limit: 2,
     columns: {
