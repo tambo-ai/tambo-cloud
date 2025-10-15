@@ -131,8 +131,13 @@ export class ThreadsController {
     @Param("id") threadId: string,
     @Req() request: Request,
     @Query("contextKey") apiContextKey?: string,
-    @Query("includeInternal") _includeInternal?: boolean,
+    @Query("includeInternal") includeInternal?: boolean,
   ): Promise<ThreadWithMessagesDto> {
+    if (includeInternal === false) {
+      throw new BadRequestException(
+        "includeInternal is deprecated, if passed, it can only be `true`",
+      );
+    }
     const { projectId, contextKey } = extractContextInfo(
       request,
       apiContextKey,
