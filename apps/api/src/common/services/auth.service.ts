@@ -1,6 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { type McpAccessTokenPayload } from "@tambo-ai-cloud/core";
+import {
+  type McpAccessTokenPayload,
+  TAMBO_MCP_ACCESS_KEY_CLAIM,
+} from "@tambo-ai-cloud/core";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import * as jwt from "jsonwebtoken";
 import { DATABASE } from "../middleware/db-transaction-middleware";
@@ -55,11 +58,13 @@ export class AuthService {
       Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000) +
       15 * 60 * 1000;
     const payload: McpAccessTokenPayload = {
-      sub: `${projectId}:${contextKey}`,
+      // TODO: perhaps there is a better way to identify the `sub`?
+      sub: `${projectId}:${threadId}`,
       exp: expiration / 1000, // jwt.sign expects the expiration in seconds
-      projectId,
-      threadId: threadId,
-      contextKey,
+      [TAMBO_MCP_ACCESS_KEY_CLAIM]: {
+        projectId,
+        threadId,
+      },
     };
 
     return jwt.sign(payload, secret);
