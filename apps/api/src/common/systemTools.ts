@@ -144,6 +144,7 @@ export async function getThreadMCPClients(
         const err = error instanceof Error ? error : new Error(String(error));
         logger.error(
           `Error processing MCP server ${mcpServer.id} in project ${projectId}: ${err.message}`,
+          err.stack,
         );
 
         await operations.addProjectLogEntry(
@@ -208,6 +209,7 @@ async function getMcpTools(
       const url = err instanceof ListToolsError ? err.url : undefined;
       logger.error(
         `Error listing tools for MCP server ${serverId ?? "unknown"} (${url ?? "n/a"}) in project ${projectId}: ${err.message}`,
+        err.stack,
       );
       await operations.addProjectLogEntry(
         db,
