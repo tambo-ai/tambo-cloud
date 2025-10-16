@@ -37,9 +37,13 @@ export const fetchOAuthValidationSettingsSchema = z
 export const updateOAuthValidationSettingsSchema = z
   .function()
   .args(
-    z.string().describe("The project ID"),
     z
       .object({
+        projectId: z
+          .string()
+          .describe(
+            "The complete project ID (e.g., 'p_u2tgQg5U.43bbdf'). Must include the 'p_' prefix.",
+          ),
         mode: z
           .nativeEnum(OAuthValidationMode)
           .describe("The OAuth validation mode"),
@@ -72,7 +76,7 @@ export const updateOAuthValidationSettingsSchema = z
             "Secret key is required for SYMMETRIC mode, public key is required for ASYMMETRIC_MANUAL mode",
         },
       )
-      .describe("The OAuth validation settings to update"),
+      .describe("Parameters for updating OAuth validation settings"),
   )
   .returns(
     z.object({
@@ -109,30 +113,34 @@ export function registerOAuthTools(
   /**
    * Registers a tool to update OAuth validation settings for a project.
    * Updates the OAuth validation mode and associated keys (secret key for symmetric, public key for asymmetric manual).
-   * @param {string} projectId - The project ID to update
-   * @param {Object} settings - OAuth validation settings to update
-   * @param {OAuthValidationMode} settings.mode - The OAuth validation mode
-   * @param {string} settings.secretKey - The secret key for symmetric validation (optional)
-   * @param {string} settings.publicKey - The public key for asymmetric manual validation (optional)
+   * @param {Object} params - Parameters object
+   * @param {string} params.projectId - The complete project ID including 'p_' prefix
+   * @param {OAuthValidationMode} params.mode - The OAuth validation mode
+   * @param {string} params.secretKey - The secret key for symmetric validation (required when mode is SYMMETRIC)
+   * @param {string} params.publicKey - The public key for asymmetric manual validation (required when mode is ASYMMETRIC_MANUAL)
    * @returns {Object} Updated OAuth validation settings
    */
   registerTool({
     name: "updateOAuthValidationSettings",
-    description: "Updates OAuth validation settings for a project.",
-    tool: async (
-      projectId: string,
-      settings: {
-        mode: OAuthValidationMode;
-        secretKey?: string;
-        publicKey?: string;
-      },
-    ) => {
+    description:
+      "Updates OAuth validation settings for a project. Requires complete project ID with 'p_' prefix. Secret key is required for SYMMETRIC mode, public key is required for ASYMMETRIC_MANUAL mode.",
+    tool: async ({
+      projectId,
+      mode,
+      secretKey,
+      publicKey,
+    }: {
+      projectId: string;
+      mode: OAuthValidationMode;
+      secretKey?: string;
+      publicKey?: string;
+    }) => {
       const result =
         await ctx.trpcClient.project.updateOAuthValidationSettings.mutate({
-          projectId: projectId,
-          mode: settings.mode,
-          secretKey: settings.secretKey,
-          publicKey: settings.publicKey,
+          projectId,
+          mode,
+          secretKey,
+          publicKey,
         });
 
       // Invalidate the OAuth settings cache to refresh the component

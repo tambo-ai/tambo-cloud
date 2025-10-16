@@ -25,8 +25,16 @@ export const fetchProjectApiKeysSchema = z
 export const generateProjectApiKeySchema = z
   .function()
   .args(
-    z.string().describe("The project ID"),
-    z.string().describe("The name of the API key"),
+    z
+      .object({
+        projectId: z
+          .string()
+          .describe(
+            "The complete project ID (e.g., 'p_u2tgQg5U.43bbdf'). Must include the 'p_' prefix.",
+          ),
+        name: z.string().describe("The name of the API key"),
+      })
+      .describe("Parameters for generating a project API key"),
   )
   .returns(
     z.object({
@@ -51,8 +59,16 @@ export const generateProjectApiKeySchema = z
 export const deleteProjectApiKeySchema = z
   .function()
   .args(
-    z.string().describe("The project ID"),
-    z.string().describe("The API key ID"),
+    z
+      .object({
+        projectId: z
+          .string()
+          .describe(
+            "The complete project ID (e.g., 'p_u2tgQg5U.43bbdf'). Must include the 'p_' prefix.",
+          ),
+        apiKeyId: z.string().describe("The API key ID to delete"),
+      })
+      .describe("Parameters for deleting a project API key"),
   )
   .returns(
     z.object({
@@ -83,14 +99,16 @@ export function registerApiKeyTools(
 
   /**
    * Registers a tool to generate a new API key for a project.
-   * @param {string} projectId - The project ID to generate an API key for
-   * @param {string} name - The name/label for the new API key
+   * @param {Object} params - Parameters object
+   * @param {string} params.projectId - The complete project ID including 'p_' prefix
+   * @param {string} params.name - The name/label for the new API key
    * @returns {Object} Generated API key details including the key value and metadata
    */
   registerTool({
     name: "generateProjectApiKey",
-    description: "generate a new api key for the current project",
-    tool: async (projectId: string, name: string) => {
+    description:
+      "Generates a new API key for a project. Requires complete project ID with 'p_' prefix.",
+    tool: async ({ projectId, name }: { projectId: string; name: string }) => {
       const result = await ctx.trpcClient.project.generateApiKey.mutate({
         projectId,
         name,
@@ -106,14 +124,22 @@ export function registerApiKeyTools(
 
   /**
    * Registers a tool to delete an existing API key from a project.
-   * @param {string} projectId - The project ID containing the API key
-   * @param {string} apiKeyId - The ID of the API key to delete
+   * @param {Object} params - Parameters object
+   * @param {string} params.projectId - The complete project ID including 'p_' prefix
+   * @param {string} params.apiKeyId - The ID of the API key to delete
    * @returns {Object} Confirmation message that the key was deleted
    */
   registerTool({
     name: "deleteProjectApiKey",
-    description: "delete an api key for the current project",
-    tool: async (projectId: string, apiKeyId: string) => {
+    description:
+      "Deletes an API key for a project. Requires complete project ID with 'p_' prefix.",
+    tool: async ({
+      projectId,
+      apiKeyId,
+    }: {
+      projectId: string;
+      apiKeyId: string;
+    }) => {
       await ctx.trpcClient.project.removeApiKey.mutate({
         projectId,
         apiKeyId,
@@ -122,7 +148,7 @@ export function registerApiKeyTools(
       // Invalidate the API keys cache to refresh the component
       await invalidateApiKeysCache(ctx, projectId);
 
-      return { deletedKey: "The key was deleted successfully." };
+      return { deletedKey: undefined };
     },
     toolSchema: deleteProjectApiKeySchema,
   });
