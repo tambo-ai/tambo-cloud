@@ -61,77 +61,83 @@ export async function getThreadMCPClients(
   mcpHandlers: MCPHandlers,
 ): Promise<MCPClient[]> {
   const mcpServers = await operations.getProjectMcpServers(db, projectId, null);
-  const mcpClients: MCPClient[] = [];
 
-  for (const mcpServer of mcpServers) {
-    if (!mcpServer.url) {
-      continue;
-    }
-    if (mcpServer.mcpRequiresAuth && !hasAuthInfo(mcpServer)) {
-      console.warn(
-        `MCP server ${mcpServer.id} in project ${projectId} requires auth, but no auth info found`,
-      );
-      // Record as a warning so the user can see it on the dashboard
-      await operations.addProjectLogEntry(
-        db,
-        projectId,
-        LogLevel.WARNING,
-        `MCP server ${mcpServer.id} requires auth but no auth info found`,
-        { mcpServerId: mcpServer.id },
-      );
-      continue;
-    }
-    const authProvider = await getAuthProvider(db, mcpServer);
-    // Extract custom_headers if they exist
-    const customHeaders = mcpServer.customHeaders as
-      | Record<string, string>
-      | undefined;
+  const results = await Promise.allSettled(
+    mcpServers.map(async (mcpServer) => {
+      if (!mcpServer.url) {
+        throw new Error("No URL provided");
+      }
 
-    const mcpSessionInfo = await operations.getMcpThreadSession(
-      db,
-      threadId,
-      mcpServer.id,
-    );
+      if (mcpServer.mcpRequiresAuth && !hasAuthInfo(mcpServer)) {
+        console.warn(
+          `MCP server ${mcpServer.id} in project ${projectId} requires auth, but no auth info found`,
+        );
+        await operations.addProjectLogEntry(
+          db,
+          projectId,
+          LogLevel.WARNING,
+          `MCP server ${mcpServer.id} requires auth but no auth info found`,
+          { mcpServerId: mcpServer.id },
+        );
+        throw new Error("Auth required but not provided");
+      }
 
-    try {
-      const mcpClient = await MCPClient.create(
-        mcpServer.url,
-        mcpServer.mcpTransport,
-        customHeaders,
-        authProvider,
-        mcpSessionInfo?.sessionId ?? undefined,
-        mcpHandlers,
-      );
-      if (
-        mcpClient.sessionId &&
-        mcpSessionInfo?.sessionId !== mcpClient.sessionId
-      ) {
-        await operations.updateMcpThreadSession(
+      try {
+        const authProvider = await getAuthProvider(db, mcpServer);
+        const customHeaders = mcpServer.customHeaders;
+
+        const mcpSessionInfo = await operations.getMcpThreadSession(
           db,
           threadId,
           mcpServer.id,
-          mcpClient.sessionId,
         );
+
+        const mcpClient = await MCPClient.create(
+          mcpServer.url,
+          mcpServer.mcpTransport,
+          customHeaders,
+          authProvider,
+          mcpSessionInfo?.sessionId ?? undefined,
+          mcpHandlers,
+        );
+
+        if (
+          mcpClient.sessionId &&
+          mcpSessionInfo?.sessionId !== mcpClient.sessionId
+        ) {
+          await operations.updateMcpThreadSession(
+            db,
+            threadId,
+            mcpServer.id,
+            mcpClient.sessionId,
+          );
+        }
+
+        return mcpClient;
+      } catch (error) {
+        logger.error(
+          `Error processing MCP server ${mcpServer.id} in project ${projectId}: ${error}`,
+        );
+
+        await operations.addProjectLogEntry(
+          db,
+          projectId,
+          LogLevel.ERROR,
+          `Error processing MCP server ${mcpServer.id}: ${error instanceof Error ? error.message : String(error)}`,
+          { mcpServerId: mcpServer.id },
+        );
+
+        throw error;
       }
+    }),
+  );
 
-      mcpClients.push(mcpClient);
-    } catch (error) {
-      // TODO: attach this error to the project
-      logger.error(
-        `Error processing MCP server ${mcpServer.id} in project ${projectId}: ${error}`,
-      );
-
-      // Store the error for visibility in the dashboard
-      await operations.addProjectLogEntry(
-        db,
-        projectId,
-        LogLevel.ERROR,
-        `Error processing MCP server ${mcpServer.id}: ${error instanceof Error ? error.message : String(error)}`,
-        { mcpServerId: mcpServer.id },
-      );
-      continue;
-    }
-  }
+  const mcpClients = results
+    .filter(
+      (result): result is PromiseFulfilledResult<MCPClient> =>
+        result.status === "fulfilled",
+    )
+    .map((result) => result.value);
 
   return mcpClients;
 }
@@ -150,11 +156,22 @@ async function getMcpTools(
     mcpHandlers,
   );
 
+  const toolResults = await Promise.allSettled(
+    mcpClients.map(async (mcpClient) => {
+      const tools = await mcpClient.listTools();
+      return { mcpClient, tools };
+    }),
+  );
+
   const mcpTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
   const mcpToolSources: Record<string, MCPClient> = {};
 
-  for (const mcpClient of mcpClients) {
-    const tools = await mcpClient.listTools();
+  for (const result of toolResults) {
+    if (result.status === "rejected") {
+      continue;
+    }
+
+    const { mcpClient, tools } = result.value;
 
     mcpTools.push(
       ...tools.map(
