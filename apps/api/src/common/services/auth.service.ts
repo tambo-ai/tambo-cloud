@@ -20,7 +20,7 @@ export class AuthService {
 
   /**
    * Generates an MCP access token (JWT) that includes projectId and contextKey
-   * with a 15-minute expiry
+   * with a 15-minute expiry.
    *
    * Only pass in the knownContextKey if you have already resolved the contextKey,
    * otherwise the thread will be fetched from the database from the threadId.
@@ -48,13 +48,16 @@ export class AuthService {
     }
 
     // https://www.rfc-editor.org/rfc/rfc7519#section-4.1.4
-    // For our purposes we round down to the nearest 5 minutes, then add 20 minutes. This makes sure
-    // if we keep signing, we'll keep generating the same token for each 5
-    // minute interval, and it will be good for at least 15 minutes
-    const expiration =
-      Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000) +
-      15 * 60 * 1000;
+    // Round down to the nearest 5 minutes, then add 15 minutes. This makes tokens
+    // within a 5‑minute window share the same payload (deterministic iat) and remain
+    // valid until 15 minutes after the window start. If you need a guaranteed
+    // minimum validity from issuance (e.g., at least 15 minutes after minting),
+    // increase the expiration offset to 20 minutes.
+    const windowStartMs =
+      Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000);
+    const expiration = windowStartMs + 15 * 60 * 1000;
     const expSeconds = Math.floor(expiration / 1000);
+    const windowStartSeconds = Math.floor(windowStartMs / 1000);
 
     // TODO: use a per-project, maybe per-thread, signing secret?
     const signedJwt = await new SignJWT({
@@ -66,7 +69,7 @@ export class AuthService {
       .setProtectedHeader({ alg: "HS256" })
       .setIssuer(projectId)
       .setSubject(`${projectId}:${threadId}`)
-      .setIssuedAt()
+      .setIssuedAt(windowStartSeconds)
       .setExpirationTime(expSeconds)
       .sign(new TextEncoder().encode(secret));
     return signedJwt;

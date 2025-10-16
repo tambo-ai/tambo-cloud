@@ -11,6 +11,7 @@ import {
 import { getDb, operations, schema } from "@tambo-ai-cloud/db";
 import { type JSONSchema7 } from "json-schema";
 import { getSystemTools, getThreadMCPClients } from "../systemTools";
+import { Logger } from "@nestjs/common";
 
 // Mock the db module
 jest.mock("@tambo-ai-cloud/db", () => {
@@ -83,6 +84,7 @@ function createMcpHandlerMocks(): MCPHandlers {
 describe("systemTools", () => {
   let mockDb: ReturnType<typeof getDb>;
   let consoleWarnSpy: jest.SpiedFunction<typeof console.warn>;
+  let loggerWarnSpy: jest.SpiedFunction<typeof Logger.prototype.warn>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -97,6 +99,9 @@ describe("systemTools", () => {
 
     jest.mocked(getDb).mockReturnValue(mockDb);
     consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    loggerWarnSpy = jest
+      .spyOn(Logger.prototype, "warn")
+      .mockImplementation(() => {});
 
     // Default mocks
     jest.mocked(operations.getProjectMcpServers).mockResolvedValue([]);
@@ -107,6 +112,7 @@ describe("systemTools", () => {
 
   afterEach(() => {
     consoleWarnSpy.mockRestore();
+    loggerWarnSpy.mockRestore();
   });
 
   describe("getSystemTools", () => {
@@ -322,7 +328,7 @@ describe("systemTools", () => {
 
       expect(clients).toEqual([]);
       expect(MCPClient.create).not.toHaveBeenCalled();
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining(
           "MCP server mcp1 in project project123 requires auth, but no auth info found",
         ),
@@ -372,7 +378,7 @@ describe("systemTools", () => {
       );
 
       expect(clients).toHaveLength(1);
-      expect(clients[0]).toBe(mockClient);
+      expect(clients[0].client).toBe(mockClient);
       expect(MCPClient.create).toHaveBeenCalledWith(
         "http://mcp1.example.com",
         MCPTransport.HTTP,
@@ -719,7 +725,7 @@ describe("systemTools", () => {
       );
 
       expect(clients).toHaveLength(1);
-      expect(clients[0]).toBe(mockClient2);
+      expect(clients[0].client).toBe(mockClient2);
       expect(operations.addProjectLogEntry).toHaveBeenCalledTimes(1);
     });
 
@@ -788,7 +794,7 @@ describe("systemTools", () => {
 
       await getThreadMCPClients(mockDb, "project123", "thread123", mcpHandlers);
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining(
           "MCP server mcp1 has multiple contexts, using the first one",
         ),
