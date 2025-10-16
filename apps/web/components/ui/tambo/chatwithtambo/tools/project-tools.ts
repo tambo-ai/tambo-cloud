@@ -144,13 +144,14 @@ export function registerProjectTools(
 ) {
   /**
    * Registers a tool to fetch all projects for the current user.
-   * Returns an array of project objects with detailed information.
+   * Returns an object containing an array of project objects with detailed information.
    */
   registerTool({
     name: "fetchAllProjects",
     description: "Fetches all projects for the current user.",
     tool: async () => {
-      return await ctx.trpcClient.project.getUserProjects.query();
+      const projects = await ctx.trpcClient.project.getUserProjects.query();
+      return { projects };
     },
     toolSchema: fetchAllProjectsSchema,
   });
