@@ -20,6 +20,18 @@ import { env } from "process";
 
 const logger = new Logger("systemTools");
 
+class ListToolsError extends Error {
+  constructor(
+    message: string,
+    public readonly serverId: string,
+    public readonly url: string,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = "ListToolsError";
+  }
+}
+
 /** Get the available MCP tools for the project, checking for duplicate tool names */
 export async function getSystemTools(
   db: HydraDatabase,
@@ -53,13 +65,15 @@ export async function getSystemTools(
   };
 }
 
+type ThreadMcpClient = { client: MCPClient; serverId: string; url: string };
+
 /** Get all MCP clients for a given thread */
 export async function getThreadMCPClients(
   db: HydraDb,
   projectId: string,
   threadId: string,
   mcpHandlers: Partial<MCPHandlers>,
-): Promise<MCPClient[]> {
+): Promise<ThreadMcpClient[]> {
   const mcpServers = await operations.getProjectMcpServers(db, projectId, null);
 
   const results = await Promise.allSettled(
@@ -76,7 +90,7 @@ export async function getThreadMCPClients(
       }
 
       if (mcpServer.mcpRequiresAuth && !hasAuthInfo(mcpServer)) {
-        console.warn(
+        logger.warn(
           `MCP server ${mcpServer.id} in project ${projectId} requires auth, but no auth info found`,
         );
         await operations.addProjectLogEntry(
@@ -120,7 +134,11 @@ export async function getThreadMCPClients(
           );
         }
 
-        return mcpClient;
+        return {
+          client: mcpClient,
+          serverId: mcpServer.id,
+          url: mcpServer.url,
+        };
       } catch (error) {
         logger.error(
           `Error processing MCP server ${mcpServer.id} in project ${projectId}: ${error}`,
@@ -141,7 +159,7 @@ export async function getThreadMCPClients(
 
   const mcpClients = results
     .filter(
-      (result): result is PromiseFulfilledResult<MCPClient> =>
+      (result): result is PromiseFulfilledResult<ThreadMcpClient> =>
         result.status === "fulfilled",
     )
     .map((result) => result.value);
@@ -164,9 +182,14 @@ async function getMcpTools(
   );
 
   const toolResults = await Promise.allSettled(
-    mcpClients.map(async (mcpClient) => {
-      const tools = await mcpClient.listTools();
-      return { mcpClient, tools };
+    mcpClients.map(async ({ client, serverId, url }) => {
+      try {
+        const tools = await client.listTools();
+        return { mcpClient: client, tools, serverId, url };
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        throw new ListToolsError(err.message, serverId, url, err);
+      }
     }),
   );
 
@@ -179,15 +202,17 @@ async function getMcpTools(
         result.reason instanceof Error
           ? result.reason
           : new Error(String(result.reason));
+      const serverId = err instanceof ListToolsError ? err.serverId : undefined;
+      const url = err instanceof ListToolsError ? err.url : undefined;
       logger.error(
-        `Error listing tools for an MCP client in project ${projectId}: ${err.message}`,
+        `Error listing tools for MCP server ${serverId ?? "unknown"} (${url ?? "n/a"}) in project ${projectId}: ${err.message}`,
       );
       await operations.addProjectLogEntry(
         db,
         projectId,
         LogLevel.ERROR,
-        `Error listing tools for an MCP client: ${err.message}`,
-        { stack: err.stack },
+        `Error listing tools for MCP server ${serverId ?? "unknown"}: ${err.message}`,
+        { mcpServerId: serverId, url, stack: err.stack },
       );
       continue;
     }
@@ -232,7 +257,7 @@ function hasAuthInfo(mcpServer: McpServer): boolean {
     return false;
   }
   if (mcpServer.contexts.length > 1) {
-    console.warn(
+    logger.warn(
       `MCP server ${mcpServer.id} has multiple contexts, using the first one`,
     );
   }
