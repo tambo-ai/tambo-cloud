@@ -25,9 +25,10 @@ class ListToolsError extends Error {
     message: string,
     public readonly serverId: string,
     public readonly url: string,
-    public readonly cause?: unknown,
+    cause?: unknown,
   ) {
-    super(message);
+    // Preserve the original error via the native cause chain
+    super(message, { cause });
     this.name = "ListToolsError";
   }
 }
@@ -140,19 +141,20 @@ export async function getThreadMCPClients(
           url: mcpServer.url,
         };
       } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
         logger.error(
-          `Error processing MCP server ${mcpServer.id} in project ${projectId}: ${error}`,
+          `Error processing MCP server ${mcpServer.id} in project ${projectId}: ${err.message}`,
         );
 
         await operations.addProjectLogEntry(
           db,
           projectId,
           LogLevel.ERROR,
-          `Error processing MCP server ${mcpServer.id}: ${error instanceof Error ? error.message : String(error)}`,
-          { mcpServerId: mcpServer.id },
+          `Error processing MCP server ${mcpServer.id}: ${err.message}`,
+          { mcpServerId: mcpServer.id, url: mcpServer.url },
         );
 
-        throw error;
+        throw err;
       }
     }),
   );
@@ -212,7 +214,7 @@ async function getMcpTools(
         projectId,
         LogLevel.ERROR,
         `Error listing tools for MCP server ${serverId ?? "unknown"}: ${err.message}`,
-        { mcpServerId: serverId, url, stack: err.stack },
+        { mcpServerId: serverId, url },
       );
       continue;
     }

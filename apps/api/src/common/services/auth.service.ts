@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { TAMBO_MCP_ACCESS_KEY_CLAIM } from "@tambo-ai-cloud/core";
-import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
+import { HydraDatabase } from "@tambo-ai-cloud/db";
 import { SignJWT } from "jose";
 import { DATABASE } from "../middleware/db-transaction-middleware";
 
@@ -19,32 +19,22 @@ export class AuthService {
   }
 
   /**
-   * Generates an MCP access token (JWT) that includes projectId and contextKey
-   * with a 15-minute expiry.
+   * Generates an MCP access token (JWT) that includes projectId/threadId in a
+   * namespaced claim and standard JWT claims (iss/sub/iat/exp).
    *
-   * Only pass in the knownContextKey if you have already resolved the contextKey,
-   * otherwise the thread will be fetched from the database from the threadId.
+   * Notes on expiry/iat:
+   * - We round down to the nearest 5 minutes and set `iat` to that window
+   *   start so tokens minted within the same 5‑minute window are identical.
+   * - `exp` is set to 15 minutes after the window start. If we ever need a
+   *   guaranteed 15 minutes of validity from issuance, bump the offset to 20m.
    */
   async generateMcpAccessToken(
     projectId: string,
     threadId: string,
-    knownContextKey?: string | null,
   ): Promise<string> {
     const secret = this.configService.get<string>("API_KEY_SECRET");
     if (!secret) {
       throw new Error("API_KEY_SECRET is not configured");
-    }
-    let contextKey = knownContextKey;
-    if (!contextKey) {
-      const thread = await operations.getThreadForProjectId(
-        this.getDb(),
-        threadId,
-        projectId,
-      );
-      if (!thread) {
-        throw new Error("Thread not found");
-      }
-      contextKey = thread.contextKey;
     }
 
     // https://www.rfc-editor.org/rfc/rfc7519#section-4.1.4

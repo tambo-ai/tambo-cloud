@@ -626,7 +626,7 @@ describe("systemTools", () => {
         "project123",
         LogLevel.ERROR,
         "Error processing MCP server mcp1: Connection failed",
-        { mcpServerId: "mcp1" },
+        { mcpServerId: "mcp1", url: "http://mcp1.example.com" },
       );
     });
 
