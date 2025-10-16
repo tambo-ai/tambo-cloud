@@ -46,12 +46,32 @@ export const updateOAuthValidationSettingsSchema = z
         secretKey: z
           .string()
           .optional()
-          .describe("The secret key for symmetric validation"),
+          .describe(
+            "The secret key for symmetric validation (required when mode is SYMMETRIC)",
+          ),
         publicKey: z
           .string()
           .optional()
-          .describe("The public key for asymmetric manual validation"),
+          .describe(
+            "The public key for asymmetric manual validation (required when mode is ASYMMETRIC_MANUAL)",
+          ),
       })
+      .refine(
+        (data) => {
+          // Validate required fields based on mode
+          if (data.mode === OAuthValidationMode.SYMMETRIC) {
+            return !!data.secretKey;
+          }
+          if (data.mode === OAuthValidationMode.ASYMMETRIC_MANUAL) {
+            return !!data.publicKey;
+          }
+          return true;
+        },
+        {
+          message:
+            "Secret key is required for SYMMETRIC mode, public key is required for ASYMMETRIC_MANUAL mode",
+        },
+      )
       .describe("The OAuth validation settings to update"),
   )
   .returns(
