@@ -94,7 +94,7 @@ export class BearerTokenGuard implements CanActivate {
       request[ContextKey] = contextKey;
 
       this.logger.log(
-        `Valid OAuth bearer token used for project ${verifiedPayload.iss} with context ${contextKey}`,
+        `Valid OAuth bearer token used for project ${verifiedProjectId} with context ${contextKey}`,
       );
 
       return true;
