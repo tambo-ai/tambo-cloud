@@ -53,17 +53,15 @@ export async function getSystemTools(
   };
 }
 
-/** Get the raw MCP servers from the database, query the MCP servers, and convert them to OpenAI tool schemas */
-async function getMcpTools(
+/** Get all MCP clients for a given thread */
+export async function getThreadMCPClients(
   db: HydraDatabase,
   projectId: string,
   threadId: string,
   mcpHandlers: MCPHandlers,
-): Promise<McpToolRegistry> {
+): Promise<MCPClient[]> {
   const mcpServers = await operations.getProjectMcpServers(db, projectId, null);
-
-  const mcpTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
-  const mcpToolSources: Record<string, MCPClient> = {};
+  const mcpClients: MCPClient[] = [];
 
   for (const mcpServer of mcpServers) {
     if (!mcpServer.url) {
@@ -116,32 +114,7 @@ async function getMcpTools(
         );
       }
 
-      const tools = await mcpClient.listTools();
-
-      mcpTools.push(
-        ...tools.map(
-          (tool): OpenAI.Chat.Completions.ChatCompletionTool => ({
-            type: "function",
-            function: {
-              name: tool.name,
-              description: tool.description,
-              strict: true,
-              parameters: tool.inputSchema?.properties
-                ? {
-                    type: "object",
-                    properties: tool.inputSchema.properties,
-                    required: tool.inputSchema.required,
-                    additionalProperties: false,
-                  }
-                : undefined,
-            },
-          }),
-        ),
-      );
-
-      for (const tool of tools) {
-        mcpToolSources[tool.name] = mcpClient;
-      }
+      mcpClients.push(mcpClient);
     } catch (error) {
       // TODO: attach this error to the project
       logger.error(
@@ -157,6 +130,55 @@ async function getMcpTools(
         { mcpServerId: mcpServer.id },
       );
       continue;
+    }
+  }
+
+  return mcpClients;
+}
+
+/** Get the raw MCP servers from the database, query the MCP servers, and convert them to OpenAI tool schemas */
+async function getMcpTools(
+  db: HydraDatabase,
+  projectId: string,
+  threadId: string,
+  mcpHandlers: MCPHandlers,
+): Promise<McpToolRegistry> {
+  const mcpClients = await getThreadMCPClients(
+    db,
+    projectId,
+    threadId,
+    mcpHandlers,
+  );
+
+  const mcpTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
+  const mcpToolSources: Record<string, MCPClient> = {};
+
+  for (const mcpClient of mcpClients) {
+    const tools = await mcpClient.listTools();
+
+    mcpTools.push(
+      ...tools.map(
+        (tool): OpenAI.Chat.Completions.ChatCompletionTool => ({
+          type: "function",
+          function: {
+            name: tool.name,
+            description: tool.description,
+            strict: true,
+            parameters: tool.inputSchema?.properties
+              ? {
+                  type: "object",
+                  properties: tool.inputSchema.properties,
+                  required: tool.inputSchema.required,
+                  additionalProperties: false,
+                }
+              : undefined,
+          },
+        }),
+      ),
+    );
+
+    for (const tool of tools) {
+      mcpToolSources[tool.name] = mcpClient;
     }
   }
 
