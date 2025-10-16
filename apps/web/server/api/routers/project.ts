@@ -167,6 +167,72 @@ async function getMultiProjectDailyCounts(
 
 export const projectRouter = createTRPCRouter({
   // ---------------------------------------------------------------------
+  //  Fetch a single project by ID
+  // ---------------------------------------------------------------------
+  getProjectById: protectedProcedure
+    .input(z.string())
+    .query(async ({ ctx, input: projectId }) => {
+      await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
+
+      const project = await ctx.db.query.projects.findFirst({
+        where: eq(schema.projects.id, projectId),
+      });
+
+      if (!project) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Project not found.",
+        });
+      }
+
+      // Get message and user counts for this project
+      const counts = await ctx.db
+        .select({
+          messages: count(schema.messages.id),
+          users: countDistinct(schema.threads.contextKey),
+          lastMessageAt: max(schema.threads.updatedAt),
+        })
+        .from(schema.threads)
+        .leftJoin(
+          schema.messages,
+          eq(schema.messages.threadId, schema.threads.id),
+        )
+        .where(eq(schema.threads.projectId, projectId))
+        .groupBy(schema.threads.projectId);
+
+      const stats = counts[0] ?? {
+        messages: 0,
+        users: 0,
+        lastMessageAt: null,
+      };
+
+      return {
+        id: project.id,
+        name: project.name,
+        userId: ctx.user.id,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        customInstructions: project.customInstructions,
+        allowSystemPromptOverride: project.allowSystemPromptOverride ?? false,
+        defaultLlmProviderName: project.defaultLlmProviderName,
+        defaultLlmModelName: project.defaultLlmModelName,
+        customLlmModelName: project.customLlmModelName,
+        customLlmBaseURL: project.customLlmBaseURL,
+        maxInputTokens: project.maxInputTokens,
+        maxToolCallLimit: project.maxToolCallLimit,
+        isTokenRequired: project.isTokenRequired,
+        providerType: project.providerType,
+        agentProviderType: project.agentProviderType,
+        agentUrl: project.agentUrl,
+        agentName: project.agentName,
+        customLlmParameters: project.customLlmParameters,
+        messages: Number(stats.messages ?? 0),
+        users: Number(stats.users ?? 0),
+        lastMessageAt: stats.lastMessageAt ?? null,
+      };
+    }),
+
+  // ---------------------------------------------------------------------
   //  Fetch all projects visible to the current user with optional sorting.
   //  The default sort is by the most recent thread update ("thread_updated").
   // ---------------------------------------------------------------------
@@ -383,6 +449,7 @@ export const projectRouter = createTRPCRouter({
           agentUrl: true,
           agentName: true,
           agentHeaders: true,
+          customLlmParameters: true,
         },
       });
 
@@ -403,6 +470,7 @@ export const projectRouter = createTRPCRouter({
         agentUrl: project.agentUrl ?? null,
         agentName: project.agentName ?? null,
         agentHeaders: project.agentHeaders,
+        customLlmParameters: project.customLlmParameters ?? null,
       };
     }),
 
@@ -604,6 +672,7 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: z.string().nullable().optional(),
         customLlmBaseURL: z.string().nullable().optional(),
         maxInputTokens: z.number().nullable().optional(),
+        customLlmParameters: customLlmParametersSchema.nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -613,6 +682,7 @@ export const projectRouter = createTRPCRouter({
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
+        customLlmParameters,
       } = input;
 
       // Ensure the user has access to the project before performing any further
@@ -654,6 +724,7 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: string | null;
         customLlmBaseURL: string | null;
         maxInputTokens: number | null;
+        customLlmParameters: typeof customLlmParameters;
       }> = {};
 
       if ("defaultLlmProviderName" in input) {
@@ -669,6 +740,9 @@ export const projectRouter = createTRPCRouter({
         // Store the trimmed value (or null if blank/undefined)
         updateData.customLlmBaseURL =
           sanitizedBaseURL && sanitizedBaseURL !== "" ? sanitizedBaseURL : null;
+      }
+      if ("customLlmParameters" in input) {
+        updateData.customLlmParameters = customLlmParameters;
       }
       if ("maxInputTokens" in input) {
         if (defaultLlmProviderName && defaultLlmModelName) {
@@ -710,6 +784,7 @@ export const projectRouter = createTRPCRouter({
             customLlmModelName: true,
             customLlmBaseURL: true,
             maxInputTokens: true,
+            customLlmParameters: true,
           },
         });
         if (!currentProject)
@@ -723,6 +798,7 @@ export const projectRouter = createTRPCRouter({
           customLlmModelName: currentProject.customLlmModelName ?? null,
           customLlmBaseURL: currentProject.customLlmBaseURL ?? null,
           maxInputTokens: currentProject.maxInputTokens ?? null,
+          customLlmParameters: currentProject.customLlmParameters ?? null,
         };
       }
 
@@ -732,6 +808,7 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: updateData.customLlmModelName,
         customLlmBaseURL: updateData.customLlmBaseURL,
         maxInputTokens: updateData.maxInputTokens,
+        customLlmParameters: updateData.customLlmParameters,
       });
 
       if (!updatedProject) {
@@ -746,6 +823,7 @@ export const projectRouter = createTRPCRouter({
         customLlmModelName: updatedProject.customLlmModelName ?? null,
         customLlmBaseURL: updatedProject.customLlmBaseURL ?? null,
         maxInputTokens: updatedProject.maxInputTokens ?? null,
+        customLlmParameters: updatedProject.customLlmParameters ?? null,
       };
     }),
 

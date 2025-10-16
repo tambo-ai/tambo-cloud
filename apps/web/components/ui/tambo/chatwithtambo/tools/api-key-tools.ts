@@ -1,0 +1,129 @@
+import { APIKeySchema } from "@/components/dashboard-components/project-details/api-key-list";
+import { z } from "zod";
+import { invalidateApiKeysCache } from "./helpers";
+import type { RegisterToolFn, ToolContext } from "./types";
+
+/**
+ * Zod schema for the `fetchProjectApiKeys` function.
+ * Defines the argument as a project ID string and the return type as an object with an `apiKeys` property,
+ * which is an array of API key details.
+ */
+export const fetchProjectApiKeysSchema = z
+  .function()
+  .args(z.string().describe("The project ID to fetch API keys for"))
+  .returns(
+    z.object({
+      apiKeys: z.array(APIKeySchema),
+    }),
+  );
+
+/**
+ * Zod schema for the `generateProjectApiKey` function.
+ * Defines arguments as the project ID string and API key name string,
+ * and the return type as an object representing the newly generated API key details.
+ */
+export const generateProjectApiKeySchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The name of the API key"),
+  )
+  .returns(
+    z.object({
+      apiKey: z.string(),
+      id: z.string(),
+      name: z.string(),
+      partiallyHiddenKey: z.string().nullable(),
+      lastUsedAt: z.date().nullable(),
+      projectId: z.string(),
+      hashedKey: z.string(),
+      createdAt: z.date(),
+      updatedAt: z.date(),
+      createdByUserId: z.string(),
+    }),
+  );
+
+/**
+ * Zod schema for the `deleteProjectApiKey` function.
+ * Defines arguments as the project ID string and API key ID string,
+ * and the return type as an object indicating the key was processed for deletion (e.g., `{ deletedKey: undefined }`).
+ */
+export const deleteProjectApiKeySchema = z
+  .function()
+  .args(
+    z.string().describe("The project ID"),
+    z.string().describe("The API key ID"),
+  )
+  .returns(
+    z.object({
+      deletedKey: z.void(),
+    }),
+  );
+
+/**
+ * Register API key management tools
+ */
+export function registerApiKeyTools(
+  registerTool: RegisterToolFn,
+  ctx: ToolContext,
+) {
+  /**
+   * Registers a tool to fetch all API keys for a specific project.
+   * @param {string} projectId - The project ID to fetch API keys for
+   * @returns {Object} Object containing an array of API key details
+   */
+  registerTool({
+    name: "fetchProjectApiKeys",
+    description: "get all api keys for the current project",
+    tool: async (projectId: string) => {
+      return await ctx.trpcClient.project.getApiKeys.query(projectId);
+    },
+    toolSchema: fetchProjectApiKeysSchema,
+  });
+
+  /**
+   * Registers a tool to generate a new API key for a project.
+   * @param {string} projectId - The project ID to generate an API key for
+   * @param {string} name - The name/label for the new API key
+   * @returns {Object} Generated API key details including the key value and metadata
+   */
+  registerTool({
+    name: "generateProjectApiKey",
+    description: "generate a new api key for the current project",
+    tool: async (projectId: string, name: string) => {
+      const result = await ctx.trpcClient.project.generateApiKey.mutate({
+        projectId,
+        name,
+      });
+
+      // Invalidate the API keys cache to refresh the component
+      await invalidateApiKeysCache(ctx, projectId);
+
+      return result;
+    },
+    toolSchema: generateProjectApiKeySchema,
+  });
+
+  /**
+   * Registers a tool to delete an existing API key from a project.
+   * @param {string} projectId - The project ID containing the API key
+   * @param {string} apiKeyId - The ID of the API key to delete
+   * @returns {Object} Confirmation message that the key was deleted
+   */
+  registerTool({
+    name: "deleteProjectApiKey",
+    description: "delete an api key for the current project",
+    tool: async (projectId: string, apiKeyId: string) => {
+      await ctx.trpcClient.project.removeApiKey.mutate({
+        projectId,
+        apiKeyId,
+      });
+
+      // Invalidate the API keys cache to refresh the component
+      await invalidateApiKeysCache(ctx, projectId);
+
+      return { deletedKey: "The key was deleted successfully." };
+    },
+    toolSchema: deleteProjectApiKeySchema,
+  });
+}
