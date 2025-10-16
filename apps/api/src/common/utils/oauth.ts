@@ -315,16 +315,25 @@ export async function extractAndVerifyMcpAccessToken(
   token: string,
   secret: string,
 ): Promise<McpAccessTokenPayload> {
-  const payload = decodeJwt(token);
-  if (!payload.iss || !payload.sub) {
-    throw new Error("MCP access token missing required claims (iss or sub)");
-  }
   const signingKey = new TextEncoder().encode(secret);
   const { payload: verifiedPayload } = await jwtVerify(token, signingKey, {
     algorithms: ALLOWED_SYMMETRIC_ALGORITHMS,
   });
-  if (!verifiedPayload[TAMBO_MCP_ACCESS_KEY_CLAIM]) {
+  if (!verifiedPayload.iss || !verifiedPayload.sub) {
+    throw new Error("MCP access token missing required claims (iss or sub)");
+  }
+  const claim = verifiedPayload[TAMBO_MCP_ACCESS_KEY_CLAIM] as
+    | McpAccessTokenPayload[typeof TAMBO_MCP_ACCESS_KEY_CLAIM]
+    | undefined;
+  if (!claim) {
     throw new Error("MCP access token missing required claim");
+  }
+  if (verifiedPayload.iss !== claim.projectId) {
+    throw new Error("Issuer does not match MCP claim projectId");
+  }
+  const expectedSub = `${claim.projectId}:${claim.threadId}`;
+  if (verifiedPayload.sub !== expectedSub) {
+    throw new Error("Subject does not match MCP claim");
   }
   return verifiedPayload as McpAccessTokenPayload;
 }

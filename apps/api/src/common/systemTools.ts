@@ -65,6 +65,13 @@ export async function getThreadMCPClients(
   const results = await Promise.allSettled(
     mcpServers.map(async (mcpServer) => {
       if (!mcpServer.url) {
+        await operations.addProjectLogEntry(
+          db,
+          projectId,
+          LogLevel.WARNING,
+          `MCP server ${mcpServer.id} has no URL configured`,
+          { mcpServerId: mcpServer.id },
+        );
         throw new Error("No URL provided");
       }
 
@@ -168,6 +175,20 @@ async function getMcpTools(
 
   for (const result of toolResults) {
     if (result.status === "rejected") {
+      const err =
+        result.reason instanceof Error
+          ? result.reason
+          : new Error(String(result.reason));
+      logger.error(
+        `Error listing tools for an MCP client in project ${projectId}: ${err.message}`,
+      );
+      await operations.addProjectLogEntry(
+        db,
+        projectId,
+        LogLevel.ERROR,
+        `Error listing tools for an MCP client: ${err.message}`,
+        { stack: err.stack },
+      );
       continue;
     }
 

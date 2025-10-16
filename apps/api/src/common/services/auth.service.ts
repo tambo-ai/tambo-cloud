@@ -1,9 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import {
-  type McpAccessTokenPayload,
-  TAMBO_MCP_ACCESS_KEY_CLAIM,
-} from "@tambo-ai-cloud/core";
+import { TAMBO_MCP_ACCESS_KEY_CLAIM } from "@tambo-ai-cloud/core";
 import { HydraDatabase, operations } from "@tambo-ai-cloud/db";
 import { SignJWT } from "jose";
 import { DATABASE } from "../middleware/db-transaction-middleware";
@@ -57,19 +54,20 @@ export class AuthService {
     const expiration =
       Math.floor(Date.now() / (5 * 60 * 1000)) * (5 * 60 * 1000) +
       15 * 60 * 1000;
-    const payload: McpAccessTokenPayload = {
-      // TODO: perhaps there is a better way to identify the `sub`?
-      sub: `${projectId}:${threadId}`,
-      exp: expiration / 1000, // jwt.sign expects the expiration in seconds
+    const expSeconds = Math.floor(expiration / 1000);
+
+    // TODO: use a per-project, maybe per-thread, signing secret?
+    const signedJwt = await new SignJWT({
       [TAMBO_MCP_ACCESS_KEY_CLAIM]: {
         projectId,
         threadId,
       },
-    };
-
-    // TODO: use a per-project, maybe per-thread, signing secret?
-    const signedJwt = await new SignJWT(payload)
+    })
       .setProtectedHeader({ alg: "HS256" })
+      .setIssuer(projectId)
+      .setSubject(`${projectId}:${threadId}`)
+      .setIssuedAt()
+      .setExpirationTime(expSeconds)
       .sign(new TextEncoder().encode(secret));
     return signedJwt;
   }
