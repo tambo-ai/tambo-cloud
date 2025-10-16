@@ -55,10 +55,10 @@ export async function getSystemTools(
 
 /** Get all MCP clients for a given thread */
 export async function getThreadMCPClients(
-  db: HydraDatabase,
+  db: HydraDb,
   projectId: string,
   threadId: string,
-  mcpHandlers: MCPHandlers,
+  mcpHandlers: Partial<MCPHandlers>,
 ): Promise<MCPClient[]> {
   const mcpServers = await operations.getProjectMcpServers(db, projectId, null);
 
@@ -151,7 +151,7 @@ export async function getThreadMCPClients(
 
 /** Get the raw MCP servers from the database, query the MCP servers, and convert them to OpenAI tool schemas */
 async function getMcpTools(
-  db: HydraDatabase,
+  db: HydraDb,
   projectId: string,
   threadId: string,
   mcpHandlers: MCPHandlers,
