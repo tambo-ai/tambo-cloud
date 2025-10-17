@@ -73,13 +73,20 @@ const handler = async (
   threadId: string,
 ) => {
   const db = getDb(process.env.DATABASE_URL!);
+  // we create the "server" on the fly, it only lives for the duration of the request,
+  // though the request could stay open for a long time if there is streaming/etc.
   const server = await createMcpServer(db, projectId, threadId);
   const transport = new StreamableHTTPServerTransport({
+    // we don't actually use the session id, but it's required for the transport
     sessionIdGenerator: () => randomUUID(),
-    enableJsonResponse: true,
   });
   await server.connect(transport);
-  await transport.handleRequest(req, res, req.body);
+  try {
+    await transport.handleRequest(req, res, req.body);
+  } finally {
+    await server.close();
+    await transport.close();
+  }
 };
 
 /**
