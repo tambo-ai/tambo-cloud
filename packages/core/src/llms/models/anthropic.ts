@@ -1,4 +1,4 @@
-import { AnthropicProvider } from "@ai-sdk/anthropic";
+import { type AnthropicProvider } from "@ai-sdk/anthropic";
 import type { LlmModelConfig } from "../../llm-config-types";
 import { type NarrowStrings } from "../../typeutils";
 
