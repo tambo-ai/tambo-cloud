@@ -85,9 +85,9 @@ export const PARAMETER_METADATA: LlmParameterMetadata<
   },
 };
 
-export interface LlmModelConfigInfo {
+export interface LlmModelConfigInfo<ModelId extends string = string> {
   /** The actual name used in API calls, e.g., "gpt-4o-mini" */
-  apiName: string;
+  apiName: ModelId;
   /** User-friendly name, e.g., "GPT-4o Mini" */
   displayName: string;
   /** The status of the model integration */
@@ -110,7 +110,7 @@ export interface LlmModelConfigInfo {
 
 export type LlmModelConfig<ModelId extends string = string> = Record<
   ModelId,
-  LlmModelConfigInfo
+  LlmModelConfigInfo<ModelId>
 >;
 
 /** Provider-specific parameters defaults that will be passed to the AI SDK via providerOptions */
