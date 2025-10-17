@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.117.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.116.1...repo-v0.117.0) (2025-10-17)
+
+
+### Features
+
+* add support for claude 4.5 ([#1950](https://github.com/tambo-ai/tambo-cloud/issues/1950)) ([9136613](https://github.com/tambo-ai/tambo-cloud/commit/913661375df0f00681a6e25be60500fb6da7ca7f))
+
+
+### Bug Fixes
+
+* use types to make sure all exposed models are supported ([#1952](https://github.com/tambo-ai/tambo-cloud/issues/1952)) ([78cec10](https://github.com/tambo-ai/tambo-cloud/commit/78cec1077bf1b2fc651901838fd00ee5ce9633dc))
+
 ## [0.116.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.116.0...repo-v0.116.1) (2025-10-16)
 
 
