@@ -7,6 +7,22 @@ import {
   generatedApiKeySchema,
   getApiKeysInput,
 } from "@/lib/schemas/api-key";
+import {
+  agentHeadersSchema,
+  createProjectInput,
+  createProjectOutputSchema,
+  getProjectByIdInput,
+  getTotalMessageUsageInput,
+  getTotalUsersInput,
+  getUserProjectsInput,
+  projectDetailSchema,
+  projectSchema,
+  removeProjectInput,
+  totalMessageUsageSchema,
+  totalUsersSchema,
+  updateProjectInput,
+  updateProjectOutputSchema,
+} from "@/lib/schemas/project";
 import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
@@ -34,22 +50,6 @@ import {
   sql,
 } from "drizzle-orm";
 import { z } from "zod";
-
-// ---------------------------------------------------------------------------
-//  Agent header constraints (no regex; count and length limits only)
-// ---------------------------------------------------------------------------
-const MAX_AGENT_HEADER_COUNT = 20;
-const MAX_AGENT_HEADER_NAME_LENGTH = 100;
-const MAX_AGENT_HEADER_VALUE_LENGTH = 2000;
-
-const agentHeadersSchema = z
-  .record(
-    z.string().min(1).max(MAX_AGENT_HEADER_NAME_LENGTH),
-    z.string().min(1).max(MAX_AGENT_HEADER_VALUE_LENGTH),
-  )
-  .refine((obj) => Object.keys(obj).length <= MAX_AGENT_HEADER_COUNT, {
-    message: `Too many headers (max ${MAX_AGENT_HEADER_COUNT})`,
-  });
 
 // Helper function to get date filter based on period
 function getDateFilter(period: string): Date | null {
@@ -177,7 +177,8 @@ export const projectRouter = createTRPCRouter({
   //  Fetch a single project by ID
   // ---------------------------------------------------------------------
   getProjectById: protectedProcedure
-    .input(z.string())
+    .input(getProjectByIdInput)
+    .output(projectDetailSchema)
     .query(async ({ ctx, input: projectId }) => {
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
 
@@ -244,15 +245,8 @@ export const projectRouter = createTRPCRouter({
   //  The default sort is by the most recent thread update ("thread_updated").
   // ---------------------------------------------------------------------
   getUserProjects: protectedProcedure
-    .input(
-      z
-        .object({
-          sort: z
-            .enum(["thread_updated", "created", "updated"]) // Future-proof
-            .optional(),
-        })
-        .optional(),
-    )
+    .input(getUserProjectsInput)
+    .output(z.array(projectSchema))
     .query(async ({ ctx, input }) => {
       const sortBy = input?.sort ?? "thread_updated";
       const userId = ctx.user.id;
@@ -358,7 +352,8 @@ export const projectRouter = createTRPCRouter({
     }),
 
   createProject: protectedProcedure
-    .input(z.string())
+    .input(createProjectInput)
+    .output(createProjectOutputSchema)
     .mutation(async ({ ctx, input }) => {
       return await operations.createProject(ctx.db, {
         name: input,
@@ -482,27 +477,8 @@ export const projectRouter = createTRPCRouter({
     }),
 
   updateProject: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        name: z.string().optional(),
-        customInstructions: z.string().nullable().optional(),
-        allowSystemPromptOverride: z.boolean().optional(),
-        defaultLlmProviderName: z.string().nullable().optional(),
-        defaultLlmModelName: z.string().nullable().optional(),
-        customLlmModelName: z.string().nullable().optional(),
-        customLlmBaseURL: z.string().nullable().optional(),
-        maxInputTokens: z.number().nullable().optional(),
-        maxToolCallLimit: z.number().optional(),
-        isTokenRequired: z.boolean().optional(),
-        providerType: z.nativeEnum(AiProviderType).optional(),
-        agentProviderType: z.nativeEnum(AgentProviderType).optional(),
-        agentUrl: z.string().url().nullable().optional(),
-        agentName: z.string().nullable().optional(),
-        customLlmParameters: customLlmParametersSchema.nullable().optional(),
-        agentHeaders: agentHeadersSchema.nullable().optional(),
-      }),
-    )
+    .input(updateProjectInput)
+    .output(updateProjectOutputSchema)
     .mutation(async ({ ctx, input }) => {
       const {
         projectId,
@@ -835,7 +811,7 @@ export const projectRouter = createTRPCRouter({
     }),
 
   removeProject: protectedProcedure
-    .input(z.string())
+    .input(removeProjectInput)
     .mutation(async ({ ctx, input: projectId }) => {
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
       await operations.deleteProject(ctx.db, projectId);
@@ -980,7 +956,8 @@ export const projectRouter = createTRPCRouter({
     }),
 
   getTotalMessageUsage: protectedProcedure
-    .input(z.object({ period: z.string().optional().default("all time") }))
+    .input(getTotalMessageUsageInput)
+    .output(totalMessageUsageSchema)
     .query(async ({ ctx, input }) => {
       const { period } = input;
       const userId = ctx.user.id;
@@ -1081,7 +1058,8 @@ export const projectRouter = createTRPCRouter({
     }),
 
   getTotalUsers: protectedProcedure
-    .input(z.object({ period: z.string().optional().default("all time") }))
+    .input(getTotalUsersInput)
+    .output(totalUsersSchema)
     .query(async ({ ctx, input }) => {
       const { period } = input;
       const userId = ctx.user.id;

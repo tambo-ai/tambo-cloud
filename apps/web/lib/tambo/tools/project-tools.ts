@@ -1,4 +1,12 @@
-import { ProjectTableSchema } from "@/components/dashboard-components/project-table";
+import {
+  createProjectInput,
+  createProjectOutputSchema,
+  getProjectByIdInput,
+  projectDetailSchema,
+  projectTableSchema,
+  removeProjectInput,
+  updateProjectOutputSchema,
+} from "@/lib/schemas/project";
 import { z } from "zod";
 import { invalidateProjectCache } from "./helpers";
 import type { RegisterToolFn, ToolContext } from "./types";
@@ -10,7 +18,7 @@ import type { RegisterToolFn, ToolContext } from "./types";
 export const fetchAllProjectsSchema = z
   .function()
   .args()
-  .returns(z.object({ projects: z.array(ProjectTableSchema) }));
+  .returns(z.object({ projects: z.array(projectTableSchema) }));
 
 /**
  * Zod schema for the `fetchProjectById` function.
@@ -21,38 +29,11 @@ export const fetchProjectByIdSchema = z
   .args(
     z
       .object({
-        projectId: z
-          .string()
-          .describe(
-            "The complete project ID to fetch (e.g., 'p_u2tgQg5U.43bbdf').",
-          ),
+        projectId: getProjectByIdInput,
       })
       .describe("Arguments for fetching a specific project"),
   )
-  .returns(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      userId: z.string(),
-      createdAt: z.string(),
-      customInstructions: z.string().nullable(),
-      allowSystemPromptOverride: z.boolean(),
-      defaultLlmProviderName: z.string().nullable(),
-      defaultLlmModelName: z.string().nullable(),
-      customLlmModelName: z.string().nullable(),
-      customLlmBaseURL: z.string().nullable(),
-      maxInputTokens: z.number().nullable(),
-      maxToolCallLimit: z.number(),
-      isTokenRequired: z.boolean(),
-      providerType: z.string().nullable(),
-      agentProviderType: z.string().nullable(),
-      agentUrl: z.string().nullable(),
-      agentName: z.string().nullable(),
-      customLlmParameters: z
-        .record(z.string(), z.record(z.string(), z.record(z.string(), z.any())))
-        .nullable(),
-    }),
-  );
+  .returns(projectDetailSchema);
 
 /**
  * Zod schema for the `updateProject` function.
@@ -87,14 +68,13 @@ export const updateProjectSchema = z
     }),
   )
   .returns(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      userId: z.string(),
-      customInstructions: z.string().nullable(),
-      allowSystemPromptOverride: z.boolean(),
-      maxToolCallLimit: z.number(),
-      isTokenRequired: z.boolean(),
+    updateProjectOutputSchema.pick({
+      id: true,
+      name: true,
+      userId: true,
+      customInstructions: true,
+      allowSystemPromptOverride: true,
+      maxToolCallLimit: true,
     }),
   );
 
@@ -104,14 +84,8 @@ export const updateProjectSchema = z
  */
 export const createProjectSchema = z
   .function()
-  .args(z.string().describe("The name of the project to create"))
-  .returns(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      userId: z.string(),
-    }),
-  );
+  .args(createProjectInput)
+  .returns(createProjectOutputSchema);
 
 /**
  * Zod schema for the `removeProject` function.
@@ -119,7 +93,7 @@ export const createProjectSchema = z
  */
 export const removeProjectSchema = z
   .function()
-  .args(z.string().describe("The ID of the project to remove"))
+  .args(removeProjectInput)
   .returns(z.object({ success: z.boolean() }));
 
 /**

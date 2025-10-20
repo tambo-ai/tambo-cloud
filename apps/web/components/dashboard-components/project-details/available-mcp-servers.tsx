@@ -32,7 +32,7 @@ export const AvailableMcpServersProps = z.object({
     .object({
       id: z.string().describe("The unique identifier for the project."),
       name: z.string().describe("The name of the project."),
-      providerType: z.nativeEnum(AiProviderType).optional(),
+      providerType: z.nativeEnum(AiProviderType).nullish(),
     })
     .describe("The project to fetch MCP servers for."),
   onEdited: z

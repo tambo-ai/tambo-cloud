@@ -1,3 +1,7 @@
+import {
+  totalMessageUsageSchema,
+  totalUsersSchema,
+} from "@/lib/schemas/project";
 import { z } from "zod";
 import type { RegisterToolFn, ToolContext } from "./types";
 
@@ -15,8 +19,7 @@ export const fetchTotalMessageUsageSchema = z
       ),
   )
   .returns(
-    z.object({
-      totalMessages: z.number(),
+    totalMessageUsageSchema.extend({
       period: z.string(),
     }),
   );
@@ -35,8 +38,7 @@ export const fetchTotalUsersSchema = z
       ),
   )
   .returns(
-    z.object({
-      totalUsers: z.number(),
+    totalUsersSchema.extend({
       period: z.string(),
     }),
   );
