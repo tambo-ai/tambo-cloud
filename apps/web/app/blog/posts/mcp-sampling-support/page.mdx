@@ -10,4 +10,46 @@ featured: true
 
 <BlogPost title="Apps using Tambo now support MCP Sampling" author="Michael Milstead" date="October 21, 2025">
 
+Tambo’s goal is to discover, understand, and package up powerful UX patterns used in LLM-based AI web apps so developers can integrate them without needing to implement them from scratch.
+
+MCP has emerged as a leader in defining how servers can expose their functionalities to LLMs, and how LLM-connected client apps can interact with those servers to extend their abilities. Still, MCP leaves it up to app developers to determine how to allow their users to connect to MCP servers and how to present their capabilities within the app’s UI.
+
+At Tambo we’re planning to support all MCP features so your app becomes “MCP-enabled” without any extra work. We’ve previously added support for MCP tools (link), and we just added support for MCP Sampling.
+
+## What is MCP Sampling?
+
+Sampling is the ability of a connected MCP server to use the client’s connected LLM to do some processing. For example, an MCP server might have a tool called “...”
+
+## The UX of Sampling in Tambo
+
+In our Message component, we show toolcall UI as an expandable dropdown that describes to the user the work that the LLM is performing to take action or generate the appropriate response. Since an MCP sampling request is a way for an MCP server to use the LLM to do processing when determining its output, we consider a sampling request as a sort of “sub conversation” that is happening between the MCP tool and the LLM, so we represent it as an expandable list of messages within a toolcall’s UI.
+
+screenshot
+
+The phrasing of the sampling title “finished additional work” is customizable, and this default is based on the opinion that the end app user might be confused by any specific terminology about MCP or Sampling. At the end of the day, the end user just needs to know that the AI is “doing something”. To customize this, update the prop passed into the component within `message.tsx`.
+
+screenshot
+
+## How to customize Tambo's Sampling UI
+
+Behind the scenes, messages sent and returned through sampling requests are added to the user’s conversation thread in Tambo with the same structure as other messages, except that they have a parentId pointing to the assistant message that triggered the toolcall resulting in the sampling request. This way we can clearly see them as “sub messages” of a normal conversation message.
+
+To build your own custom sampling UI, use Tambo’s react SDK to get the list of messages for the current thread, and use the parentId field on the messages to group and show sampling messages in any way you prefer.
+
+code screenshot
+
+## How to enable MCP Sampling in your app using Tambo
+
+If you already have an app with Tambo running, you’ll need to:
+Upgrade your tambo-ai/react dependency to at least version 0.57.0 using npm install @tambo-ai/react@0.57.0
+Upgrade your installed Tambo Message component using npx tambo@latest upgrade message
+
+If you haven’t integrated Tambo into your web app yet, new installations will automatically contain MCP Sampling functionality and UI.
+
+## Up next for MCP Sampling support
+
+- Allow clientside sampling support for apps where the user is allowed to add their own mcp servers.
+- Allow user confirmation of sampling subflow
+- Show separate sampling requests separately within one toolcall
+
 </BlogPost>
