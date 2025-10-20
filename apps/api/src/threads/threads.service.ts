@@ -1069,7 +1069,6 @@ export class ThreadsService {
           },
           generationStage: GenerationStage.COMPLETE,
           statusMessage: "",
-          mcpAccessToken: "",
         });
         return;
       }
@@ -1117,10 +1116,15 @@ export class ThreadsService {
           ...convertMetadataToTools(advanceRequestDto.clientTools ?? []),
         ],
       };
-      const mcpAccessToken = await this.authService.generateMcpAccessToken(
+
+      // Only generate MCP access token if project has MCP servers configured
+      const hasMcpServers = await operations.projectHasMcpServers(
+        db,
         projectId,
-        thread.id,
       );
+      const mcpAccessToken = hasMcpServers
+        ? await this.authService.generateMcpAccessToken(projectId, thread.id)
+        : undefined;
 
       if (stream) {
         await this.generateStreamingResponse(
@@ -1215,7 +1219,7 @@ export class ThreadsService {
         },
         generationStage: resultingGenerationStage,
         statusMessage: resultingStatusMessage,
-        mcpAccessToken,
+        ...(mcpAccessToken && { mcpAccessToken }),
       });
 
       return;
@@ -1381,7 +1385,7 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     toolCallCounts: Record<string, number>,
     allTools: ToolRegistry,
-    mcpAccessToken: string,
+    mcpAccessToken: string | undefined,
     maxToolCallLimit: number,
   ): Promise<void> {
     return await Sentry.startSpan(
@@ -1427,7 +1431,7 @@ export class ThreadsService {
     advanceRequestDto: AdvanceThreadDto,
     toolCallCounts: Record<string, number>,
     allTools: ToolRegistry,
-    mcpAccessToken: string,
+    mcpAccessToken: string | undefined,
     maxToolCallLimit: number,
   ): Promise<void> {
     try {
@@ -2211,7 +2215,7 @@ async function syncThreadStatus(
   projectId: string,
   chunkCount: number,
   currentThreadMessage: ThreadMessage,
-  mcpAccessToken: string,
+  mcpAccessToken: string | undefined,
   logger?: Logger,
 ): Promise<AdvanceThreadResponseDto | undefined> {
   return await Sentry.startSpan(
@@ -2241,7 +2245,7 @@ async function syncThreadStatus(
           },
           generationStage: GenerationStage.CANCELLED,
           statusMessage: "cancelled",
-          mcpAccessToken,
+          ...(mcpAccessToken && { mcpAccessToken }),
         };
       }
 
@@ -2292,7 +2296,6 @@ function createMcpHandlers(
           },
           generationStage: GenerationStage.STREAMING_RESPONSE,
           statusMessage: `Streaming response...`,
-          mcpAccessToken: "",
         });
       }
       const response = await tamboBackend.llmClient.complete({
@@ -2326,7 +2329,6 @@ function createMcpHandlers(
         },
         generationStage: GenerationStage.STREAMING_RESPONSE,
         statusMessage: `Streaming response...`,
-        mcpAccessToken: "",
       });
 
       return {
