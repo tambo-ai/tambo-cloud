@@ -10,11 +10,13 @@ featured: true
 
 <BlogPost title="Apps using Tambo now support MCP Sampling" author="Michael Milstead" date="October 21, 2025">
 
+gif of sampling
+
 Tambo’s goal is to discover, understand, and package up powerful UX patterns used in LLM-based AI web apps so developers can integrate them without needing to implement them from scratch.
 
 MCP has emerged as a leader in defining how servers can expose their functionalities to LLMs, and how LLM-connected client apps can interact with those servers to extend their abilities. Still, MCP leaves it up to app developers to determine how to allow their users to connect to MCP servers and how to present their capabilities within the app’s UI.
 
-At Tambo we’re planning to support all MCP features so your app becomes “MCP-enabled” without any extra work. We’ve previously added support for MCP tools (link), and we just added support for MCP Sampling.
+At Tambo (link) we’re planning to support all MCP features so your app becomes “MCP-enabled” without any extra work. We’ve previously added support for MCP tools (link), and we just released support for MCP Sampling (link).
 
 ## What is MCP Sampling?
 
@@ -22,7 +24,7 @@ Sampling is the ability of a connected MCP server to use the client’s connecte
 
 ## The UX of Sampling in Tambo
 
-In our Message component, we show toolcall UI as an expandable dropdown that describes to the user the work that the LLM is performing to take action or generate the appropriate response. Since an MCP sampling request is a way for an MCP server to use the LLM to do processing when determining its output, we consider a sampling request as a sort of “sub conversation” that is happening between the MCP tool and the LLM, so we represent it as an expandable list of messages within a toolcall’s UI.
+In our `Message` component, we show toolcall UI as an expandable dropdown that describes to the user the work that the LLM is performing while taking action or generating an appropriate response. Since an MCP sampling request is a way for an MCP server to use the LLM to do processing when determining its output, we consider a sampling request as a sort of “sub conversation” that is happening between the MCP tool and the LLM, so we represent it as an expandable list of messages within a toolcall’s UI.
 
 screenshot
 
@@ -49,7 +51,7 @@ If you haven’t integrated Tambo into your web app yet, new installations will 
 ## Up next for MCP Sampling support
 
 - Allow clientside sampling support for apps where the user is allowed to add their own mcp servers.
-- Allow user confirmation of sampling subflow
-- Show separate sampling requests separately within one toolcall
+- Allow user confirmation of sampling subflow.
+- Show separate sampling requests separately within one toolcall.
 
 </BlogPost>
