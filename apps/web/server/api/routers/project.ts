@@ -1,5 +1,12 @@
 import { env } from "@/lib/env";
 import { customLlmParametersSchema } from "@/lib/llm-parameters";
+import {
+  apiKeySchema,
+  deleteApiKeyInput,
+  generateApiKeyInput,
+  generatedApiKeySchema,
+  getApiKeysInput,
+} from "@/lib/schemas/api-key";
 import { validateSafeURL } from "@/lib/urlSecurity";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import {
@@ -904,12 +911,8 @@ export const projectRouter = createTRPCRouter({
     }),
 
   generateApiKey: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        name: z.string(),
-      }),
-    )
+    .input(generateApiKeyInput)
+    .output(generatedApiKeySchema)
     .mutation(async ({ ctx, input }) => {
       const { projectId, name } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
@@ -938,19 +941,15 @@ export const projectRouter = createTRPCRouter({
     }),
 
   getApiKeys: protectedProcedure
-    .input(z.string())
+    .input(getApiKeysInput)
+    .output(z.array(apiKeySchema))
     .query(async ({ ctx, input: projectId }) => {
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
       return await operations.getApiKeys(ctx.db, projectId);
     }),
 
   removeApiKey: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        apiKeyId: z.string(),
-      }),
-    )
+    .input(deleteApiKeyInput)
     .mutation(async ({ ctx, input }) => {
       await operations.ensureProjectAccess(
         ctx.db,

@@ -1,21 +1,22 @@
-import { APIKeySchema } from "@/components/dashboard-components/project-details/api-key-list";
+import {
+  apiKeySchema,
+  deleteApiKeyInput,
+  generateApiKeyInput,
+  generatedApiKeySchema,
+  getApiKeysInput,
+} from "@/lib/schemas/api-key";
 import { z } from "zod";
 import { invalidateApiKeysCache } from "./helpers";
 import type { RegisterToolFn, ToolContext } from "./types";
 
 /**
  * Zod schema for the `fetchProjectApiKeys` function.
- * Defines the argument as a project ID string and the return type as an object with an `apiKeys` property,
- * which is an array of API key details.
+ * Defines the argument as a project ID string and the return type as an array of API key details.
  */
 export const fetchProjectApiKeysSchema = z
   .function()
-  .args(z.string().describe("The project ID to fetch API keys for"))
-  .returns(
-    z.object({
-      apiKeys: z.array(APIKeySchema),
-    }),
-  );
+  .args(getApiKeysInput)
+  .returns(z.array(apiKeySchema));
 
 /**
  * Zod schema for the `generateProjectApiKey` function.
@@ -24,30 +25,8 @@ export const fetchProjectApiKeysSchema = z
  */
 export const generateProjectApiKeySchema = z
   .function()
-  .args(
-    z
-      .object({
-        projectId: z
-          .string()
-          .describe("The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')."),
-        name: z.string().describe("The name of the API key"),
-      })
-      .describe("Parameters for generating a project API key"),
-  )
-  .returns(
-    z.object({
-      apiKey: z.string(),
-      id: z.string(),
-      name: z.string(),
-      partiallyHiddenKey: z.string().nullable(),
-      lastUsedAt: z.date().nullable(),
-      projectId: z.string(),
-      hashedKey: z.string(),
-      createdAt: z.date(),
-      updatedAt: z.date(),
-      createdByUserId: z.string(),
-    }),
-  );
+  .args(generateApiKeyInput)
+  .returns(generatedApiKeySchema);
 
 /**
  * Zod schema for the `deleteProjectApiKey` function.
@@ -56,16 +35,7 @@ export const generateProjectApiKeySchema = z
  */
 export const deleteProjectApiKeySchema = z
   .function()
-  .args(
-    z
-      .object({
-        projectId: z
-          .string()
-          .describe("The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')."),
-        apiKeyId: z.string().describe("The API key ID to delete"),
-      })
-      .describe("Parameters for deleting a project API key"),
-  )
+  .args(deleteApiKeyInput)
   .returns(
     z.object({
       deletedKey: z.void(),
@@ -82,7 +52,7 @@ export function registerApiKeyTools(
   /**
    * Registers a tool to fetch all API keys for a specific project.
    * @param {string} projectId - The project ID to fetch API keys for
-   * @returns {Object} Object containing an array of API key details
+   * @returns {Array} Array of API key details
    */
   registerTool({
     name: "fetchProjectApiKeys",
