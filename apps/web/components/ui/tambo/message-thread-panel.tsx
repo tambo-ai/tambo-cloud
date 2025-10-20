@@ -1,6 +1,5 @@
 "use client";
 
-import { useTamboManagementTools } from "@/components/ui/tambo/chatwithtambo/tools";
 import type { messageVariants } from "@/components/ui/tambo/message";
 import { Message, MessageContent } from "@/components/ui/tambo/message";
 import {
@@ -22,8 +21,10 @@ import {
   ThreadContentMessages,
 } from "@/components/ui/tambo/thread-content";
 import { ThreadDropdown } from "@/components/ui/tambo/thread-dropdown";
+import { registerAllTools } from "@/lib/tambo/tools/tool-registry";
 import { cn } from "@/lib/utils";
 import { useMessageThreadPanel } from "@/providers/message-thread-panel-provider";
+import { api, useTRPCClient } from "@/trpc/react";
 import {
   useTambo,
   type Suggestion,
@@ -168,7 +169,18 @@ export const MessageThreadPanel = React.forwardRef<
   HTMLDivElement,
   MessageThreadPanelProps
 >(({ className, variant, ...props }, ref) => {
-  useTamboManagementTools();
+  const { registerTool } = useTambo();
+  const trpcClient = useTRPCClient();
+  const utils = api.useUtils();
+
+  /**
+   * Registers all tambo tools with the thread.
+   * This effect runs once when the component mounts and registers tools for tambo
+   * which lets tambo use the tools to interact with the tambo dashboard.
+   */
+  React.useEffect(() => {
+    registerAllTools(registerTool, { trpcClient, utils });
+  }, [registerTool, trpcClient, utils]);
 
   const { data: session } = useSession();
   const isUserLoggedIn = !!session;
