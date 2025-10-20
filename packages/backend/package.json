@@ -25,7 +25,7 @@
     "@ag-ui/core": "^0.0.39",
     "@ag-ui/crewai": "^0.0.2",
     "@ag-ui/llamaindex": "^0.1.4",
-    "@ag-ui/mastra": "^0.1.1",
+    "@ag-ui/mastra": "^0.2.0",
     "@ai-sdk/anthropic": "^2.0.33",
     "@ai-sdk/google": "^2.0.23",
     "@ai-sdk/groq": "^2.0.24",
