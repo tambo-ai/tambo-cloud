@@ -24,7 +24,7 @@ export const fetchProjectByIdSchema = z
         projectId: z
           .string()
           .describe(
-            "The complete project ID to fetch (e.g., 'p_u2tgQg5U.43bbdf'). Must include the 'p_' prefix.",
+            "The complete project ID to fetch (e.g., 'p_u2tgQg5U.43bbdf').",
           ),
       })
       .describe("Arguments for fetching a specific project"),
@@ -159,13 +159,13 @@ export function registerProjectTools(
   /**
    * Registers a tool to fetch a specific project by its ID.
    * @param {Object} params - Parameters object
-   * @param {string} params.projectId - The complete project ID including the 'p_' prefix (e.g., 'p_u2tgQg5U.43bbdf')
+   * @param {string} params.projectId - The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')
    * @returns {Object} Project details including ID, name, user ID, settings, and timestamps
    */
   registerTool({
     name: "fetchProjectById",
     description:
-      "Fetches a specific project by its complete ID. The project ID must include the 'p_' prefix (e.g., 'p_u2tgQg5U.43bbdf'). Use fetchAllProjects first to get the correct project ID.",
+      "Fetches a specific project by its complete ID (e.g., 'p_u2tgQg5U.43bbdf'). Use fetchAllProjects first to get the correct project ID.",
     tool: async ({ projectId }: { projectId: string }) => {
       return await ctx.trpcClient.project.getProjectById.query(projectId);
     },

@@ -41,9 +41,7 @@ export const updateOAuthValidationSettingsSchema = z
       .object({
         projectId: z
           .string()
-          .describe(
-            "The complete project ID (e.g., 'p_u2tgQg5U.43bbdf'). Must include the 'p_' prefix.",
-          ),
+          .describe("The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')."),
         mode: z
           .nativeEnum(OAuthValidationMode)
           .describe("The OAuth validation mode"),
@@ -114,7 +112,7 @@ export function registerOAuthTools(
    * Registers a tool to update OAuth validation settings for a project.
    * Updates the OAuth validation mode and associated keys (secret key for symmetric, public key for asymmetric manual).
    * @param {Object} params - Parameters object
-   * @param {string} params.projectId - The complete project ID including 'p_' prefix
+   * @param {string} params.projectId - The complete project ID
    * @param {OAuthValidationMode} params.mode - The OAuth validation mode
    * @param {string} params.secretKey - The secret key for symmetric validation (required when mode is SYMMETRIC)
    * @param {string} params.publicKey - The public key for asymmetric manual validation (required when mode is ASYMMETRIC_MANUAL)
@@ -123,7 +121,7 @@ export function registerOAuthTools(
   registerTool({
     name: "updateOAuthValidationSettings",
     description:
-      "Updates OAuth validation settings for a project. Requires complete project ID with 'p_' prefix. Secret key is required for SYMMETRIC mode, public key is required for ASYMMETRIC_MANUAL mode.",
+      "Updates OAuth validation settings for a project. Requires complete project ID. Secret key is required for SYMMETRIC mode, public key is required for ASYMMETRIC_MANUAL mode.",
     tool: async ({
       projectId,
       mode,

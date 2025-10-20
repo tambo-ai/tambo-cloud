@@ -51,9 +51,7 @@ export const fetchProjectLlmSettingsSchema = z
       .object({
         projectId: z
           .string()
-          .describe(
-            "The complete project ID (e.g., 'p_u2tgQg5U.43bbdf'). Must include the 'p_' prefix.",
-          ),
+          .describe("The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')."),
       })
       .describe("Arguments for fetching project LLM settings"),
   )
@@ -99,9 +97,7 @@ export const updateProjectLlmSettingsSchema = z
       .object({
         projectId: z
           .string()
-          .describe(
-            "The complete project ID (e.g., 'p_u2tgQg5U.43bbdf'). Must include the 'p_' prefix.",
-          ),
+          .describe("The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')."),
         defaultLlmProviderName: z.string().optional(),
         defaultLlmModelName: z.string().nullable().optional(),
         customLlmModelName: z.string().nullable().optional(),
@@ -173,13 +169,13 @@ export function registerLlmTools(
    * Registers a tool to fetch LLM configuration settings for a project.
    * Returns the current LLM provider, model, custom settings, and agent settings.
    * @param {Object} params - Parameters object
-   * @param {string} params.projectId - The complete project ID including 'p_' prefix
+   * @param {string} params.projectId - The complete project ID
    * @returns {Object} LLM configuration including provider, model, custom settings, and agent settings
    */
   registerTool({
     name: "fetchProjectLlmSettings",
     description:
-      "Fetches LLM configuration settings for a project. Requires the complete project ID with 'p_' prefix.",
+      "Fetches LLM configuration settings for a project. Requires the complete project ID.",
     tool: async ({ projectId }: { projectId: string }) => {
       return await ctx.trpcClient.project.getProjectLlmSettings.query({
         projectId,
@@ -193,7 +189,7 @@ export function registerLlmTools(
    * Updates the default LLM provider, model, custom configurations, and custom LLM parameters.
    * IMPORTANT: After calling this tool, wait for it to complete, then show a NEW instance of the ProviderKeySection component to display the updated settings.
    * @param {Object} params - Parameters object
-   * @param {string} params.projectId - The complete project ID including 'p_' prefix
+   * @param {string} params.projectId - The complete project ID
    * @param {string} params.defaultLlmProviderName - The LLM provider name (e.g., 'openai', 'anthropic')
    * @param {string|null} params.defaultLlmModelName - The default model name
    * @param {string|null} params.customLlmModelName - Custom model name if using custom provider

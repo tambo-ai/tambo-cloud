@@ -14,9 +14,7 @@ export const updateProjectAgentSettingsSchema = z
       .object({
         projectId: z
           .string()
-          .describe(
-            "The complete project ID (e.g., 'p_u2tgQg5U.43bbdf'). Must include the 'p_' prefix.",
-          ),
+          .describe("The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')."),
         providerType: z
           .nativeEnum(AiProviderType)
           .describe("The provider type (LLM or AGENT)"),
@@ -65,7 +63,7 @@ export function registerAgentTools(
    * Registers a tool to update agent settings for a project.
    * Updates the provider type (LLM or AGENT) and agent-specific configurations.
    * @param {Object} params - Parameters object
-   * @param {string} params.projectId - The complete project ID including 'p_' prefix
+   * @param {string} params.projectId - The complete project ID
    * @param {AiProviderType} params.providerType - The provider type (LLM or AGENT)
    * @param {AgentProviderType} params.agentProviderType - The agent provider type (optional)
    * @param {string} params.agentUrl - The agent URL (optional)
@@ -76,7 +74,7 @@ export function registerAgentTools(
   registerTool({
     name: "updateProjectAgentSettings",
     description:
-      "Updates agent settings for a project, including provider type and agent-specific configurations. Requires complete project ID with 'p_' prefix.",
+      "Updates agent settings for a project, including provider type and agent-specific configurations. Requires complete project ID.",
     tool: async ({
       projectId,
       providerType,
