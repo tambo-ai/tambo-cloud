@@ -1633,7 +1633,7 @@ export class ThreadsService {
     originalRequest: AdvanceThreadDto,
     originalTools: OpenAI.Chat.Completions.ChatCompletionTool[],
     toolCallCounts: Record<string, number>,
-    mcpAccessToken: string,
+    mcpAccessToken: string | undefined,
     maxToolCallLimit: number,
     modelOptions: ModelOptions,
   ): Promise<void> {
@@ -1694,7 +1694,7 @@ export class ThreadsService {
           },
           generationStage: GenerationStage.CANCELLED,
           statusMessage: "Thread cancelled",
-          mcpAccessToken,
+          ...(mcpAccessToken && { mcpAccessToken }),
         });
         ttfbSpan.end();
         ttfbEnded = true;
@@ -1798,7 +1798,7 @@ export class ThreadsService {
           },
           generationStage: GenerationStage.STREAMING_RESPONSE,
           statusMessage: `Streaming response...`,
-          mcpAccessToken,
+          ...(mcpAccessToken && { mcpAccessToken }),
         });
 
         finalThreadMessage = currentThreadMessage;
@@ -1900,7 +1900,7 @@ export class ThreadsService {
           },
           generationStage: resultingGenerationStage,
           statusMessage: resultingStatusMessage,
-          mcpAccessToken,
+          ...(mcpAccessToken && { mcpAccessToken }),
         };
         queue.push(finalThreadMessageDto);
 
@@ -1940,7 +1940,7 @@ export class ThreadsService {
         },
         generationStage: resultingGenerationStage,
         statusMessage: resultingStatusMessage,
-        mcpAccessToken,
+        ...(mcpAccessToken && { mcpAccessToken }),
       });
     } catch (error) {
       // Capture streaming errors with full context
