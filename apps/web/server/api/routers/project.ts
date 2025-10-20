@@ -1,5 +1,4 @@
 import { env } from "@/lib/env";
-import { customLlmParametersSchema } from "@/lib/llm-parameters";
 import {
   apiKeySchema,
   deleteApiKeyInput,
@@ -7,6 +6,12 @@ import {
   generatedApiKeySchema,
   getApiKeysInput,
 } from "@/lib/schemas/api-key";
+import {
+  getProjectLlmSettingsInput,
+  projectLlmSettingsSchema,
+  updateProjectLlmSettingsInput,
+  updateProjectLlmSettingsOutputSchema,
+} from "@/lib/schemas/llm";
 import {
   agentHeadersSchema,
   createProjectInput,
@@ -433,7 +438,8 @@ export const projectRouter = createTRPCRouter({
     }),
 
   getProjectLlmSettings: protectedProcedure
-    .input(z.object({ projectId: z.string() }))
+    .input(getProjectLlmSettingsInput)
+    .output(projectLlmSettingsSchema)
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
@@ -647,17 +653,8 @@ export const projectRouter = createTRPCRouter({
     }),
 
   updateProjectLlmSettings: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        defaultLlmProviderName: z.string().nullable().optional(),
-        defaultLlmModelName: z.string().nullable().optional(),
-        customLlmModelName: z.string().nullable().optional(),
-        customLlmBaseURL: z.string().nullable().optional(),
-        maxInputTokens: z.number().nullable().optional(),
-        customLlmParameters: customLlmParametersSchema.nullable().optional(),
-      }),
-    )
+    .input(updateProjectLlmSettingsInput)
+    .output(updateProjectLlmSettingsOutputSchema)
     .mutation(async ({ ctx, input }) => {
       const {
         projectId,

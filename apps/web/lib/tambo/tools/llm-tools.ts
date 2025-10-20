@@ -1,3 +1,10 @@
+import {
+  getProjectLlmSettingsInput,
+  llmProviderConfigSchema,
+  projectLlmSettingsSchema,
+  updateProjectLlmSettingsInput,
+  updateProjectLlmSettingsOutputSchema,
+} from "@/lib/schemas/llm";
 import type { CustomLlmParameters } from "@tambo-ai-cloud/core";
 import { z } from "zod";
 import { invalidateLlmSettingsCache } from "./helpers";
@@ -10,35 +17,7 @@ import type { RegisterToolFn, ToolContext } from "./types";
 export const fetchAvailableLlmModelsSchema = z
   .function()
   .args()
-  .returns(
-    z.record(
-      z.string(),
-      z.object({
-        apiName: z.string(),
-        displayName: z.string(),
-        docLinkRoot: z.string().optional(),
-        apiKeyLink: z.string().optional(),
-        isCustomProvider: z.boolean().optional(),
-        requiresBaseUrl: z.boolean().optional(),
-        isDefaultProvider: z.boolean().optional(),
-        models: z
-          .record(
-            z.string(),
-            z.object({
-              displayName: z.string(),
-              apiName: z.string(),
-              inputTokenLimit: z.union([z.number(), z.string()]).optional(),
-              outputTokenLimit: z.union([z.number(), z.string()]).optional(),
-              status: z.enum(["tested", "untested", "deprecated"]).optional(),
-              releaseDate: z.string().optional(),
-              modelSpecificParams: z.record(z.string(), z.any()).optional(),
-            }),
-          )
-          .optional(),
-        providerSpecificParams: z.record(z.string(), z.any()).optional(),
-      }),
-    ),
-  );
+  .returns(llmProviderConfigSchema);
 
 /**
  * Zod schema for the `fetchProjectLlmSettings` function.
@@ -46,44 +25,8 @@ export const fetchAvailableLlmModelsSchema = z
  */
 export const fetchProjectLlmSettingsSchema = z
   .function()
-  .args(
-    z
-      .object({
-        projectId: z
-          .string()
-          .describe("The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')."),
-      })
-      .describe("Arguments for fetching project LLM settings"),
-  )
-  .returns(
-    z.object({
-      defaultLlmProviderName: z.string().nullable(),
-      defaultLlmModelName: z.string().nullable(),
-      customLlmModelName: z.string().nullable(),
-      customLlmBaseURL: z.string().nullable(),
-      maxInputTokens: z.number().nullable(),
-      providerType: z.string().nullable(),
-      agentProviderType: z.string().nullable(),
-      agentUrl: z.string().nullable(),
-      agentName: z.string().nullable(),
-      agentHeaders: z.record(z.string(), z.string()).nullable(),
-      customLlmParameters: z
-        .record(
-          z.string().describe("Provider name"),
-          z.record(
-            z.string().describe("Model name"),
-            z.record(
-              z.string().describe("Parameter name"),
-              z.any().describe("Parameter value"),
-            ),
-          ),
-        )
-        .nullable()
-        .describe(
-          'Structure: { "providerName": { "modelName": { "parameterName": value } } }',
-        ),
-    }),
-  );
+  .args(getProjectLlmSettingsInput)
+  .returns(projectLlmSettingsSchema);
 
 /**
  * Zod schema for the `updateProjectLlmSettings` function.
@@ -92,55 +35,8 @@ export const fetchProjectLlmSettingsSchema = z
  */
 export const updateProjectLlmSettingsSchema = z
   .function()
-  .args(
-    z
-      .object({
-        projectId: z
-          .string()
-          .describe("The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')."),
-        defaultLlmProviderName: z.string().optional(),
-        defaultLlmModelName: z.string().nullable().optional(),
-        customLlmModelName: z.string().nullable().optional(),
-        customLlmBaseURL: z.string().nullable().optional(),
-        maxInputTokens: z.number().nullable().optional(),
-        customLlmParameters: z
-          .record(
-            z.string().describe("Provider name (e.g., 'openai', 'anthropic')"),
-            z.record(
-              z
-                .string()
-                .describe("Model name (e.g., 'gpt-4o', 'gpt-5-2025-08-07')"),
-              z.record(
-                z
-                  .string()
-                  .describe(
-                    "Parameter name (e.g., 'reasoningEffort', 'temperature')",
-                  ),
-                z.any().describe("Parameter value (e.g., 'high', 0.7, true)"),
-              ),
-            ),
-          )
-          .nullable()
-          .optional()
-          .describe(
-            'Custom LLM parameters. Structure: { "providerName": { "modelName": { "parameterName": parameterValue } } }. Example: { "openai": { "gpt-5-2025-08-07": { "reasoningEffort": "high", "reasoningSummary": "auto" } } }',
-          ),
-      })
-      .describe("The LLM settings to update"),
-  )
-  .returns(
-    z.object({
-      defaultLlmProviderName: z.string().nullable(),
-      defaultLlmModelName: z.string().nullable(),
-      customLlmModelName: z.string().nullable(),
-      customLlmBaseURL: z.string().nullable(),
-      maxInputTokens: z.number().nullable(),
-      customLlmParameters: z
-        .record(z.string(), z.record(z.string(), z.record(z.string(), z.any())))
-        .nullable()
-        .optional(),
-    }),
-  );
+  .args(updateProjectLlmSettingsInput)
+  .returns(updateProjectLlmSettingsOutputSchema);
 
 /**
  * Register LLM provider settings management tools
