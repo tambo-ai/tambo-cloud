@@ -28,9 +28,41 @@ At Tambo, we're building comprehensive MCP support so your app becomes "MCP-enab
 
 [MCP Sampling](https://modelcontextprotocol.io/docs/learn/client-concepts#sampling) is the ability of an MCP server to use the client’s LLM. For example, when a user asks "What's the weather like today?", a Weather MCP server will fetch the raw temperature and forecast data. With sampling, it can then use _the app's LLM_ to summarize the data before showing it to the user.
 
-Without MCP sampling, the server would need its own AI setup and wouldn't have access to your conversation history or user context.
+Without MCP sampling, the server would need its own AI setup.
 
-With MCP Sampling through Tambo, the server uses Tambo's AI setup and gains full context about the conversation, user, and app state.
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant S as Weather MCP Server
+    participant D as Data Source
+    participant L as Server's own LLM
+
+    U->>S: What's the weather in San Francisco?
+    S->>D: Fetch weather data for city: "San Francisco"
+    D-->>S: Return raw data: 68°F, partly cloudy, 15mph winds
+    S->>L: Summarize this weather data: 68°F, partly cloudy, 15mph winds, SF
+    L-->>S: It's 68°F and partly cloudy in San Francisco.
+    S-->>U: "It's 68°F and partly cloudy in San Francisco."
+
+```
+
+With MCP Sampling through Tambo, the server uses Tambo's AI setup.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant S as Weather MCP Server
+    participant D as Data Source
+    participant L as Client's LLM (Tambo)
+
+    U->>S: What's the weather in San Francisco?
+    S->>D: Fetch weather data for city: "San Francisco"
+    D-->>S: Return raw data: 68°F, partly cloudy, 15mph winds
+    S->>L: Summarize this weather data: 68°F, partly cloudy, 15mph winds, SF
+    L-->>S: It's 68°F and partly cloudy in San Francisco.
+    S-->>U: "It's 68°F and partly cloudy in San Francisco."
+
+```
 
 ## The UX of Sampling in Tambo
 
