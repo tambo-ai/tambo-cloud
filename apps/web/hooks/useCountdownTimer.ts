@@ -6,12 +6,14 @@ export function useCountdownTimer(
 ) {
   const [countdown, setCountdown] = useState(initialSeconds);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isActive, setIsActive] = useState(false);
 
   const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    setIsActive(false);
   }, []);
 
   const startTimer = useCallback(() => {
@@ -36,6 +38,7 @@ export function useCountdownTimer(
         return prev - 1;
       });
     }, 1000);
+    setIsActive(true);
   }, [initialSeconds, onComplete, stopTimer]);
 
   // Clean up timer on unmount
@@ -49,7 +52,7 @@ export function useCountdownTimer(
 
   return {
     countdown,
-    isActive: timerRef.current !== null,
+    isActive,
     startTimer,
     stopTimer,
   };

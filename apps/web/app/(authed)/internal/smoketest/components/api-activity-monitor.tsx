@@ -29,10 +29,7 @@ export function ApiActivityMonitor({
   const [currentDuration, setCurrentDuration] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!state.isRunning || !state.startTime) {
-      setCurrentDuration(state.duration);
-      return;
-    }
+    if (!state.isRunning || !state.startTime) return;
 
     const interval = setInterval(() => {
       setCurrentDuration((Date.now() - state.startTime!) / 1000);
@@ -40,6 +37,8 @@ export function ApiActivityMonitor({
 
     return () => clearInterval(interval);
   }, [state.isRunning, state.startTime, state.duration]);
+
+  const displayDuration = state.isRunning ? currentDuration : state.duration;
 
   return (
     <div className="flex items-center gap-2 p-2 text-sm">
@@ -52,7 +51,7 @@ export function ApiActivityMonitor({
         )}
       </span>
       <span className="w-20">
-        {currentDuration !== null ? `${currentDuration.toFixed(1)}s` : "-"}
+        {displayDuration !== null ? `${displayDuration.toFixed(1)}s` : "-"}
       </span>
       <Button
         size="sm"

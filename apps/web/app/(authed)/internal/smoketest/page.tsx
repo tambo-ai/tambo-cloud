@@ -15,6 +15,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { z } from "zod";
@@ -97,7 +98,7 @@ export default function SmokePage() {
     },
   });
 
-  const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const wrappedApis = useWrappedApis(
     setApiStates,
@@ -120,28 +121,20 @@ export default function SmokePage() {
   }, [wrappedApis]);
 
   useEffect(() => {
-    if (isAnyApiRunning && !pollInterval) {
-      const interval = setInterval(() => {
-        console.log("polling");
-        setApiStates({
-          aqi: wrappedApis.aqi.getState(),
-          forecast: wrappedApis.forecast.getState(),
-          history: wrappedApis.history.getState(),
-          currentWeather: wrappedApis.currentWeather.getState(),
-        });
-      }, 1000);
-      setPollInterval(interval);
-    } else if (!isAnyApiRunning && pollInterval) {
-      clearInterval(pollInterval);
-      setPollInterval(null);
+    if (isAnyApiRunning && !pollIntervalRef.current) {
+      pollIntervalRef.current = setInterval(updateApiStates, 1000);
+    } else if (!isAnyApiRunning && pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
     }
 
     return () => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
       }
     };
-  }, [apiStates, wrappedApis, pollInterval, isAnyApiRunning]);
+  }, [isAnyApiRunning, updateApiStates]);
 
   const tools: Record<string, TamboTool> = useMemo(
     () =>

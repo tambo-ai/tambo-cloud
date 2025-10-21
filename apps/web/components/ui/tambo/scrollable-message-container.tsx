@@ -37,10 +37,11 @@ export const ScrollableMessageContainer = React.forwardRef<
   React.useImperativeHandle(ref, () => scrollContainerRef.current!, []);
 
   // Create a dependency that represents all content that should trigger autoscroll
+  const messages = thread?.messages;
   const messagesContent = React.useMemo(() => {
-    if (!thread?.messages) return null;
+    if (!messages) return null;
 
-    return thread.messages.map((message) => ({
+    return messages.map((message) => ({
       id: message.id,
       content: message.content,
       tool_calls: message.tool_calls,
@@ -48,7 +49,7 @@ export const ScrollableMessageContainer = React.forwardRef<
       reasoning: message.reasoning,
       componentState: message.componentState,
     }));
-  }, [thread?.messages]);
+  }, [messages]);
 
   const generationStage = thread?.generationStage ?? "IDLE";
 

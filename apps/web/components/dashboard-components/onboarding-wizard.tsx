@@ -16,7 +16,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CreateProjectDialog } from "./create-project-dialog";
 import { CommandCopyButton } from "./onboarding/command-copy-button";
 import { TemplateCard } from "./onboarding/template-card";
@@ -185,13 +185,7 @@ export function OnboardingWizard({
     useState<OnboardingStepId>("welcome");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
-  // Reset state when dialog opens to ensure users always start from the beginning
-  useEffect(() => {
-    if (open) {
-      setCurrentStepId("welcome");
-      setSelectedTemplate(null);
-    }
-  }, [open]);
+  // Reset state when dialog opens via onOpenChange to avoid setState in effects
 
   const currentStep = steps.find((step) => step.id === currentStepId);
 
@@ -463,7 +457,16 @@ export function OnboardingWizard({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next) {
+          setCurrentStepId("welcome");
+          setSelectedTemplate(null);
+        }
+        onOpenChange(next);
+      }}
+    >
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="sr-only">Onboarding Wizard</DialogTitle>

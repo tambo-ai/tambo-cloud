@@ -23,9 +23,25 @@ const containerVariants = {
   },
 };
 
+// Static component to satisfy react-hooks/static-components
+function LoadingSpinner() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-col items-center justify-center min-h-[60vh]"
+    >
+      <Icons.spinner className="h-8 w-8 animate-spin text-foreground" />
+      <p className="mt-4 text-sm text-foreground">Loading...</p>
+    </motion.div>
+  );
+}
+
 export default function DashboardPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  // Allow auto-open exactly once when there are no projects
+  const [autoOpenEnabled, setAutoOpenEnabled] = useState(true);
   const [messagesPeriod, setMessagesPeriod] = useState("all time");
   const [usersPeriod, setUsersPeriod] = useState("all time");
   const { toast } = useToast();
@@ -63,12 +79,12 @@ export default function DashboardPage() {
     }
   }, [projectLoadingError, toast]);
 
-  // Open onboarding wizard for new users (no projects), otherwise use regular create dialog
-  useEffect(() => {
-    if (!isProjectsLoading && projects && projects.length === 0) {
-      setIsOnboardingOpen(true);
-    }
-  }, [isProjectsLoading, projects]);
+  // Derive auto-open condition instead of setting state in an effect
+  const shouldAutoOpenOnboarding =
+    autoOpenEnabled &&
+    !isProjectsLoading &&
+    !!projects &&
+    projects.length === 0;
 
   const { mutateAsync: createProject } =
     api.project.createProject2.useMutation();
@@ -109,17 +125,6 @@ export default function DashboardPage() {
     { value: "per month", label: "last 30 days" },
     { value: "per week", label: "last 7 days" },
   ];
-
-  const LoadingSpinner = () => (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center min-h-[60vh]"
-    >
-      <Icons.spinner className="h-8 w-8 animate-spin text-foreground" />
-      <p className="mt-4 text-sm text-foreground">Loading...</p>
-    </motion.div>
-  );
 
   // Show loading spinner while checking auth or loading projects
   if (isAuthLoading || isProjectsLoading) {
@@ -162,8 +167,11 @@ export default function DashboardPage() {
 
         {/* Onboarding wizard for new users (no projects) */}
         <OnboardingWizard
-          open={isOnboardingOpen}
-          onOpenChange={setIsOnboardingOpen}
+          open={isOnboardingOpen || shouldAutoOpenOnboarding}
+          onOpenChange={(open) => {
+            setIsOnboardingOpen(open);
+            if (!open) setAutoOpenEnabled(false);
+          }}
           onSubmit={handleCreateProject}
         />
 

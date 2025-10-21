@@ -49,18 +49,22 @@ export function SpeechTranscription({
   useEffect(() => {
     if (!listening) return;
 
-    // If we have a transcript, show audio detected
+    // If we have a transcript, signal detection asynchronously to
+    // avoid synchronous setState in an effect body
     if (transcript) {
-      setAudioDetected(true);
-      // Show transcript whenever we detect speech
-      setShowTranscript(true);
-
+      const start = setTimeout(() => {
+        setAudioDetected(true);
+        setShowTranscript(true);
+      }, 0);
       // Use a longer timeout for better UX
-      const timeout = setTimeout(() => {
+      const stop = setTimeout(() => {
         setAudioDetected(false);
       }, 1000);
 
-      return () => clearTimeout(timeout);
+      return () => {
+        clearTimeout(start);
+        clearTimeout(stop);
+      };
     }
   }, [transcript, listening]);
 

@@ -71,7 +71,10 @@ interface ResizablePanelProps extends React.HTMLAttributes<HTMLDivElement> {
 const ResizablePanel = React.forwardRef<HTMLDivElement, ResizablePanelProps>(
   ({ className, children, isOpen = true, ...props }, ref) => {
     const [width, setWidth] = React.useState(isOpen ? 400 : 0);
-    const isResizing = React.useRef(false);
+    // Use a ref to gate mousemove performance-sensitive checks,
+    // and a piece of state to drive UI classes without reading the ref during render
+    const isResizingRef = React.useRef(false);
+    const [isResizingUi, setIsResizingUi] = React.useState(false);
     const lastUpdateRef = React.useRef(0);
 
     // Animate width when isOpen changes
@@ -86,7 +89,7 @@ const ResizablePanel = React.forwardRef<HTMLDivElement, ResizablePanelProps>(
     }, [isOpen]);
 
     const handleMouseMove = React.useCallback((e: MouseEvent) => {
-      if (!isResizing.current) return;
+      if (!isResizingRef.current) return;
 
       const now = Date.now();
       if (now - lastUpdateRef.current < 16) return;
@@ -116,7 +119,7 @@ const ResizablePanel = React.forwardRef<HTMLDivElement, ResizablePanelProps>(
         ref={ref}
         className={cn(
           "h-full flex flex-col bg-background relative",
-          !isResizing.current && "transition-[width] duration-300 ease-in-out",
+          !isResizingUi && "transition-[width] duration-300 ease-in-out",
           "overflow-x-auto border-l border-border",
           className,
         )}
@@ -132,14 +135,16 @@ const ResizablePanel = React.forwardRef<HTMLDivElement, ResizablePanelProps>(
           className="absolute top-0 bottom-0 left-0 w-1 cursor-ew-resize hover:bg-gray-300 transition-colors z-50"
           onMouseDown={(e) => {
             e.preventDefault();
-            isResizing.current = true;
+            isResizingRef.current = true;
+            setIsResizingUi(true);
             document.body.style.cursor = "ew-resize";
             document.body.style.userSelect = "none";
             document.addEventListener("mousemove", handleMouseMove);
             document.addEventListener(
               "mouseup",
               () => {
-                isResizing.current = false;
+                isResizingRef.current = false;
+                setIsResizingUi(false);
                 document.body.style.cursor = "";
                 document.body.style.userSelect = "";
                 document.removeEventListener("mousemove", handleMouseMove);
