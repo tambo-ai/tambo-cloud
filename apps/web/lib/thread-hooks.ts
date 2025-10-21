@@ -22,7 +22,7 @@ export function useMergedRef<T>(...refs: React.Ref<T>[]) {
         // Update `.current` without a direct assignment expression so the
         // compiler rule doesn't flag a mutation of hook inputs.
         // This still updates the ref value as intended.
-         
+
         Reflect.set(ref as object, "current", element);
       }
     }
