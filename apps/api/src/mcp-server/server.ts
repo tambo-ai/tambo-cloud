@@ -20,7 +20,7 @@ export async function createMcpServer(
     },
     {
       capabilities: {
-        tools: {},
+        prompts: { listChanged: true },
       },
       // Enable notification debouncing for specific methods
       debouncedNotificationMethods: [
