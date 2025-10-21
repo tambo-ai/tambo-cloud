@@ -13,6 +13,12 @@ import {
   updateProjectLlmSettingsOutputSchema,
 } from "@/lib/schemas/llm";
 import {
+  getOAuthValidationSettingsInput,
+  oauthValidationSettingsSchema,
+  updateOAuthValidationSettingsInput,
+  updateOAuthValidationSettingsOutputSchema,
+} from "@/lib/schemas/oauth";
+import {
   agentHeadersSchema,
   createProjectInput,
   createProjectOutputSchema,
@@ -1115,7 +1121,8 @@ export const projectRouter = createTRPCRouter({
   // -------------------------------------------------------------------------
 
   getOAuthValidationSettings: protectedProcedure
-    .input(z.object({ projectId: z.string() }))
+    .input(getOAuthValidationSettingsInput)
+    .output(oauthValidationSettingsSchema)
     .query(async ({ ctx, input }) => {
       const { projectId } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
@@ -1128,6 +1135,7 @@ export const projectRouter = createTRPCRouter({
       if (!settings) {
         return {
           mode: OAuthValidationMode.NONE,
+          publicKey: null,
           hasSecretKey: false,
           hasPublicKey: false,
         };
@@ -1142,17 +1150,8 @@ export const projectRouter = createTRPCRouter({
     }),
 
   updateOAuthValidationSettings: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        mode: z.enum(
-          Object.values(OAuthValidationMode) as [OAuthValidationMode],
-        ),
-        secretKey: z.string().optional(),
-        publicKey: z.string().optional(),
-        isTokenRequired: z.boolean().optional(),
-      }),
-    )
+    .input(updateOAuthValidationSettingsInput)
+    .output(updateOAuthValidationSettingsOutputSchema)
     .mutation(async ({ ctx, input }) => {
       const { projectId, mode, secretKey, publicKey, isTokenRequired } = input;
       await operations.ensureProjectAccess(ctx.db, projectId, ctx.user.id);
