@@ -23,12 +23,14 @@ export const updateProjectLlmSettingsInput = z.object({
     .string()
     .nullable()
     .optional()
-    .describe("The LLM provider name (e.g., 'openai', 'anthropic')"),
+    .describe(
+      "The LLM provider name (e.g., 'openai', 'anthropic') that will be used as the provider for this project",
+    ),
   defaultLlmModelName: z
     .string()
     .nullable()
     .optional()
-    .describe("The default model name"),
+    .describe("The model name that will be used as the model for this project"),
   customLlmModelName: z
     .string()
     .nullable()
