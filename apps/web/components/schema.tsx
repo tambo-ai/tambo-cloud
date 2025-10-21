@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 interface SchemaProps {
   jsonLd: Record<string, any> | Record<string, any>[];
@@ -11,18 +11,16 @@ interface SchemaProps {
  * Usage: <Schema jsonLd={generateWebsiteSchema()} />
  */
 export function Schema({ jsonLd }: SchemaProps) {
-  const [markup, setMarkup] = useState<string>("");
-
-  useEffect(() => {
-    // Only set the markup on the client side to avoid hydration issues
-    setMarkup(
+  const markup = useMemo(
+    () =>
       Array.isArray(jsonLd)
         ? jsonLd.map((item) => JSON.stringify(item)).join("")
         : JSON.stringify(jsonLd),
-    );
-  }, [jsonLd]);
+    [jsonLd],
+  );
 
-  if (!markup) return null;
+  // Only render on the client to avoid hydration issues
+  if (typeof window === "undefined") return null;
 
   return (
     <script

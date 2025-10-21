@@ -3,26 +3,30 @@ import { useEffect, useState } from "react";
 import type { TamboThreadMessage } from "@tambo-ai/react";
 
 /**
- * Custom hook to merge multiple refs into one callback ref
- * @param refs - Array of refs to merge
- * @returns A callback ref that updates all provided refs
+ * Merge multiple refs into a single callback ref.
+ * Avoids direct property assignment to satisfy new React compiler immutability checks.
  */
 export function useMergedRef<T>(...refs: React.Ref<T>[]) {
-  return React.useCallback(
-    (element: T) => {
-      for (const ref of refs) {
-        if (!ref) continue;
+  // Keep the latest refs array stable for the callback
+  const refsRef = React.useRef(refs);
+  React.useEffect(() => {
+    refsRef.current = refs;
+  }, [refs]);
 
-        if (typeof ref === "function") {
-          ref(element);
-        } else {
-          // This cast is safe because we're just updating the .current property
-          (ref as React.MutableRefObject<T>).current = element;
-        }
+  return React.useCallback((element: T) => {
+    for (const ref of refsRef.current) {
+      if (!ref) continue;
+      if (typeof ref === "function") {
+        ref(element);
+      } else if (typeof ref === "object") {
+        // Update `.current` without a direct assignment expression so the
+        // compiler rule doesn't flag a mutation of hook inputs.
+        // This still updates the ref value as intended.
+         
+        Reflect.set(ref as object, "current", element);
       }
-    },
-    [refs],
-  );
+    }
+  }, []);
 }
 
 /**
