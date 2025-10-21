@@ -12,11 +12,14 @@ import type { RegisterToolFn, ToolContext } from "./types";
 export const fetchTotalMessageUsageSchema = z
   .function()
   .args(
-    z
-      .string()
-      .describe(
-        "Time period filter: 'all time', 'per month', or 'per week'. Defaults to 'all time'",
-      ),
+    z.object({
+      period: z
+        .string()
+        .optional()
+        .describe(
+          "Time period filter: 'all time', 'per month', or 'per week'. Defaults to 'all time'",
+        ),
+    }),
   )
   .returns(
     totalMessageUsageSchema.extend({
@@ -31,11 +34,14 @@ export const fetchTotalMessageUsageSchema = z
 export const fetchTotalUsersSchema = z
   .function()
   .args(
-    z
-      .string()
-      .describe(
-        "Time period filter: 'all time', 'per month', or 'per week'. Defaults to 'all time'",
-      ),
+    z.object({
+      period: z
+        .string()
+        .optional()
+        .describe(
+          "Time period filter: 'all time', 'per month', or 'per week'. Defaults to 'all time'",
+        ),
+    }),
   )
   .returns(
     totalUsersSchema.extend({
@@ -52,16 +58,17 @@ export function registerDashboardTools(
 ) {
   /**
    * Registers a tool to fetch total message usage statistics.
-   * @param {string} period - Time period filter ('all time', 'per month', 'per week'). Defaults to 'all time' if not specified.
+   * @param {Object} params - Parameters object
+   * @param {string} params.period - Time period filter ('all time', 'per month', 'per week'). Defaults to 'all time' if not specified.
    * @returns {Object} Object containing total message count and period
    */
   registerTool({
     name: "fetchTotalMessageUsage",
     description:
       "Fetches total message usage statistics with period filtering. Period can be 'all time', 'per month', or 'per week'.",
-    tool: async (period: string) => {
+    tool: async (params: { period?: string }) => {
       // Use 'all time' as default if period is not provided or invalid
-      const validPeriod = period || "all time";
+      const validPeriod = params.period || "all time";
       const result = await ctx.trpcClient.project.getTotalMessageUsage.query({
         period: validPeriod,
       });
@@ -75,16 +82,17 @@ export function registerDashboardTools(
 
   /**
    * Registers a tool to fetch total user count statistics.
-   * @param {string} period - Time period filter ('all time', 'per month', 'per week'). Defaults to 'all time' if not specified.
+   * @param {Object} params - Parameters object
+   * @param {string} params.period - Time period filter ('all time', 'per month', 'per week'). Defaults to 'all time' if not specified.
    * @returns {Object} Object containing total user count and period
    */
   registerTool({
     name: "fetchTotalUsers",
     description:
       "Fetches total user count statistics with period filtering. Period can be 'all time', 'per month', or 'per week'.",
-    tool: async (period: string) => {
+    tool: async (params: { period?: string }) => {
       // Use 'all time' as default if period is not provided or invalid
-      const validPeriod = period || "all time";
+      const validPeriod = params.period || "all time";
       const result = await ctx.trpcClient.project.getTotalUsers.query({
         period: validPeriod,
       });
