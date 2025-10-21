@@ -122,14 +122,7 @@ export default function SmokePage() {
 
   useEffect(() => {
     if (isAnyApiRunning && !pollIntervalRef.current) {
-      pollIntervalRef.current = setInterval(() => {
-        setApiStates({
-          aqi: wrappedApis.aqi.getState(),
-          forecast: wrappedApis.forecast.getState(),
-          history: wrappedApis.history.getState(),
-          currentWeather: wrappedApis.currentWeather.getState(),
-        });
-      }, 1000);
+      pollIntervalRef.current = setInterval(updateApiStates, 1000);
     } else if (!isAnyApiRunning && pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
@@ -141,7 +134,7 @@ export default function SmokePage() {
         pollIntervalRef.current = null;
       }
     };
-  }, [apiStates, wrappedApis, isAnyApiRunning]);
+  }, [isAnyApiRunning, updateApiStates]);
 
   const tools: Record<string, TamboTool> = useMemo(
     () =>
