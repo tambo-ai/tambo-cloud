@@ -54,55 +54,121 @@ export const updateProjectLlmSettingsInput = z.object({
 
 // Output schemas
 export const projectLlmSettingsSchema = z.object({
-  defaultLlmProviderName: z.string().nullable(),
-  defaultLlmModelName: z.string().nullable(),
-  customLlmModelName: z.string().nullable(),
-  customLlmBaseURL: z.string().nullable(),
-  maxInputTokens: z.number().nullable(),
-  providerType: z.nativeEnum(AiProviderType).nullish(),
-  agentProviderType: z.nativeEnum(AgentProviderType).nullish(),
-  agentUrl: z.string().nullable(),
-  agentName: z.string().nullable(),
-  agentHeaders: agentHeadersSchema.nullable(),
-  customLlmParameters: customLlmParametersSchema.nullable(),
+  defaultLlmProviderName: z
+    .string()
+    .nullable()
+    .describe("The LLM provider name (e.g., 'openai', 'anthropic')"),
+  defaultLlmModelName: z.string().nullable().describe("The default model name"),
+  customLlmModelName: z
+    .string()
+    .nullable()
+    .describe("Custom model name if using custom provider"),
+  customLlmBaseURL: z
+    .string()
+    .nullable()
+    .describe("Custom base URL for LLM API"),
+  maxInputTokens: z.number().nullable().describe("Maximum input tokens"),
+  providerType: z
+    .nativeEnum(AiProviderType)
+    .nullish()
+    .describe("AI provider type (LLM or AGENT)"),
+  agentProviderType: z
+    .nativeEnum(AgentProviderType)
+    .nullish()
+    .describe("Agent provider type if using agent mode"),
+  agentUrl: z.string().nullable().describe("Agent URL if using agent mode"),
+  agentName: z.string().nullable().describe("Agent name if using agent mode"),
+  agentHeaders: agentHeadersSchema
+    .nullable()
+    .describe("Custom headers for agent requests"),
+  customLlmParameters: customLlmParametersSchema
+    .nullable()
+    .describe("Custom LLM parameters"),
 });
 
 export const updateProjectLlmSettingsOutputSchema = z.object({
-  defaultLlmProviderName: z.string().nullable(),
-  defaultLlmModelName: z.string().nullable(),
-  customLlmModelName: z.string().nullable(),
-  customLlmBaseURL: z.string().nullable(),
-  maxInputTokens: z.number().nullable(),
-  customLlmParameters: customLlmParametersSchema.nullable(),
+  defaultLlmProviderName: z
+    .string()
+    .nullable()
+    .describe("The LLM provider name (e.g., 'openai', 'anthropic')"),
+  defaultLlmModelName: z.string().nullable().describe("The default model name"),
+  customLlmModelName: z
+    .string()
+    .nullable()
+    .describe("Custom model name if using custom provider"),
+  customLlmBaseURL: z
+    .string()
+    .nullable()
+    .describe("Custom base URL for LLM API"),
+  maxInputTokens: z.number().nullable().describe("Maximum input tokens"),
+  customLlmParameters: customLlmParametersSchema
+    .nullable()
+    .describe("Custom LLM parameters"),
 });
 
 // For fetchAvailableLlmModels - this returns the LlmProviderConfig from core
-export const llmProviderConfigSchema = z.record(
-  z.string(),
-  z.object({
-    apiName: z.string(),
-    displayName: z.string(),
-    docLinkRoot: z.string().optional(),
-    apiKeyLink: z.string().optional(),
-    isCustomProvider: z.boolean().optional(),
-    requiresBaseUrl: z.boolean().optional(),
-    isDefaultProvider: z.boolean().optional(),
-    models: z
-      .record(
-        z.string(),
-        z.object({
-          displayName: z.string(),
-          apiName: z.string(),
-          inputTokenLimit: z.number().optional(),
-          outputTokenLimit: z.number().optional(),
-          status: z.enum(["tested", "untested", "deprecated"]).optional(),
-          releaseDate: z.string().optional(),
-          notes: z.string().optional(),
-          docLink: z.string().optional(),
-          modelSpecificParams: z.record(z.string(), z.any()).optional(),
-        }),
-      )
-      .optional(),
-    providerSpecificParams: z.record(z.string(), z.any()).optional(),
-  }),
-);
+export const llmProviderConfigSchema = z
+  .record(
+    z.string(),
+    z.object({
+      apiName: z.string().describe("API name for the provider"),
+      displayName: z.string().describe("Human-readable display name"),
+      docLinkRoot: z.string().optional().describe("Root URL for documentation"),
+      apiKeyLink: z
+        .string()
+        .optional()
+        .describe("Link to get API key for this provider"),
+      isCustomProvider: z
+        .boolean()
+        .optional()
+        .describe("Whether this is a custom provider"),
+      requiresBaseUrl: z
+        .boolean()
+        .optional()
+        .describe("Whether this provider requires a custom base URL"),
+      isDefaultProvider: z
+        .boolean()
+        .optional()
+        .describe("Whether this is a default provider"),
+      models: z
+        .record(
+          z.string(),
+          z.object({
+            displayName: z.string().describe("Human-readable model name"),
+            apiName: z.string().describe("API name for the model"),
+            inputTokenLimit: z
+              .number()
+              .optional()
+              .describe("Maximum input tokens"),
+            outputTokenLimit: z
+              .number()
+              .optional()
+              .describe("Maximum output tokens"),
+            status: z
+              .enum(["tested", "untested", "deprecated"])
+              .optional()
+              .describe("Testing status of the model"),
+            releaseDate: z.string().optional().describe("Model release date"),
+            notes: z
+              .string()
+              .optional()
+              .describe("Additional notes about the model"),
+            docLink: z
+              .string()
+              .optional()
+              .describe("Documentation link for this model"),
+            modelSpecificParams: z
+              .record(z.string(), z.any())
+              .optional()
+              .describe("Model-specific parameters"),
+          }),
+        )
+        .optional()
+        .describe("Available models for this provider"),
+      providerSpecificParams: z
+        .record(z.string(), z.any())
+        .optional()
+        .describe("Provider-specific parameters"),
+    }),
+  )
+  .describe("Configuration for all available LLM providers");

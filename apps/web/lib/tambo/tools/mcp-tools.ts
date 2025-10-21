@@ -1,3 +1,13 @@
+import {
+  addMcpServerInput,
+  deleteMcpServerInput,
+  inspectMcpServerInput,
+  inspectMcpServerOutputSchema,
+  listMcpServersInput,
+  mcpServerDetailSchema,
+  mcpServerSchema,
+  updateMcpServerInput,
+} from "@/lib/schemas/mcp";
 import { MCPTransport } from "@tambo-ai-cloud/core";
 import { z } from "zod";
 import { invalidateMcpServersCache } from "./helpers";
@@ -5,21 +15,13 @@ import type { RegisterToolFn, ToolContext } from "./types";
 
 /**
  * Zod schema for the `fetchProjectMcpServers` function.
- * Defines the argument as a project ID string.
- * The schema's return type is an object representing the details of a single MCP server (as per this schema definition).
+ * Defines the argument as a project ID string and the return type as an array of MCP server objects.
+ * The schema's return type is an array of MCP server objects.
  */
 export const fetchProjectMcpServersSchema = z
   .function()
-  .args(z.string().describe("The project ID to fetch MCP servers for"))
-  .returns(
-    z.object({
-      id: z.string(),
-      url: z.string().nullable(),
-      customHeaders: z.record(z.string(), z.string()).nullable(),
-      mcpRequiresAuth: z.boolean(),
-      mcpIsAuthed: z.boolean(),
-    }),
-  );
+  .args(listMcpServersInput)
+  .returns(z.array(mcpServerSchema));
 
 /**
  * Zod schema for the `addMcpServer` function.
@@ -28,30 +30,8 @@ export const fetchProjectMcpServersSchema = z
  */
 export const addMcpServerSchema = z
   .function()
-  .args(
-    z.object({
-      projectId: z.string().describe("The project ID"),
-      url: z.string().describe("The URL of the MCP server"),
-      customHeaders: z
-        .record(z.string(), z.string())
-        .describe("Custom headers for the MCP server"),
-      mcpTransport: z
-        .nativeEnum(MCPTransport)
-        .describe("Transport mechanism for MCP communication, default is SSE"),
-    }),
-  )
-  .returns(
-    z.object({
-      id: z.string(),
-      url: z.string(),
-      customHeaders: z.record(z.string(), z.string()),
-      mcpTransport: z.nativeEnum(MCPTransport),
-      mcpRequiresAuth: z.boolean(),
-      mcpCapabilities: z.record(z.string(), z.any()).optional(),
-      mcpVersion: z.record(z.string(), z.any()).optional(),
-      mcpInstructions: z.string().optional(),
-    }),
-  );
+  .args(addMcpServerInput)
+  .returns(mcpServerDetailSchema);
 
 /**
  * Zod schema for the `updateMcpServer` function.
@@ -59,50 +39,18 @@ export const addMcpServerSchema = z
  */
 export const updateMcpServerSchema = z
   .function()
-  .args(
-    z.object({
-      projectId: z.string().describe("The project ID"),
-      serverId: z.string().describe("The ID of the MCP server to update"),
-      url: z.string().describe("The URL of the MCP server"),
-      customHeaders: z
-        .record(z.string(), z.string())
-        .describe("Custom headers for the MCP server"),
-      mcpTransport: z
-        .nativeEnum(MCPTransport)
-        .describe("Transport mechanism for MCP communication"),
-    }),
-  )
-  .returns(
-    z.object({
-      id: z.string(),
-      url: z.string(),
-      customHeaders: z.record(z.string(), z.string()),
-      mcpTransport: z.nativeEnum(MCPTransport),
-      mcpRequiresAuth: z.boolean(),
-      mcpCapabilities: z.record(z.string(), z.any()).optional(),
-      mcpVersion: z.record(z.string(), z.any()).optional(),
-      mcpInstructions: z.string().optional(),
-    }),
-  );
+  .args(updateMcpServerInput)
+  .returns(mcpServerDetailSchema);
 
 /**
  * Zod schema for the `deleteMcpServer` function.
  * Defines the argument as an object containing the project ID and server ID,
- * and the return type as an object indicating success.
+ * and the return type as an object with a success boolean.
  */
 export const deleteMcpServerSchema = z
   .function()
-  .args(
-    z.object({
-      projectId: z.string().describe("The project ID"),
-      serverId: z.string().describe("The ID of the MCP server to delete"),
-    }),
-  )
-  .returns(
-    z.object({
-      success: z.boolean(),
-    }),
-  );
+  .args(deleteMcpServerInput)
+  .returns(z.object({ success: z.boolean() }));
 
 /**
  * Zod schema for the `getMcpServerTools` function.
@@ -111,26 +59,8 @@ export const deleteMcpServerSchema = z
  */
 export const getMcpServerToolsSchema = z
   .function()
-  .args(
-    z.object({
-      projectId: z.string().describe("The project ID"),
-      serverId: z.string().describe("The ID of the MCP server to inspect"),
-    }),
-  )
-  .returns(
-    z.object({
-      tools: z.object({
-        name: z.string(),
-        description: z.string().optional(),
-        inputSchema: z.any().optional(),
-      }),
-      serverInfo: z.object({
-        version: z.record(z.string(), z.any()).optional(),
-        instructions: z.string().optional(),
-        capabilities: z.record(z.string(), z.any()).optional(),
-      }),
-    }),
-  );
+  .args(inspectMcpServerInput)
+  .returns(inspectMcpServerOutputSchema);
 
 /**
  * Register MCP server management tools
@@ -142,14 +72,17 @@ export function registerMcpTools(
   /**
    * Registers a tool to fetch all MCP (Model Context Protocol) servers for a project.
    * Returns server configuration including URL, headers, and authentication status.
-   * @param {string} projectId - The project ID to fetch MCP servers for
-   * @returns {Object} MCP server details including ID, URL, headers, and auth status
+   * @param {Object} params - Parameters
+   * @param {string} params.projectId - The project ID to fetch MCP servers for
+   * @returns {Array} MCP server details including ID, URL, headers, and auth status
    */
   registerTool({
     name: "fetchProjectMcpServers",
     description: "Fetches MCP servers for a project.",
-    tool: async (projectId: string) => {
-      return await ctx.trpcClient.tools.listMcpServers.query({ projectId });
+    tool: async (params: { projectId: string }) => {
+      return await ctx.trpcClient.tools.listMcpServers.query({
+        projectId: params.projectId,
+      });
     },
     toolSchema: fetchProjectMcpServersSchema,
   });
