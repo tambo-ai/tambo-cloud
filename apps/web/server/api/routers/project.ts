@@ -1,5 +1,9 @@
 import { env } from "@/lib/env";
 import {
+  updateProjectAgentSettingsInput,
+  updateProjectAgentSettingsOutputSchema,
+} from "@/lib/schemas/agent";
+import {
   apiKeySchema,
   deleteApiKeyInput,
   generateApiKeyInput,
@@ -19,7 +23,6 @@ import {
   updateOAuthValidationSettingsOutputSchema,
 } from "@/lib/schemas/oauth";
 import {
-  agentHeadersSchema,
   createProjectInput,
   createProjectOutputSchema,
   getProjectByIdInput,
@@ -573,19 +576,8 @@ export const projectRouter = createTRPCRouter({
     }),
 
   updateProjectAgentSettings: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        providerType: z.nativeEnum(AiProviderType),
-        agentProviderType: z
-          .nativeEnum(AgentProviderType)
-          .nullable()
-          .optional(),
-        agentUrl: z.string().url().nullable().optional(),
-        agentName: z.string().nullable().optional(),
-        agentHeaders: agentHeadersSchema.nullable().optional(),
-      }),
-    )
+    .input(updateProjectAgentSettingsInput)
+    .output(updateProjectAgentSettingsOutputSchema)
     .mutation(async ({ ctx, input }) => {
       const {
         projectId,

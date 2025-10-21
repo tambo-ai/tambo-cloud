@@ -1,3 +1,7 @@
+import {
+  updateProjectAgentSettingsInput,
+  updateProjectAgentSettingsOutputSchema,
+} from "@/lib/schemas/agent";
 import { AgentProviderType, AiProviderType } from "@tambo-ai-cloud/core";
 import { z } from "zod";
 import { invalidateLlmSettingsCache, invalidateProjectCache } from "./helpers";
@@ -5,52 +9,12 @@ import type { RegisterToolFn, ToolContext } from "./types";
 
 /**
  * Zod schema for the `updateProjectAgentSettings` function.
- * Defines arguments as the project ID string and agent settings object.
+ * Defines arguments as an object containing agent settings and returns updated settings.
  */
 export const updateProjectAgentSettingsSchema = z
   .function()
-  .args(
-    z
-      .object({
-        projectId: z
-          .string()
-          .describe("The complete project ID (e.g., 'p_u2tgQg5U.43bbdf')."),
-        providerType: z
-          .nativeEnum(AiProviderType)
-          .describe("The provider type (LLM or AGENT)"),
-        agentProviderType: z
-          .nativeEnum(AgentProviderType)
-          .nullable()
-          .optional()
-          .describe("The agent provider type if using agent mode"),
-        agentUrl: z
-          .string()
-          .url()
-          .nullable()
-          .optional()
-          .describe("The agent URL if using agent mode"),
-        agentName: z
-          .string()
-          .nullable()
-          .optional()
-          .describe("The agent name if using agent mode"),
-        agentHeaders: z
-          .record(z.string(), z.string())
-          .nullable()
-          .optional()
-          .describe("Custom headers for agent requests"),
-      })
-      .describe("The agent settings to update"),
-  )
-  .returns(
-    z.object({
-      providerType: z.nativeEnum(AiProviderType),
-      agentProviderType: z.nativeEnum(AgentProviderType).nullable(),
-      agentUrl: z.string().nullable(),
-      agentName: z.string().nullable(),
-      agentHeaders: z.record(z.string(), z.string()).nullable(),
-    }),
-  );
+  .args(updateProjectAgentSettingsInput)
+  .returns(updateProjectAgentSettingsOutputSchema);
 
 /**
  * Register agent-specific settings management tools
@@ -75,14 +39,7 @@ export function registerAgentTools(
     name: "updateProjectAgentSettings",
     description:
       "Updates agent settings for a project, including provider type and agent-specific configurations. Requires complete project ID.",
-    tool: async ({
-      projectId,
-      providerType,
-      agentProviderType,
-      agentUrl,
-      agentName,
-      agentHeaders,
-    }: {
+    tool: async (params: {
       projectId: string;
       providerType: AiProviderType;
       agentProviderType?: AgentProviderType | null;
@@ -92,18 +49,18 @@ export function registerAgentTools(
     }) => {
       const result =
         await ctx.trpcClient.project.updateProjectAgentSettings.mutate({
-          projectId,
-          providerType,
-          agentProviderType,
-          agentUrl,
-          agentName,
-          agentHeaders,
+          projectId: params.projectId,
+          providerType: params.providerType,
+          agentProviderType: params.agentProviderType,
+          agentUrl: params.agentUrl,
+          agentName: params.agentName,
+          agentHeaders: params.agentHeaders,
         });
 
       // Invalidate all caches that display agent settings (shown in LLM settings view)
       await Promise.all([
-        invalidateLlmSettingsCache(ctx, projectId),
-        ctx.utils.project.getProjectById.invalidate(projectId),
+        invalidateLlmSettingsCache(ctx, params.projectId),
+        ctx.utils.project.getProjectById.invalidate(params.projectId),
         invalidateProjectCache(ctx),
       ]);
 
