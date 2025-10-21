@@ -24,7 +24,9 @@ At [Tambo](tambo.co) we’re planning to support all MCP features so your app be
 
 ## What is MCP Sampling?
 
-Sampling is the ability of a connected MCP server to use the client’s LLM to do some processing. For example, an MCP server might have a tool called “...”
+[MCP Sampling](https://modelcontextprotocol.io/docs/learn/client-concepts#sampling) is the ability of a connected MCP server to use the client’s LLM to do some processing. For example, a Weather MCP server might have a tool to get a summary of today's weather called `summarize_weather` which, when called by the MCP client (an app using Tambo), fetches weather data and then needs to use an LLM to summarize the data it has fetched before returning the summary to the client and end app user.
+
+Without MCP sampling, this tool would need to know how to send requests to its own LLM, and that request would not know about the user or the previous messages in the conversation. With MCP sampling the server requests to use the LLM of the client to do this processing, and, through Tambo, gains all the additional context about the app, user, and thread that any other message gets.
 
 ## The UX of Sampling in Tambo
 
