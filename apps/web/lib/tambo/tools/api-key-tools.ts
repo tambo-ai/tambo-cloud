@@ -74,14 +74,14 @@ export function registerApiKeyTools(
     name: "generateProjectApiKey",
     description:
       "Generates a new API key for a project. Requires complete project ID.",
-    tool: async ({ projectId, name }: { projectId: string; name: string }) => {
+    tool: async (params: { projectId: string; name: string }) => {
       const result = await ctx.trpcClient.project.generateApiKey.mutate({
-        projectId,
-        name,
+        projectId: params.projectId,
+        name: params.name,
       });
 
       // Invalidate the API keys cache to refresh the component
-      await invalidateApiKeysCache(ctx, projectId);
+      await invalidateApiKeysCache(ctx, params.projectId);
 
       return result;
     },
@@ -99,20 +99,14 @@ export function registerApiKeyTools(
     name: "deleteProjectApiKey",
     description:
       "Deletes an API key for a project. Requires complete project ID.",
-    tool: async ({
-      projectId,
-      apiKeyId,
-    }: {
-      projectId: string;
-      apiKeyId: string;
-    }) => {
+    tool: async (params: { projectId: string; apiKeyId: string }) => {
       await ctx.trpcClient.project.removeApiKey.mutate({
-        projectId,
-        apiKeyId,
+        projectId: params.projectId,
+        apiKeyId: params.apiKeyId,
       });
 
       // Invalidate the API keys cache to refresh the component
-      await invalidateApiKeysCache(ctx, projectId);
+      await invalidateApiKeysCache(ctx, params.projectId);
 
       return { deletedKey: undefined };
     },

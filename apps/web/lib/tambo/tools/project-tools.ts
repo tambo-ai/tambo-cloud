@@ -140,8 +140,10 @@ export function registerProjectTools(
     name: "fetchProjectById",
     description:
       "Fetches a specific project by its complete ID (e.g., 'p_u2tgQg5U.43bbdf'). Use fetchAllProjects first to get the correct project ID.",
-    tool: async ({ projectId }: { projectId: string }) => {
-      return await ctx.trpcClient.project.getProjectById.query(projectId);
+    tool: async (params: { projectId: string }) => {
+      return await ctx.trpcClient.project.getProjectById.query(
+        params.projectId,
+      );
     },
     toolSchema: fetchProjectByIdSchema,
   });

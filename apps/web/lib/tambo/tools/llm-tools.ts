@@ -72,9 +72,9 @@ export function registerLlmTools(
     name: "fetchProjectLlmSettings",
     description:
       "Fetches LLM configuration settings for a project. Requires the complete project ID.",
-    tool: async ({ projectId }: { projectId: string }) => {
+    tool: async (params: { projectId: string }) => {
       return await ctx.trpcClient.project.getProjectLlmSettings.query({
-        projectId,
+        projectId: params.projectId,
       });
     },
     toolSchema: fetchProjectLlmSettingsSchema,
@@ -98,15 +98,7 @@ export function registerLlmTools(
     name: "updateProjectLlmSettings",
     description:
       'Updates LLM configuration settings for a project, including provider, model, and custom LLM parameters. For customLlmParameters, use the structure: { "providerName": { "modelName": { "parameterName": parameterValue } } }. Example: { "openai": { "gpt-5-2025-08-07": { "reasoningEffort": "high" } } }. IMPORTANT: After this tool completes, show a NEW ProviderKeySection component to display the updated settings. The component will automatically fetch the latest data.',
-    tool: async ({
-      projectId,
-      defaultLlmProviderName,
-      defaultLlmModelName,
-      customLlmModelName,
-      customLlmBaseURL,
-      maxInputTokens,
-      customLlmParameters,
-    }: {
+    tool: async (params: {
       projectId: string;
       defaultLlmProviderName?: string;
       defaultLlmModelName?: string | null;
@@ -117,31 +109,31 @@ export function registerLlmTools(
     }) => {
       const result =
         await ctx.trpcClient.project.updateProjectLlmSettings.mutate({
-          projectId,
-          ...(defaultLlmProviderName !== undefined && {
-            defaultLlmProviderName,
+          projectId: params.projectId,
+          ...(params.defaultLlmProviderName !== undefined && {
+            defaultLlmProviderName: params.defaultLlmProviderName,
           }),
-          ...(defaultLlmModelName !== undefined && {
-            defaultLlmModelName,
+          ...(params.defaultLlmModelName !== undefined && {
+            defaultLlmModelName: params.defaultLlmModelName,
           }),
-          ...(customLlmModelName !== undefined && {
-            customLlmModelName,
+          ...(params.customLlmModelName !== undefined && {
+            customLlmModelName: params.customLlmModelName,
           }),
-          ...(customLlmBaseURL !== undefined && {
-            customLlmBaseURL,
+          ...(params.customLlmBaseURL !== undefined && {
+            customLlmBaseURL: params.customLlmBaseURL,
           }),
-          ...(maxInputTokens !== undefined && {
-            maxInputTokens,
+          ...(params.maxInputTokens !== undefined && {
+            maxInputTokens: params.maxInputTokens,
           }),
-          ...(customLlmParameters !== undefined && {
-            customLlmParameters,
+          ...(params.customLlmParameters !== undefined && {
+            customLlmParameters: params.customLlmParameters,
           }),
         });
 
       // Invalidate all caches that display LLM settings
       await Promise.all([
-        invalidateLlmSettingsCache(ctx, projectId),
-        ctx.utils.project.getProjectById.invalidate(projectId),
+        invalidateLlmSettingsCache(ctx, params.projectId),
+        ctx.utils.project.getProjectById.invalidate(params.projectId),
         ctx.utils.project.getUserProjects.invalidate(),
       ]);
 
