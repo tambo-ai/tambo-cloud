@@ -24,9 +24,11 @@ At Tambo, we're building comprehensive MCP support so your app becomes "MCP-enab
 
 ## What is MCP Sampling?
 
-[MCP Sampling](https://modelcontextprotocol.io/docs/learn/client-concepts#sampling) is the ability of a connected MCP server to use the client’s LLM to do some processing. For example, a Weather MCP server might have a tool to get a summary of today's weather called `summarize_weather` which, when called by the MCP client (an app using Tambo), fetches weather data and then needs to use an LLM to summarize the data it has fetched before returning the summary to the client and end app user.
+[MCP Sampling](https://modelcontextprotocol.io/docs/learn/client-concepts#sampling) is the ability of a connected MCP server to use the client’s LLM to do some processing. For example, when a user asks "What's the weather like today?", a connected Weather MCP server's tool might be used to fetch the raw temperature and forecast data, then uses your app's LLM to turn that data into a readable summary before showing it to the user.
 
-Without MCP sampling, this tool would need to know how to send requests to its own LLM, and that request would not know about the user or the previous messages in the conversation. With MCP sampling the server requests to use the LLM of the client to do this processing, and, through Tambo, gains all the additional context about the app, user, and thread that any other message gets.
+Without MCP sampling, the server would need its own AI setup and wouldn't have access to your conversation history or user context.
+
+With MCP Sampling through Tambo, the server uses Tambo's AI setup and gains full context about the conversation, user, and app state.
 
 ## The UX of Sampling in Tambo
 
