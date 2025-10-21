@@ -90,7 +90,7 @@ The title of the dropdown defaults to “finished additional work” but is cust
 
 ## How to customize Tambo's Sampling UI
 
-Behind the scenes, Tambo adds messages sent and returned through sampling requests to the user's conversation thread. The sampling messages have a `parentMessageId` field pointing to the assistant message tool call that triggered the sampling request. This is what distinguishes them as "sub messages" of a normal conversation message.
+Behind the scenes, Tambo adds messages sent and returned through sampling requests to the user's conversation thread. The sampling messages have a `parentMessageId` field pointing to the assistant message tool call that triggered the sampling request. This is what distinguishes them as "sub messages" of a normal conversation message. Note that Tambo passes a `_meta` field containing the `parentMessageId` to MCP tools and expects sampling requests to pass that along to Tambo.
 
 To build your own custom sampling UI, use Tambo’s [React SDK](https://github.com/tambo-ai/tambo) to get the list of messages for the current thread, and use the `parentMessageId` field on the messages to group and show sampling messages in any way you prefer.
 
