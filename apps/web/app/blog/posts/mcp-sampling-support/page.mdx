@@ -10,11 +10,13 @@ featured: true
 
 <BlogPost title="Apps using Tambo now support MCP Sampling" author="Michael Milstead" date="October 21, 2025">
 
-<img
-  src="/assets/blog/mcp-sampling-support/full2.gif"
-  alt="sampling UX"
-  className="max-w-lg mx-auto rounded-md"
-/>
+<ImageZoom>
+  <img
+    src="/assets/blog/mcp-sampling-support/sampling-ui.gif"
+    alt="sampling UX"
+    className="max-w-lg mx-auto rounded-md"
+  />
+</ImageZoom>
 
 [Tambo](https://tambo.co) helps developers build LLM-based AI web apps by discovering, understanding, and packaging up emerging UX patterns so you can integrate them without building from scratch.
 
@@ -32,15 +34,27 @@ With MCP Sampling through Tambo, the server uses Tambo's AI setup and gains full
 
 ## The UX of Sampling in Tambo
 
-In our `Message` component, we show toolcall UI as an expandable dropdown that describes to the user the work that the LLM is performing while taking action or generating an appropriate response. Since an MCP sampling request is a way for an MCP server to use the LLM to do processing when determining its tool output, we consider a sampling request as a sort of “sub conversation” that is happening between the MCP tool and the LLM, so we represent it as an expandable list of messages within a toolcall’s UI.
+In a Tambo app using our pre-built `Message` component, when Tambo decides to use a tool we display an expandable dropdown that shows details of the tool call to the user. We consider a sampling request as a sort of “sub-conversation” that is happening between the MCP tool and Tambo, so we represent it as an expandable list of messages within a tool's information UI.
 
-The title of the dropdown defaults to “finished additional work” but is customizable. This default is based on the opinion that the end app user might be confused by any specific terminology about MCP or Sampling. At the end of the day, the end user just needs to know that the AI is “doing something”. To customize this, update the prop passed into the component within `message.tsx`.
+In the following example we use an `emojify_via_llm` MCP tool which uses Sampling to turn a string into emojis. Within the dropdown you can see the messages the tool sent to Tambo and the responses it received.
 
-<img
-  src="/assets/blog/mcp-sampling-support/custom-sampling-title.png"
-  alt="Sampling UI Screenshot"
-  className="max-w-md mx-auto rounded-md"
-/>
+<ImageZoom>
+  <img
+    src="/assets/blog/mcp-sampling-support/sampling-expand.gif"
+    alt="Sampling dropdown expansion"
+    className="max-w-lg mx-auto rounded-md"
+  />
+</ImageZoom>
+
+The title of the dropdown defaults to “finished additional work” but is customizable. This default is based on the opinion that the end app user might be confused by any specific terminology about MCP or Sampling. At the end of the day, the end user just needs to know that the AI is “doing something”. To customize this, update the `titleText` prop passed into the `SamplingSubThread` component within `message.tsx`.
+
+<ImageZoom>
+  <img
+    src="/assets/blog/mcp-sampling-support/custom-sampling-title.png"
+    alt="Sampling UI Screenshot"
+    className="max-w-md mx-auto rounded-md"
+  />
+</ImageZoom>
 
 ## How to customize Tambo's Sampling UI
 
@@ -48,11 +62,13 @@ Behind the scenes, messages sent and returned through sampling requests are adde
 
 To build your own custom sampling UI, use Tambo’s [React SDK](https://github.com/tambo-ai/tambo) to get the list of messages for the current thread, and use the `parentMessageId` field on the messages to group and show sampling messages in any way you prefer.
 
-<img
-  src="/assets/blog/mcp-sampling-support/custom-sampling-code.png"
-  alt="Sampling messages code"
-  className="max-w-full mx-auto rounded-md"
-/>
+<ImageZoom>
+  <img
+    src="/assets/blog/mcp-sampling-support/custom-sampling-code.png"
+    alt="Sampling messages code"
+    className="max-w-full mx-auto rounded-md"
+  />
+</ImageZoom>
 
 ## How to enable MCP Sampling in your app using Tambo
 
