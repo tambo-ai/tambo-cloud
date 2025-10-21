@@ -73,9 +73,7 @@ export function registerLlmTools(
     description:
       "Fetches LLM configuration settings for a project. Requires the complete project ID.",
     tool: async (params: { projectId: string }) => {
-      return await ctx.trpcClient.project.getProjectLlmSettings.query({
-        projectId: params.projectId,
-      });
+      return await ctx.trpcClient.project.getProjectLlmSettings.query(params);
     },
     toolSchema: fetchProjectLlmSettingsSchema,
   });

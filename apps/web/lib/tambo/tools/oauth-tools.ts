@@ -45,9 +45,9 @@ export function registerOAuthTools(
     name: "fetchOAuthValidationSettings",
     description: "Fetches OAuth validation settings for a project.",
     tool: async (params: { projectId: string }) => {
-      return await ctx.trpcClient.project.getOAuthValidationSettings.query({
-        projectId: params.projectId,
-      });
+      return await ctx.trpcClient.project.getOAuthValidationSettings.query(
+        params,
+      );
     },
     toolSchema: fetchOAuthValidationSettingsSchema,
   });
@@ -75,13 +75,9 @@ export function registerOAuthTools(
       isTokenRequired?: boolean;
     }) => {
       const result =
-        await ctx.trpcClient.project.updateOAuthValidationSettings.mutate({
-          projectId: params.projectId,
-          mode: params.mode,
-          secretKey: params.secretKey,
-          publicKey: params.publicKey,
-          isTokenRequired: params.isTokenRequired,
-        });
+        await ctx.trpcClient.project.updateOAuthValidationSettings.mutate(
+          params,
+        );
 
       // Invalidate the OAuth settings cache to refresh the component
       await invalidateOAuthSettingsCache(ctx, params.projectId);

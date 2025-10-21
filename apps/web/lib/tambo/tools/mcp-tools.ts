@@ -80,9 +80,7 @@ export function registerMcpTools(
     name: "fetchProjectMcpServers",
     description: "Fetches MCP servers for a project.",
     tool: async (params: { projectId: string }) => {
-      return await ctx.trpcClient.tools.listMcpServers.query({
-        projectId: params.projectId,
-      });
+      return await ctx.trpcClient.tools.listMcpServers.query(params);
     },
     toolSchema: fetchProjectMcpServersSchema,
   });
@@ -105,12 +103,7 @@ export function registerMcpTools(
       customHeaders: Record<string, string>;
       mcpTransport: MCPTransport;
     }) => {
-      const result = await ctx.trpcClient.tools.addMcpServer.mutate({
-        projectId: params.projectId,
-        url: params.url,
-        customHeaders: params.customHeaders,
-        mcpTransport: params.mcpTransport,
-      });
+      const result = await ctx.trpcClient.tools.addMcpServer.mutate(params);
 
       // Invalidate the mcp server cache to refresh the component
       await invalidateMcpServersCache(ctx, params.projectId);
@@ -140,13 +133,7 @@ export function registerMcpTools(
       customHeaders: Record<string, string>;
       mcpTransport: MCPTransport;
     }) => {
-      const result = await ctx.trpcClient.tools.updateMcpServer.mutate({
-        projectId: params.projectId,
-        serverId: params.serverId,
-        url: params.url,
-        customHeaders: params.customHeaders,
-        mcpTransport: params.mcpTransport,
-      });
+      const result = await ctx.trpcClient.tools.updateMcpServer.mutate(params);
 
       // Invalidate the mcp server cache to refresh the component
       await invalidateMcpServersCache(ctx, params.projectId);
@@ -167,10 +154,7 @@ export function registerMcpTools(
     name: "deleteMcpServer",
     description: "Deletes an MCP server for a project.",
     tool: async (params: { projectId: string; serverId: string }) => {
-      await ctx.trpcClient.tools.deleteMcpServer.mutate({
-        projectId: params.projectId,
-        serverId: params.serverId,
-      });
+      await ctx.trpcClient.tools.deleteMcpServer.mutate(params);
 
       // Invalidate the mcp server cache to refresh the component
       await invalidateMcpServersCache(ctx, params.projectId);
@@ -192,10 +176,7 @@ export function registerMcpTools(
     name: "getMcpServerTools",
     description: "Gets the tools for an MCP server for a project.",
     tool: async (params: { projectId: string; serverId: string }) => {
-      return await ctx.trpcClient.tools.inspectMcpServer.query({
-        projectId: params.projectId,
-        serverId: params.serverId,
-      });
+      return await ctx.trpcClient.tools.inspectMcpServer.query(params);
     },
     toolSchema: getMcpServerToolsSchema,
   });

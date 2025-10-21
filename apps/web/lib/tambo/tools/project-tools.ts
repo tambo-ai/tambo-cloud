@@ -45,7 +45,7 @@ export const updateProjectSchema = z
   .function()
   .args(
     z.object({
-      id: z.string().describe("The ID of the project to update"),
+      projectId: z.string().describe("The ID of the project to update"),
       name: z.string().optional().describe("The new name of the project"),
       customInstructions: z
         .string()
@@ -154,7 +154,7 @@ export function registerProjectTools(
    * For agent settings, use updateProjectAgentSettings.
    * For OAuth settings, use updateOAuthValidationSettings.
    * @param {Object} params - Project update parameters
-   * @param {string} params.id - The ID of the project to update
+   * @param {string} params.projectId - The ID of the project to update
    * @param {string} params.name - The new name for the project
    * @param {string} params.customInstructions - Custom AI instructions for the project
    * @param {boolean} params.allowSystemPromptOverride - Whether to allow system prompt override
@@ -167,21 +167,14 @@ export function registerProjectTools(
     description:
       "Updates core project settings like name, custom instructions, system prompt override, and tool call limits. For LLM settings use updateProjectLlmSettings, for agent settings use updateProjectAgentSettings, for OAuth settings use updateOAuthValidationSettings.",
     tool: async (params: {
-      id: string;
+      projectId: string;
       name?: string;
       customInstructions?: string;
       allowSystemPromptOverride?: boolean;
       maxToolCallLimit?: number;
       isTokenRequired?: boolean;
     }) => {
-      const result = await ctx.trpcClient.project.updateProject.mutate({
-        projectId: params.id,
-        name: params.name,
-        customInstructions: params.customInstructions,
-        allowSystemPromptOverride: params.allowSystemPromptOverride,
-        maxToolCallLimit: params.maxToolCallLimit,
-        isTokenRequired: params.isTokenRequired,
-      });
+      const result = await ctx.trpcClient.project.updateProject.mutate(params);
 
       // Invalidate the project cache to refresh the component
       await invalidateProjectCache(ctx);

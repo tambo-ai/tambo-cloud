@@ -48,14 +48,7 @@ export function registerAgentTools(
       agentHeaders?: Record<string, string> | null;
     }) => {
       const result =
-        await ctx.trpcClient.project.updateProjectAgentSettings.mutate({
-          projectId: params.projectId,
-          providerType: params.providerType,
-          agentProviderType: params.agentProviderType,
-          agentUrl: params.agentUrl,
-          agentName: params.agentName,
-          agentHeaders: params.agentHeaders,
-        });
+        await ctx.trpcClient.project.updateProjectAgentSettings.mutate(params);
 
       // Invalidate all caches that display agent settings (shown in LLM settings view)
       await Promise.all([
