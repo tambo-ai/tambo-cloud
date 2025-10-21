@@ -26,7 +26,7 @@ At Tambo, we're building comprehensive MCP support so your app becomes "MCP-enab
 
 ## What is MCP Sampling?
 
-[MCP Sampling](https://modelcontextprotocol.io/docs/learn/client-concepts#sampling) is the ability of an MCP server to use the client’s LLM. For example, when a user asks "What's the weather like today?", a Weather MCP server will fetch the raw temperature and forecast data. With sampling, it can then use *the app's LLM* to summarize the data before showing it to the user.
+[MCP Sampling](https://modelcontextprotocol.io/docs/learn/client-concepts#sampling) is the ability of an MCP server to use the client’s LLM. For example, when a user asks "What's the weather like today?", a Weather MCP server will fetch the raw temperature and forecast data. With sampling, it can then use _the app's LLM_ to summarize the data before showing it to the user.
 
 Without MCP sampling, the server would need its own AI setup and wouldn't have access to your conversation history or user context.
 
@@ -58,7 +58,7 @@ The title of the dropdown defaults to “finished additional work” but is cust
 
 ## How to customize Tambo's Sampling UI
 
-Behind the scenes, messages sent and returned through sampling requests are added to the user’s conversation thread. The sampling message have a `parentMessageId` field pointing to the assistant message tool call that triggered the sampling request. This is what distinguishes them as “sub messages” of a normal conversation message.
+Behind the scenes, messages sent and returned through sampling requests are added to the user’s conversation thread. The sampling messages have a `parentMessageId` field pointing to the assistant message tool call that triggered the sampling request. This is what distinguishes them as “sub messages” of a normal conversation message.
 
 To build your own custom sampling UI, use Tambo’s [React SDK](https://github.com/tambo-ai/tambo) to get the list of messages for the current thread, and use the `parentMessageId` field on the messages to group and show sampling messages in any way you prefer.
 
