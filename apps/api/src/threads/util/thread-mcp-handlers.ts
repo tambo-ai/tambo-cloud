@@ -23,9 +23,19 @@ export function createMcpHandlers(
 ): MCPHandlers {
   return {
     async sampling(e) {
-      const parentMessageId = e.params._meta?.[
-        MCP_PARENT_MESSAGE_ID_META_KEY
-      ] as string | undefined;
+      let parentMessageId = e.params._meta?.[MCP_PARENT_MESSAGE_ID_META_KEY] as
+        | string
+        | undefined;
+
+      // Fallback: if parentMessageId is not provided, find the last message
+      // in the thread that doesn't have a parent
+      if (!parentMessageId) {
+        parentMessageId = await operations.findLastMessageWithoutParent(
+          db,
+          threadId,
+        );
+      }
+
       const messages = e.params.messages.map((m) => ({
         // Have pretend this is "user" to let audio/image content through to
         // ChatCompletionContentPart
