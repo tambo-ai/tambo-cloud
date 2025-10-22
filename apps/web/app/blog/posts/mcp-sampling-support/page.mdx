@@ -33,16 +33,16 @@ Without MCP sampling, the server would need its own AI setup.
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant S as Weather MCP Server
-    participant D as Data Source
+    participant T as Tambo
+    participant M as Weather MCP Server
     participant L as Server's own LLM
 
-    U->>S: What's the weather in San Francisco?
-    S->>D: Fetch weather data for city: "San Francisco"
-    D-->>S: Return raw data: 68°F, partly cloudy, 15mph winds
-    S->>L: Summarize this weather data: 68°F, partly cloudy, 15mph winds, SF
-    L-->>S: It's 68°F and partly cloudy in San Francisco.
-    S-->>U: "It's 68°F and partly cloudy in San Francisco."
+    U->>T: What's the weather in San Francisco?
+    T->>M: What's the weather in San Francisco?
+    M->>L: Summarize this weather data: 68°F, partly cloudy, 15mph winds, SF
+    L-->>M: It's 68°F and partly cloudy in San Francisco.
+    M-->>T: "It's 68°F and partly cloudy in San Francisco."
+    T-->>U: "It's 68°F and partly cloudy in San Francisco."
 
 ```
 
@@ -51,16 +51,15 @@ With MCP Sampling through Tambo, the server uses Tambo's AI setup.
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant S as Weather MCP Server
-    participant D as Data Source
-    participant L as Client's LLM (Tambo)
+    participant T as Tambo
+    participant M as Weather MCP Server
 
-    U->>S: What's the weather in San Francisco?
-    S->>D: Fetch weather data for city: "San Francisco"
-    D-->>S: Return raw data: 68°F, partly cloudy, 15mph winds
-    S->>L: Summarize this weather data: 68°F, partly cloudy, 15mph winds, SF
-    L-->>S: It's 68°F and partly cloudy in San Francisco.
-    S-->>U: "It's 68°F and partly cloudy in San Francisco."
+    U->>T: What's the weather in San Francisco?
+    T->>M: What's the weather in San Francisco?
+    M->>T: Summarize this weather data: 68°F, partly cloudy, 15mph winds, SF
+    T-->>M: It's 68°F and partly cloudy in San Francisco.
+    M-->>T: "It's 68°F and partly cloudy in San Francisco."
+    T-->>U: "It's 68°F and partly cloudy in San Francisco."
 
 ```
 
