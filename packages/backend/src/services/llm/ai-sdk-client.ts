@@ -16,9 +16,8 @@ import {
   type LlmProviderConfigInfo,
 } from "@tambo-ai-cloud/core";
 import {
+  AssistantModelMessage,
   convertToModelMessages,
-  CoreAssistantMessage,
-  CoreUserMessage,
   generateText,
   jsonSchema,
   JSONValue,
@@ -31,6 +30,7 @@ import {
   ToolChoice,
   ToolContent,
   ToolResultPart,
+  UserModelMessage,
   type GenerateTextResult,
   type ToolSet,
 } from "ai";
@@ -721,14 +721,14 @@ function convertOpenAIMessageToCoreMessage(
     return {
       role: "assistant",
       content: content,
-    } satisfies CoreAssistantMessage;
+    } satisfies AssistantModelMessage;
   }
   if (message.role === "user") {
     if (typeof message.content === "string") {
       return {
         role: "user",
         content: message.content,
-      } satisfies CoreUserMessage;
+      } satisfies UserModelMessage;
     } else if (Array.isArray(message.content)) {
       const processedContent = message.content
         .map((part) => {
@@ -751,7 +751,7 @@ function convertOpenAIMessageToCoreMessage(
       return {
         role: message.role,
         content: processedContent,
-      } satisfies CoreUserMessage;
+      } satisfies UserModelMessage;
     }
     console.error(
       "Unexpected content type in user message:",
