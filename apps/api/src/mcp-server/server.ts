@@ -106,8 +106,28 @@ const handler = async (
  * @param server - The MCP server to handle the requests
  */
 export function registerHandler(expressApp: Express, path: string) {
+  // Handle CORS preflight
+  expressApp.options(path, (_req, res) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With",
+    );
+    res.header("Access-Control-Max-Age", "86400"); // 24 hours
+    res.status(204).send();
+  });
+
   // MCP over HTTP expects POST; restrict to POST to avoid ambiguity
   expressApp.post(path, async (req, res) => {
+    // Set CORS headers for actual request
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-Requested-With",
+    );
+
     const authorization = req.header("authorization");
     if (!authorization) {
       res.status(401).send("Unauthorized");
