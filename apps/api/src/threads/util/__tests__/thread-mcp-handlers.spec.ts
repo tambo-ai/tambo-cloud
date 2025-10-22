@@ -15,6 +15,7 @@ import { createMcpHandlers } from "../thread-mcp-handlers";
 jest.mock("@tambo-ai-cloud/db", () => ({
   operations: {
     addMessage: jest.fn(),
+    findLastMessageWithoutParent: jest.fn(),
   },
 }));
 
@@ -36,6 +37,11 @@ describe("createMcpHandlers", () => {
     jest
       .mocked(convertContentPartToDto)
       .mockImplementation((content) => content as any);
+
+    // Mock findLastMessageWithoutParent to return undefined by default
+    jest
+      .mocked(operations.findLastMessageWithoutParent)
+      .mockResolvedValue(undefined);
 
     mockQueue = {
       push: jest.fn(),
@@ -391,6 +397,156 @@ describe("createMcpHandlers", () => {
             responseMessageDto: expect.objectContaining({
               parentMessageId: parentMsgId,
             }),
+          }),
+        );
+      });
+
+      it("should use fallback to find last message without parent when _meta is missing", async () => {
+        const lastMessageId = "last-msg-without-parent";
+
+        jest
+          .mocked(operations.findLastMessageWithoutParent)
+          .mockResolvedValue(lastMessageId);
+
+        jest.mocked(operations.addMessage).mockResolvedValue({
+          id: "msg-1",
+          threadId: mockThreadId,
+          role: MessageRole.User,
+          content: [],
+          componentState: {},
+          createdAt: new Date(),
+        } as any);
+
+        jest.mocked(mockTamboBackend.llmClient.complete).mockResolvedValue({
+          message: { role: "assistant", content: "Response" },
+        } as any);
+
+        const handlers = createMcpHandlers(
+          mockDb,
+          mockTamboBackend,
+          mockThreadId,
+          mockQueue,
+        );
+
+        await handlers.sampling({
+          method: "sampling/createMessage",
+          params: {
+            messages: [
+              { role: "user", content: { type: "text", text: "Hello" } },
+            ],
+            maxTokens: 1000,
+          },
+        });
+
+        // Verify fallback was called
+        expect(operations.findLastMessageWithoutParent).toHaveBeenCalledWith(
+          mockDb,
+          mockThreadId,
+        );
+
+        // Verify parentMessageId from fallback passed to database operations
+        expect(operations.addMessage).toHaveBeenCalledWith(
+          mockDb,
+          expect.objectContaining({
+            parentMessageId: lastMessageId,
+          }),
+        );
+      });
+
+      it("should use undefined parentMessageId when fallback finds no messages", async () => {
+        jest
+          .mocked(operations.findLastMessageWithoutParent)
+          .mockResolvedValue(undefined);
+
+        jest.mocked(operations.addMessage).mockResolvedValue({
+          id: "msg-1",
+          threadId: mockThreadId,
+          role: MessageRole.User,
+          content: [],
+          componentState: {},
+          createdAt: new Date(),
+        } as any);
+
+        jest.mocked(mockTamboBackend.llmClient.complete).mockResolvedValue({
+          message: { role: "assistant", content: "Response" },
+        } as any);
+
+        const handlers = createMcpHandlers(
+          mockDb,
+          mockTamboBackend,
+          mockThreadId,
+          mockQueue,
+        );
+
+        await handlers.sampling({
+          method: "sampling/createMessage",
+          params: {
+            messages: [
+              { role: "user", content: { type: "text", text: "Hello" } },
+            ],
+            maxTokens: 1000,
+          },
+        });
+
+        // Verify fallback was called
+        expect(operations.findLastMessageWithoutParent).toHaveBeenCalledWith(
+          mockDb,
+          mockThreadId,
+        );
+
+        // Verify parentMessageId is undefined
+        expect(operations.addMessage).toHaveBeenCalledWith(
+          mockDb,
+          expect.objectContaining({
+            parentMessageId: undefined,
+          }),
+        );
+      });
+
+      it("should not call fallback when parentMessageId is provided in _meta", async () => {
+        const parentMsgId = "parent-msg-789";
+
+        jest.mocked(operations.addMessage).mockResolvedValue({
+          id: "msg-1",
+          threadId: mockThreadId,
+          role: MessageRole.User,
+          content: [],
+          componentState: {},
+          createdAt: new Date(),
+        } as any);
+
+        jest.mocked(mockTamboBackend.llmClient.complete).mockResolvedValue({
+          message: { role: "assistant", content: "Response" },
+        } as any);
+
+        const handlers = createMcpHandlers(
+          mockDb,
+          mockTamboBackend,
+          mockThreadId,
+          mockQueue,
+        );
+
+        await handlers.sampling({
+          method: "sampling/createMessage",
+          params: {
+            messages: [
+              { role: "user", content: { type: "text", text: "Hello" } },
+            ],
+            maxTokens: 1000,
+            _meta: {
+              "tambo.co/parentMessageId": parentMsgId,
+            },
+          },
+        });
+
+        // Verify fallback was NOT called
+        expect(operations.findLastMessageWithoutParent).not.toHaveBeenCalled();
+
+        // Verify provided parentMessageId was used
+        expect(operations.addMessage).toHaveBeenCalledWith(
+          mockDb,
+          expect.objectContaining({
+            parentMessageId: parentMsgId,
           }),
         );
       });
