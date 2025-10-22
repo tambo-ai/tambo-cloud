@@ -24,9 +24,9 @@ import {
 } from "@nestjs/swagger";
 import { AsyncQueue, GenerationStage } from "@tambo-ai-cloud/core";
 import { Request, Response } from "express";
+import { ApiKeyGuard } from "src/projects/guards/apikey.guard";
+import { BearerTokenGuard } from "src/projects/guards/bearer-token.guard";
 import { extractContextInfo } from "../common/utils/extract-context-info";
-import { ApiKeyGuard } from "../projects/guards/apikey.guard";
-import { BearerTokenGuard } from "../projects/guards/bearer-token.guard";
 import {
   ProjectAccessOwnGuard,
   ProjectIdParameterKey,
@@ -46,6 +46,7 @@ import {
   ThreadWithMessagesDto,
   UpdateComponentStateDto,
 } from "./dto/thread.dto";
+import { TranscribeAudioDto } from "./dto/transcribe-audio.dto";
 import { ThreadInProjectGuard } from "./guards/thread-in-project-guard";
 import { ThreadsService } from "./threads.service";
 import { throttleChunks } from "./util/streaming";
@@ -579,6 +580,12 @@ export class ThreadsController {
       projectId,
       contextKey,
     );
+  }
+
+  @Post("transcribe-audio")
+  @ApiOperation({ summary: "Transcribe audio to text" })
+  async transcribeAudio(@Body() transcribeAudioDto: TranscribeAudioDto) {
+    return await this.threadsService.transcribeAudio(transcribeAudioDto.audio.data);
   }
 
   private async handleAdvanceStream(

@@ -2164,6 +2164,10 @@ export class ThreadsService {
     }
     return false;
   }
+
+  async transcribeAudio(audioData: string): Promise<string> {
+    return "Audio transcribed" + audioData;
+  }
 }
 
 const checkCancellationStatus = async (
