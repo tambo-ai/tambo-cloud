@@ -121,7 +121,7 @@ function mcpContentToContentPart(
 
     case "audio": {
       const format = mimeTypes.extension(content.mimeType);
-      if (![AudioFormat.MP3, AudioFormat.WAV].includes(format as AudioFormat)) {
+      if (format !== AudioFormat.MP3 && format !== AudioFormat.WAV) {
         console.warn(
           `Unknown audio format: ${content.mimeType}, returning text content`,
         );

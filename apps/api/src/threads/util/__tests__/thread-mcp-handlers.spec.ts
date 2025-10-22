@@ -820,6 +820,7 @@ describe("createMcpHandlers", () => {
                 content: {
                   type: "video" as any,
                   data: "videodata",
+                  mimeType: "video/mp4",
                 },
               },
             ],
@@ -921,10 +922,15 @@ describe("createMcpHandlers", () => {
       });
 
       it("should use correct model from tamboBackend.modelOptions", async () => {
-        mockTamboBackend.modelOptions = {
-          model: "gpt-4-turbo",
-          provider: "openai",
-        };
+        const customMockTamboBackend = {
+          llmClient: {
+            complete: jest.fn(),
+          },
+          modelOptions: {
+            model: "gpt-4-turbo",
+            provider: "openai",
+          },
+        } as any;
 
         jest.mocked(operations.addMessage).mockResolvedValue({
           id: "msg-1",
@@ -935,13 +941,15 @@ describe("createMcpHandlers", () => {
           createdAt: new Date(),
         } as any);
 
-        jest.mocked(mockTamboBackend.llmClient.complete).mockResolvedValue({
-          message: { role: "assistant", content: "Response" },
-        } as any);
+        jest
+          .mocked(customMockTamboBackend.llmClient.complete)
+          .mockResolvedValue({
+            message: { role: "assistant", content: "Response" },
+          } as any);
 
         const handlers = createMcpHandlers(
           mockDb,
-          mockTamboBackend,
+          customMockTamboBackend,
           mockThreadId,
           mockQueue,
         );
