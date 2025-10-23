@@ -184,3 +184,43 @@ export function getMessageImages(
     .filter((item) => item?.type === "image_url" && item.image_url?.url)
     .map((item) => item.image_url!.url!);
 }
+
+/**
+ * Truncates a file name to a maximum length, preserving the extension.
+ * @param name - The file name to truncate
+ * @param maxLength - Maximum length (default: 20)
+ * @returns Truncated file name with ellipsis if needed
+ */
+export function truncateFileName(name: string, maxLength: number = 20): string {
+  if (name.length <= maxLength) return name;
+  const extension = name.split(".").pop();
+  const nameWithoutExtension = name.slice(0, name.lastIndexOf("."));
+  const truncated = nameWithoutExtension.slice(
+    0,
+    maxLength - (extension ? extension.length + 4 : 3),
+  );
+  return extension ? `${truncated}...${extension}` : `${truncated}...`;
+}
+
+/**
+ * Gets a display name for an image based on its name and position.
+ * @param image - The staged image
+ * @param allImages - All staged images
+ * @param index - Current image index
+ * @returns Display name for the image
+ */
+export function getImageDisplayName(
+  image: { name?: string },
+  allImages: { name?: string }[],
+  index: number,
+): string {
+  if (image.name && image.name !== "image.png") {
+    return truncateFileName(image.name);
+  }
+  const unnamedImagesBefore = allImages
+    .slice(0, index)
+    .filter((img) => !img.name || img.name === "image.png").length;
+  return unnamedImagesBefore === 0
+    ? "Image"
+    : `Image ${unnamedImagesBefore + 1}`;
+}
