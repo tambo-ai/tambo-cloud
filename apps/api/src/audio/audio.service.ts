@@ -1,12 +1,17 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import mimeTypes from "mime-types";
 import { OpenAI, toFile } from "openai";
 
 @Injectable()
 export class AudioService {
   private readonly logger = new Logger(AudioService.name);
-  private readonly openaiClient = new OpenAI({
-    apiKey: process.env["OPENAI_API_KEY"],
-  });
+  private readonly openaiClient: OpenAI;
+
+  constructor(@Inject("OPENAI_API_KEY") private readonly openaiApiKey: string) {
+    this.openaiClient = new OpenAI({
+      apiKey: this.openaiApiKey,
+    });
+  }
 
   async transcribeAudio(
     audioBuffer: Buffer,
@@ -47,7 +52,7 @@ export class AudioService {
   ): Promise<string> {
     const audioFile = await toFile(
       audioBuffer as unknown as ArrayBuffer,
-      `audio`,
+      `audio.${mimeTypes.extension(mimeType)}`,
       {
         type: mimeType,
       },

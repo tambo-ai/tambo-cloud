@@ -15,6 +15,7 @@ import {
   ApiSecurity,
   ApiTags,
 } from "@nestjs/swagger";
+import mimeTypes from "mime-types";
 import { ApiKeyGuard } from "src/projects/guards/apikey.guard";
 import { AudioService } from "./audio.service";
 import { TranscribeAudioDto } from "./dto/transcribe-audio.dto";
@@ -43,11 +44,11 @@ export class AudioController {
     description: "Invalid audio file or format",
   })
   async transcribeAudio(@UploadedFile() file: any) {
-    this.validateAudioFile(file);
-    return await this.audioService.transcribeAudio(file.buffer, file.mimetype);
+    const mimeType = this.validateAudioFile(file);
+    return await this.audioService.transcribeAudio(file.buffer, mimeType);
   }
 
-  private validateAudioFile(file: any): void {
+  private validateAudioFile(file: any): string {
     if (!file) {
       throw new BadRequestException("No audio file provided");
     }
@@ -63,10 +64,15 @@ export class AudioController {
       "video/mp4",
     ];
 
-    if (!allowedMimeTypes.includes(file.mimetype)) {
+    const mimeType = file.mimetype || mimeTypes.contentType(file.originalname);
+    console.log("mimeType", mimeType);
+
+    if (!allowedMimeTypes.includes(mimeType)) {
       throw new BadRequestException(
-        `Unsupported file type: ${file.mimetype}. Supported types: ${allowedMimeTypes.join(", ")}`,
+        `Unsupported file type: ${mimeType}. Supported types: ${allowedMimeTypes.join(", ")}`,
       );
     }
+
+    return mimeType;
   }
 }
