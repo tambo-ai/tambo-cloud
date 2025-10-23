@@ -58,7 +58,7 @@ export class AudioService {
     model: string = "gpt-4o-mini-transcribe",
   ): Promise<string> {
     const audioFile = await toFile(
-      audioBuffer as unknown as ArrayBuffer,
+      audioBuffer,
       `audio.${mimeTypes.extension(mimeType)}`,
       {
         type: mimeType,
