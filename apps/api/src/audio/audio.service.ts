@@ -14,8 +14,10 @@ export class AudioService {
         `Transcribing audio: format=${format}, bufferSize=${audioBuffer.length} bytes`,
       );
 
-      const formData = this.createTranscriptionFormData(audioBuffer, format);
-      const transcription = await this.transcribeWithOpenai(formData);
+      const transcription = await this.transcribeWithOpenai(
+        audioBuffer,
+        format,
+      );
 
       return this.processTranscriptionResult(transcription);
     } catch (error: unknown) {
@@ -32,10 +34,11 @@ export class AudioService {
     }
   }
 
-  private createTranscriptionFormData(
+  private async transcribeWithOpenai(
     audioBuffer: Buffer,
     format: string,
-  ): FormData {
+    model: string = "gpt-4o-mini-transcribe",
+  ): Promise<string> {
     const formData = new FormData();
     const mimeType = format === "mp3" ? "audio/mpeg" : `audio/${format}`;
     const audioBlob = new Blob([audioBuffer as unknown as ArrayBuffer], {
@@ -43,13 +46,9 @@ export class AudioService {
     });
 
     formData.append("file", audioBlob, `audio.${format}`);
-    formData.append("model", "whisper-1");
+    formData.append("model", model);
     formData.append("response_format", "text");
 
-    return formData;
-  }
-
-  private async transcribeWithOpenai(formData: FormData): Promise<string> {
     const response = await fetch(
       "https://api.openai.com/v1/audio/transcriptions",
       {
