@@ -8,8 +8,10 @@ export class AudioService {
     audioBuffer: Buffer,
     format: string = "mp3",
   ): Promise<string> {
+    if (audioBuffer.length === 0) {
+      throw new Error("Invalid audio data - buffer is empty");
+    }
     try {
-      this.validateAudioBuffer(audioBuffer);
       this.logger.log(
         `Transcribing audio: format=${format}, bufferSize=${audioBuffer.length} bytes`,
       );
@@ -25,12 +27,6 @@ export class AudioService {
         error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Audio transcription failed: ${errorMessage}`);
       throw new Error(`Failed to transcribe audio: ${errorMessage}`);
-    }
-  }
-
-  private validateAudioBuffer(audioBuffer: Buffer): void {
-    if (audioBuffer.length === 0) {
-      throw new Error("Invalid audio data - buffer is empty");
     }
   }
 
