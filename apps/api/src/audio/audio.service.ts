@@ -4,7 +4,6 @@ import {
   Injectable,
   Logger,
 } from "@nestjs/common";
-import mimeTypes from "mime-types";
 import { OpenAI, toFile } from "openai";
 
 @Injectable()
@@ -20,19 +19,19 @@ export class AudioService {
 
   async transcribeAudio(
     audioBuffer: Buffer,
-    mimeType: string,
+    filename: string,
   ): Promise<string> {
     if (audioBuffer.length === 0) {
       throw new BadRequestException("Invalid audio data - buffer is empty");
     }
     try {
       this.logger.log(
-        `Transcribing audio: mimeType=${mimeType}, bufferSize=${audioBuffer.length} bytes`,
+        `Transcribing audio: bufferSize=${audioBuffer.length} bytes`,
       );
 
       const transcription = await this.transcribeWithOpenai(
         audioBuffer,
-        mimeType,
+        filename,
       );
 
       if (!transcription || transcription.trim().length === 0) {
@@ -54,16 +53,10 @@ export class AudioService {
 
   private async transcribeWithOpenai(
     audioBuffer: Buffer,
-    mimeType: string,
+    filename: string,
     model: string = "gpt-4o-mini-transcribe",
   ): Promise<string> {
-    const audioFile = await toFile(
-      audioBuffer,
-      `audio.${mimeTypes.extension(mimeType)}`,
-      {
-        type: mimeType,
-      },
-    );
+    const audioFile = await toFile(audioBuffer, filename);
     const transcription = await this.openaiClient.audio.transcriptions.create({
       file: audioFile,
       model: model,

@@ -46,14 +46,17 @@ export class AudioController {
     description: "Invalid audio file or format",
   })
   async transcribeAudio(@UploadedFile() file: Express.Multer.File) {
-    const mimeType = this.validateAudioFile(file);
-    return await this.audioService.transcribeAudio(file.buffer, mimeType);
+    this.validateAudioFile(file);
+    return await this.audioService.transcribeAudio(
+      file.buffer,
+      file.originalname,
+    );
   }
 
   private validateAudioFile(
     file: Express.Multer.File,
     maxFileSizeBytes: number = this.MAX_FILE_SIZE_MB * 1024 * 1024,
-  ): string {
+  ): void {
     if (file.size > maxFileSizeBytes) {
       throw new BadRequestException(
         `File too large. Maximum size allowed is ${maxFileSizeBytes / (1024 * 1024)}MB`,
@@ -67,6 +70,7 @@ export class AudioController {
       "audio/wave",
       "audio/mp4",
       "audio/m4a",
+      "audio/x-m4a",
       "audio/webm",
       "video/mp4",
     ];
@@ -79,7 +83,5 @@ export class AudioController {
         `Unsupported file type: ${mimeType}. Supported types: ${allowedMimeTypes.join(", ")}`,
       );
     }
-
-    return mimeType;
   }
 }
