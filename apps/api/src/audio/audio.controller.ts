@@ -27,6 +27,9 @@ import { TranscribeAudioDto } from "./dto/transcribe-audio.dto";
 export class AudioController {
   constructor(private readonly audioService: AudioService) {}
 
+  // Maximum file size in MB
+  private readonly MAX_FILE_SIZE_MB = 25;
+
   @Post("transcribe")
   @UseInterceptors(FileInterceptor("file"))
   @ApiConsumes("multipart/form-data")
@@ -36,21 +39,25 @@ export class AudioController {
   })
   @ApiOperation({
     summary: "Transcribe audio to text",
-    description:
-      "Upload an audio file and get its transcription. Supports MP3, WAV, MP4, MPEG, MPGA, M4A, and WEBM formats.",
+    description: `Upload an audio file and get its transcription. Supports MP3, WAV, MP4, MPEG, MPGA, M4A, and WEBM formats. Maximum file size is 25 MB.`,
   })
   @ApiResponse({
     status: 400,
     description: "Invalid audio file or format",
   })
-  async transcribeAudio(@UploadedFile() file: any) {
+  async transcribeAudio(@UploadedFile() file: Express.Multer.File) {
     const mimeType = this.validateAudioFile(file);
     return await this.audioService.transcribeAudio(file.buffer, mimeType);
   }
 
-  private validateAudioFile(file: any): string {
-    if (!file) {
-      throw new BadRequestException("No audio file provided");
+  private validateAudioFile(
+    file: Express.Multer.File,
+    maxFileSizeBytes: number = this.MAX_FILE_SIZE_MB * 1024 * 1024,
+  ): string {
+    if (file.size > maxFileSizeBytes) {
+      throw new BadRequestException(
+        `File too large. Maximum size allowed is ${maxFileSizeBytes / (1024 * 1024)}MB`,
+      );
     }
 
     const allowedMimeTypes = [
@@ -64,8 +71,8 @@ export class AudioController {
       "video/mp4",
     ];
 
-    const mimeType = file.mimetype || mimeTypes.contentType(file.originalname);
-    console.log("mimeType", mimeType);
+    const mimeType =
+      file.mimetype || mimeTypes.contentType(file.originalname) || "unknown";
 
     if (!allowedMimeTypes.includes(mimeType)) {
       throw new BadRequestException(

@@ -1,4 +1,9 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from "@nestjs/common";
 import mimeTypes from "mime-types";
 import { OpenAI, toFile } from "openai";
 
@@ -18,7 +23,7 @@ export class AudioService {
     mimeType: string,
   ): Promise<string> {
     if (audioBuffer.length === 0) {
-      throw new Error("Invalid audio data - buffer is empty");
+      throw new BadRequestException("Invalid audio data - buffer is empty");
     }
     try {
       this.logger.log(
@@ -31,7 +36,7 @@ export class AudioService {
       );
 
       if (!transcription || transcription.trim().length === 0) {
-        throw new Error(
+        throw new BadRequestException(
           "Empty transcription received - audio might be silent or invalid",
         );
       }
@@ -41,7 +46,9 @@ export class AudioService {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Audio transcription failed: ${errorMessage}`);
-      throw new Error(`Failed to transcribe audio: ${errorMessage}`);
+      throw new BadRequestException(
+        `Failed to transcribe audio: ${errorMessage}`,
+      );
     }
   }
 

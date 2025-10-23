@@ -9,5 +9,5 @@ export class TranscribeAudioDto {
     format: "binary",
   })
   @IsNotEmpty()
-  file!: any;
+  file!: Express.Multer.File;
 }
