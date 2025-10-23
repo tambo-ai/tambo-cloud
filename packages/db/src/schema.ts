@@ -813,11 +813,11 @@ export const tamboUsers = pgTable(
     }),
 
     /** @deprecated - Reactivation email feature removed, column kept for data preservation */
-    reactivationEmailSentAt: timestamp("reactivation_email_sent_at", {
+    deprecatedReactivationEmailSentAt: timestamp("reactivation_email_sent_at", {
       withTimezone: true,
     }),
     /** @deprecated - Reactivation email feature removed, column kept for data preservation */
-    reactivationEmailCount: integer("reactivation_email_count")
+    deprecatedReactivationEmailCount: integer("reactivation_email_count")
       .notNull()
       .default(0),
 
@@ -836,9 +836,9 @@ export const tamboUsers = pgTable(
       table.lastActivityAt,
     ),
     /** @deprecated - Reactivation email feature removed, index kept for data preservation */
-    reactivationSentIdx: index("idx_tambo_users_reactivation_sent").on(
-      table.reactivationEmailSentAt,
-    ),
+    deprecatedReactivationSentIdx: index(
+      "idx_tambo_users_reactivation_sent",
+    ).on(table.deprecatedReactivationEmailSentAt),
     welcomeEmailSentIdx: index("idx_tambo_users_welcome_email_sent").on(
       table.welcomeEmailSent,
     ),
