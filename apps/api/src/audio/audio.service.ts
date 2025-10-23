@@ -15,7 +15,7 @@ export class AudioService {
       );
 
       const formData = this.createTranscriptionFormData(audioBuffer, format);
-      const transcription = await this.callOpenAIWhisperAPI(formData);
+      const transcription = await this.transcribeWithOpenai(formData);
 
       return this.processTranscriptionResult(transcription);
     } catch (error: unknown) {
@@ -49,7 +49,7 @@ export class AudioService {
     return formData;
   }
 
-  private async callOpenAIWhisperAPI(formData: FormData): Promise<string> {
+  private async transcribeWithOpenai(formData: FormData): Promise<string> {
     const response = await fetch(
       "https://api.openai.com/v1/audio/transcriptions",
       {
