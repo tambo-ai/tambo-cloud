@@ -111,7 +111,7 @@ export function createMcpHandlers(
   };
 }
 type McpContent = Parameters<
-  MCPHandlers["sampling"]
+  NonNullable<MCPHandlers["sampling"]>
 >[0]["params"]["messages"][0]["content"];
 function mcpContentToContentPart(
   content: McpContent,

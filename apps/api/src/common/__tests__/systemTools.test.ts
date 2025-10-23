@@ -1,4 +1,5 @@
 import { jest } from "@jest/globals";
+import { Logger } from "@nestjs/common";
 import {
   LogLevel,
   MCPClient,
@@ -11,7 +12,6 @@ import {
 import { getDb, operations, schema } from "@tambo-ai-cloud/db";
 import { type JSONSchema7 } from "json-schema";
 import { getSystemTools, getThreadMCPClients } from "../systemTools";
-import { Logger } from "@nestjs/common";
 
 // Mock the db module
 jest.mock("@tambo-ai-cloud/db", () => {
@@ -76,8 +76,8 @@ const _mcpClientInstance = null as unknown as MCPClient;
 // Factory function to create properly typed MCPHandlers mocks
 function createMcpHandlerMocks(): MCPHandlers {
   return {
-    elicitation: jest.fn<MCPHandlers["elicitation"]>(),
-    sampling: jest.fn<MCPHandlers["sampling"]>(),
+    elicitation: jest.fn<NonNullable<MCPHandlers["elicitation"]>>(),
+    sampling: jest.fn<NonNullable<MCPHandlers["sampling"]>>(),
   };
 }
 
