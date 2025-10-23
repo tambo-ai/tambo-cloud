@@ -17,13 +17,11 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { ApiKeyGuard } from "src/projects/guards/apikey.guard";
-import { BearerTokenGuard } from "src/projects/guards/bearer-token.guard";
 import { AudioService } from "./audio.service";
 
 @ApiTags("audio")
 @ApiSecurity("apiKey")
-@ApiSecurity("bearer")
-@UseGuards(ApiKeyGuard, BearerTokenGuard)
+@UseGuards(ApiKeyGuard)
 @Controller("audio")
 export class AudioController {
   constructor(private readonly audioService: AudioService) {}
