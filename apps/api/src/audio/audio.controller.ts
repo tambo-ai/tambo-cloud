@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Post,
   UploadedFile,
@@ -40,12 +39,6 @@ export class AudioController {
           format: "binary",
           description: "Audio file (MP3, WAV, MP4, MPEG, MPGA, M4A, or WEBM)",
         },
-        format: {
-          type: "string",
-          enum: ["mp3", "wav", "mp4", "mpeg", "mpga", "m4a", "webm"],
-          description:
-            "Audio format (optional, will be auto-detected if not provided)",
-        },
       },
       required: ["file"],
     },
@@ -59,13 +52,9 @@ export class AudioController {
     status: 400,
     description: "Invalid audio file or format",
   })
-  async transcribeAudio(
-    @UploadedFile() file: any,
-    @Body("format") format?: string,
-  ) {
+  async transcribeAudio(@UploadedFile() file: any) {
     this.validateAudioFile(file);
-    const audioFormat = this.determineAudioFormat(file, format);
-    return await this.audioService.transcribeAudio(file.buffer, audioFormat);
+    return await this.audioService.transcribeAudio(file.buffer, file.mimetype);
   }
 
   private validateAudioFile(file: any): void {
@@ -81,62 +70,13 @@ export class AudioController {
       "audio/mp4",
       "audio/m4a",
       "audio/webm",
-      "video/mp4", // MP4 can be video container with audio
+      "video/mp4",
     ];
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
         `Unsupported file type: ${file.mimetype}. Supported types: ${allowedMimeTypes.join(", ")}`,
       );
-    }
-  }
-
-  private determineAudioFormat(file: any, format?: string): string {
-    if (format) {
-      return format;
-    }
-
-    // Check MIME types first
-    if (file.mimetype === "audio/mpeg" || file.mimetype === "audio/mp3") {
-      return "mp3";
-    }
-
-    if (file.mimetype === "audio/wav" || file.mimetype === "audio/wave") {
-      return "wav";
-    }
-
-    if (file.mimetype === "audio/mp4" || file.mimetype === "video/mp4") {
-      return "mp4";
-    }
-
-    if (file.mimetype === "audio/m4a") {
-      return "m4a";
-    }
-
-    if (file.mimetype === "audio/webm") {
-      return "webm";
-    }
-
-    // Fallback to file extension
-    const extension = file.originalname.split(".").pop()?.toLowerCase();
-
-    switch (extension) {
-      case "wav":
-        return "wav";
-      case "mp3":
-        return "mp3";
-      case "mp4":
-        return "mp4";
-      case "mpeg":
-        return "mpeg";
-      case "mpga":
-        return "mpga";
-      case "m4a":
-        return "m4a";
-      case "webm":
-        return "webm";
-      default:
-        return "mp3"; // Default fallback
     }
   }
 }

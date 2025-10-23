@@ -10,19 +10,19 @@ export class AudioService {
 
   async transcribeAudio(
     audioBuffer: Buffer,
-    format: string = "mp3",
+    mimeType: string,
   ): Promise<string> {
     if (audioBuffer.length === 0) {
       throw new Error("Invalid audio data - buffer is empty");
     }
     try {
       this.logger.log(
-        `Transcribing audio: format=${format}, bufferSize=${audioBuffer.length} bytes`,
+        `Transcribing audio: mimeType=${mimeType}, bufferSize=${audioBuffer.length} bytes`,
       );
 
       const transcription = await this.transcribeWithOpenai(
         audioBuffer,
-        format,
+        mimeType,
       );
 
       if (!transcription || transcription.trim().length === 0) {
@@ -42,14 +42,12 @@ export class AudioService {
 
   private async transcribeWithOpenai(
     audioBuffer: Buffer,
-    format: string,
+    mimeType: string,
     model: string = "gpt-4o-mini-transcribe",
   ): Promise<string> {
-    const mimeType = format === "mp3" ? "audio/mpeg" : `audio/${format}`;
-
     const audioFile = await toFile(
       audioBuffer as unknown as ArrayBuffer,
-      `audio.${format}`,
+      `audio`,
       {
         type: mimeType,
       },
