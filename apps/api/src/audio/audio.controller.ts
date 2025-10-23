@@ -73,40 +73,45 @@ export class AudioController {
     @UploadedFile() file: any,
     @Body("format") format?: string,
   ) {
+    this.validateAudioFile(file);
+    const audioFormat = this.determineAudioFormat(file, format);
+    return await this.audioService.transcribeAudio(file.buffer, audioFormat);
+  }
+
+  private validateAudioFile(file: any): void {
     if (!file) {
       throw new BadRequestException("No audio file provided");
     }
 
-    // Validate file type
     const allowedMimeTypes = [
       "audio/mpeg",
       "audio/mp3",
       "audio/wav",
       "audio/wave",
     ];
+
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
         `Unsupported file type: ${file.mimetype}. Supported types: ${allowedMimeTypes.join(", ")}`,
       );
     }
+  }
 
-    // Determine format from file extension or mime type
-    let audioFormat = format;
-    if (!audioFormat) {
-      if (file.mimetype === "audio/mpeg" || file.mimetype === "audio/mp3") {
-        audioFormat = "mp3";
-      } else if (
-        file.mimetype === "audio/wav" ||
-        file.mimetype === "audio/wave"
-      ) {
-        audioFormat = "wav";
-      } else {
-        // Fallback to file extension
-        const extension = file.originalname.split(".").pop()?.toLowerCase();
-        audioFormat = extension === "wav" ? "wav" : "mp3";
-      }
+  private determineAudioFormat(file: any, format?: string): string {
+    if (format) {
+      return format;
     }
 
-    return await this.audioService.transcribeAudio(file.buffer, audioFormat);
+    if (file.mimetype === "audio/mpeg" || file.mimetype === "audio/mp3") {
+      return "mp3";
+    }
+
+    if (file.mimetype === "audio/wav" || file.mimetype === "audio/wave") {
+      return "wav";
+    }
+
+    // Fallback to file extension
+    const extension = file.originalname.split(".").pop()?.toLowerCase();
+    return extension === "wav" ? "wav" : "mp3";
   }
 }
