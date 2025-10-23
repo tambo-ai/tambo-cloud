@@ -561,13 +561,6 @@
       "when": 1760552119610,
       "tag": "0079_futuristic_master_mold",
       "breakpoints": true
-    },
-    {
-      "idx": 80,
-      "version": "7",
-      "when": 1761253955685,
-      "tag": "0080_puzzling_shooting_star",
-      "breakpoints": true
     }
   ]
 }
