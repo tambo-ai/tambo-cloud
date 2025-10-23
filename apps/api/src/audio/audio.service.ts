@@ -1,8 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { OpenAI, toFile } from "openai";
 
 @Injectable()
 export class AudioService {
   private readonly logger = new Logger(AudioService.name);
+  private readonly openaiClient = new OpenAI({
+    apiKey: process.env["OPENAI_API_KEY"],
+  });
 
   async transcribeAudio(
     audioBuffer: Buffer,
@@ -41,34 +45,21 @@ export class AudioService {
     format: string,
     model: string = "gpt-4o-mini-transcribe",
   ): Promise<string> {
-    const formData = new FormData();
     const mimeType = format === "mp3" ? "audio/mpeg" : `audio/${format}`;
-    const audioBlob = new Blob([audioBuffer as unknown as ArrayBuffer], {
-      type: mimeType,
-    });
 
-    formData.append("file", audioBlob, `audio.${format}`);
-    formData.append("model", model);
-    formData.append("response_format", "text");
-
-    const response = await fetch(
-      "https://api.openai.com/v1/audio/transcriptions",
+    const audioFile = await toFile(
+      audioBuffer as unknown as ArrayBuffer,
+      `audio.${format}`,
       {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: formData,
+        type: mimeType,
       },
     );
+    const transcription = await this.openaiClient.audio.transcriptions.create({
+      file: audioFile,
+      model: model,
+      response_format: "text",
+    });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        `OpenAI API error: ${response.status} - ${errorData.error?.message || "Unknown error"}`,
-      );
-    }
-
-    return await response.text();
+    return transcription;
   }
 }
