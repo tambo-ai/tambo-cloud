@@ -5,7 +5,6 @@ import {
   Tooltip,
   TooltipProvider,
 } from "@/components/ui/tambo/suggestions-tooltip";
-import { getImageDisplayName } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import {
   useIsTamboTokenUpdating,
@@ -866,7 +865,11 @@ const MessageInputStagedImages = React.forwardRef<
         <ImageBadge
           key={image.id}
           image={image}
-          displayName={getImageDisplayName(image, images, index)}
+          displayName={
+            image.name && !image.name.toLocaleLowerCase().startsWith("image.")
+              ? image.name
+              : `Image ${index + 1}`
+          }
           isExpanded={expandedImageId === image.id}
           onToggle={() =>
             setExpandedImageId(expandedImageId === image.id ? null : image.id)
