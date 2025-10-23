@@ -21,7 +21,13 @@ export class AudioService {
         format,
       );
 
-      return this.processTranscriptionResult(transcription);
+      if (!transcription || transcription.trim().length === 0) {
+        throw new Error(
+          "Empty transcription received - audio might be silent or invalid",
+        );
+      }
+
+      return transcription;
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -64,19 +70,5 @@ export class AudioService {
     }
 
     return await response.text();
-  }
-
-  private processTranscriptionResult(transcription: string): string {
-    this.logger.log(
-      `Transcription successful: length=${transcription.length}, content="${transcription}"`,
-    );
-
-    if (!transcription || transcription.trim().length === 0) {
-      throw new Error(
-        "Empty transcription received - audio might be silent or invalid",
-      );
-    }
-
-    return transcription;
   }
 }
