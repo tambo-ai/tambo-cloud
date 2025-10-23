@@ -17,6 +17,7 @@ import {
 } from "@nestjs/swagger";
 import { ApiKeyGuard } from "src/projects/guards/apikey.guard";
 import { AudioService } from "./audio.service";
+import { TranscribeAudioDto } from "./dto/transcribe-audio.dto";
 
 @ApiTags("audio")
 @ApiSecurity("apiKey")
@@ -30,18 +31,7 @@ export class AudioController {
   @ApiConsumes("multipart/form-data")
   @ApiBody({
     description: "Audio file to transcribe",
-    type: "multipart/form-data",
-    schema: {
-      type: "object",
-      properties: {
-        file: {
-          type: "string",
-          format: "binary",
-          description: "Audio file (MP3, WAV, MP4, MPEG, MPGA, M4A, or WEBM)",
-        },
-      },
-      required: ["file"],
-    },
+    type: TranscribeAudioDto,
   })
   @ApiOperation({
     summary: "Transcribe audio to text",
