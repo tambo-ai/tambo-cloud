@@ -425,6 +425,12 @@ const MessageInputTextarea = ({
       const file = item.getAsFile();
       if (file) {
         try {
+          // Mark this file as pasted so we can show "Image 1", "Image 2", etc.
+          Object.defineProperty(file, "wasPasted", {
+            value: true,
+            writable: false,
+            enumerable: false,
+          });
           await addImage(file);
         } catch (error) {
           console.error("Failed to add pasted image:", error);
@@ -866,9 +872,9 @@ const MessageInputStagedImages = React.forwardRef<
           key={image.id}
           image={image}
           displayName={
-            image.name && !image.name.toLocaleLowerCase().startsWith("image.")
-              ? image.name
-              : `Image ${index + 1}`
+            (image.file as File & { wasPasted?: boolean }).wasPasted
+              ? `Image ${index + 1}`
+              : image.name
           }
           isExpanded={expandedImageId === image.id}
           onToggle={() =>
