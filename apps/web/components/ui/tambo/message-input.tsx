@@ -730,9 +730,9 @@ const MessageInputFileButton = React.forwardRef<
 MessageInputFileButton.displayName = "MessageInput.FileButton";
 
 /**
- * Props for the ImageBadge component.
+ * Props for the ImageContextBadge component.
  */
-interface ImageBadgeProps {
+interface ImageContextBadgeProps {
   image: StagedImage;
   displayName: string;
   isExpanded: boolean;
@@ -741,13 +741,13 @@ interface ImageBadgeProps {
 }
 
 /**
- * Badge component that displays a staged image with expandable preview.
+ * ContextBadge component that displays a staged image with expandable preview.
  * Shows a compact badge with icon and name by default, expands to show image preview on click.
  *
  * @component
  * @example
  * ```tsx
- * <ImageBadge
+ * <ImageContextBadge
  *   image={stagedImage}
  *   displayName="Image"
  *   isExpanded={false}
@@ -756,7 +756,7 @@ interface ImageBadgeProps {
  * />
  * ```
  */
-const ImageBadge: React.FC<ImageBadgeProps> = ({
+const ImageContextBadge: React.FC<ImageContextBadgeProps> = ({
   image,
   displayName,
   isExpanded,
@@ -862,7 +862,7 @@ const MessageInputStagedImages = React.forwardRef<
       {...props}
     >
       {images.map((image, index) => (
-        <ImageBadge
+        <ImageContextBadge
           key={image.id}
           image={image}
           displayName={
