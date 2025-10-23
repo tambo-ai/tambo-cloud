@@ -768,6 +768,7 @@ const ImageBadge: React.FC<ImageBadgeProps> = ({
     <button
       type="button"
       onClick={onToggle}
+      aria-expanded={isExpanded}
       className={cn(
         "relative flex items-center rounded-lg border overflow-hidden",
         "border-border bg-background hover:bg-muted cursor-pointer",
@@ -775,25 +776,28 @@ const ImageBadge: React.FC<ImageBadgeProps> = ({
         isExpanded ? "w-40 h-28 p-0" : "w-32 h-9 pl-3 pr-8 gap-2",
       )}
     >
-      <div
-        className={cn(
-          "absolute inset-0 transition-opacity duration-150",
-          isExpanded ? "opacity-100 delay-100" : "opacity-0",
-        )}
-      >
-        <div className="relative w-full h-full">
-          <Image
-            src={image.dataUrl}
-            alt={displayName}
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <div className="absolute bottom-1 left-2 right-2 text-white text-xs font-medium truncate">
-            {displayName}
+      {isExpanded && (
+        <div
+          className={cn(
+            "absolute inset-0 transition-opacity duration-150",
+            "opacity-100 delay-100",
+          )}
+        >
+          <div className="relative w-full h-full">
+            <Image
+              src={image.dataUrl}
+              alt={displayName}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute bottom-1 left-2 right-2 text-white text-xs font-medium truncate">
+              {displayName}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       <span
         className={cn(
           "flex items-center gap-1.5 text-sm text-foreground truncate leading-none transition-opacity duration-150",

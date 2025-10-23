@@ -1,6 +1,6 @@
+import type { TamboThreadMessage } from "@tambo-ai/react";
 import * as React from "react";
 import { useEffect, useState } from "react";
-import type { TamboThreadMessage } from "@tambo-ai/react";
 
 /**
  * Custom hook to merge multiple refs into one callback ref
@@ -193,13 +193,16 @@ export function getMessageImages(
  */
 export function truncateFileName(name: string, maxLength: number = 20): string {
   if (name.length <= maxLength) return name;
-  const extension = name.split(".").pop();
-  const nameWithoutExtension = name.slice(0, name.lastIndexOf("."));
-  const truncated = nameWithoutExtension.slice(
-    0,
-    maxLength - (extension ? extension.length + 4 : 3),
-  );
-  return extension ? `${truncated}...${extension}` : `${truncated}...`;
+
+  const lastDot = name.lastIndexOf(".");
+  const hasExtension = lastDot > 0 && lastDot < name.length - 1;
+  const extension = hasExtension ? name.slice(lastDot + 1) : "";
+  const base = hasExtension ? name.slice(0, lastDot) : name;
+
+  const suffix = extension ? `....${extension}` : "...";
+  const baseMax = Math.max(0, maxLength - suffix.length);
+  const truncatedBase = base.slice(0, baseMax);
+  return `${truncatedBase}${suffix}`;
 }
 
 /**
