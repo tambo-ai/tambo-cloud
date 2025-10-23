@@ -785,7 +785,7 @@ export type DBToolProviderUserContext =
 
 export const tamboUsers = pgTable(
   "tambo_users",
-  ({ text, timestamp, uuid, boolean, integer }) => ({
+  ({ text, timestamp, uuid, boolean }) => ({
     id: text("id")
       .primaryKey()
       .notNull()
@@ -812,14 +812,6 @@ export const tamboUsers = pgTable(
       withTimezone: true,
     }),
 
-    // Reactivation email tracking
-    reactivationEmailSentAt: timestamp("reactivation_email_sent_at", {
-      withTimezone: true,
-    }),
-    reactivationEmailCount: integer("reactivation_email_count")
-      .notNull()
-      .default(0),
-
     // Legal acceptance tracking
     legalAccepted: boolean("legal_accepted").notNull().default(false),
     legalAcceptedAt: timestamp("legal_accepted_at", { withTimezone: true }),
@@ -833,9 +825,6 @@ export const tamboUsers = pgTable(
     userIdIdx: index("idx_tambo_users_user_id").on(table.userId),
     lastActivityIdx: index("idx_tambo_users_last_activity").on(
       table.lastActivityAt,
-    ),
-    reactivationSentIdx: index("idx_tambo_users_reactivation_sent").on(
-      table.reactivationEmailSentAt,
     ),
     welcomeEmailSentIdx: index("idx_tambo_users_welcome_email_sent").on(
       table.welcomeEmailSent,
