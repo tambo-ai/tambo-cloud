@@ -40,11 +40,11 @@ export class AudioController {
         file: {
           type: "string",
           format: "binary",
-          description: "Audio file (MP3 or WAV)",
+          description: "Audio file (MP3, WAV, MP4, MPEG, MPGA, M4A, or WEBM)",
         },
         format: {
           type: "string",
-          enum: ["mp3", "wav"],
+          enum: ["mp3", "wav", "mp4", "mpeg", "mpga", "m4a", "webm"],
           description:
             "Audio format (optional, will be auto-detected if not provided)",
         },
@@ -55,15 +55,7 @@ export class AudioController {
   @ApiOperation({
     summary: "Transcribe audio to text",
     description:
-      "Upload an audio file and get its transcription. Supports MP3 and WAV formats.",
-  })
-  @ApiResponse({
-    status: 200,
-    description: "Audio transcribed successfully",
-    schema: {
-      type: "string",
-      example: "Hello, this is a transcription of the audio file.",
-    },
+      "Upload an audio file and get its transcription. Supports MP3, WAV, MP4, MPEG, MPGA, M4A, and WEBM formats.",
   })
   @ApiResponse({
     status: 400,
@@ -88,6 +80,10 @@ export class AudioController {
       "audio/mp3",
       "audio/wav",
       "audio/wave",
+      "audio/mp4",
+      "audio/m4a",
+      "audio/webm",
+      "video/mp4", // MP4 can be video container with audio
     ];
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
@@ -102,6 +98,7 @@ export class AudioController {
       return format;
     }
 
+    // Check MIME types first
     if (file.mimetype === "audio/mpeg" || file.mimetype === "audio/mp3") {
       return "mp3";
     }
@@ -110,8 +107,38 @@ export class AudioController {
       return "wav";
     }
 
+    if (file.mimetype === "audio/mp4" || file.mimetype === "video/mp4") {
+      return "mp4";
+    }
+
+    if (file.mimetype === "audio/m4a") {
+      return "m4a";
+    }
+
+    if (file.mimetype === "audio/webm") {
+      return "webm";
+    }
+
     // Fallback to file extension
     const extension = file.originalname.split(".").pop()?.toLowerCase();
-    return extension === "wav" ? "wav" : "mp3";
+
+    switch (extension) {
+      case "wav":
+        return "wav";
+      case "mp3":
+        return "mp3";
+      case "mp4":
+        return "mp4";
+      case "mpeg":
+        return "mpeg";
+      case "mpga":
+        return "mpga";
+      case "m4a":
+        return "m4a";
+      case "webm":
+        return "webm";
+      default:
+        return "mp3"; // Default fallback
+    }
   }
 }

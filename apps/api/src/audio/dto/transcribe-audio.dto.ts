@@ -4,6 +4,11 @@ import { IsEnum, IsNotEmpty, IsOptional } from "class-validator";
 export enum AudioFormat {
   WAV = "wav",
   MP3 = "mp3",
+  MP4 = "mp4",
+  MPEG = "mpeg",
+  MPGA = "mpga",
+  M4A = "m4a",
+  WEBM = "webm",
 }
 
 export class TranscribeAudioDto {
