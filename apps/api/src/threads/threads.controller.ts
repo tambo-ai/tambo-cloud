@@ -24,9 +24,9 @@ import {
 } from "@nestjs/swagger";
 import { AsyncQueue, GenerationStage } from "@tambo-ai-cloud/core";
 import { Request, Response } from "express";
-import { ApiKeyGuard } from "src/projects/guards/apikey.guard";
-import { BearerTokenGuard } from "src/projects/guards/bearer-token.guard";
 import { extractContextInfo } from "../common/utils/extract-context-info";
+import { ApiKeyGuard } from "../projects/guards/apikey.guard";
+import { BearerTokenGuard } from "../projects/guards/bearer-token.guard";
 import {
   ProjectAccessOwnGuard,
   ProjectIdParameterKey,
