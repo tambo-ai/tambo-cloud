@@ -55,24 +55,9 @@ export async function createMcpServer(
      */
     async dispose() {
       await Promise.allSettled(
-        mcpClients.map(async ({ client: upstream }) => {
+        mcpClients.map(async ({ client }) => {
           try {
-            // Prefer a direct close if exposed on the wrapper
-            const maybeClosable = upstream as unknown as {
-              close?: () => Promise<void>;
-            };
-            if (typeof maybeClosable.close === "function") {
-              return await maybeClosable.close();
-            }
-            // Fallback to closing the underlying SDK client
-            const inner = (upstream as any).client as
-              | {
-                  close?: () => Promise<void>;
-                }
-              | undefined;
-            if (typeof inner?.close === "function") {
-              return await inner.close();
-            }
+            await client.close();
           } catch {
             // swallow to keep cleanup best-effort
           }
@@ -148,9 +133,11 @@ const handler = async (req: AuthenticatedMcpRequest, res: Response) => {
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
   });
-  res.on("close", () => {
-    void transport.close();
-    void dispose();
+  res.on("close", async () => {
+    // make the server transport is closed first so no requests can come in and
+    // hit closing/closed clients
+    await transport.close();
+    await dispose();
   });
   await server.connect(transport);
   await transport.handleRequest(req, res, req.body);

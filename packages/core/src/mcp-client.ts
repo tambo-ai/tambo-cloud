@@ -287,6 +287,12 @@ export class MCPClient {
     }
     this.client.setRequestHandler(CreateMessageRequestSchema, handler);
   }
+
+  async close() {
+    // Not really sure which one of these to close first, but we'll close the transport first
+    await this.transport.close();
+    await this.client.close();
+  }
 }
 
 /**
