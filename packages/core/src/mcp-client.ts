@@ -36,8 +36,8 @@ export enum MCPTransport {
  * ```
  */
 export interface MCPHandlers {
-  elicitation?: (e: ElicitRequest) => Promise<ElicitResult>;
-  sampling?: (e: CreateMessageRequest) => Promise<CreateMessageResult>;
+  elicitation: (e: ElicitRequest) => Promise<ElicitResult>;
+  sampling: (e: CreateMessageRequest) => Promise<CreateMessageResult>;
 }
 
 /**
@@ -63,7 +63,7 @@ export class MCPClient {
   private endpoint: string;
   private headers: Record<string, string>;
   private authProvider?: OAuthClientProvider;
-  private handlers: MCPHandlers;
+  private handlers: Partial<MCPHandlers>;
 
   /**
    * Private constructor to enforce using the static create method.
@@ -77,7 +77,7 @@ export class MCPClient {
     headers?: Record<string, string>,
     authProvider?: OAuthClientProvider,
     sessionId?: string,
-    handlers: MCPHandlers = {},
+    handlers: Partial<MCPHandlers> = {},
   ) {
     this.endpoint = endpoint;
     this.headers = headers ?? {};
@@ -107,7 +107,7 @@ export class MCPClient {
     headers: Record<string, string> | undefined,
     authProvider: OAuthClientProvider | undefined,
     sessionId: string | undefined,
-    handlers: MCPHandlers = {},
+    handlers: Partial<MCPHandlers> = {},
   ): Promise<MCPClient> {
     const mcpClient = new MCPClient(
       endpoint,

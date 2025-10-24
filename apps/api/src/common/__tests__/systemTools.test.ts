@@ -76,8 +76,8 @@ const _mcpClientInstance = null as unknown as MCPClient;
 // Factory function to create properly typed MCPHandlers mocks
 function createMcpHandlerMocks(): MCPHandlers {
   return {
-    elicitation: jest.fn<NonNullable<MCPHandlers["elicitation"]>>(),
-    sampling: jest.fn<NonNullable<MCPHandlers["sampling"]>>(),
+    elicitation: jest.fn<MCPHandlers["elicitation"]>(),
+    sampling: jest.fn<MCPHandlers["sampling"]>(),
   };
 }
 
