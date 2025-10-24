@@ -11,12 +11,12 @@ import {
   type CallToolRequest,
 } from "@modelcontextprotocol/sdk/types.js";
 import { Command } from "commander";
+import cors from "cors";
 import express from "express";
 import { createServer } from "http";
 import { randomUUID } from "node:crypto";
 import { McpServiceRegistry } from "./mcp-service.js";
 import { testService } from "./test-service.js";
-
 // Create MCP service registry and register services
 const serviceRegistry = new McpServiceRegistry();
 serviceRegistry.registerService(testService);
@@ -185,6 +185,20 @@ async function main() {
     const port = await findAvailablePort(desiredPort);
     const enableSessionManagement =
       serverOptions.enableSessionManagement ?? true;
+    app.use(
+      "/mcp",
+      cors({
+        origin: "*", // use "*" with caution in production
+        methods: "GET,POST,DELETE",
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
+        exposedHeaders: [
+          "mcp-session-id",
+          "last-event-id",
+          "mcp-protocol-version",
+        ],
+      }),
+    ); // Enable CORS for all routes so Inspector can connect
 
     // Handle POST requests for client-to-server communication
     app.post("/mcp", async (req, res) => {
