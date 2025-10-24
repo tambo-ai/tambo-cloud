@@ -1,4 +1,4 @@
-import { Prompt } from "@modelcontextprotocol/sdk/types";
+import { Prompt } from "@modelcontextprotocol/sdk/types.js";
 
 export const testPrompts: Prompt[] = [
   {

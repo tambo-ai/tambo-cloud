@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { MCPClient } from "@tambo-ai-cloud/core";
 import { registerPromptHandlers } from "../prompts";
 
