@@ -38,11 +38,7 @@ export async function createMcpServer(
       ],
     },
   );
-  server.server.oninitialized = () => {
-    console.log("MCP server initialized");
-  };
 
-  console.log("Trying to connect to MCP clients");
   const mcpHandlers = {};
   const mcpClients = await getThreadMCPClients(
     db,
@@ -58,7 +54,6 @@ export async function createMcpServer(
      * We intentionally swallow errors so one bad client doesn't prevent cleanup of others.
      */
     async dispose() {
-      console.log("Disposing MCP clients");
       await Promise.allSettled(
         mcpClients.map(async ({ client: upstream }) => {
           try {
@@ -99,14 +94,12 @@ async function authenticateMcpRequest(
 ) {
   const authorization = req.header("authorization");
   if (!authorization) {
-    console.log("No authorization header");
     res.status(401).send("Unauthorized");
     return;
   }
 
   // make sure authorization is a bearer token
   if (!authorization.toLowerCase().startsWith("bearer ")) {
-    console.log("Invalid authorization header");
     res.status(401).send("Unauthorized");
     return;
   }
@@ -122,18 +115,11 @@ async function authenticateMcpRequest(
       | undefined;
 
     if (!claim || !claim.projectId || !claim.threadId) {
-      console.log("Invalid authorization claim");
       res.status(403).send("Forbidden");
       return;
     }
 
     const { projectId, threadId } = claim;
-    console.log(
-      "Proxy MCP server request to projectId:",
-      projectId,
-      "threadId:",
-      threadId,
-    );
 
     // Attach to request object using symbols
     (req as AuthenticatedMcpRequest)[MCP_REQUEST_PROJECT_ID] = projectId;
@@ -197,9 +183,6 @@ export function registerHandler(expressApp: Express, path: string) {
 
   // MCP over HTTP expects POST; restrict to POST to avoid ambiguity
   expressApp.use(path, async (req, res) => {
-    console.log("Proxy MCP server request");
-    const r = await handler(req as AuthenticatedMcpRequest, res);
-    console.log("Proxy MCP server request result", r);
-    return r;
+    return await handler(req as AuthenticatedMcpRequest, res);
   });
 }

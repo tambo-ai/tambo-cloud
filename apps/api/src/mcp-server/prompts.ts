@@ -1,10 +1,12 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
 import { MCPClient } from "@tambo-ai-cloud/core";
 import Ajv from "ajv";
 import { z } from "zod";
 
 const ajv = new Ajv();
 
+/** This is just a wrapper around ajv to convert a JSON schema to a Zod type. */
 function zodFromJsonSchema(jsonSchema: object): z.ZodTypeAny {
   const validateFn = ajv.compile(jsonSchema);
   return z.custom((data) => validateFn(data));
@@ -15,14 +17,14 @@ export async function registerPromptHandlers(
   mcpClients: { client: MCPClient; serverId: string; url: string }[],
 ) {
   const registrations = await Promise.allSettled(
-    mcpClients.map(async ({ client, serverId, url }) => {
-      const capabilities = await client.client.getServerCapabilities();
-      console.log("Capabilities:", capabilities);
+    mcpClients.map(async ({ client, serverId }) => {
       try {
+        // TODO: check if the server supports prompts, but capabilities is always returning undefined?
+        // const capabilities = await client.client.getServerCapabilities();
+        // console.log("Capabilities:", capabilities);
         const promptResponse = await client.client.listPrompts();
-        console.log("Prompt response:", promptResponse);
+
         for (const prompt of promptResponse.prompts) {
-          console.log("Registering prompt:", prompt);
           const argsSchema = Object.fromEntries(
             prompt.arguments?.map((arg) => {
               const argZod = zodFromJsonSchema({
@@ -32,8 +34,7 @@ export async function registerPromptHandlers(
               return [arg.name, requiredArgZod] as const;
             }) ?? [],
           );
-          console.log("as zod: ", argsSchema);
-          const registration = server.registerPrompt(
+          server.registerPrompt(
             prompt.name,
             {
               title: prompt.title ?? prompt.name,
@@ -45,47 +46,25 @@ export async function registerPromptHandlers(
             // TODO: prompts without parameters seem to just pass opts as the first arg, so there is no args
             async (argsOrOpts, opts) => {
               const realArgs = (opts as any) ? argsOrOpts : opts;
-              console.log(
-                "Getting prompt from:",
-                serverId,
-                url,
-                prompt.name,
-                "args:",
-                argsOrOpts,
-                "extra:",
-                opts,
-                "realArgs:",
-                realArgs,
-              );
-              try {
-                const promptResponse = await client.client.getPrompt({
-                  name: prompt.name,
-                  arguments: realArgs as any,
-                });
-                console.log("Prompt response:", promptResponse);
-                return promptResponse;
-              } catch (error) {
-                console.error("Error getting prompt:", error);
-                throw error;
-              }
+              const promptResponse = await client.client.getPrompt({
+                name: prompt.name,
+                arguments: realArgs as any,
+              });
+              return promptResponse;
             },
-          );
-          console.log(
-            "Registered prompt from:",
-            serverId,
-            url,
-            prompt.name,
-            registration.title,
-            registration.description,
           );
         }
       } catch (error) {
-        console.error(
-          "Error listing prompts for MCP server",
-          serverId,
-          url,
-          error,
-        );
+        // for some reason getServerCapabilities returns undefined even when the method is available,
+        // so we need to assume all servers support prompts right now
+        if (
+          error instanceof McpError &&
+          error.code === ErrorCode.MethodNotFound
+        ) {
+          return;
+        }
+
+        console.error("Error listing prompts for MCP server", serverId, error);
       }
       // TODO: handle prompt updates
       // something like this:
