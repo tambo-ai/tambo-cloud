@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.119.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.118.1...repo-v0.119.0) (2025-10-25)
+
+
+### Features
+
+* add audio transcription route ([#1983](https://github.com/tambo-ai/tambo-cloud/issues/1983)) ([f57a502](https://github.com/tambo-ai/tambo-cloud/commit/f57a50238ec99fc878c091e4a102c4e9f5a66d43))
+* add context badge for images ([#1982](https://github.com/tambo-ai/tambo-cloud/issues/1982)) ([807140a](https://github.com/tambo-ai/tambo-cloud/commit/807140a151307a9dcaace1f9155108c3fb6b3711))
+* remove reactivation emails ([#1984](https://github.com/tambo-ai/tambo-cloud/issues/1984)) ([d3b461d](https://github.com/tambo-ai/tambo-cloud/commit/d3b461d4ab0b41ba152c44d3338df493c39d19fb))
+
+
+### Bug Fixes
+
+* make mcp prompts proxy correcty ([#1986](https://github.com/tambo-ai/tambo-cloud/issues/1986)) ([477b49f](https://github.com/tambo-ai/tambo-cloud/commit/477b49f8444fde9a3a6bbb3acd1c423b9ce7a756))
+
 ## [0.118.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.118.0...repo-v0.118.1) (2025-10-23)
 
 
