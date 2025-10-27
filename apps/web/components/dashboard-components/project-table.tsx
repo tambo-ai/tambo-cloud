@@ -345,14 +345,22 @@ export function ProjectTable({
                     <TableCell
                       className={`${cellClass} ${compact ? "hidden" : "hidden lg:table-cell"}`}
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center gap-2">
                         {projectId ? (
-                          <Link
-                            href={`/dashboard/${projectId}`}
-                            className="hover:bg-accent rounded-md p-1"
-                          >
-                            View
-                          </Link>
+                          <>
+                            <Link
+                              href={`/dashboard/${projectId}`}
+                              className="hover:bg-accent rounded-md p-1"
+                            >
+                              View
+                            </Link>
+                            <Link
+                              href={`/playground/${projectId}`}
+                              className="hover:bg-accent rounded-md p-1 text-blue-600 dark:text-blue-400"
+                            >
+                              Playground
+                            </Link>
+                          </>
                         ) : (
                           <span className="text-sm">No ID</span>
                         )}

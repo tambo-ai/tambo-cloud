@@ -59,6 +59,7 @@
     "drizzle-orm": "^0.44.5",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.22",
+    "freestyle-sandboxes": "^0.0.95",
     "geist": "^1.5.1",
     "highlight.js": "^11.11.1",
     "jiti": "^2.6.0",

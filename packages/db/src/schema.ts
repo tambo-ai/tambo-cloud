@@ -197,6 +197,11 @@ export const projects = pgTable(
       "custom_llm_parameters",
     ),
     agentHeaders: customJsonb<Record<string, string>>("agent_headers"),
+    // Freestyle Sandbox integration for AI Playground
+    freestyleRepoId: text("freestyle_repo_id"), // Freestyle Git repository ID
+    freestyleRepoUrl: text("freestyle_repo_url"), // Freestyle repository URL
+    templateGitUrl: text("template_git_url"), // Original template Git URL used for creation
+    playgroundEnabled: boolean("playground_enabled").default(false).notNull(), // Whether playground is accessible for this project
   }),
   (table) => {
     return [

@@ -27,6 +27,10 @@ export async function createProject(
     defaultLlmModelName,
     customLlmModelName,
     customLlmBaseURL,
+    freestyleRepoId,
+    freestyleRepoUrl,
+    templateGitUrl,
+    playgroundEnabled = false,
   }: {
     name: string;
     userId: string;
@@ -37,6 +41,10 @@ export async function createProject(
     customLlmModelName?: string;
     customLlmBaseURL?: string;
     role?: string;
+    freestyleRepoId?: string;
+    freestyleRepoUrl?: string;
+    templateGitUrl?: string;
+    playgroundEnabled?: boolean;
   },
 ) {
   if (!userId) {
@@ -54,6 +62,10 @@ export async function createProject(
         defaultLlmModelName,
         customLlmModelName,
         customLlmBaseURL,
+        freestyleRepoId,
+        freestyleRepoUrl,
+        templateGitUrl,
+        playgroundEnabled,
       })
       .returning();
 
@@ -69,6 +81,10 @@ export async function createProject(
       userId,
       isTokenRequired: project.isTokenRequired,
       providerType: project.providerType,
+      freestyleRepoId: project.freestyleRepoId,
+      freestyleRepoUrl: project.freestyleRepoUrl,
+      templateGitUrl: project.templateGitUrl,
+      playgroundEnabled: project.playgroundEnabled,
     };
   });
 }
@@ -144,6 +160,10 @@ export async function updateProject(
     customLlmParameters,
     agentHeaders,
     allowSystemPromptOverride,
+    freestyleRepoId,
+    freestyleRepoUrl,
+    templateGitUrl,
+    playgroundEnabled,
   }: {
     name?: string;
     customInstructions?: string | null;
@@ -161,6 +181,10 @@ export async function updateProject(
     customLlmParameters?: CustomLlmParameters | null;
     agentHeaders?: Record<string, string> | null;
     allowSystemPromptOverride?: boolean;
+    freestyleRepoId?: string | null;
+    freestyleRepoUrl?: string | null;
+    templateGitUrl?: string | null;
+    playgroundEnabled?: boolean;
   },
 ) {
   // Create update object with only provided fields
@@ -211,6 +235,18 @@ export async function updateProject(
   }
   if (allowSystemPromptOverride !== undefined) {
     updateData.allowSystemPromptOverride = allowSystemPromptOverride;
+  }
+  if (freestyleRepoId !== undefined) {
+    updateData.freestyleRepoId = freestyleRepoId;
+  }
+  if (freestyleRepoUrl !== undefined) {
+    updateData.freestyleRepoUrl = freestyleRepoUrl;
+  }
+  if (templateGitUrl !== undefined) {
+    updateData.templateGitUrl = templateGitUrl;
+  }
+  if (playgroundEnabled !== undefined) {
+    updateData.playgroundEnabled = playgroundEnabled;
   }
 
   // Only perform update if there are fields to update

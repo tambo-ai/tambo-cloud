@@ -1,8 +1,9 @@
 import { CopyButton } from "@/components/copy-button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { type RouterOutputs, api } from "@/trpc/react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
 import { FREE_MESSAGE_LIMIT } from "./provider-key-section";
@@ -169,7 +170,7 @@ export function ProjectInfo({
     <Card className="border-card-background bg-card-background rounded-3xl overflow-hidden p-2 sm:p-4">
       <CardContent className="p-2 sm:p-4 space-y-4">
         <motion.div
-          className="flex items-center gap-2"
+          className="flex items-center justify-between gap-4"
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3 }}
@@ -177,6 +178,12 @@ export function ProjectInfo({
           <h4 className="text-3xl sm:text-4xl md:text-6xl pb-4 sm:pb-4">
             {project.name}
           </h4>
+          <Button asChild size="lg" className="gap-2">
+            <Link href={`/playground/${project.id}`}>
+              <Sparkles className="h-5 w-5" />
+              Open Playground
+            </Link>
+          </Button>
         </motion.div>
 
         <motion.div
