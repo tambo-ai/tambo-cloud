@@ -5,14 +5,14 @@ on:
     branches:
       - main
     paths:
-      - 'apps/mcp-everything/**'
-      - '.github/workflows/mcp-everything-docker.yml'
+      - "apps/mcp-everything/**"
+      - ".github/workflows/mcp-everything-docker.yml"
   pull_request:
     branches:
       - main
     paths:
-      - 'apps/mcp-everything/**'
-      - '.github/workflows/mcp-everything-docker.yml'
+      - "apps/mcp-everything/**"
+      - ".github/workflows/mcp-everything-docker.yml"
   workflow_dispatch:
 
 concurrency:
