@@ -37,6 +37,22 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/tambo-ai/mcp-everything
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
+          labels: |
+            org.opencontainers.image.title=MCP Everything Server
+            org.opencontainers.image.description=Docker image for the MCP Everything server with streamable HTTP transport
+            org.opencontainers.image.vendor=Tambo AI
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.source=https://github.com/tambo-ai/tambo-cloud
+            org.opencontainers.image.documentation=https://docs.tambo.co
+
       - name: Determine if we should push to GHCR
         id: should_push
         run: |
@@ -65,9 +81,8 @@ jobs:
           push: ${{ steps.should_push.outputs.should_push }}
           load: ${{ steps.should_push.outputs.should_push == 'false' }}
           platforms: ${{ steps.should_push.outputs.should_push == 'true' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          tags: |
-            ghcr.io/tambo-ai/mcp-everything:latest
-            ghcr.io/tambo-ai/mcp-everything:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
