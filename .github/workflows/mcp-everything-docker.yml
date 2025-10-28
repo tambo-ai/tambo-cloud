@@ -43,8 +43,8 @@ jobs:
         with:
           images: ghcr.io/tambo-ai/mcp-everything
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-
+            type=raw,value=latest
+            type=sha,format=short
           labels: |
             org.opencontainers.image.title=MCP Everything Server
             org.opencontainers.image.description=Docker image for the MCP Everything server with streamable HTTP transport
