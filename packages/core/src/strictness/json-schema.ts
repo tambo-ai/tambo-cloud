@@ -45,10 +45,23 @@ export function strictifyJSONSchemaProperty(
   isRequired: boolean,
   debugKey?: string,
 ): JSONSchema7Definition {
+  if (typeof property === "boolean") {
+    if (isRequired) {
+      return property;
+    }
+    return {
+      anyOf: [
+        {
+          type: "null",
+        },
+        property,
+      ],
+    };
+  }
   if (
-    typeof property === "boolean" ||
-    typeof property === "number" ||
-    typeof property === "string"
+    property?.type === "boolean" ||
+    property?.type === "number" ||
+    property?.type === "string"
   ) {
     if (isRequired) {
       return property;
