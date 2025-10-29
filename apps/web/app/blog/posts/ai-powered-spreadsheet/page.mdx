@@ -103,7 +103,7 @@ function formatSpreadsheetAsMarkdown(activeTab) {
   // Map visible columns to their indices so row cell access stays aligned
   const visibleCols = columns
     .map((col, idx) => ({ id: col.columnId, idx }))
-    .filter(c => c.id !== "ROW_HEADER");
+    .filter((c) => c.id !== "ROW_HEADER");
 
   // Escape pipes and newlines to prevent breaking markdown tables
   const escapeMd = (val) => {
@@ -114,7 +114,7 @@ function formatSpreadsheetAsMarkdown(activeTab) {
   let markdown = `# Spreadsheet: ${name}\n\n`;
 
   // Build the table header
-  markdown += `|   | ${visibleCols.map(c => c.id).join(" | ")} |\n`;
+  markdown += `|   | ${visibleCols.map((c) => c.id).join(" | ")} |\n`;
   markdown += `|---|${visibleCols.map(() => "---").join("|")}|\n`;
 
   // Add each row (skip header row)
