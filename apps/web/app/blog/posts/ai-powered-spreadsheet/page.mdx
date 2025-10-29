@@ -12,7 +12,10 @@ featured: true
 
 I've been wanting to build an AI-powered spreadsheet for a while now, and honestly, Google's Gemini integration for Sheets hasn't impressed me yet. So I decided to see what we could do with Tambo.
 
-<video src="https://github.com/user-attachments/assets/d7b89bf0-5070-4027-99ab-0be3edf7c91d" controls />
+<video
+  src="https://github.com/user-attachments/assets/d7b89bf0-5070-4027-99ab-0be3edf7c91d"
+  controls
+/>
 
 Try it yourself: [cheatsheet.tambo.co](https://cheatsheet.tambo.co)
 
@@ -35,7 +38,10 @@ Let me walk through each layer of the architecture.
 
 ## Managing Tabs with Interactables
 
-<video src="https://github.com/user-attachments/assets/39d1b5b0-cff2-4a57-b825-f6ae9785eec4" controls />
+<video
+  src="https://github.com/user-attachments/assets/39d1b5b0-cff2-4a57-b825-f6ae9785eec4"
+  controls
+/>
 
 Let me start with the simplest case: tab management.
 
@@ -49,11 +55,11 @@ const TabsInteractableWrapper = (props) => {
     const store = useSpreadsheetTabsStore.getState();
 
     const payload = {
-      tabs: store.tabs.map(tab => ({
+      tabs: store.tabs.map((tab) => ({
         id: tab.id,
-        name: tab.name
+        name: tab.name,
       })),
-      activeTabId: store.activeTabId
+      activeTabId: store.activeTabId,
     };
 
     onPropsUpdate({ state: payload });
@@ -71,7 +77,7 @@ const TabsInteractableWrapper = (props) => {
 export const InteractableTabs = withInteractable(TabsInteractableWrapper, {
   componentName: "TabsState",
   description: "Spreadsheet tab metadata (names and IDs only, no data)",
-  propsSchema: interactableTabsPropsSchema
+  propsSchema: interactableTabsPropsSchema,
 });
 ```
 
@@ -95,27 +101,27 @@ function formatSpreadsheetAsMarkdown(activeTab) {
 
   // Get column headers (A, B, C, etc.)
   const columnIds = columns
-    .filter(col => col.columnId !== 'ROW_HEADER')
-    .map(col => col.columnId);
+    .filter((col) => col.columnId !== "ROW_HEADER")
+    .map((col) => col.columnId);
 
   let markdown = `# Spreadsheet: ${name}\n\n`;
 
   // Build the table header
-  markdown += `|   | ${columnIds.join(' | ')} |\n`;
-  markdown += `|---|${columnIds.map(() => '---').join('|')}|\n`;
+  markdown += `|   | ${columnIds.join(" | ")} |\n`;
+  markdown += `|---|${columnIds.map(() => "---").join("|")}|\n`;
 
   // Add each row
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    const cellValues = row.cells.map(cell => cell.text || cell.value || '');
-    markdown += `| ${row.rowId} | ${cellValues.join(' | ')} |\n`;
+    const cellValues = row.cells.map((cell) => cell.text || cell.value || "");
+    markdown += `| ${row.rowId} | ${cellValues.join(" | ")} |\n`;
   }
 
   return markdown;
 }
 
 export const spreadsheetContextHelper = () => {
-  const activeTab = store.tabs.find(t => t.id === store.activeTabId);
+  const activeTab = store.tabs.find((t) => t.id === store.activeTabId);
   return formatSpreadsheetAsMarkdown(activeTab);
 };
 ```
@@ -162,7 +168,10 @@ But self-correction isn't the end goal. It's a signal that something needs fixin
 
 ## Making Selections Part of the Context
 
-<video src="https://github.com/user-attachments/assets/958dbd48-1b7d-4471-93a0-62125a685587" controls />
+<video
+  src="https://github.com/user-attachments/assets/958dbd48-1b7d-4471-93a0-62125a685587"
+  controls
+/>
 
 For me, one of the most important UX patterns is letting users provide context to the AI through the GUI, not just text. I wanted to be able to select a range of cells and then say "sort this" or "sum this up" without having to type out "cells A1 through D5."
 
