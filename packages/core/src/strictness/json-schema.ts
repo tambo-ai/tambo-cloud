@@ -85,10 +85,14 @@ export function strictifyJSONSchemaProperty(
       ],
     };
   }
+  if (!property?.type) {
+    // this is an invalid schema, so we return a null schema
+    return { type: "null" };
+  }
   if (
-    property?.type === "boolean" ||
-    property?.type === "number" ||
-    property?.type === "string"
+    property.type === "boolean" ||
+    property.type === "number" ||
+    property.type === "string"
   ) {
     // Strip validation properties even for these simple types
     // property is guaranteed to be an object here because property?.type is truthy
@@ -139,7 +143,7 @@ export function strictifyJSONSchemaProperty(
     pattern: _pattern,
     multipleOf: _multipleOf,
     ...restOfProperty
-  } = property ?? {};
+  } = property;
 
   warnDroppedKeys(property, restOfProperty, debugKey);
 
