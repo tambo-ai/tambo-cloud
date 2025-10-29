@@ -126,6 +126,99 @@ describe("strictifyJSONSchemaProperties", () => {
     });
   });
 
+  it("should handle property.type boolean, string, and number with early return and strip validation properties", () => {
+    // These property types should be caught by the early return at lines 61-113
+    // Validation properties should still be stripped
+    const properties: Record<string, JSONSchema7Definition> = {
+      // Required boolean type with validation properties (should be stripped)
+      isActive: {
+        type: "boolean",
+        description: "Whether the item is active",
+        default: false,
+        examples: [true, false],
+      },
+      // Optional boolean type
+      isArchived: {
+        type: "boolean",
+        description: "Whether the item is archived",
+      },
+
+      // Required string type with validation properties (should be stripped)
+      name: {
+        type: "string",
+        description: "User name",
+        minLength: 3,
+        maxLength: 100,
+        pattern: "^[A-Za-z]+$",
+        format: "text",
+      },
+      // Optional string type
+      email: { type: "string", description: "User email" },
+
+      // Required number type with validation properties (should be stripped)
+      age: {
+        type: "number",
+        description: "User age",
+        minimum: 0,
+        maximum: 120,
+        exclusiveMinimum: 0,
+        exclusiveMaximum: 121,
+        multipleOf: 1,
+      },
+      // Optional number type
+      score: { type: "number", description: "User score" },
+    };
+
+    const result = strictifyJSONSchemaProperties(properties, [
+      "isActive",
+      "name",
+      "age",
+    ]);
+
+    // Required properties should have validation properties stripped
+    expect(result.isActive).toEqual({
+      type: "boolean",
+      description: "Whether the item is active",
+    });
+    expect(result.name).toEqual({
+      type: "string",
+      description: "User name",
+    });
+    expect(result.age).toEqual({
+      type: "number",
+      description: "User age",
+    });
+
+    // Optional properties should be wrapped with anyOf containing null
+    expect(result.isArchived).toEqual({
+      anyOf: [
+        { type: "null" },
+        {
+          type: "boolean",
+          description: "Whether the item is archived",
+        },
+      ],
+    });
+    expect(result.email).toEqual({
+      anyOf: [
+        { type: "null" },
+        {
+          type: "string",
+          description: "User email",
+        },
+      ],
+    });
+    expect(result.score).toEqual({
+      anyOf: [
+        { type: "null" },
+        {
+          type: "number",
+          description: "User score",
+        },
+      ],
+    });
+  });
+
   it("should handle array with multiple item types", () => {
     const properties: Record<string, JSONSchema7Definition> = {
       mixed: {
@@ -815,6 +908,68 @@ describe("strictifyJSONSchemaProperties", () => {
           additionalProperties: false,
         },
       });
+    });
+  });
+
+  it("should handle property with only stripped validation properties resulting in empty restOfProperty", () => {
+    // This test case creates a scenario where restOfProperty becomes {}
+    // by providing a property that only has validation properties that get stripped,
+    // and no other properties like 'type', 'description', etc.
+    const properties: Record<string, JSONSchema7Definition> = {
+      // A property with only validation properties that get stripped
+      // This has no 'type', 'description', or other non-stripped properties
+      emptyAfterStripping: {
+        format: "email",
+        default: "test@example.com",
+        minLength: 5,
+        maxLength: 100,
+        pattern: "^[^@]+@[^@]+$",
+        examples: ["example@test.com"],
+        minimum: 0, // These don't make sense for strings but are here to test
+        maximum: 100,
+        exclusiveMinimum: 0,
+        exclusiveMaximum: 101,
+        multipleOf: 1,
+        minItems: 1, // These don't make sense for strings but are here to test
+        maxItems: 10,
+      },
+    };
+
+    // When not required, restOfProperty should be {} since all properties were stripped
+    const resultNotRequired = strictifyJSONSchemaProperties(
+      properties,
+      [], // empty required list
+    );
+    expect(resultNotRequired.emptyAfterStripping).toEqual({});
+
+    // When required, restOfProperty should also be {} (since isRequired=true returns early)
+    const resultRequired = strictifyJSONSchemaProperties(properties, [
+      "emptyAfterStripping",
+    ]);
+    expect(resultRequired.emptyAfterStripping).toEqual({});
+  });
+
+  it("should wrap non-empty restOfProperty with anyOf when non-required", () => {
+    // This tests the code path at lines 179-181, where restOfProperty is NOT empty
+    // but doesn't match any of the special cases (object, array, anyOf/oneOf/allOf/not).
+    // Note: when restOfProperty is empty, it returns early at line 176, so we can't
+    // reach line 179-181 with an empty restOfProperty.
+    const properties: Record<string, JSONSchema7Definition> = {
+      // Property with only description (a non-stripped property) and validation props
+      // After stripping validation props, restOfProperty = { description: "..." }
+      minimalProp: {
+        description: "A minimal property",
+        format: "email",
+        default: "test@example.com",
+        minLength: 5,
+      },
+    };
+
+    // When not required, should wrap with anyOf since restOfProperty has description
+    // but no type, so it doesn't match object/array/anyOf special cases
+    const resultNotRequired = strictifyJSONSchemaProperties(properties, []);
+    expect(resultNotRequired.minimalProp).toEqual({
+      anyOf: [{ type: "null" }, { description: "A minimal property" }],
     });
   });
 });

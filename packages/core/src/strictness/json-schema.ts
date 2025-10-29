@@ -63,15 +63,52 @@ export function strictifyJSONSchemaProperty(
     property?.type === "number" ||
     property?.type === "string"
   ) {
+    // Strip validation properties even for these simple types
+    // property is guaranteed to be an object here because property?.type is truthy
+    const {
+      format: _format,
+      default: _default,
+      minItems: _minItems,
+      maxItems: _maxItems,
+      maxLength: _maxLength,
+      minLength: _minLength,
+      examples: _examples,
+      minimum: _minimum,
+      exclusiveMaximum: _exclusiveMaximum,
+      exclusiveMinimum: _exclusiveMinimum,
+      maximum: _maximum,
+      pattern: _pattern,
+      multipleOf: _multipleOf,
+      ...restOfProperty
+    } = property;
+
+    // Dynamically calculate dropped keys for warning
+    const prop = typeof property === "object" ? property : {};
+    const originalKeys = Object.keys(prop);
+    const restKeys = Object.keys(restOfProperty);
+    const droppedKeys = originalKeys
+      .filter(
+        (key) =>
+          !restKeys.includes(key) &&
+          prop[key as keyof typeof prop] != null &&
+          prop[key as keyof typeof prop] !== undefined,
+      )
+      .filter((key) => key !== "default");
+    if (droppedKeys.length > 0) {
+      console.warn(
+        `Sanitizing JSON dropped key(s) at ${debugKey}: ${droppedKeys.join(", ")}`,
+      );
+    }
+
     if (isRequired) {
-      return property;
+      return restOfProperty;
     }
     return {
       anyOf: [
         {
           type: "null",
         },
-        property,
+        restOfProperty,
       ],
     };
   }
