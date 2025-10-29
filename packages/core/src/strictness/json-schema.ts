@@ -32,6 +32,33 @@ export function strictifyJSONSchemaProperties(
 }
 
 /**
+ * Logs a warning if any keys were dropped during sanitization.
+ */
+function warnDroppedKeys(
+  property: JSONSchema7Definition | undefined,
+  restOfProperty: Record<string, unknown>,
+  debugKey?: string,
+): void {
+  const prop = typeof property === "object" ? property : {};
+  const originalKeys = Object.keys(prop);
+  const restKeys = Object.keys(restOfProperty);
+  const droppedKeys = originalKeys
+    .filter(
+      (key) =>
+        !restKeys.includes(key) &&
+        prop[key as keyof typeof prop] != null &&
+        prop[key as keyof typeof prop] !== undefined,
+    )
+    // default will be handled by the tool call strictifier
+    .filter((key) => key !== "default");
+  if (droppedKeys.length > 0) {
+    console.warn(
+      `Sanitizing JSON dropped key(s) at ${debugKey}: ${droppedKeys.join(", ")}`,
+    );
+  }
+}
+
+/**
  * Sanitizes a single JSON Schema property to ensure it is valid for OpenAI
  * function calling.
  *
@@ -82,23 +109,7 @@ export function strictifyJSONSchemaProperty(
       ...restOfProperty
     } = property;
 
-    // Dynamically calculate dropped keys for warning
-    const prop = typeof property === "object" ? property : {};
-    const originalKeys = Object.keys(prop);
-    const restKeys = Object.keys(restOfProperty);
-    const droppedKeys = originalKeys
-      .filter(
-        (key) =>
-          !restKeys.includes(key) &&
-          prop[key as keyof typeof prop] != null &&
-          prop[key as keyof typeof prop] !== undefined,
-      )
-      .filter((key) => key !== "default");
-    if (droppedKeys.length > 0) {
-      console.warn(
-        `Sanitizing JSON dropped key(s) at ${debugKey}: ${droppedKeys.join(", ")}`,
-      );
-    }
+    warnDroppedKeys(property, restOfProperty, debugKey);
 
     if (isRequired) {
       return restOfProperty;
@@ -130,24 +141,7 @@ export function strictifyJSONSchemaProperty(
     ...restOfProperty
   } = property ?? {};
 
-  // Dynamically calculate dropped keys
-  const prop = typeof property === "object" ? property : {};
-  const originalKeys = Object.keys(prop);
-  const restKeys = Object.keys(restOfProperty);
-  const droppedKeys = originalKeys
-    .filter(
-      (key) =>
-        !restKeys.includes(key) &&
-        prop[key as keyof typeof prop] != null &&
-        prop[key as keyof typeof prop] !== undefined, // filters out null and undefined
-    )
-    // default will be handled by the tool call strictifier
-    .filter((key) => key !== "default");
-  if (droppedKeys.length > 0) {
-    console.warn(
-      `Sanitizing JSON dropped key(s) at ${debugKey}: ${droppedKeys.join(", ")}`,
-    );
-  }
+  warnDroppedKeys(property, restOfProperty, debugKey);
 
   if (restOfProperty.type === "object") {
     const objectProperty = {
