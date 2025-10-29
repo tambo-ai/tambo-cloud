@@ -1,4 +1,6 @@
 import { JSONSchema7Definition } from "json-schema";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { strictifyJSONSchemaProperties } from "./json-schema";
 
 describe("strictifyJSONSchemaProperties", () => {
@@ -425,11 +427,14 @@ describe("strictifyJSONSchemaProperties", () => {
     });
 
     // Verify nested objects have validation props removed
-    const metadata = result.metadata as any;
-    expect(metadata).toHaveProperty("anyOf");
+    expect(result.metadata).toHaveProperty("anyOf");
+    const metadata = result.metadata as { anyOf: JSONSchema7Definition[] };
 
     // Check the object part of the anyOf
-    const objectPart = metadata.anyOf[1];
+    const objectPart = metadata.anyOf[1] as {
+      type: string;
+      properties: Record<string, JSONSchema7Definition>;
+    };
     expect(objectPart).toHaveProperty("type", "object");
 
     // Check nested properties
@@ -470,5 +475,346 @@ describe("strictifyJSONSchemaProperties", () => {
     for (const prop of validationProps) {
       expect(resultStr).not.toContain(`"${prop}"`);
     }
+  });
+
+  describe("Zod schema conversion", () => {
+    it("should handle optional primitive types from Zod", () => {
+      const zodSchema = z.object({
+        name: z.string().optional(),
+        age: z.number().optional(),
+        isActive: z.boolean().optional(),
+      });
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      const properties = jsonSchema.properties ?? {};
+      const required = jsonSchema.required ?? [];
+
+      const result = strictifyJSONSchemaProperties(properties, required);
+
+      expect(result).toEqual({
+        name: {
+          anyOf: [{ type: "null" }, { type: "string" }],
+        },
+        age: {
+          anyOf: [{ type: "null" }, { type: "number" }],
+        },
+        isActive: {
+          anyOf: [{ type: "null" }, { type: "boolean" }],
+        },
+      });
+    });
+
+    it("should handle required primitive types from Zod", () => {
+      const zodSchema = z.object({
+        name: z.string(),
+        age: z.number(),
+        isActive: z.boolean(),
+      });
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      const properties = jsonSchema.properties ?? {};
+      const required = jsonSchema.required ?? [];
+
+      const result = strictifyJSONSchemaProperties(properties, required);
+
+      expect(result).toEqual({
+        name: { type: "string" },
+        age: { type: "number" },
+        isActive: { type: "boolean" },
+      });
+    });
+
+    it("should handle mixed required and optional fields from Zod", () => {
+      const zodSchema = z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string().optional(),
+        age: z.number().optional(),
+      });
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      const properties = jsonSchema.properties ?? {};
+      const required = jsonSchema.required ?? [];
+
+      const result = strictifyJSONSchemaProperties(properties, required);
+
+      expect(result).toEqual({
+        id: { type: "string" },
+        name: { type: "string" },
+        email: {
+          anyOf: [{ type: "null" }, { type: "string" }],
+        },
+        age: {
+          anyOf: [{ type: "null" }, { type: "number" }],
+        },
+      });
+    });
+
+    it("should handle nested objects from Zod", () => {
+      const zodSchema = z.object({
+        user: z.object({
+          name: z.string(),
+          email: z.string().optional(),
+          profile: z.object({
+            bio: z.string().optional(),
+            age: z.number(),
+          }),
+        }),
+      });
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      const properties = jsonSchema.properties ?? {};
+      const required = jsonSchema.required ?? [];
+
+      const result = strictifyJSONSchemaProperties(properties, required);
+
+      expect(result).toEqual({
+        user: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            email: {
+              anyOf: [{ type: "null" }, { type: "string" }],
+            },
+            profile: {
+              type: "object",
+              properties: {
+                bio: {
+                  anyOf: [{ type: "null" }, { type: "string" }],
+                },
+                age: { type: "number" },
+              },
+              required: ["bio", "age"],
+              additionalProperties: false,
+            },
+          },
+          required: ["name", "email", "profile"],
+          additionalProperties: false,
+        },
+      });
+    });
+
+    it("should handle arrays from Zod", () => {
+      const zodSchema = z.object({
+        tags: z.array(z.string()),
+        scores: z.array(z.number()).optional(),
+      });
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      const properties = jsonSchema.properties ?? {};
+      const required = jsonSchema.required ?? [];
+
+      const result = strictifyJSONSchemaProperties(properties, required);
+
+      // Required arrays don't wrap items in anyOf
+      expect(result).toEqual({
+        tags: {
+          type: "array",
+          items: { type: "string" },
+        },
+        scores: {
+          anyOf: [
+            { type: "null" },
+            {
+              type: "array",
+              items: { anyOf: [{ type: "null" }, { type: "number" }] },
+            },
+          ],
+        },
+      });
+    });
+
+    it("should handle arrays of objects from Zod", () => {
+      const zodSchema = z.object({
+        users: z.array(
+          z.object({
+            name: z.string(),
+            email: z.string().optional(),
+          }),
+        ),
+      });
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      const properties = jsonSchema.properties ?? {};
+      const required = jsonSchema.required ?? [];
+
+      const result = strictifyJSONSchemaProperties(properties, required);
+
+      // Required arrays don't wrap items in anyOf with null
+      expect(result).toEqual({
+        users: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              email: {
+                anyOf: [{ type: "null" }, { type: "string" }],
+              },
+            },
+            required: ["name", "email"],
+            additionalProperties: false,
+          },
+        },
+      });
+    });
+
+    it("should handle union types from Zod", () => {
+      const zodSchema = z.object({
+        value: z.union([z.string(), z.number()]),
+        optionalUnion: z.union([z.string(), z.number()]).optional(),
+      });
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      const properties = jsonSchema.properties ?? {};
+      const required = jsonSchema.required ?? [];
+
+      const result = strictifyJSONSchemaProperties(properties, required);
+
+      // Zod union types generate a type array like { type: ["string", "number"] }
+      expect(result.value).toHaveProperty("type");
+      expect(result.value).toMatchObject({ type: ["string", "number"] });
+
+      // Optional unions should be wrapped with null
+      expect(result.optionalUnion).toHaveProperty("anyOf");
+      expect(result.optionalUnion).toMatchObject({
+        anyOf: expect.arrayContaining([
+          { type: "null" },
+          { type: ["string", "number"] },
+        ]),
+      });
+    });
+
+    it("should strip validation properties from Zod schemas", () => {
+      const zodSchema = z.object({
+        email: z.string().email().min(5).max(100),
+        age: z.number().min(0).max(120),
+        username: z.string().regex(/^[a-z0-9_]+$/),
+      });
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      const properties = jsonSchema.properties ?? {};
+      const required = jsonSchema.required ?? [];
+
+      const result = strictifyJSONSchemaProperties(properties, required);
+
+      // Check that validation properties are removed
+      expect(result.email).toEqual({ type: "string" });
+      expect(result.age).toEqual({ type: "number" });
+      expect(result.username).toEqual({ type: "string" });
+    });
+
+    it("should handle complex nested Zod schemas", () => {
+      const zodSchema = z.object({
+        organization: z.object({
+          name: z.string(),
+          departments: z.array(
+            z.object({
+              name: z.string(),
+              employees: z.array(
+                z.object({
+                  id: z.string(),
+                  name: z.string(),
+                  role: z.string().optional(),
+                }),
+              ),
+            }),
+          ),
+          metadata: z
+            .object({
+              founded: z.number(),
+              location: z.string().optional(),
+            })
+            .optional(),
+        }),
+      });
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      const properties = jsonSchema.properties ?? {};
+      const required = jsonSchema.required ?? [];
+
+      const result = strictifyJSONSchemaProperties(properties, required);
+
+      // Required arrays don't wrap items in anyOf
+      expect(result).toEqual({
+        organization: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            departments: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  employees: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        name: { type: "string" },
+                        role: {
+                          anyOf: [{ type: "null" }, { type: "string" }],
+                        },
+                      },
+                      required: ["id", "name", "role"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["name", "employees"],
+                additionalProperties: false,
+              },
+            },
+            metadata: {
+              anyOf: [
+                { type: "null" },
+                {
+                  type: "object",
+                  properties: {
+                    founded: { type: "number" },
+                    location: {
+                      anyOf: [{ type: "null" }, { type: "string" }],
+                    },
+                  },
+                  required: ["founded", "location"],
+                  additionalProperties: false,
+                },
+              ],
+            },
+          },
+          required: ["name", "departments", "metadata"],
+          additionalProperties: false,
+        },
+      });
+    });
   });
 });

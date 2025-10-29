@@ -173,7 +173,7 @@ export function strictifyJSONSchemaProperty(
     }
   }
 
-  if (isRequired) {
+  if (isRequired || Object.keys(restOfProperty).length === 0) {
     return restOfProperty;
   }
   return {
