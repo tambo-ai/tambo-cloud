@@ -359,18 +359,19 @@ MessageInputInternal.displayName = "MessageInputInternal";
 MessageInput.displayName = "MessageInput";
 
 /**
- * Symbol for marking pasted images
- * Using Symbol.for to create a global symbol that can be accessed across modules
- * @internal - Used by InputAttachments component
+ * Symbol for marking pasted images.
+ * Using Symbol.for to create a global symbol that can be accessed across modules.
+ * @internal
  */
 export const IS_PASTED_IMAGE = Symbol.for("tambo-is-pasted-image");
 
 /**
- * Extend the File interface to include IS_PASTED_IMAGE symbol
+ * Extend the File interface to include the IS_PASTED_IMAGE property.
+ * This is a type-safe way to mark pasted images without using a broad index signature.
  */
 declare global {
   interface File {
-    [key: symbol]: boolean | undefined;
+    [IS_PASTED_IMAGE]?: boolean;
   }
 }
 

@@ -100,12 +100,22 @@ export const ContextBadge: React.FC<ContextBadgeProps> = ({
 ContextBadge.displayName = "ContextBadge";
 
 /**
+ * Minimal shape required for displaying message attachments.
+ * This decouples MessageAttachments from the full TamboThreadMessage type.
+ */
+export interface MessageAttachmentsData {
+  content?: Array<{ type?: string; image_url?: { url?: string } }>;
+  additionalContext?: Record<string, unknown> | null;
+  role?: string;
+}
+
+/**
  * Props for the MessageAttachments component.
  */
 export interface MessageAttachmentsProps
   extends React.HTMLAttributes<HTMLDivElement> {
   /** Optional message to display attachments from (display mode) */
-  message?: TamboThreadMessage;
+  message?: TamboThreadMessage | MessageAttachmentsData;
   /** Whether to show remove buttons (input mode) */
   showRemoveButtons?: boolean;
 }

@@ -1,10 +1,12 @@
 import { createMarkdownComponents } from "@/components/ui/tambo/markdown-components";
-import { MessageAttachments } from "@/components/ui/tambo/message-context-badge";
+import {
+  MessageAttachments,
+  MessageAttachmentsData,
+} from "@/components/ui/tambo/message-context-badge";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { getSafeContent } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import { type RouterOutputs } from "@/trpc/react";
-import { type TamboThreadMessage } from "@tambo-ai/react";
 import { motion } from "framer-motion";
 import { Check, ChevronDown, Copy, Info } from "lucide-react";
 import { FC, isValidElement, memo, ReactNode, useState } from "react";
@@ -255,7 +257,7 @@ export const MessageContent = memo(
 
               {/* Image and context attachments */}
               <MessageAttachments
-                message={message as unknown as TamboThreadMessage}
+                message={message as MessageAttachmentsData}
                 className="mb-2"
               />
 

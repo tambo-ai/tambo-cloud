@@ -196,13 +196,21 @@ export interface MessageComponentContext {
 }
 
 /**
+ * Minimal message shape needed to extract contexts
+ */
+export interface MessageWithContext {
+  role?: string;
+  additionalContext?: Record<string, unknown> | null;
+}
+
+/**
  * Checks if a message was sent with component context.
  * Context helpers store data in additionalContext.selectedComponent.
- * @param message - The thread message
+ * @param message - The thread message or minimal message data
  * @returns Array of component contexts (empty if none)
  */
 export function getMessageContexts(
-  message: TamboThreadMessage | undefined | null,
+  message: TamboThreadMessage | MessageWithContext | undefined | null,
 ): MessageComponentContext[] {
   if (!message) return [];
 
