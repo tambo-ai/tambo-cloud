@@ -191,12 +191,23 @@ export function ComponentContextProvider({
     });
 
     previousContextIdsRef.current = currentIds;
+
+    // Cleanup: remove all context helpers on unmount
+    return () => {
+      previousContextIdsRef.current.forEach((id) => {
+        removeContextHelper(id);
+      });
+    };
   }, [contexts, addContextHelper, removeContextHelper, getContextHelperData]);
 
   const addContext = useCallback((context: Omit<ContextItem, "id">) => {
     setContexts((prev) => {
       if (prev.some((c) => c.name === context.name)) return prev;
-      return [...prev, { ...context, id: `ctx-${Date.now()}` }];
+      const newId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `ctx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      return [...prev, { ...context, id: newId }];
     });
   }, []);
 
