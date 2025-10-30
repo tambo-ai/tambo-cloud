@@ -18,16 +18,21 @@ export function strictifyJSONSchemaProperties(
   debugKey?: string,
 ): Record<string, JSONSchema7Definition> {
   return Object.fromEntries(
-    Object.entries(properties).map(([key, value]) => {
-      return [
-        key,
-        strictifyJSONSchemaProperty(
-          value,
-          requiredProperties.includes(key),
-          debugKey ? `${debugKey}.${key}` : `$.${key}`,
-        ),
-      ] as const;
-    }),
+    Object.entries(properties)
+      .map(([key, value]) => {
+        return [
+          key,
+          strictifyJSONSchemaProperty(
+            value,
+            requiredProperties.includes(key),
+            debugKey ? `${debugKey}.${key}` : `$.${key}`,
+          ),
+        ] as const;
+      })
+      .filter(([_, value]) => value !== null) as [
+      string,
+      JSONSchema7Definition,
+    ][],
   );
 }
 
@@ -81,6 +86,7 @@ function stripValidationProps(
     maximum: _maximum,
     pattern: _pattern,
     multipleOf: _multipleOf,
+    $schema: _schema,
     ...restOfProperty
   } = source;
 
@@ -101,7 +107,7 @@ export function strictifyJSONSchemaProperty(
   property: JSONSchema7Definition | undefined,
   isRequired: boolean,
   debugKey?: string,
-): JSONSchema7Definition {
+): JSONSchema7Definition | null {
   if (typeof property === "boolean") {
     if (isRequired) {
       return property;
@@ -162,21 +168,27 @@ export function strictifyJSONSchemaProperty(
   }
   if (property?.type === "array") {
     const restOfProperty = stripValidationProps(property, debugKey);
-    const arrayProperty = {
-      ...restOfProperty,
-      items: Array.isArray(restOfProperty.items)
-        ? restOfProperty.items.map((item, index) =>
+    const items = Array.isArray(restOfProperty.items)
+      ? restOfProperty.items
+          .map((item, index) =>
             strictifyJSONSchemaProperty(
               item,
               isRequired,
               `${debugKey}.items[${index}]`,
             ),
           )
-        : strictifyJSONSchemaProperty(
-            restOfProperty.items as JSONSchema7Definition,
-            isRequired,
-            `${debugKey}.items`,
-          ),
+          .filter((value) => value !== null)
+      : strictifyJSONSchemaProperty(
+          restOfProperty.items as JSONSchema7Definition,
+          isRequired,
+          `${debugKey}.items`,
+        );
+    if (!items || (Array.isArray(items) && items.length === 0)) {
+      return null;
+    }
+    const arrayProperty = {
+      ...restOfProperty,
+      items: items,
     };
 
     if (isRequired) {
@@ -190,31 +202,44 @@ export function strictifyJSONSchemaProperty(
 
   const wellKnownKeys = ["anyOf", "oneOf", "allOf", "not"] as const;
   for (const key of wellKnownKeys) {
-    if (key in restOfProperty) {
-      const value = restOfProperty[key];
-      if (Array.isArray(value)) {
-        const sanitizedArray = value.map((item, index) => {
+    if (!(key in restOfProperty)) {
+      continue;
+    }
+    const value = restOfProperty[key];
+    if (Array.isArray(value)) {
+      const sanitizedArray = value
+        .map((item, index) => {
           return strictifyJSONSchemaProperty(
             item,
             isRequired,
             `${debugKey}.${key}[${index}]`,
           );
-        });
+        })
+        .filter((value) => value !== null);
 
-        return {
-          ...restOfProperty,
-          [key]: sanitizedArray,
-        };
-      } else {
-        return {
-          ...restOfProperty,
-          [key]: strictifyJSONSchemaProperty(
-            value as JSONSchema7Definition,
-            isRequired,
-            `${debugKey}.${key}`,
-          ),
-        };
+      return {
+        ...restOfProperty,
+        [key]: sanitizedArray,
+      };
+    } else {
+      if (key === "not" && (!value || Object.keys(value).length === 0)) {
+        // this is a broken case, "not: {}" which means "not everything" or "never"
+        // so we just ignore it
+        return null;
       }
+
+      const strictSchema = strictifyJSONSchemaProperty(
+        value as JSONSchema7Definition,
+        isRequired,
+        `${debugKey}.${key}`,
+      );
+      if (!strictSchema) {
+        return null;
+      }
+      return {
+        ...restOfProperty,
+        [key]: strictSchema,
+      };
     }
   }
   if (!property?.type) {

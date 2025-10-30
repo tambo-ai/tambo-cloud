@@ -1,7 +1,10 @@
 import { JSONSchema7Definition } from "json-schema";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { strictifyJSONSchemaProperties } from "./json-schema";
+import {
+  strictifyJSONSchemaProperties,
+  strictifyJSONSchemaProperty,
+} from "./json-schema";
 
 describe("strictifyJSONSchemaProperties", () => {
   it("should handle empty properties object", () => {
@@ -620,6 +623,22 @@ describe("strictifyJSONSchemaProperties", () => {
         name: { type: "string" },
         age: { type: "number" },
         isActive: { type: "boolean" },
+      });
+    });
+
+    it("should handle z.number().optional() from Zod", () => {
+      const zodSchema = z.number().optional();
+
+      const jsonSchema = zodToJsonSchema(zodSchema) as {
+        properties?: Record<string, JSONSchema7Definition>;
+        required?: string[];
+      };
+      console.log("trying to strictify", jsonSchema);
+
+      const result = strictifyJSONSchemaProperty(jsonSchema, true);
+
+      expect(result).toEqual({
+        anyOf: [{ type: "number" }],
       });
     });
 
