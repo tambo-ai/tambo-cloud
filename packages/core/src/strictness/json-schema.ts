@@ -216,6 +216,13 @@ export function strictifyJSONSchemaProperty(
           );
         })
         .filter((value) => value !== null);
+      if (
+        (key === "allOf" || key === "anyOf" || key === "oneOf") &&
+        sanitizedArray.length === 1
+      ) {
+        // no need for the wrapper
+        return sanitizedArray[0];
+      }
 
       return {
         ...restOfProperty,

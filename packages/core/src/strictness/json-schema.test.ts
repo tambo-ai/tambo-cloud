@@ -638,7 +638,7 @@ describe("strictifyJSONSchemaProperties", () => {
       const result = strictifyJSONSchemaProperty(jsonSchema, true);
 
       expect(result).toEqual({
-        anyOf: [{ type: "number" }],
+        type: "number",
       });
     });
 
