@@ -935,18 +935,36 @@ describe("strictifyJSONSchemaProperties", () => {
       },
     };
 
-    // When not required, restOfProperty should be {} since all properties were stripped
+    // When not required, invalid schema (no type) becomes a null-typed schema retaining props
     const resultNotRequired = strictifyJSONSchemaProperties(
       properties,
       [], // empty required list
     );
-    expect(resultNotRequired.emptyAfterStripping).toEqual({});
+    expect(resultNotRequired.emptyAfterStripping).toEqual({
+      anyOf: [
+        { type: "null" },
+        { type: "string" },
+        { type: "number" },
+        { type: "integer" },
+        { type: "boolean" },
+        { type: "null" },
+      ],
+    });
 
-    // When required, restOfProperty should also be {} (since isRequired=true returns early)
+    // When required, same null-typed schema (since invalid input has no type)
     const resultRequired = strictifyJSONSchemaProperties(properties, [
       "emptyAfterStripping",
     ]);
-    expect(resultRequired.emptyAfterStripping).toEqual({});
+    expect(resultRequired.emptyAfterStripping).toEqual({
+      anyOf: [
+        { type: "null" },
+        { type: "string" },
+        { type: "number" },
+        { type: "integer" },
+        { type: "boolean" },
+        { type: "null" },
+      ],
+    });
   });
 
   it("should wrap non-empty restOfProperty with anyOf when non-required", () => {
@@ -969,7 +987,51 @@ describe("strictifyJSONSchemaProperties", () => {
     // but no type, so it doesn't match object/array/anyOf special cases
     const resultNotRequired = strictifyJSONSchemaProperties(properties, []);
     expect(resultNotRequired.minimalProp).toEqual({
-      anyOf: [{ type: "null" }, { description: "A minimal property" }],
+      anyOf: [
+        {
+          type: "null",
+        },
+        {
+          type: "string",
+        },
+        { type: "number" },
+        { type: "integer" },
+        { type: "boolean" },
+        { type: "null" },
+      ],
+      description: "A minimal property",
+    });
+  });
+
+  it("should preserve description and other metadata properties alongside anyOf", () => {
+    const properties: Record<string, JSONSchema7Definition> = {
+      value: {
+        anyOf: [{ type: "string" }, { type: "number" }],
+        description: "Can be a string or number",
+        title: "Value field",
+      },
+    };
+
+    const result = strictifyJSONSchemaProperties(properties, ["value"]);
+    expect(result.value).toEqual({
+      anyOf: [{ type: "string" }, { type: "number" }],
+      description: "Can be a string or number",
+      title: "Value field",
+    });
+  });
+
+  it("should preserve description alongside not", () => {
+    const properties: Record<string, JSONSchema7Definition> = {
+      value: {
+        not: { type: "null" },
+        description: "Cannot be null",
+      },
+    };
+
+    const result = strictifyJSONSchemaProperties(properties, ["value"]);
+    expect(result.value).toEqual({
+      not: { type: "null" },
+      description: "Cannot be null",
     });
   });
 });
