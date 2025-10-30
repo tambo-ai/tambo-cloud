@@ -1,5 +1,81 @@
 # Changelog
 
+## [0.120.3](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.120.2...repo-v0.120.3) (2025-10-30)
+
+
+### Bug Fixes
+
+* **tools:** Fix handling of primitives in tool parameters ([#2011](https://github.com/tambo-ai/tambo-cloud/issues/2011)) ([fd4867b](https://github.com/tambo-ai/tambo-cloud/commit/fd4867b9a519c8b33a0ee63b9ca88b23c0d605be))
+
+
+### Miscellaneous Chores
+
+* sync mcp-client from tambo repo ([#2008](https://github.com/tambo-ai/tambo-cloud/issues/2008)) ([2c2f1dd](https://github.com/tambo-ai/tambo-cloud/commit/2c2f1ddc75773b4216604cf8ba48ece3397c6998))
+
+## [0.120.2](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.120.1...repo-v0.120.2) (2025-10-29)
+
+
+### Bug Fixes
+
+* remove strict mode for now ([#2009](https://github.com/tambo-ai/tambo-cloud/issues/2009)) ([2008033](https://github.com/tambo-ai/tambo-cloud/commit/20080338544a8359f0cc1ac3a6639b1dd789fead))
+
+
+### Miscellaneous Chores
+
+* update CLAUDE.md files to reference AGENTS.md properly ([#2006](https://github.com/tambo-ai/tambo-cloud/issues/2006)) ([04853f3](https://github.com/tambo-ai/tambo-cloud/commit/04853f3585ab8b4be9fc60323ec9ea10e9c2f085))
+
+## [0.120.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.120.0...repo-v0.120.1) (2025-10-29)
+
+
+### Miscellaneous Chores
+
+* **blog:** Add cheatsheet blog post. ([#2004](https://github.com/tambo-ai/tambo-cloud/issues/2004)) ([787527f](https://github.com/tambo-ai/tambo-cloud/commit/787527fd3744182fed2fe9a02fde2a9ff2ee8ccc))
+
+## [0.120.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.119.0...repo-v0.120.0) (2025-10-28)
+
+
+### Features
+
+* add dockerfile for mcp-everything ([#1999](https://github.com/tambo-ai/tambo-cloud/issues/1999)) ([94180a5](https://github.com/tambo-ai/tambo-cloud/commit/94180a5c16aa56f476974f1cf353866f777bfdab))
+
+
+### Bug Fixes
+
+* better MCP Everything docker deploy ([#2001](https://github.com/tambo-ai/tambo-cloud/issues/2001)) ([c0a88a9](https://github.com/tambo-ai/tambo-cloud/commit/c0a88a9eb32f089a5da197e277269862ab064b5c))
+* Ensure Tambo always responds with a complete _tambo_displayMessage ([#2003](https://github.com/tambo-ai/tambo-cloud/issues/2003)) ([a569086](https://github.com/tambo-ai/tambo-cloud/commit/a569086eb5d4bd533f9011589aaa194d6237c370))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump the eslint group across 1 directory with 3 updates ([#1998](https://github.com/tambo-ai/tambo-cloud/issues/1998)) ([b14647c](https://github.com/tambo-ai/tambo-cloud/commit/b14647cce7c41a0cf9d82ee1fa3e09f085cc4a46))
+
+## [0.119.0](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.118.1...repo-v0.119.0) (2025-10-27)
+
+
+### Features
+
+* add audio transcription route ([#1983](https://github.com/tambo-ai/tambo-cloud/issues/1983)) ([f57a502](https://github.com/tambo-ai/tambo-cloud/commit/f57a50238ec99fc878c091e4a102c4e9f5a66d43))
+* add context badge for images ([#1982](https://github.com/tambo-ai/tambo-cloud/issues/1982)) ([807140a](https://github.com/tambo-ai/tambo-cloud/commit/807140a151307a9dcaace1f9155108c3fb6b3711))
+* remove reactivation emails ([#1984](https://github.com/tambo-ai/tambo-cloud/issues/1984)) ([d3b461d](https://github.com/tambo-ai/tambo-cloud/commit/d3b461d4ab0b41ba152c44d3338df493c39d19fb))
+
+
+### Bug Fixes
+
+* let handleAdvanceStream end streams on error ([#1997](https://github.com/tambo-ai/tambo-cloud/issues/1997)) ([2e9bfc2](https://github.com/tambo-ai/tambo-cloud/commit/2e9bfc283b90f46750bf95960390538556cccc51))
+* make mcp prompts proxy correcty ([#1986](https://github.com/tambo-ai/tambo-cloud/issues/1986)) ([477b49f](https://github.com/tambo-ai/tambo-cloud/commit/477b49f8444fde9a3a6bbb3acd1c423b9ce7a756))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump @langfuse/otel from 4.2.0 to 4.2.1 ([#1992](https://github.com/tambo-ai/tambo-cloud/issues/1992)) ([832db40](https://github.com/tambo-ai/tambo-cloud/commit/832db40c8556425382753b047edd8757789f68d9))
+* **deps:** bump drizzle-orm from 0.44.6 to 0.44.7 in the drizzle group ([#1989](https://github.com/tambo-ai/tambo-cloud/issues/1989)) ([35d092f](https://github.com/tambo-ai/tambo-cloud/commit/35d092f7de1c794085da23b5984428ca6bbda38a))
+* **deps:** bump langfuse from 3.38.5 to 3.38.6 ([#1995](https://github.com/tambo-ai/tambo-cloud/issues/1995)) ([94d5539](https://github.com/tambo-ai/tambo-cloud/commit/94d5539003cda9a528eff119acf39832405d00b2))
+* **deps:** bump recharts from 3.2.1 to 3.3.0 ([#1993](https://github.com/tambo-ai/tambo-cloud/issues/1993)) ([7505fe1](https://github.com/tambo-ai/tambo-cloud/commit/7505fe1384ee088da31d673b8eb0c3c3715fc62a))
+* **deps:** bump the ai-sdk group with 3 updates ([#1990](https://github.com/tambo-ai/tambo-cloud/issues/1990)) ([464daa8](https://github.com/tambo-ai/tambo-cloud/commit/464daa8d9bea6fc46a1dd3d00af8e6faa965165e))
+* **deps:** bump the nestjs group with 4 updates ([#1988](https://github.com/tambo-ai/tambo-cloud/issues/1988)) ([ac620bc](https://github.com/tambo-ai/tambo-cloud/commit/ac620bc86eeb949ad706f1e26b3f3c9621ab44bd))
+* **deps:** bump the sentry group with 3 updates ([#1994](https://github.com/tambo-ai/tambo-cloud/issues/1994)) ([6e9db3e](https://github.com/tambo-ai/tambo-cloud/commit/6e9db3e7bc866b99e30fdb305284482a613b2cd4))
+* **deps:** bump the small-safe-packages group with 8 updates ([#1991](https://github.com/tambo-ai/tambo-cloud/issues/1991)) ([3f1d344](https://github.com/tambo-ai/tambo-cloud/commit/3f1d3448fa611c347328cc0d17676b73ca24563d))
+
 ## [0.118.1](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.118.0...repo-v0.118.1) (2025-10-23)
 
 
