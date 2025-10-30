@@ -152,12 +152,9 @@ const withNextra = nextra({
       [
         rehypePrettyCode,
         {
-          theme: {
-            light: "github-light",
-            dark: "github-dark",
-          },
-          keepBackground: false,
-          defaultLang: "ts",
+          theme: "github-light",
+          keepBackground: true,
+          defaultLang: "typescript",
         },
       ],
     ],
