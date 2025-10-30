@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EditableHint } from "@/components/ui/editable-hint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -220,6 +221,32 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg font-semibold">
           OAuth Token Validation
+          <EditableHint
+            suggestions={[
+              {
+                id: "fetch-oauth-settings",
+                title: "Fetch OAuth Settings",
+                detailedSuggestion: "Fetch the OAuth settings for this project",
+                messageId: "fetch-oauth-settings",
+              },
+              {
+                id: "update-oauth-settings",
+                title: "Update OAuth Settings",
+                detailedSuggestion:
+                  "Update the OAuth settings for this project",
+                messageId: "update-oauth-settings",
+              },
+              {
+                id: "make-token-required-true",
+                title: "Make Token Required True",
+                detailedSuggestion:
+                  "Make the token required for this project to be true",
+                messageId: "make-token-required-true",
+              },
+            ]}
+            description="Click to know more about how to manage token required for this project"
+            componentName="OAuth Settings"
+          />
         </CardTitle>
         <p className="text-sm font-sans text-foreground">
           Configure how OAuth bearer tokens are validated for your

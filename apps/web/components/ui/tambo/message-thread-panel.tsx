@@ -1,9 +1,11 @@
 "use client";
 
+import { useComponentContext } from "@/components/ui/tambo/component-context";
 import type { messageVariants } from "@/components/ui/tambo/message";
 import { Message, MessageContent } from "@/components/ui/tambo/message";
 import {
   MessageInput,
+  MessageInputContexts,
   MessageInputError,
   MessageInputFileButton,
   MessageInputSubmitButton,
@@ -186,6 +188,7 @@ export const MessageThreadPanel = forwardRef<
   const isUserLoggedIn = !!session;
   const { thread } = useTambo();
   const { isOpen, setIsOpen } = useMessageThreadPanel();
+  const componentContext = useComponentContext();
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Update CSS variable and focus input when panel opens/closes
@@ -287,6 +290,20 @@ export const MessageThreadPanel = forwardRef<
     },
   ];
 
+  // Use custom suggestions if available, otherwise use defaults
+  const activeSuggestions =
+    componentContext?.customSuggestions ?? defaultSuggestions;
+
+  // Clear custom suggestions when a new message is sent
+  useEffect(() => {
+    if (
+      thread?.messages?.length &&
+      componentContext?.customSuggestions !== null
+    ) {
+      componentContext?.setCustomSuggestions(null);
+    }
+  }, [thread?.messages?.length, componentContext]);
+
   return (
     <ResizablePanel ref={ref} className={className} isOpen={isOpen} {...props}>
       {/* Header */}
@@ -335,6 +352,7 @@ export const MessageThreadPanel = forwardRef<
         {/* Message input */}
         <div className="p-4 flex-shrink-0">
           <MessageInput contextKey={contextKey} inputRef={inputRef}>
+            <MessageInputContexts />
             <MessageInputTextarea placeholder="Type your message or paste images..." />
             <MessageInputToolbar>
               <MessageInputFileButton />
@@ -347,7 +365,7 @@ export const MessageThreadPanel = forwardRef<
         </div>
 
         {/* Message suggestions */}
-        <MessageSuggestions initialSuggestions={defaultSuggestions}>
+        <MessageSuggestions initialSuggestions={activeSuggestions}>
           <MessageSuggestionsList className="flex-shrink-0" />
         </MessageSuggestions>
       </div>

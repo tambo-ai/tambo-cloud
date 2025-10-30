@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/combobox";
+import { EditableHint } from "@/components/ui/editable-hint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -729,7 +730,36 @@ export function ProviderKeySection({
     <Card className="overflow-hidden rounded-md border">
       <CardHeader className="pb-0 pt-6">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">LLM Providers</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            LLM Providers
+            <EditableHint
+              suggestions={[
+                {
+                  id: "change-model",
+                  title: "Change Model",
+                  detailedSuggestion:
+                    "Change the model used for this project to gpt-4o",
+                  messageId: "change-model",
+                },
+                {
+                  id: "turn-on-thinking",
+                  title: "Turn on Thinking",
+                  detailedSuggestion:
+                    "Turn on thinking for the model used for this project",
+                  messageId: "turn-on-thinking",
+                },
+                {
+                  id: "change-input-token-limit",
+                  title: "Change Input Token Limit",
+                  detailedSuggestion:
+                    "Change the input token limit for the model used for this project",
+                  messageId: "change-input-token-limit",
+                },
+              ]}
+              description="Click to know more about how to manage the LLM provider for this project"
+              componentName="LLM Providers"
+            />
+          </CardTitle>
           {hasUnsavedChanges && (
             <Button
               size="sm"

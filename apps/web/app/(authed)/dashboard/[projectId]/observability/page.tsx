@@ -4,6 +4,7 @@ import { ThreadTableContainer } from "@/components/observability/thread-table/th
 import { ObservabilityPageSkeleton } from "@/components/skeletons/observability-skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EditableHint } from "@/components/ui/editable-hint";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
@@ -85,7 +86,34 @@ export default function ObservabilityPage({ params }: ObservabilityPageProps) {
     >
       {/* Header with refresh button */}
       <div className="flex items-center justify-between mb-4 gap-2">
-        <h1 className="text-2xl sm:text-4xl font-semibold">Threads</h1>
+        <h1 className="text-2xl sm:text-4xl font-semibold">
+          Threads
+          <EditableHint
+            suggestions={[
+              {
+                id: "thread-advanced-filters",
+                title: "Advanced Filters",
+                detailedSuggestion:
+                  "Add filters for date range, status, and user ID",
+                messageId: "thread-advanced-filters",
+              },
+              {
+                id: "thread-metadata-search",
+                title: "Metadata Search",
+                detailedSuggestion: "Add search by custom metadata fields",
+                messageId: "thread-metadata-search",
+              },
+              {
+                id: "thread-export-csv",
+                title: "Export to CSV",
+                detailedSuggestion:
+                  "Add functionality to export thread data to CSV",
+                messageId: "thread-export-csv",
+              },
+            ]}
+            description="Add more filtering and export options"
+          />
+        </h1>
         <Button
           onClick={handleRefresh}
           disabled={isFetchingThreads}
