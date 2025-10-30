@@ -1,4 +1,4 @@
-import { JSONSchema7Definition } from "json-schema";
+import { JSONSchema7, JSONSchema7Definition } from "json-schema";
 
 /**
  * Sanitizes a JSON Schema object to ensure it is valid for OpenAI function
@@ -58,6 +58,36 @@ function warnDroppedKeys(
   }
 }
 
+function stripValidationProps(
+  property: JSONSchema7 | undefined,
+  debugKey?: string,
+): Partial<JSONSchema7> {
+  if (typeof property === "boolean") {
+    return property;
+  }
+  const source: Record<string, unknown> =
+    typeof property === "object" ? (property as Record<string, unknown>) : {};
+  const {
+    format: _format,
+    default: _default,
+    minItems: _minItems,
+    maxItems: _maxItems,
+    maxLength: _maxLength,
+    minLength: _minLength,
+    examples: _examples,
+    minimum: _minimum,
+    exclusiveMaximum: _exclusiveMaximum,
+    exclusiveMinimum: _exclusiveMinimum,
+    maximum: _maximum,
+    pattern: _pattern,
+    multipleOf: _multipleOf,
+    ...restOfProperty
+  } = source;
+
+  warnDroppedKeys(property, restOfProperty, debugKey);
+  return restOfProperty;
+}
+
 /**
  * Sanitizes a single JSON Schema property to ensure it is valid for OpenAI
  * function calling.
@@ -85,35 +115,15 @@ export function strictifyJSONSchemaProperty(
       ],
     };
   }
-  if (!property?.type) {
-    // this is an invalid schema, so we return a null schema
-    return { type: "null" };
-  }
+
   if (
-    property.type === "boolean" ||
-    property.type === "number" ||
-    property.type === "string"
+    property?.type === "boolean" ||
+    property?.type === "number" ||
+    property?.type === "integer" ||
+    property?.type === "string"
   ) {
     // Strip validation properties even for these simple types
-    // property is guaranteed to be an object here because property?.type is truthy
-    const {
-      format: _format,
-      default: _default,
-      minItems: _minItems,
-      maxItems: _maxItems,
-      maxLength: _maxLength,
-      minLength: _minLength,
-      examples: _examples,
-      minimum: _minimum,
-      exclusiveMaximum: _exclusiveMaximum,
-      exclusiveMinimum: _exclusiveMinimum,
-      maximum: _maximum,
-      pattern: _pattern,
-      multipleOf: _multipleOf,
-      ...restOfProperty
-    } = property;
-
-    warnDroppedKeys(property, restOfProperty, debugKey);
+    const restOfProperty = stripValidationProps(property, debugKey);
 
     if (isRequired) {
       return restOfProperty;
@@ -128,26 +138,8 @@ export function strictifyJSONSchemaProperty(
     };
   }
 
-  const {
-    format: _format,
-    default: _default,
-    minItems: _minItems,
-    maxItems: _maxItems,
-    maxLength: _maxLength,
-    minLength: _minLength,
-    examples: _examples,
-    minimum: _minimum,
-    exclusiveMaximum: _exclusiveMaximum,
-    exclusiveMinimum: _exclusiveMinimum,
-    maximum: _maximum,
-    pattern: _pattern,
-    multipleOf: _multipleOf,
-    ...restOfProperty
-  } = property;
-
-  warnDroppedKeys(property, restOfProperty, debugKey);
-
-  if (restOfProperty.type === "object") {
+  if (property?.type === "object") {
+    const restOfProperty = stripValidationProps(property, debugKey);
     const objectProperty = {
       ...restOfProperty,
       properties: strictifyJSONSchemaProperties(
@@ -168,7 +160,8 @@ export function strictifyJSONSchemaProperty(
       anyOf: [{ type: "null" }, objectProperty],
     };
   }
-  if (restOfProperty.type === "array") {
+  if (property?.type === "array") {
+    const restOfProperty = stripValidationProps(property, debugKey);
     const arrayProperty = {
       ...restOfProperty,
       items: Array.isArray(restOfProperty.items)
@@ -193,6 +186,8 @@ export function strictifyJSONSchemaProperty(
       anyOf: [{ type: "null" }, arrayProperty],
     };
   }
+  const restOfProperty = stripValidationProps(property, debugKey);
+
   const wellKnownKeys = ["anyOf", "oneOf", "allOf", "not"] as const;
   for (const key of wellKnownKeys) {
     if (key in restOfProperty) {
@@ -207,12 +202,14 @@ export function strictifyJSONSchemaProperty(
         });
 
         return {
+          ...restOfProperty,
           [key]: sanitizedArray,
         };
       } else {
         return {
+          ...restOfProperty,
           [key]: strictifyJSONSchemaProperty(
-            value,
+            value as JSONSchema7Definition,
             isRequired,
             `${debugKey}.${key}`,
           ),
@@ -220,7 +217,25 @@ export function strictifyJSONSchemaProperty(
       }
     }
   }
-
+  if (!property?.type) {
+    // technically this means "any" type but
+    const restOfProperty = stripValidationProps(property, debugKey);
+    return {
+      anyOf: [
+        { type: "null" },
+        { type: "string" },
+        { type: "number" },
+        { type: "integer" },
+        { type: "boolean" },
+        { type: "null" },
+        // OpenAI and others can't handle arbitrary objects or arrays, so we
+        // don't include them here:
+        // { type: "object" },
+        // { type: "array" },
+      ],
+      ...restOfProperty,
+    };
+  }
   if (isRequired || Object.keys(restOfProperty).length === 0) {
     return restOfProperty;
   }
