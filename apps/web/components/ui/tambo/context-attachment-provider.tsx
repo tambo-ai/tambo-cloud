@@ -49,30 +49,32 @@ export interface ContextHelperData {
 }
 
 /**
- * Context state interface for managing component contexts and custom suggestions.
+ * Context state interface for managing context attachments and custom suggestions.
  *
- * @property {ContextItem[]} contexts - Array of active context items (badges above message input)
- * @property {function} addContext - Add a new context item
- * @property {function} removeContext - Remove a context item by ID
- * @property {function} clearContexts - Remove all context items - This is used to clear the context when the user submits a message
+ * @property {ContextItem[]} attachments - Array of active context items (badges above message input)
+ * @property {function} addContextAttachment - Add a new context item
+ * @property {function} removeContextAttachment - Remove a context item by ID
+ * @property {function} clearContextAttachments - Remove all context items - This is used to clear the context when the user submits a message
  * @property {Suggestion[] | null} customSuggestions - Custom suggestions to display instead of auto-generated ones
  * @property {function} setCustomSuggestions - Set or clear custom suggestions
  */
-interface ContextState {
-  contexts: ContextItem[];
-  addContext: (context: Omit<ContextItem, "id">) => void;
-  removeContext: (id: string) => void;
-  clearContexts: () => void;
+interface ContextAttachmentState {
+  attachments: ContextItem[];
+  addContextAttachment: (context: Omit<ContextItem, "id">) => void;
+  removeContextAttachment: (id: string) => void;
+  clearContextAttachments: () => void;
   customSuggestions: Suggestion[] | null;
   setCustomSuggestions: (suggestions: Suggestion[] | null) => void;
 }
 
-const ComponentContext = createContext<ContextState | null>(null);
+const ContextAttachmentContext = createContext<ContextAttachmentState | null>(
+  null,
+);
 
 /**
- * Props for the ComponentContextProvider.
+ * Props for the ContextAttachmentProvider.
  */
-export interface ComponentContextProviderProps {
+export interface ContextAttachmentProviderProps {
   children: ReactNode;
   /**
    * Optional function to customize the data sent to the AI for each context.
@@ -83,7 +85,7 @@ export interface ComponentContextProviderProps {
    *
    * @example
    * ```tsx
-   * <ComponentContextProvider
+   * <ContextAttachmentProvider
    *   getContextHelperData={(context) => ({
    *     selectedFile: {
    *       name: context.name,
@@ -93,7 +95,7 @@ export interface ComponentContextProviderProps {
    *   })}
    * >
    *   {children}
-   * </ComponentContextProvider>
+   * </ContextAttachmentProvider>
    * ```
    */
   getContextHelperData?: (
@@ -102,7 +104,7 @@ export interface ComponentContextProviderProps {
 }
 
 /**
- * Provider that enables component context features and custom suggestions in MessageInput.
+ * Provider that enables context attachment features and custom suggestions in MessageInput.
  *
  * **When to use:**
  * - **Optional** - MessageInput works without this provider (shows images only)
@@ -114,28 +116,28 @@ export interface ComponentContextProviderProps {
  * - Manages context items that appear as badges above MessageInput
  * - Syncs context data with Tambo's AI for better responses
  * - Manages custom suggestions that replace auto-generated suggestions
- * - Allows components to add/remove contexts via `useComponentContext()`
+ * - Allows components to add/remove contexts via `useContextAttachment()`
  * - Allows components to set custom suggestions via `setCustomSuggestions()`
  *
  * **Without this provider:**
  * - MessageInputContexts will only show images (still works!)
- * - `useComponentContext()` returns `undefined`
+ * - `useContextAttachment()` returns `undefined`
  * - Custom suggestions cannot be set
  *
  * @example
  * Basic usage - wrap your app
  * ```tsx
  * <TamboProvider apiKey="...">
- *   <ComponentContextProvider>
+ *   <ContextAttachmentProvider>
  *     <App />
- *   </ComponentContextProvider>
+ *   </ContextAttachmentProvider>
  * </TamboProvider>
  * ```
  *
  * @example
  * With custom context data
  * ```tsx
- * <ComponentContextProvider
+ * <ContextAttachmentProvider
  *   getContextHelperData={(context) => ({
  *     selectedComponent: {
  *       name: context.name,
@@ -145,27 +147,27 @@ export interface ComponentContextProviderProps {
  *   })}
  * >
  *   <App />
- * </ComponentContextProvider>
+ * </ContextAttachmentProvider>
  * ```
  */
-export function ComponentContextProvider({
+export function ContextAttachmentProvider({
   children,
   getContextHelperData,
-}: ComponentContextProviderProps) {
-  const [contexts, setContexts] = useState<ContextItem[]>([]);
+}: ContextAttachmentProviderProps) {
+  const [attachments, setAttachments] = useState<ContextItem[]>([]);
   const [customSuggestions, setCustomSuggestions] = useState<
     Suggestion[] | null
   >(null);
   const { addContextHelper, removeContextHelper } = useTamboContextHelpers();
   const previousContextIdsRef = useRef<Set<string>>(new Set());
 
-  // Sync contexts to Tambo's context helpers
+  // Sync attachments to Tambo's context helpers
   useEffect(() => {
-    const currentIds = new Set(contexts.map((c) => c.id));
+    const currentIds = new Set(attachments.map((c) => c.id));
     const previousIds = previousContextIdsRef.current;
 
     // Add new contexts
-    contexts.forEach((context) => {
+    attachments.forEach((context) => {
       if (!previousIds.has(context.id)) {
         addContextHelper(context.id, async (): Promise<ContextHelperData> => {
           if (getContextHelperData) {
@@ -198,69 +200,83 @@ export function ComponentContextProvider({
         removeContextHelper(id);
       });
     };
-  }, [contexts, addContextHelper, removeContextHelper, getContextHelperData]);
+  }, [
+    attachments,
+    addContextHelper,
+    removeContextHelper,
+    getContextHelperData,
+  ]);
 
-  const addContext = useCallback((context: Omit<ContextItem, "id">) => {
-    setContexts((prev) => {
-      if (prev.some((c) => c.name === context.name)) return prev;
-      const newId =
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `ctx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      return [...prev, { ...context, id: newId }];
-    });
-  }, []);
+  const addContextAttachment = useCallback(
+    (context: Omit<ContextItem, "id">) => {
+      setAttachments((prev) => {
+        if (prev.some((c) => c.name === context.name)) return prev;
+        const newId =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `ctx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        return [...prev, { ...context, id: newId }];
+      });
+    },
+    [],
+  );
 
   // This is used to remove a context when the user clicks the remove button
-  const removeContext = useCallback((id: string) => {
-    setContexts((prev) => prev.filter((c) => c.id !== id));
+  const removeContextAttachment = useCallback((id: string) => {
+    setAttachments((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
   // This is used to clear the context when the user submits a message
-  const clearContexts = useCallback(() => {
+  const clearContextAttachments = useCallback(() => {
     // Remove all context helpers before clearing
-    contexts.forEach((context) => {
+    attachments.forEach((context) => {
       removeContextHelper(context.id);
     });
-    setContexts([]);
-  }, [contexts, removeContextHelper]);
+    setAttachments([]);
+  }, [attachments, removeContextHelper]);
 
   const value = useMemo(
     () => ({
-      contexts,
-      addContext,
-      removeContext,
-      clearContexts,
+      attachments,
+      addContextAttachment,
+      removeContextAttachment,
+      clearContextAttachments,
       customSuggestions,
       setCustomSuggestions,
     }),
-    [contexts, addContext, removeContext, clearContexts, customSuggestions],
+    [
+      attachments,
+      addContextAttachment,
+      removeContextAttachment,
+      clearContextAttachments,
+      customSuggestions,
+    ],
   );
 
   return (
-    <ComponentContext.Provider value={value}>
+    <ContextAttachmentContext.Provider value={value}>
       {children}
-    </ComponentContext.Provider>
+    </ContextAttachmentContext.Provider>
   );
 }
 
 /**
- * Hook to access component context state and methods.
+ * Hook to access context attachment state and methods.
  *
- * **Important:** Returns `undefined` if used outside of `ComponentContextProvider`.
+ * **Important:** Returns `undefined` if used outside of `ContextAttachmentProvider`.
  * Always use optional chaining or check for `undefined` before calling methods.
  *
- * @returns Context state with `contexts`, `addContext`, `removeContext`,
+ * @returns Context state with `attachments`, `addContextAttachment`, `removeContextAttachment`,
  *          `customSuggestions`, and `setCustomSuggestions`, or `undefined`
  *
  * @example
  * Adding a context (safe with optional chaining)
  * ```tsx
  * function MyComponent() {
- *   const componentContext = useComponentContext();
+ *   const contextAttachment = useContextAttachment();
  *
  *   const handleClick = () => {
- *     componentContext?.addContext({
+ *     contextAttachment?.addContextAttachment({
  *       name: "Button.tsx",
  *       icon: <FileIcon />,
  *       metadata: { path: "/src/Button.tsx" }
@@ -275,10 +291,10 @@ export function ComponentContextProvider({
  * Setting custom suggestions
  * ```tsx
  * function EditableComponent() {
- *   const componentContext = useComponentContext();
+ *   const contextAttachment = useContextAttachment();
  *
  *   const handleEditClick = () => {
- *     componentContext?.setCustomSuggestions([
+ *     contextAttachment?.setCustomSuggestions([
  *       {
  *         id: "suggestion-1",
  *         title: "Add Feature",
@@ -295,32 +311,32 @@ export function ComponentContextProvider({
  * @example
  * Checking if provider is available
  * ```tsx
- * const componentContext = useComponentContext();
+ * const contextAttachment = useContextAttachment();
  *
- * if (componentContext) {
+ * if (contextAttachment) {
  *   // Provider is available, use context features
- *   componentContext.addContext({ name: "File.tsx" });
+ *   contextAttachment.addContextAttachment({ name: "File.tsx" });
  * }
  * ```
  *
  * @example
  * Removing a context - This is used to remove a context when the user clicks the remove button
  * ```tsx
- * componentContext?.removeContext(contextId);
+ * contextAttachment?.removeContextAttachment(contextId);
  * ```
  *
  * @example
  * Clearing all contexts - This is used to clear the context when the user submits a message
  * ```tsx
- * componentContext?.clearContexts();
+ * contextAttachment?.clearContextAttachments();
  * ```
  *
  * @example
  * Clearing custom suggestions
  * ```tsx
- * componentContext?.setCustomSuggestions(null);
+ * contextAttachment?.setCustomSuggestions(null);
  * ```
  */
-export function useComponentContext() {
-  return useContext(ComponentContext);
+export function useContextAttachment() {
+  return useContext(ContextAttachmentContext);
 }

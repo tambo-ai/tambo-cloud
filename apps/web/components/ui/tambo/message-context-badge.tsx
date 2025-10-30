@@ -1,6 +1,6 @@
 "use client";
 
-import { useComponentContext } from "@/components/ui/tambo/component-context";
+import { useContextAttachment } from "@/components/ui/tambo/context-attachment-provider";
 import { getMessageContexts, getMessageImages } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
 import type { TamboThreadMessage } from "@tambo-ai/react";
@@ -139,7 +139,7 @@ export const MessageAttachments = React.forwardRef<
 >(({ message, showRemoveButtons = false, className, ...props }, ref) => {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const threadInput = useTamboThreadInput();
-  const componentContext = useComponentContext();
+  const contextAttachment = useContextAttachment();
 
   let allAttachments: Array<{
     id: string;
@@ -158,11 +158,13 @@ export const MessageAttachments = React.forwardRef<
 
   const contextsList = message
     ? getMessageContexts(message)
-    : (componentContext?.contexts ?? []);
+    : (contextAttachment?.attachments ?? []);
 
   // Build attachments array
   const removeImage = message ? undefined : threadInput.removeImage;
-  const removeContext = message ? undefined : componentContext?.removeContext;
+  const removeContext = message
+    ? undefined
+    : contextAttachment?.removeContextAttachment;
 
   allAttachments = [
     ...imagesList.map((image, index) => ({

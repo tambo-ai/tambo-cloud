@@ -1,5 +1,5 @@
 import { MessageContent } from "@/components/observability/messages/message-content";
-import { ComponentContextProvider } from "@/components/ui/tambo/component-context";
+import { ContextAttachmentProvider } from "@/components/ui/tambo/context-attachment-provider";
 import { ChatCompletionContentPart, MessageRole } from "@tambo-ai-cloud/core";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -59,7 +59,7 @@ const mockWriteText = navigator.clipboard.writeText as jest.Mock;
 
 // Test wrapper component that provides necessary contexts
 function TestWrapper({ children }: { children: React.ReactNode }) {
-  return <ComponentContextProvider>{children}</ComponentContextProvider>;
+  return <ContextAttachmentProvider>{children}</ContextAttachmentProvider>;
 }
 
 // Helper function to render with providers

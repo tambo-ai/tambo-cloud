@@ -1,6 +1,6 @@
 "use client";
 
-import { useComponentContext } from "@/components/ui/tambo/component-context";
+import { useContextAttachment } from "@/components/ui/tambo/context-attachment-provider";
 import { McpConfigModal } from "@/components/ui/tambo/mcp-config-modal";
 import { MessageAttachments } from "@/components/ui/tambo/message-context-badge";
 import {
@@ -167,7 +167,7 @@ const MessageInputInternal = React.forwardRef<
     clearImages,
   } = useTamboThreadInput();
   const { cancel } = useTamboThread();
-  const componentContext = useComponentContext();
+  const contextAttachment = useContextAttachment();
   const [displayValue, setDisplayValue] = React.useState("");
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -195,8 +195,11 @@ const MessageInputInternal = React.forwardRef<
       if (images.length > 0) {
         setTimeout(() => clearImages(), 0);
       }
-      if (componentContext?.contexts && componentContext.contexts.length > 0) {
-        setTimeout(() => componentContext.clearContexts(), 0);
+      if (
+        contextAttachment?.attachments &&
+        contextAttachment.attachments.length > 0
+      ) {
+        setTimeout(() => contextAttachment.clearContextAttachments(), 0);
       }
 
       try {
@@ -235,7 +238,7 @@ const MessageInputInternal = React.forwardRef<
       isSubmitting,
       images,
       clearImages,
-      componentContext,
+      contextAttachment,
     ],
   );
 

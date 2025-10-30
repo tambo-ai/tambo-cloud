@@ -1,6 +1,6 @@
 "use client";
 
-import { useComponentContext } from "@/components/ui/tambo/component-context";
+import { useContextAttachment } from "@/components/ui/tambo/context-attachment-provider";
 import { cn } from "@/lib/utils";
 import { useMessageThreadPanel } from "@/providers/message-thread-panel-provider";
 import type { Suggestion } from "@tambo-ai/react";
@@ -39,7 +39,7 @@ interface EditableHintProps {
   className?: string;
 
   /**
-   * Optional name for the component context badge that appears above the message input.
+   * Optional name for the context attachment badge that appears above the message input.
    * If not provided, defaults to the first 3 words of the description.
    *
    * @example "API Keys" or "LLM Provider Settings"
@@ -59,7 +59,7 @@ interface EditableHintProps {
  *   3. Shows custom suggestions specific to that component
  *
  * **Requirements:**
- * - Must be used within `ComponentContextProvider`
+ * - Must be used within `ContextAttachmentProvider`
  * - Must be used within `MessageThreadPanelProvider`
  *
  * @example
@@ -107,7 +107,7 @@ export function EditableHint({
   componentName,
 }: EditableHintProps) {
   const { setIsOpen } = useMessageThreadPanel();
-  const componentContext = useComponentContext();
+  const contextAttachment = useContextAttachment();
   const [showPopover, setShowPopover] = useState(false);
 
   // Generate a component name from description if not provided
@@ -122,13 +122,13 @@ export function EditableHint({
     (e: MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      componentContext?.setCustomSuggestions(suggestions);
-      componentContext?.addContext({
+      contextAttachment?.setCustomSuggestions(suggestions);
+      contextAttachment?.addContextAttachment({
         name: contextName,
       });
       setIsOpen(true);
     },
-    [suggestions, contextName, componentContext, setIsOpen],
+    [suggestions, contextName, contextAttachment, setIsOpen],
   );
 
   return (
