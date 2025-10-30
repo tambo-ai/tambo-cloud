@@ -4,7 +4,7 @@
       "WebSearch",
       "Bash(npm run lint:*)",
       "Bash(npm run check-types:*)",
-      "Bash(git fetch:*)"
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
