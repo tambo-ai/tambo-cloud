@@ -177,7 +177,7 @@ export function ContextAttachmentProvider({
             selectedComponent: {
               name: context.name,
               instruction:
-                "This component is selected. Only edit this component.",
+                "This is a Tambo interactable component that is currently selected and visible on the dashboard. You can read its current props and state, and update it by modifying its props. If multiple components are attached, you can interact with and modify any of them. Use the auto-registered interactable component tools (like get_interactable_component_by_id and update_interactable_component_<id>) to view and update the component's state.",
               ...(context.metadata || {}),
             },
           };
