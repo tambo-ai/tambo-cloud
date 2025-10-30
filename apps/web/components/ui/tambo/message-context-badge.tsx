@@ -138,6 +138,8 @@ export const MessageAttachments = React.forwardRef<
   MessageAttachmentsProps
 >(({ message, showRemoveButtons = false, className, ...props }, ref) => {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
+  const threadInput = useTamboThreadInput();
+  const componentContext = useComponentContext();
 
   let allAttachments: Array<{
     id: string;
@@ -152,19 +154,15 @@ export const MessageAttachments = React.forwardRef<
     ? getMessageImages(
         Array.isArray(message.content) ? message.content : null,
       ).map((url, index) => ({ id: `image-${index}`, dataUrl: url }))
-    : useTamboThreadInput().images;
+    : threadInput.images;
 
   const contextsList = message
     ? getMessageContexts(message)
-    : (useComponentContext()?.contexts ?? []);
+    : (componentContext?.contexts ?? []);
 
   // Build attachments array
-  const { removeImage } = message
-    ? { removeImage: undefined }
-    : useTamboThreadInput();
-  const { removeContext } = message
-    ? { removeContext: undefined }
-    : (useComponentContext() ?? {});
+  const removeImage = message ? undefined : threadInput.removeImage;
+  const removeContext = message ? undefined : componentContext?.removeContext;
 
   allAttachments = [
     ...imagesList.map((image, index) => ({
