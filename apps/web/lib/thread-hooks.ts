@@ -1,4 +1,4 @@
-import { ContextHelperData } from "@/components/ui/tambo/component-context";
+import type { ContextHelperData } from "@/components/ui/tambo/component-context";
 import type { TamboThreadMessage } from "@tambo-ai/react";
 import * as React from "react";
 import { useEffect, useState } from "react";
