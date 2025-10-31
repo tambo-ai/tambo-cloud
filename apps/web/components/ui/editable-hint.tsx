@@ -7,97 +7,32 @@ import type { Suggestion } from "@tambo-ai/react";
 import { Sparkles } from "lucide-react";
 import { useCallback, useMemo, useState, type MouseEvent } from "react";
 
-/**
- * Props for the EditableHint component.
- */
 interface EditableHintProps {
-  /**
-   * Array of suggestions to display when the hint is clicked.
-   * These will replace auto-generated suggestions in the message thread.
-   *
-   * @example
-   * ```tsx
-   * [
-   *   {
-   *     id: "suggestion-1",
-   *     title: "Add Analytics",
-   *     detailedSuggestion: "Add API key usage analytics showing request counts",
-   *     messageId: "api-key-analytics"
-   *   }
-   * ]
-   * ```
-   */
+  /** Suggestions to display when clicked */
   suggestions: Suggestion[];
-
-  /**
-   * Description text shown in the hover popover.
-   * Provides context about what clicking the hint will do.
-   */
+  /** Description text shown in the hover popover */
   description: string;
-
-  /** Optional className for styling the button */
+  /** Optional className for styling */
   className?: string;
-
-  /**
-   * Optional name for the context attachment badge that appears above the message input.
-   * If not provided, defaults to the first 3 words of the description.
-   *
-   * @example "API Keys" or "LLM Provider Settings"
-   */
+  /** Optional name for the context badge. Defaults to first 3 words of description */
   componentName?: string;
 }
 
 /**
- * An inline sparkle button that indicates a component can be edited with Tambo AI.
+ * Inline sparkle button that opens Tambo AI panel with custom suggestions.
+ * Shows a popover on hover and adds a context badge when clicked.
  *
- * **What it does:**
- * - Shows a sparkle (✨) icon next to component headings
- * - Displays a description popover on hover
- * - When clicked:
- *   1. Opens the Tambo message thread panel
- *   2. Adds a context badge for the component
- *   3. Shows custom suggestions specific to that component
- *
- * **Requirements:**
- * - Must be used within `ContextAttachmentProvider`
- * - Must be used within `MessageThreadPanelProvider`
+ * Requires `ContextAttachmentProvider` and `MessageThreadPanelProvider`.
  *
  * @example
- * Basic usage with multiple suggestions
  * ```tsx
  * <h2>
  *   API Keys
  *   <EditableHint
- *     suggestions={[
- *       {
- *         id: "api-key-analytics",
- *         title: "Usage Analytics",
- *         detailedSuggestion: "Show request counts and usage analytics for each API key",
- *         messageId: "api-key-analytics"
- *       },
- *       {
- *         id: "api-key-rate-limits",
- *         title: "Rate Limits",
- *         detailedSuggestion: "Display rate limits and throttling information per key",
- *         messageId: "api-key-rate-limits"
- *       }
- *     ]}
- *     description="Click to enhance API key management"
+ *     suggestions={[{ id: "1", title: "Add Analytics", detailedSuggestion: "..." }]}
+ *     description="Enhance API key management"
  *   />
  * </h2>
- * ```
- *
- * @example
- * With custom component name
- * ```tsx
- * <CardTitle>
- *   LLM Providers
- *   <EditableHint
- *     suggestions={[...]}
- *     description="Enhance provider monitoring"
- *     componentName="LLM Providers"
- *   />
- * </CardTitle>
  * ```
  */
 export function EditableHint({
