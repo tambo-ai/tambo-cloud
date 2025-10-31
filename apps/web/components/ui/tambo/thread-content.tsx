@@ -8,7 +8,7 @@ import {
   ToolcallInfo,
   type messageVariants,
 } from "@/components/ui/tambo/message";
-import { MessageAttachments } from "@/components/ui/tambo/message-context-badge";
+import { ContextAttachmentBadgeList } from "@/components/ui/tambo/context-attachment-badge";
 import { cn } from "@/lib/utils";
 import { type TamboThreadMessage, useTambo } from "@tambo-ai/react";
 import { type VariantProps } from "class-variance-authority";
@@ -165,7 +165,7 @@ const ThreadContentMessages = React.forwardRef<
                 )}
               >
                 <ReasoningInfo />
-                <MessageAttachments message={message} />
+                <ContextAttachmentBadgeList message={message} />
                 <MessageContent
                   className={
                     message.role === "assistant"

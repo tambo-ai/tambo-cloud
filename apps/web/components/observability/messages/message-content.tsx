@@ -1,8 +1,8 @@
-import { createMarkdownComponents } from "@/components/ui/tambo/markdown-components";
 import {
-  MessageAttachments,
-  MessageAttachmentsData,
-} from "@/components/ui/tambo/message-context-badge";
+  ContextAttachmentBadgeList,
+  ContextAttachmentBadgeListData,
+} from "@/components/ui/tambo/context-attachment-badge";
+import { createMarkdownComponents } from "@/components/ui/tambo/markdown-components";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { getSafeContent } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
@@ -256,8 +256,8 @@ export const MessageContent = memo(
               <span className="text-xs text-foreground/50">{message.role}</span>
 
               {/* Image and context attachments */}
-              <MessageAttachments
-                message={message as MessageAttachmentsData}
+              <ContextAttachmentBadgeList
+                message={message as ContextAttachmentBadgeListData}
                 className="mb-2"
               />
 

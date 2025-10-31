@@ -1,8 +1,8 @@
 "use client";
 
+import { ContextAttachmentBadgeList } from "@/components/ui/tambo/context-attachment-badge";
 import { useContextAttachment } from "@/components/ui/tambo/context-attachment-provider";
 import { McpConfigModal } from "@/components/ui/tambo/mcp-config-modal";
-import { MessageAttachments } from "@/components/ui/tambo/message-context-badge";
 import {
   Tooltip,
   TooltipProvider,
@@ -766,7 +766,7 @@ const MessageInputContexts = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <MessageAttachments
+  <ContextAttachmentBadgeList
     ref={ref}
     showRemoveButtons
     className={cn("pb-2 pt-1 border-b border-border", className)}

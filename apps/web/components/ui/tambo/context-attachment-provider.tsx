@@ -12,8 +12,8 @@ import {
 } from "react";
 
 /**
- * Represents a context item that can be displayed in MessageInputContexts.
- * Context items appear as badges above the message input and provide additional
+ * Represents a context attachment that can be displayed in MessageInputContexts.
+ * Context attachments appear as badges above the message input and provide additional
  * information to the AI about what to focus on.
  *
  * @property {string} name - Display name shown in the badge
@@ -22,14 +22,14 @@ import {
  *
  * @example
  * ```tsx
- * const context: ContextItem = {
+ * const context: ContextAttachment = {
  *   name: "Button.tsx",
  *   icon: <FileIcon />,
  *   metadata: { filePath: "/src/components/Button.tsx" }
  * };
  * ```
  */
-export interface ContextItem {
+export interface ContextAttachment {
   id: string;
   name: string;
   icon?: ReactNode;
@@ -50,16 +50,16 @@ export interface ContextHelperData {
 /**
  * Context state interface for managing context attachments and custom suggestions.
  *
- * @property {ContextItem[]} attachments - Array of active context items (badges above message input)
- * @property {function} addContextAttachment - Add a new context item
- * @property {function} removeContextAttachment - Remove a context item by ID
- * @property {function} clearContextAttachments - Remove all context items - This is used to clear the context when the user submits a message
+ * @property {ContextAttachment[]} attachments - Array of active context attachments (badges above message input)
+ * @property {function} addContextAttachment - Add a new context attachment
+ * @property {function} removeContextAttachment - Remove a context attachment by ID
+ * @property {function} clearContextAttachments - Remove all context attachments - This is used to clear the context when the user submits a message
  * @property {Suggestion[] | null} customSuggestions - Custom suggestions to display instead of auto-generated ones
  * @property {function} setCustomSuggestions - Set or clear custom suggestions
  */
 interface ContextAttachmentState {
-  attachments: ContextItem[];
-  addContextAttachment: (context: Omit<ContextItem, "id">) => void;
+  attachments: ContextAttachment[];
+  addContextAttachment: (context: Omit<ContextAttachment, "id">) => void;
   removeContextAttachment: (id: string) => void;
   clearContextAttachments: () => void;
   customSuggestions: Suggestion[] | null;
@@ -79,7 +79,7 @@ export interface ContextAttachmentProviderProps {
    * Optional function to customize the data sent to the AI for each context.
    * If not provided, uses a default structure with the context name and instruction.
    *
-   * @param context - The context item to generate data for
+   * @param context - The context attachment to generate data for
    * @returns Object containing data to send to the AI (can be async)
    *
    * @example
@@ -98,7 +98,7 @@ export interface ContextAttachmentProviderProps {
    * ```
    */
   getContextHelperData?: (
-    context: ContextItem,
+    context: ContextAttachment,
   ) => Promise<ContextHelperData> | ContextHelperData;
 }
 
@@ -153,7 +153,7 @@ export function ContextAttachmentProvider({
   children,
   getContextHelperData,
 }: ContextAttachmentProviderProps) {
-  const [attachments, setAttachments] = useState<ContextItem[]>([]);
+  const [attachments, setAttachments] = useState<ContextAttachment[]>([]);
   const [customSuggestions, setCustomSuggestions] = useState<
     Suggestion[] | null
   >(null);
@@ -169,7 +169,7 @@ export function ContextAttachmentProvider({
   }, [attachments, removeContextHelper]);
 
   const addContextAttachment = useCallback(
-    (context: Omit<ContextItem, "id">) => {
+    (context: Omit<ContextAttachment, "id">) => {
       // Check if context already exists
       if (attachments.some((c) => c.name === context.name)) return;
 

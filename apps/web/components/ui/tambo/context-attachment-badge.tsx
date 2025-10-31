@@ -10,9 +10,9 @@ import Image from "next/image";
 import * as React from "react";
 
 /**
- * Props for the ContextBadge component.
+ * Props for the ContextAttachmentBadge component.
  */
-export interface ContextBadgeProps {
+export interface ContextAttachmentBadgeProps {
   id: string;
   displayName: string;
   icon?: React.ReactNode;
@@ -24,10 +24,10 @@ export interface ContextBadgeProps {
 }
 
 /**
- * Reusable badge component for rendering individual context items (images or component contexts).
+ * Reusable badge component for rendering individual context attachments (images or component contexts).
  * Used in both message input and message display.
  */
-export const ContextBadge: React.FC<ContextBadgeProps> = ({
+export const ContextAttachmentBadge: React.FC<ContextAttachmentBadgeProps> = ({
   displayName,
   icon,
   image,
@@ -97,25 +97,25 @@ export const ContextBadge: React.FC<ContextBadgeProps> = ({
   </div>
 );
 
-ContextBadge.displayName = "ContextBadge";
+ContextAttachmentBadge.displayName = "ContextAttachmentBadge";
 
 /**
- * Minimal shape required for displaying message attachments.
- * This decouples MessageAttachments from the full TamboThreadMessage type.
+ * Minimal shape required for displaying context attachment badge list.
+ * This decouples ContextAttachmentBadgeList from the full TamboThreadMessage type.
  */
-export interface MessageAttachmentsData {
+export interface ContextAttachmentBadgeListData {
   content?: Array<{ type?: string; image_url?: { url?: string } }>;
   additionalContext?: Record<string, unknown> | null;
   role?: string;
 }
 
 /**
- * Props for the MessageAttachments component.
+ * Props for the ContextAttachmentBadgeList component.
  */
-export interface MessageAttachmentsProps
+export interface ContextAttachmentBadgeListProps
   extends React.HTMLAttributes<HTMLDivElement> {
   /** Optional message to display attachments from (display mode) */
-  message?: TamboThreadMessage | MessageAttachmentsData;
+  message?: TamboThreadMessage | ContextAttachmentBadgeListData;
   /** Whether to show remove buttons (input mode) */
   showRemoveButtons?: boolean;
 }
@@ -127,15 +127,15 @@ export interface MessageAttachmentsProps
  * @example
  * ```tsx
  * // Display mode
- * <MessageAttachments message={message} />
+ * <ContextAttachmentBadgeList message={message} />
  *
  * // Input mode
- * <MessageAttachments showRemoveButtons />
+ * <ContextAttachmentBadgeList showRemoveButtons />
  * ```
  */
-export const MessageAttachments = React.forwardRef<
+export const ContextAttachmentBadgeList = React.forwardRef<
   HTMLDivElement,
-  MessageAttachmentsProps
+  ContextAttachmentBadgeListProps
 >(({ message, showRemoveButtons = false, className, ...props }, ref) => {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const threadInput = useTamboThreadInput();
@@ -193,7 +193,7 @@ export const MessageAttachments = React.forwardRef<
       {...props}
     >
       {allAttachments.map((attachment) => (
-        <ContextBadge
+        <ContextAttachmentBadge
           key={attachment.id}
           id={attachment.id}
           displayName={attachment.displayName}
@@ -211,4 +211,4 @@ export const MessageAttachments = React.forwardRef<
   );
 });
 
-MessageAttachments.displayName = "MessageAttachments";
+ContextAttachmentBadgeList.displayName = "ContextAttachmentBadgeList";
