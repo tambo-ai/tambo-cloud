@@ -381,7 +381,13 @@ html {
 /* Code block styles for rehype-pretty-code */
 pre {
   @apply rounded-lg p-4 overflow-x-auto my-4;
-  /* Background is now provided by Shiki (keepBackground: true) */
+  background-color: #f6f8fa; /* GitHub light theme background */
+}
+
+@media (prefers-color-scheme: dark) {
+  pre {
+    background-color: #0d1117; /* GitHub dark theme background */
+  }
 }
 
 code {

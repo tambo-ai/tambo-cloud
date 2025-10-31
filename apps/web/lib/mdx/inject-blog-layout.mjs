@@ -22,15 +22,17 @@ export function remarkInjectBlogLayout() {
     }
 
     // Check if the file already has a layout export (to avoid double-wrapping)
+    // Use AST-based detection instead of string matching for robustness
     let hasLayoutExport = false;
     visit(tree, "mdxjsEsm", (node) => {
-      if (
-        node.value &&
-        (node.value.includes("export default") ||
-          node.value.includes("BlogPostWithFrontmatter") ||
-          node.value.includes("BlogPost"))
-      ) {
-        hasLayoutExport = true;
+      // Check the estree AST structure for export default declarations
+      if (node.data?.estree?.body) {
+        for (const statement of node.data.estree.body) {
+          if (statement.type === "ExportDefaultDeclaration") {
+            hasLayoutExport = true;
+            break;
+          }
+        }
       }
     });
 

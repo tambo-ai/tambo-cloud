@@ -1,5 +1,6 @@
 import { BlogPostListItem } from "@/lib/blog/types";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/blog/format-date";
 import Link from "next/link";
 
 interface BlogCardProps {
@@ -29,7 +30,7 @@ export function BlogCard({ post, className }: BlogCardProps) {
               <span>•</span>
             </>
           )}
-          <time dateTime={post.date}>{post.date}</time>
+          <time dateTime={post.date}>{formatDate(post.date)}</time>
         </div>
       </article>
     </Link>
