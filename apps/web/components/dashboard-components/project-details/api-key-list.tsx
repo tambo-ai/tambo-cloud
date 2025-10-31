@@ -6,6 +6,7 @@ import { useClipboard } from "@/hooks/use-clipboard";
 import { useToast } from "@/hooks/use-toast";
 import { apiKeyListSuggestions } from "@/lib/component-suggestions";
 import { api, type RouterOutputs } from "@/trpc/react";
+import { withInteractable } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Copy } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -17,7 +18,7 @@ import {
 import { APIKeyDialog } from "./api-key-dialog";
 import { APIKeyListItem } from "./api-key-list-item";
 
-export const APIKeyListProps = z.object({
+export const InteractableAPIKeyListProps = z.object({
   project: z
     .object({
       id: z.string(),
@@ -29,25 +30,41 @@ export const APIKeyListProps = z.object({
     .boolean()
     .optional()
     .describe("Whether the API keys are loading."),
+  createKeyWithName: z
+    .string()
+    .optional()
+    .describe(
+      "When set, automatically creates a new API key with the specified name. The component will enter create mode and execute the key creation.",
+    ),
+  enterCreateMode: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, automatically opens the create key form dialog, allowing the user to enter a key name manually.",
+    ),
   onEdited: z
     .function()
     .args()
     .returns(z.void())
     .optional()
     .describe(
-      "Optional callback function triggered when API keys are successfully updated.",
+      "Optional callback function triggered when API keys are successfully created, updated, or deleted.",
     ),
 });
 
 interface APIKeyListProps {
   project?: RouterOutputs["project"]["getUserProjects"][number];
   isLoading?: boolean;
+  createKeyWithName?: string;
+  enterCreateMode?: boolean;
   onEdited?: () => void;
 }
 
 export function APIKeyList({
   project,
   isLoading: externalLoading,
+  createKeyWithName,
+  enterCreateMode,
   onEdited,
 }: APIKeyListProps) {
   const [isCreating, setIsCreating] = useState(false);
@@ -159,6 +176,21 @@ export function APIKeyList({
       handleCreateApiKey("first-tambo-key").catch(console.error);
     }
   }, [apiKeysLoading, apiKeys, handleCreateApiKey]);
+
+  // When Tambo sends createKeyWithName, automatically create the key
+  useEffect(() => {
+    if (createKeyWithName !== undefined && project?.id) {
+      handleCreateApiKey(createKeyWithName).catch(console.error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createKeyWithName]);
+
+  // When Tambo sends enterCreateMode, open the create form
+  useEffect(() => {
+    if (enterCreateMode) {
+      setIsCreating(true);
+    }
+  }, [enterCreateMode]);
 
   const handleDeleteApiKey = async () => {
     try {
@@ -458,3 +490,10 @@ export function APIKeyList({
     </Card>
   );
 }
+
+export const InteractableAPIKeyList = withInteractable(APIKeyList, {
+  componentName: "APIKeyManager",
+  description:
+    "A component that allows users to manage API keys for their project. Users can view existing API keys, create new keys with custom names, and delete keys they no longer need. Each key is displayed with its creation date and preview, and newly created keys are shown once for copying.",
+  propsSchema: InteractableAPIKeyListProps,
+});

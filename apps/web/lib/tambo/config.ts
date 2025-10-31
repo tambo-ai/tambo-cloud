@@ -2,10 +2,6 @@
 
 import { NextAuthAuthForm } from "@/components/auth/nextauth-auth-form";
 import {
-  APIKeyList,
-  APIKeyListProps,
-} from "@/components/dashboard-components/project-details/api-key-list";
-import {
   AvailableMcpServers,
   AvailableMcpServersProps,
 } from "@/components/dashboard-components/project-details/available-mcp-servers";
@@ -53,13 +49,6 @@ export const tamboRegisteredComponents = [
       "Shows detailed information about a specific project including project name, unique ID (with copy button), owner details, and creation date. Features smooth animations and handles loading states. Use when displaying project overview information or when users need to reference project details like copying the project ID.",
     component: ProjectInfo,
     propsSchema: ProjectInfoProps,
-  },
-  {
-    name: "APIKeyList",
-    description:
-      "Manages project API keys with full CRUD operations - create, view, and delete API keys. Automatically generates a first key for new projects. Shows masked key values, last usage dates, and provides secure key generation with one-time display. Includes animated interactions and handles loading states. Use when users need to manage authentication keys for their project.",
-    component: APIKeyList,
-    propsSchema: APIKeyListProps,
   },
   {
     name: "ProviderKeySection",

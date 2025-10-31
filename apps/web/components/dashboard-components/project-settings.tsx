@@ -4,7 +4,7 @@ import {
   DeleteConfirmationDialog,
   type AlertState,
 } from "@/components/dashboard-components/delete-confirmation-dialog";
-import { APIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
+import { InteractableAPIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
 import { AvailableMcpServers } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import { InteractableCustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
 import { OAuthSettings } from "@/components/dashboard-components/project-details/oauth-settings";
@@ -456,7 +456,7 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
         >
           <div className="space-y-4">
             <div ref={apiKeysRef} className="p-2">
-              <APIKeyList project={project} />
+              <InteractableAPIKeyList project={project} />
             </div>
 
             <div ref={llmProvidersRef} className="p-2">
