@@ -57,6 +57,7 @@
     "jsonwebtoken": "^9.0.2",
     "mime-types": "^3.0.1",
     "openai": "^6.4.0",
+    "pdf-parse": "^1.1.1",
     "react-fast-compare": "^3.2.2",
     "reflect-metadata": "^0.2.0",
     "rxjs": "7.8.1",
