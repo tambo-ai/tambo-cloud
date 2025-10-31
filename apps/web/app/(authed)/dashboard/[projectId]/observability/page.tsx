@@ -4,9 +4,7 @@ import { ThreadTableContainer } from "@/components/observability/thread-table/th
 import { ObservabilityPageSkeleton } from "@/components/skeletons/observability-skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { EditableHint } from "@/components/ui/editable-hint";
 import { useToast } from "@/hooks/use-toast";
-import { observabilityThreadsSuggestions } from "@/lib/component-suggestions";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
 import { RefreshCw } from "lucide-react";
@@ -87,13 +85,7 @@ export default function ObservabilityPage({ params }: ObservabilityPageProps) {
     >
       {/* Header with refresh button */}
       <div className="flex items-center justify-between mb-4 gap-2">
-        <h1 className="text-2xl sm:text-4xl font-semibold">
-          Threads
-          <EditableHint
-            suggestions={observabilityThreadsSuggestions}
-            description="Add more filtering and export options"
-          />
-        </h1>
+        <h1 className="text-2xl sm:text-4xl font-semibold">Threads</h1>
         <Button
           onClick={handleRefresh}
           disabled={isFetchingThreads}
