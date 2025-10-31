@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useToast } from "@/hooks/use-toast";
 import { apiKeyListSuggestions } from "@/lib/component-suggestions";
-import { api, type RouterOutputs } from "@/trpc/react";
+import { api } from "@/trpc/react";
 import { withInteractable } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Copy } from "lucide-react";
@@ -19,13 +19,7 @@ import { APIKeyDialog } from "./api-key-dialog";
 import { APIKeyListItem } from "./api-key-list-item";
 
 export const InteractableAPIKeyListProps = z.object({
-  project: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-    })
-    .optional()
-    .describe("The project to fetch API keys for."),
+  projectId: z.string().describe("The project ID to fetch API keys for."),
   isLoading: z
     .boolean()
     .optional()
@@ -53,7 +47,7 @@ export const InteractableAPIKeyListProps = z.object({
 });
 
 interface APIKeyListProps {
-  project?: RouterOutputs["project"]["getUserProjects"][number];
+  projectId?: string;
   isLoading?: boolean;
   createKeyWithName?: string;
   enterCreateMode?: boolean;
@@ -61,7 +55,7 @@ interface APIKeyListProps {
 }
 
 export function APIKeyList({
-  project,
+  projectId,
   isLoading: externalLoading,
   createKeyWithName,
   enterCreateMode,
@@ -84,14 +78,14 @@ export function APIKeyList({
     data: apiKeys,
     isLoading: apiKeysLoading,
     error: apiKeysError,
-  } = api.project.getApiKeys.useQuery(project?.id ?? "", {
-    enabled: !!project?.id,
+  } = api.project.getApiKeys.useQuery(projectId ?? "", {
+    enabled: !!projectId,
   });
 
   const { mutateAsync: generateApiKey, isPending: isGeneratingKey } =
     api.project.generateApiKey.useMutation({
       onSuccess: async () => {
-        await utils.project.getApiKeys.invalidate(project?.id ?? "");
+        await utils.project.getApiKeys.invalidate(projectId ?? "");
         onEdited?.();
       },
       onError: () => {
@@ -105,7 +99,7 @@ export function APIKeyList({
 
   const { mutateAsync: removeApiKey } = api.project.removeApiKey.useMutation({
     onSuccess: async () => {
-      await utils.project.getApiKeys.invalidate(project?.id ?? "");
+      await utils.project.getApiKeys.invalidate(projectId ?? "");
       onEdited?.();
       toast({
         title: "Success",
@@ -146,7 +140,7 @@ export function APIKeyList({
       try {
         setIsCreating(true);
         const newKey = await generateApiKey({
-          projectId: project?.id ?? "",
+          projectId: projectId ?? "",
           name: name,
         });
         setNewGeneratedKey(newKey.apiKey);
@@ -167,7 +161,7 @@ export function APIKeyList({
         setIsCreating(false);
       }
     },
-    [generateApiKey, newKeyName, project?.id, toast],
+    [generateApiKey, newKeyName, projectId, toast],
   );
 
   // Auto-create first key if none exist
@@ -179,7 +173,7 @@ export function APIKeyList({
 
   // When Tambo sends createKeyWithName, automatically create the key
   useEffect(() => {
-    if (createKeyWithName !== undefined && project?.id) {
+    if (createKeyWithName !== undefined && projectId) {
       handleCreateApiKey(createKeyWithName).catch(console.error);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -194,10 +188,10 @@ export function APIKeyList({
 
   const handleDeleteApiKey = async () => {
     try {
-      if (!alertState.data || !project?.id) return;
+      if (!alertState.data || !projectId) return;
 
       await removeApiKey({
-        projectId: project.id,
+        projectId: projectId,
         apiKeyId: alertState.data.id,
       });
     } finally {
@@ -227,16 +221,6 @@ export function APIKeyList({
   };
 
   const isLoading = apiKeysLoading || externalLoading;
-
-  if (!project) {
-    return (
-      <Card className="border rounded-md overflow-hidden">
-        <CardContent className="p-6">
-          <p className="text-sm text-muted-foreground">No project found</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Show loading state
   if (isLoading) {

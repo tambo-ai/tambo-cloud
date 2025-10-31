@@ -456,7 +456,10 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
         >
           <div className="space-y-4">
             <div ref={apiKeysRef} className="p-2">
-              <InteractableAPIKeyList project={project} />
+              <InteractableAPIKeyList
+                projectId={project.id}
+                onEdited={handleRefreshProject}
+              />
             </div>
 
             <div ref={llmProvidersRef} className="p-2">
