@@ -247,78 +247,25 @@ export function ContextAttachmentProvider({
 /**
  * Hook to access context attachment state and methods.
  *
- * **Important:** Returns `undefined` if used outside of `ContextAttachmentProvider`.
- * Always use optional chaining or check for `undefined` before calling methods.
- *
- * @returns Context state with `attachments`, `addContextAttachment`, `removeContextAttachment`,
- *          `customSuggestions`, and `setCustomSuggestions`, or `undefined`
+ * Returns `undefined` if used outside of `ContextAttachmentProvider`.
+ * Use optional chaining when calling methods.
  *
  * @example
- * Adding a context (safe with optional chaining)
- * ```tsx
- * function MyComponent() {
- *   const contextAttachment = useContextAttachment();
- *
- *   const handleClick = () => {
- *     contextAttachment?.addContextAttachment({
- *       name: "Button.tsx",
- *       icon: <FileIcon />,
- *       metadata: { path: "/src/Button.tsx" }
- *     });
- *   };
- *
- *   return <button onClick={handleClick}>Add Context</button>;
- * }
- * ```
- *
- * @example
- * Setting custom suggestions
- * ```tsx
- * function EditableComponent() {
- *   const contextAttachment = useContextAttachment();
- *
- *   const handleEditClick = () => {
- *     contextAttachment?.setCustomSuggestions([
- *       {
- *         id: "suggestion-1",
- *         title: "Add Feature",
- *         detailedSuggestion: "Add a new feature to this component",
- *         messageId: "add-feature"
- *       }
- *     ]);
- *   };
- *
- *   return <button onClick={handleEditClick}>Edit</button>;
- * }
- * ```
- *
- * @example
- * Checking if provider is available
  * ```tsx
  * const contextAttachment = useContextAttachment();
  *
- * if (contextAttachment) {
- *   // Provider is available, use context features
- *   contextAttachment.addContextAttachment({ name: "File.tsx" });
- * }
- * ```
+ * // Add a context
+ * contextAttachment?.addContextAttachment({
+ *   name: "Button.tsx",
+ *   icon: <FileIcon />,
+ *   metadata: { path: "/src/Button.tsx" }
+ * });
  *
- * @example
- * Removing a context - This is used to remove a context when the user clicks the remove button
- * ```tsx
+ * // Remove a context
  * contextAttachment?.removeContextAttachment(contextId);
- * ```
  *
- * @example
- * Clearing all contexts - This is used to clear the context when the user submits a message
- * ```tsx
- * contextAttachment?.clearContextAttachments();
- * ```
- *
- * @example
- * Clearing custom suggestions
- * ```tsx
- * contextAttachment?.setCustomSuggestions(null);
+ * // Set custom suggestions
+ * contextAttachment?.setCustomSuggestions([{ id: "1", title: "Add Feature" }]);
  * ```
  */
 export function useContextAttachment() {
