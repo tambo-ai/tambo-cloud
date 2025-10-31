@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EditableHint } from "@/components/ui/editable-hint";
+import { availableMcpServersSuggestions } from "@/lib/component-suggestions";
 import { api } from "@/trpc/react";
 import { AiProviderType } from "@tambo-ai-cloud/core";
 import { useRouter } from "next/navigation";
@@ -128,7 +130,14 @@ export function AvailableMcpServers({
     <Card className="border rounded-md overflow-hidden">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">MCP Servers</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            MCP Servers
+            <EditableHint
+              suggestions={availableMcpServersSuggestions}
+              description="Click to know more about how to manage MCP servers"
+              componentName="MCP Servers"
+            />
+          </CardTitle>
           {!isAddingNew && (
             <Button
               variant="outline"

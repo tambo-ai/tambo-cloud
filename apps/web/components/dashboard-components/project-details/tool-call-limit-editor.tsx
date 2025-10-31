@@ -8,9 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EditableHint } from "@/components/ui/editable-hint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { toolCallLimitEditorSuggestions } from "@/lib/component-suggestions";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -120,7 +122,14 @@ export function ToolCallLimitEditor({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Tool Call Limit</CardTitle>
+        <CardTitle className="text-lg font-semibold">
+          Tool Call Limit
+          <EditableHint
+            suggestions={toolCallLimitEditorSuggestions}
+            description="Click to know more about how to manage the tool call limit for this project"
+            componentName="Tool Call Limit"
+          />
+        </CardTitle>
         <CardDescription className="text-sm font-sans text-foreground">
           Set the maximum number of tool calls allowed per response. This helps
           prevent infinite loops and controls resource usage.

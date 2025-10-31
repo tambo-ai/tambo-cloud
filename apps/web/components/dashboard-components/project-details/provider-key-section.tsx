@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Combobox } from "@/components/ui/combobox";
+import { EditableHint } from "@/components/ui/editable-hint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { providerKeySectionSuggestions } from "@/lib/component-suggestions";
 import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 import {
@@ -729,7 +731,14 @@ export function ProviderKeySection({
     <Card className="overflow-hidden rounded-md border">
       <CardHeader className="pb-0 pt-6">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">LLM Providers</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            LLM Providers
+            <EditableHint
+              suggestions={providerKeySectionSuggestions}
+              description="Click to know more about how to manage the LLM provider for this project"
+              componentName="LLM Providers"
+            />
+          </CardTitle>
           {hasUnsavedChanges && (
             <Button
               size="sm"

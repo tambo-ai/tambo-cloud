@@ -8,12 +8,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EditableHint } from "@/components/ui/editable-hint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { oauthSettingsSuggestions } from "@/lib/component-suggestions";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { OAuthValidationMode } from "@tambo-ai-cloud/core";
 import { motion } from "framer-motion";
@@ -218,8 +220,13 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+        <CardTitle className="text-lg font-semibold">
           OAuth Token Validation
+          <EditableHint
+            suggestions={oauthSettingsSuggestions}
+            description="Click to know more about how to manage token required for this project"
+            componentName="OAuth Settings"
+          />
         </CardTitle>
         <p className="text-sm font-sans text-foreground">
           Configure how OAuth bearer tokens are validated for your
