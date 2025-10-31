@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EditableHint } from "@/components/ui/editable-hint";
 import { useToast } from "@/hooks/use-toast";
+import { observabilityThreadsSuggestions } from "@/lib/component-suggestions";
 import { api } from "@/trpc/react";
 import { motion } from "framer-motion";
 import { RefreshCw } from "lucide-react";
@@ -89,28 +90,7 @@ export default function ObservabilityPage({ params }: ObservabilityPageProps) {
         <h1 className="text-2xl sm:text-4xl font-semibold">
           Threads
           <EditableHint
-            suggestions={[
-              {
-                id: "thread-advanced-filters",
-                title: "Advanced Filters",
-                detailedSuggestion:
-                  "Add filters for date range, status, and user ID",
-                messageId: "thread-advanced-filters",
-              },
-              {
-                id: "thread-metadata-search",
-                title: "Metadata Search",
-                detailedSuggestion: "Add search by custom metadata fields",
-                messageId: "thread-metadata-search",
-              },
-              {
-                id: "thread-export-csv",
-                title: "Export to CSV",
-                detailedSuggestion:
-                  "Add functionality to export thread data to CSV",
-                messageId: "thread-export-csv",
-              },
-            ]}
+            suggestions={observabilityThreadsSuggestions}
             description="Add more filtering and export options"
           />
         </h1>

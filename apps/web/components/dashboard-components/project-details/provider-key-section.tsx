@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { providerKeySectionSuggestions } from "@/lib/component-suggestions";
 import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 import {
@@ -733,29 +734,7 @@ export function ProviderKeySection({
           <CardTitle className="text-lg font-semibold">
             LLM Providers
             <EditableHint
-              suggestions={[
-                {
-                  id: "change-model",
-                  title: "Change Model",
-                  detailedSuggestion:
-                    "Change the model used for this project to gpt-4o",
-                  messageId: "change-model",
-                },
-                {
-                  id: "turn-on-thinking",
-                  title: "Turn on Thinking",
-                  detailedSuggestion:
-                    "Turn on thinking for the model used for this project",
-                  messageId: "turn-on-thinking",
-                },
-                {
-                  id: "change-input-token-limit",
-                  title: "Change Input Token Limit",
-                  detailedSuggestion:
-                    "Change the input token limit for the model used for this project",
-                  messageId: "change-input-token-limit",
-                },
-              ]}
+              suggestions={providerKeySectionSuggestions}
               description="Click to know more about how to manage the LLM provider for this project"
               componentName="LLM Providers"
             />

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { customInstructionsEditorSuggestions } from "@/lib/component-suggestions";
 import { api } from "@/trpc/react";
 import { withInteractable } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -151,34 +152,13 @@ export function CustomInstructionsEditor({
     setIsEditing(false);
   };
 
-  const suggestions = [
-    {
-      id: "add-custom-instructions",
-      title: "Add Custom Instructions",
-      detailedSuggestion: "Add custom instructions to the project",
-      messageId: "add-custom-instructions",
-    },
-    {
-      id: "edit-custom-instructions",
-      title: "Edit Custom Instructions",
-      detailedSuggestion: "Make the custom instructions more detailed",
-      messageId: "edit-custom-instructions",
-    },
-    {
-      id: "update-prompt-to-greet-with-howdy",
-      title: "Update Prompt to Greet with Howdy",
-      detailedSuggestion: "Update the prompt to always greet with howdy",
-      messageId: "update-prompt-to-greet-with-howdy",
-    },
-  ];
-
   return (
     <Card className="border rounded-md overflow-hidden">
       <CardHeader>
         <CardTitle className="text-lg font-semibold">
           Custom Instructions
           <EditableHint
-            suggestions={suggestions}
+            suggestions={customInstructionsEditorSuggestions}
             description="Click to know more about how to manage the custom instructions for this project"
             componentName="Custom Instructions"
           />
