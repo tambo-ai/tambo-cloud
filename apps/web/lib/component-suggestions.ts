@@ -155,27 +155,3 @@ export const toolCallLimitEditorSuggestions: ComponentSuggestion[] = [
     messageId: "how-to-use-tool-call-limit",
   },
 ];
-
-/**
- * Suggestions for the Observability/Threads page
- */
-export const observabilityThreadsSuggestions: ComponentSuggestion[] = [
-  {
-    id: "thread-advanced-filters",
-    title: "Advanced Filters",
-    detailedSuggestion: "Add filters for date range, status, and user ID",
-    messageId: "thread-advanced-filters",
-  },
-  {
-    id: "thread-metadata-search",
-    title: "Metadata Search",
-    detailedSuggestion: "Add search by custom metadata fields",
-    messageId: "thread-metadata-search",
-  },
-  {
-    id: "thread-export-csv",
-    title: "Export to CSV",
-    detailedSuggestion: "Add functionality to export thread data to CSV",
-    messageId: "thread-export-csv",
-  },
-];
