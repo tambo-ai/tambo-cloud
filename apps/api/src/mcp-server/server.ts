@@ -1,11 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import type { MCPHandlers } from "@tambo-ai-cloud/core";
 import { TAMBO_MCP_ACCESS_KEY_CLAIM } from "@tambo-ai-cloud/core";
 import { getDb, HydraDb } from "@tambo-ai-cloud/db";
 import cors from "cors";
 import { Express, NextFunction, Request, Response } from "express";
 import { getThreadMCPClients } from "src/common/systemTools";
 import { extractAndVerifyMcpAccessToken } from "../common/utils/oauth";
+import { registerElicitationHandlers } from "./elicitations";
 import { registerPromptHandlers } from "./prompts";
 
 const MCP_REQUEST_PROJECT_ID = Symbol("mcpProjectId");
@@ -29,6 +31,7 @@ export async function createMcpServer(
     {
       capabilities: {
         prompts: { listChanged: true },
+        elicitation: {},
       },
       // Enable notification debouncing for specific methods
       debouncedNotificationMethods: [
@@ -39,7 +42,7 @@ export async function createMcpServer(
     },
   );
 
-  const mcpHandlers = {};
+  const mcpHandlers: Partial<MCPHandlers> = {};
   const mcpClients = await getThreadMCPClients(
     db,
     projectId,
@@ -47,6 +50,7 @@ export async function createMcpServer(
     mcpHandlers,
   );
   await registerPromptHandlers(server, mcpClients);
+  registerElicitationHandlers(server, mcpClients);
   return {
     server,
     /**
