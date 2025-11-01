@@ -1,14 +1,25 @@
 import { jest } from "@jest/globals";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type {
+  ElicitRequest,
+  ElicitResult,
+} from "@modelcontextprotocol/sdk/types.js";
 import type { MCPHandlers } from "@tambo-ai-cloud/core";
 import type { ThreadMcpClient } from "../elicitations";
 import { registerElicitationHandlers } from "../elicitations";
 
 describe("registerElicitationHandlers", () => {
-  const elicitResult = { content: { type: "text", text: "ok" } };
+  const elicitResult: ElicitResult = {
+    action: "accept",
+    content: {
+      response: "ok",
+    },
+  };
 
   function createServerMock() {
-    const elicitInput = jest.fn().mockResolvedValue(elicitResult);
+    const elicitInput = jest.fn(
+      async (_params: ElicitRequest["params"]) => elicitResult,
+    );
     const server = {
       server: {
         elicitInput,
@@ -49,18 +60,20 @@ describe("registerElicitationHandlers", () => {
       .calls[0]?.[0] as MCPHandlers["elicitation"];
     expect(typeof handler).toBe("function");
 
-    const request = {
+    const request: Parameters<MCPHandlers["elicitation"]>[0] = {
+      method: "elicitation/create",
       params: {
         message: "Test message",
         requestedSchema: {
           type: "object",
           properties: {},
+          required: [],
         },
         _meta: {
           existing: true,
         },
       },
-    } as Parameters<MCPHandlers["elicitation"]>[0];
+    } satisfies ElicitRequest;
 
     const result = await handler(request);
 
@@ -70,6 +83,7 @@ describe("registerElicitationHandlers", () => {
       requestedSchema: {
         type: "object",
         properties: {},
+        required: [],
       },
       _meta: {
         existing: true,
