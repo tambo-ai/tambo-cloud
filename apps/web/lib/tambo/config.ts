@@ -2,10 +2,6 @@
 
 import { NextAuthAuthForm } from "@/components/auth/nextauth-auth-form";
 import {
-  AvailableMcpServers,
-  AvailableMcpServersProps,
-} from "@/components/dashboard-components/project-details/available-mcp-servers";
-import {
   DailyMessagesChart,
   DailyMessagesChartSchema,
 } from "@/components/dashboard-components/project-details/daily-messages-chart";
@@ -56,13 +52,6 @@ export const tamboRegisteredComponents = [
       "Comprehensive LLM provider configuration interface allowing users to select AI providers (OpenAI, Anthropic, etc.), configure models, set API keys, and manage custom endpoints. Handles free message limits, provider-specific settings, base URLs for custom providers, and validation. Shows real-time configuration status and supports both standard and OpenAI-compatible providers. Use when users need to configure or modify their AI model settings.",
     component: ProviderKeySection,
     propsSchema: ProviderKeySectionProps,
-  },
-  {
-    name: "AvailableMcpServers",
-    description:
-      "Manages Model Context Protocol (MCP) servers for extending AI capabilities with external tools and data sources. Allows adding, configuring, and removing MCP servers with authentication handling. Shows server status, transport methods, and provides integration management. Use when users need to connect external tools, APIs, or data sources to enhance their AI assistant's capabilities.",
-    component: AvailableMcpServers,
-    propsSchema: AvailableMcpServersProps,
   },
   {
     name: "AuthForm",

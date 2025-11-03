@@ -269,5 +269,11 @@ export function ContextAttachmentProvider({
  * ```
  */
 export function useContextAttachment() {
-  return useContext(ContextAttachmentContext);
+  const context = useContext(ContextAttachmentContext);
+  if (!context) {
+    throw new Error(
+      "useContextAttachment must be used within a ContextAttachmentProvider",
+    );
+  }
+  return context;
 }

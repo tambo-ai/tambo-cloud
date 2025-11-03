@@ -4,7 +4,22 @@ Guide for making React components interactable with Tambo AI.
 
 ## Overview
 
-Interactable components are pre-placed by you but can be controlled by Tambo through natural language. They auto-register when mounted - no manual registration needed.
+Interactable components are pre-placed by you but can be controlled by Tambo through natural language.
+
+**🚨 KEY DIFFERENCE: Interactable components auto-register when mounted - DO NOT add them to `TamboProvider` components array!**
+
+Unlike regular components that must be registered in `TamboProvider`, interactable components handle their own registration automatically when they mount.
+
+### When to Use Interactable vs Regular Components
+
+| Feature          | Interactable Components                                 | Regular Components                                              |
+| ---------------- | ------------------------------------------------------- | --------------------------------------------------------------- |
+| **Placement**    | You place them in JSX                                   | Tambo generates them inline                                     |
+| **Registration** | ✅ Auto-registers on mount                              | ❌ Must register in `TamboProvider`                             |
+| **Control**      | Tambo updates props                                     | Tambo creates/removes instances                                 |
+| **Use Case**     | Settings panels, editors, forms that are always visible | Dynamic content, tables, charts that Tambo decides when to show |
+
+**Pro Tip**: If you want BOTH behaviors (pre-placed AND Tambo can generate new ones), register it in `TamboProvider` too.
 
 ## Steps to Make a Component Interactable
 
@@ -247,12 +262,80 @@ export const InteractableAPIKeyListProps = z.object({
 7. **Use useEffect to watch control props** - they trigger actions when Tambo sets them
 8. **Respect ongoing user edits** - don't overwrite state during active editing
 
+## Automatic Context Awareness
+
+When you use interactable components, they are **automatically included in the AI's context**. This means:
+
+- The AI knows what components are currently on the page
+- Users can ask "What's on this page?" and get a comprehensive answer
+- The AI can see the current state (props) of all interactable components
+- Component changes are reflected in real-time
+
+**No additional setup required** - this context is provided automatically.
+
+## Auto-Registered Tools
+
+When interactable components are present, these tools are automatically available to Tambo:
+
+- `get_all_interactable_components` — Returns all interactable components with their current props
+- `get_interactable_component_by_id` — Returns a specific component by ID
+- `remove_interactable_component` — Removes a component from the interactables list
+- `update_interactable_component_<id>` — Updates props for a specific component using partial props
+
+These tools enable Tambo to discover what's on the page and perform targeted updates.
+
+## Partial Updates Behavior
+
+Interactable component props are updated via **partial updates**:
+
+- Only the provided **top-level props** are replaced
+- Providing `{ count: 5 }` only updates `count`, leaving other props unchanged
+- **Nested objects are replaced entirely** - if you update a nested object, provide the complete nested object to avoid losing properties
+
+Example:
+
+```typescript
+// Original props
+{
+  title: "Original",
+  config: { theme: "light", language: "en" }
+}
+
+// Partial update
+{ config: { theme: "dark" } }
+
+// Result (config is completely replaced!)
+{
+  title: "Original",
+  config: { theme: "dark" }  // language is now undefined!
+}
+```
+
+**Best practice**: For nested updates, provide the complete nested object.
+
 ## Important Notes
 
-- Interactable components are **automatically registered when they mount** - do NOT add them to `TamboProvider` components array
-- If you want Tambo to both modify pre-placed instances AND generate new instances inline, register the component normally in `TamboProvider` as well
+- **🚨 DO NOT register interactable components in `TamboProvider` components array** - they auto-register on mount
+- If you want Tambo to both modify pre-placed instances AND generate new instances inline, then register the component normally in `TamboProvider` as well
 - The component name in `withInteractable` config is what Tambo uses to reference it
 - Descriptions in Zod schemas are how Tambo understands what the component does - make them clear and actionable
+- Each interactable component gets a unique ID for targeted updates
+- Use `useCurrentInteractablesSnapshot()` hook to read current interactables without mutating internal state
+
+## Quick Checklist
+
+When making a component interactable, ensure you have:
+
+- [ ] Imported `withInteractable` from `@tambo-ai/react`
+- [ ] Created Zod schema with detailed descriptions for all props
+- [ ] Added control props (e.g., `editedValue`, `createX`, `deleteX`) for Tambo to trigger actions
+- [ ] Added TypeScript interface matching the Zod schema
+- [ ] Added `useEffect` hooks to watch control props and trigger actions
+- [ ] Wrapped component with `withInteractable` and exported it
+- [ ] Used the `Interactable` version in parent component (not the base component)
+- [ ] **NOT** added it to `TamboProvider` components array (unless you want both behaviors)
+- [ ] Passed minimal props - only what the component actually needs
+- [ ] Added `onEdited` callback and call it after mutations
 
 ## Documentation Reference
 
