@@ -193,6 +193,54 @@ triggerAction: z.enum(["save", "reset", "refresh"]).optional(),
 actionPayload: z.unknown().optional(), // For action-specific data
 ```
 
+## Best Practice: Use Flat Props Instead of Nested Objects
+
+**❌ Don't do this:**
+
+```typescript
+// Passing entire objects when you only need specific fields
+export const InteractableComponentProps = z.object({
+  project: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      maxToolCallLimit: z.number(),
+      // ... many other fields
+    })
+    .describe("The project object"),
+});
+
+// Usage
+<InteractableComponent project={project} />
+```
+
+**✅ Do this instead:**
+
+```typescript
+// Pass only the specific props the component actually needs
+export const InteractableComponentProps = z.object({
+  projectId: z.string().describe("The unique identifier for the project."),
+  maxToolCallLimit: z
+    .number()
+    .describe("The current maximum number of tool calls allowed."),
+  // ... other specific props
+});
+
+// Usage
+<InteractableComponent
+  projectId={project.id}
+  maxToolCallLimit={project.maxToolCallLimit}
+/>
+```
+
+**Why flat props are better:**
+
+1. **Explicit contract** - Shows exactly what data the component needs
+2. **Better for Tambo** - AI can see and update individual values more precisely
+3. **Type safety** - Prevents accidental dependencies on unused project fields
+4. **Testability** - Easier to mock specific values in tests
+5. **Performance** - Component only re-renders when specific values change
+
 ## Real Examples in Codebase
 
 ### InteractableCustomInstructionsEditor
@@ -251,16 +299,54 @@ export const InteractableAPIKeyListProps = z.object({
 });
 ```
 
+### InteractableToolCallLimitEditor
+
+```typescript
+export const InteractableToolCallLimitEditorProps = z.object({
+  projectId: z.string().describe("The unique identifier for the project."),
+  maxToolCallLimit: z
+    .number()
+    .describe("The current maximum number of tool calls allowed per response."),
+  editedLimit: z
+    .number()
+    .optional()
+    .describe(
+      "When set, the component enters edit mode with this limit value pre-filled. This allows Tambo to propose a specific tool call limit change.",
+    ),
+  enterEditMode: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, the component enters edit mode with the current limit value, allowing the user to modify it manually.",
+    ),
+  onEdited: z
+    .function()
+    .args()
+    .returns(z.void())
+    .optional()
+    .describe(
+      "Optional callback function triggered when tool call limit is successfully updated.",
+    ),
+});
+
+// Usage in parent component
+<InteractableToolCallLimitEditor
+  projectId={project.id}
+  maxToolCallLimit={project.maxToolCallLimit}
+  onEdited={handleRefreshProject}
+/>
+```
+
 ## Key Principles
 
-1. **Keep props flat and simple** when possible
-2. **Each control prop = one clear action** that Tambo can trigger
-3. **Descriptions are Tambo's interface** - be detailed and specific about what each prop does
-4. **Call `onEdited()` after any mutation** to notify parent
-5. **No registration needed** - component auto-registers on mount (unlike regular components)
-6. **Pass minimal props** - only what the component actually uses
-7. **Use useEffect to watch control props** - they trigger actions when Tambo sets them
-8. **Respect ongoing user edits** - don't overwrite state during active editing
+1. **Use flat props, not nested objects** - Pass individual values (`projectId`, `maxLimit`) instead of entire objects (`project`)
+2. **Pass minimal props only** - Only what the component actually needs, nothing more
+3. **Each control prop = one clear action** that Tambo can trigger
+4. **Descriptions are Tambo's interface** - Be detailed and specific about what each prop does and when to use it
+5. **Call `onEdited()` after any mutation** to notify parent and trigger refetches
+6. **No registration needed** - Component auto-registers on mount (unlike regular components)
+7. **Use useEffect to watch control props** - They trigger actions when Tambo sets them
+8. **Respect ongoing user edits** - Don't overwrite state during active editing
 
 ## Automatic Context Awareness
 
@@ -328,13 +414,14 @@ When making a component interactable, ensure you have:
 
 - [ ] Imported `withInteractable` from `@tambo-ai/react`
 - [ ] Created Zod schema with detailed descriptions for all props
+- [ ] **Used flat props** (e.g., `projectId`, `maxLimit`) instead of nested objects (e.g., `project`)
+- [ ] Passed **minimal props only** - only what the component actually needs
 - [ ] Added control props (e.g., `editedValue`, `createX`, `deleteX`) for Tambo to trigger actions
 - [ ] Added TypeScript interface matching the Zod schema
 - [ ] Added `useEffect` hooks to watch control props and trigger actions
 - [ ] Wrapped component with `withInteractable` and exported it
 - [ ] Used the `Interactable` version in parent component (not the base component)
 - [ ] **NOT** added it to `TamboProvider` components array (unless you want both behaviors)
-- [ ] Passed minimal props - only what the component actually needs
 - [ ] Added `onEdited` callback and call it after mutations
 
 ## Documentation Reference
