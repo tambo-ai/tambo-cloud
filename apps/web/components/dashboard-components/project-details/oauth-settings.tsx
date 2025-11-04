@@ -15,9 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { oauthSettingsSuggestions } from "@/lib/component-suggestions";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { OAuthValidationMode } from "@tambo-ai-cloud/core";
+import type { Suggestion } from "@tambo-ai/react";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -26,7 +26,7 @@ import {
   Loader2,
   Shield,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import {
   SiAuth0,
   SiClerk,
@@ -36,6 +36,27 @@ import {
   SiSupabase,
 } from "react-icons/si";
 import { z } from "zod";
+
+const oauthSettingsSuggestions: Suggestion[] = [
+  {
+    id: "fetch-oauth-settings",
+    title: "Fetch OAuth Settings",
+    detailedSuggestion: "Fetch the OAuth settings for this project",
+    messageId: "fetch-oauth-settings",
+  },
+  {
+    id: "update-oauth-settings",
+    title: "Update OAuth Settings",
+    detailedSuggestion: "Update the OAuth settings for this project",
+    messageId: "update-oauth-settings",
+  },
+  {
+    id: "make-token-required-true",
+    title: "Make Token Required True",
+    detailedSuggestion: "Make the token required for this project to be true",
+    messageId: "make-token-required-true",
+  },
+];
 
 export const OAuthSettingsPropsSchema = z.object({
   project: z
@@ -83,6 +104,12 @@ const OAUTH_PRESETS = [
 ] as const;
 
 export function OAuthSettings({ project }: OAuthSettingsProps) {
+  const modeNoneId = useId();
+  const modeSymmetricId = useId();
+  const secretKeyId = useId();
+  const modeAsymmetricAutoId = useId();
+  const modeAsymmetricManualId = useId();
+  const publicKeyId = useId();
   const { toast } = useToast();
 
   // State management
@@ -283,12 +310,12 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
           >
             {/* NONE */}
             <label
-              htmlFor="mode-none"
+              htmlFor={modeNoneId}
               className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <RadioGroupItem
                 value={OAuthValidationMode.NONE}
-                id="mode-none"
+                id={modeNoneId}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -302,12 +329,12 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
 
             {/* SYMMETRIC */}
             <label
-              htmlFor="mode-symmetric"
+              htmlFor={modeSymmetricId}
               className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <RadioGroupItem
                 value={OAuthValidationMode.SYMMETRIC}
-                id="mode-symmetric"
+                id={modeSymmetricId}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -323,11 +350,11 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
                     exit={{ opacity: 0, height: 0 }}
                     className="mt-3 space-y-2"
                   >
-                    <Label htmlFor="secret-key" className="text-sm">
+                    <Label htmlFor={secretKeyId} className="text-sm">
                       Secret Key
                     </Label>
                     <Input
-                      id="secret-key"
+                      id={secretKeyId}
                       type="password"
                       placeholder="Enter your shared secret key"
                       value={secretKey}
@@ -346,12 +373,12 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
 
             {/* ASYMMETRIC_AUTO */}
             <label
-              htmlFor="mode-asymmetric-auto"
+              htmlFor={modeAsymmetricAutoId}
               className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <RadioGroupItem
                 value={OAuthValidationMode.ASYMMETRIC_AUTO}
-                id="mode-asymmetric-auto"
+                id={modeAsymmetricAutoId}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -367,12 +394,12 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
 
             {/* ASYMMETRIC_MANUAL */}
             <label
-              htmlFor="mode-asymmetric-manual"
+              htmlFor={modeAsymmetricManualId}
               className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <RadioGroupItem
                 value={OAuthValidationMode.ASYMMETRIC_MANUAL}
-                id="mode-asymmetric-manual"
+                id={modeAsymmetricManualId}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -388,11 +415,11 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
                     exit={{ opacity: 0, height: 0 }}
                     className="mt-3 space-y-2"
                   >
-                    <Label htmlFor="public-key" className="text-sm">
+                    <Label htmlFor={publicKeyId} className="text-sm">
                       Public Key
                     </Label>
                     <Textarea
-                      id="public-key"
+                      id={publicKeyId}
                       placeholder={`-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----`}
                       value={publicKey}
                       onChange={(e) => setPublicKey(e.target.value)}

@@ -141,14 +141,6 @@ export const ContextAttachmentBadgeList = React.forwardRef<
   const threadInput = useTamboThreadInput();
   const contextAttachment = useContextAttachment();
 
-  let allAttachments: Array<{
-    id: string;
-    displayName: string;
-    icon: React.ReactNode;
-    image?: { dataUrl: string };
-    onRemove?: () => void;
-  }> = [];
-
   // Get images and contexts based on mode
   const imagesList = message
     ? getMessageImages(
@@ -166,7 +158,7 @@ export const ContextAttachmentBadgeList = React.forwardRef<
     ? undefined
     : contextAttachment?.removeContextAttachment;
 
-  allAttachments = [
+  const allAttachments = [
     ...imagesList.map((image, index) => ({
       id: "id" in image ? image.id : `image-${index}`,
       displayName: `Image ${index + 1}`,

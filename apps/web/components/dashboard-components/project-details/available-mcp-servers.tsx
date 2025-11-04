@@ -1,14 +1,36 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EditableHint } from "@/components/ui/editable-hint";
-import { availableMcpServersSuggestions } from "@/lib/component-suggestions";
 import { api } from "@/trpc/react";
 import { AiProviderType } from "@tambo-ai-cloud/core";
 import { withInteractable } from "@tambo-ai/react";
+import type { Suggestion } from "@tambo-ai/react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import { McpServerRow } from "./mcp-server-row";
+
+const availableMcpServersSuggestions: Suggestion[] = [
+  {
+    id: "fetch-mcp-servers",
+    title: "Fetch MCP Servers",
+    detailedSuggestion: "Fetch all MCP servers for this project",
+    messageId: "fetch-mcp-servers",
+  },
+  {
+    id: "add-mcp-server",
+    title: "Add MCP Server",
+    detailedSuggestion: "Add a new MCP server to this project",
+    messageId: "add-mcp-server",
+  },
+  {
+    id: "inspect-mcp-server-tools",
+    title: "Inspect MCP Server Tools",
+    detailedSuggestion:
+      "Inspect the tools available on the MCP servers of this project",
+    messageId: "inspect-mcp-server-tools",
+  },
+];
 
 export const InteractableAvailableMcpServersProps = z.object({
   projectId: z.string().describe("The project to fetch MCP servers for."),
