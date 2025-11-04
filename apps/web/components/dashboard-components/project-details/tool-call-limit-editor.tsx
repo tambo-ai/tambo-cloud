@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toolCallLimitEditorSuggestions } from "@/lib/component-suggestions";
 import { api } from "@/trpc/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { z } from "zod";
 
 export const ToolCallLimitEditorPropsSchema = z.object({
@@ -49,6 +49,7 @@ export function ToolCallLimitEditor({
   project,
   onEdited,
 }: ToolCallLimitEditorProps) {
+  const maxToolCallLimitId = useId();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [maxToolCallLimit, setMaxToolCallLimit] = useState("");
@@ -148,9 +149,9 @@ export function ToolCallLimitEditor({
                 className="space-y-4"
               >
                 <div className="space-y-2">
-                  <Label htmlFor="maxToolCallLimit">Maximum Tool Calls</Label>
+                  <Label htmlFor={maxToolCallLimitId}>Maximum Tool Calls</Label>
                   <Input
-                    id="maxToolCallLimit"
+                    id={maxToolCallLimitId}
                     type="number"
                     min="1"
                     value={maxToolCallLimit}
