@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.120.8](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.120.7...repo-v0.120.8) (2025-11-04)
+
+
+### Bug Fixes
+
+* split middleware commands ([#2034](https://github.com/tambo-ai/tambo-cloud/issues/2034)) ([9fdd306](https://github.com/tambo-ai/tambo-cloud/commit/9fdd3064ade79bd6d83de7860951b09b51f19d9c))
+
+## [0.120.7](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.120.6...repo-v0.120.7) (2025-11-04)
+
+
+### Bug Fixes
+
+* Refactor JWT claims structure in transactionMiddleware ([#2033](https://github.com/tambo-ai/tambo-cloud/issues/2033)) ([f82b60d](https://github.com/tambo-ai/tambo-cloud/commit/f82b60d324f07867711ece9554555d1724172940))
+* update default MCP transport from SSE to HTTP ([#2029](https://github.com/tambo-ai/tambo-cloud/issues/2029)) ([688d65e](https://github.com/tambo-ai/tambo-cloud/commit/688d65e70dbee45fee9042fcb99457fd76a30c78))
+
+## [0.120.6](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.120.5...repo-v0.120.6) (2025-11-03)
+
+
+### Bug Fixes
+
+* disable strict json ([#2030](https://github.com/tambo-ai/tambo-cloud/issues/2030)) ([b64189f](https://github.com/tambo-ai/tambo-cloud/commit/b64189f71a6ccaf158040b59d513cfeabd30962a))
+
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump drizzle-kit from 0.31.5 to 0.31.6 in the drizzle group ([#2022](https://github.com/tambo-ai/tambo-cloud/issues/2022)) ([d03281f](https://github.com/tambo-ai/tambo-cloud/commit/d03281f12ae9914c4621a12fa8a4a69ca73503ff))
+* **deps:** bump @modelcontextprotocol/sdk from 1.20.1 to 1.20.2 ([#2028](https://github.com/tambo-ai/tambo-cloud/issues/2028)) ([66d5c30](https://github.com/tambo-ai/tambo-cloud/commit/66d5c3017975c780338a5e2c1538457de5571f97))
+* **deps:** bump the ai-sdk group with 7 updates ([#2023](https://github.com/tambo-ai/tambo-cloud/issues/2023)) ([f4dfca6](https://github.com/tambo-ai/tambo-cloud/commit/f4dfca6a4952b385a3c28ea7c381836ba09af10e))
+* **deps:** bump the nestjs group with 4 updates ([#2021](https://github.com/tambo-ai/tambo-cloud/issues/2021)) ([6084a24](https://github.com/tambo-ai/tambo-cloud/commit/6084a24ad57ef69be33e7da0e63607c21848e434))
+* **deps:** bump the sentry group with 3 updates ([#2027](https://github.com/tambo-ai/tambo-cloud/issues/2027)) ([715ea25](https://github.com/tambo-ai/tambo-cloud/commit/715ea25e77186a4a9ff0a1700e527bd65a56a97f))
+* **deps:** bump the small-safe-packages group with 3 updates ([#2026](https://github.com/tambo-ai/tambo-cloud/issues/2026)) ([abc48c9](https://github.com/tambo-ai/tambo-cloud/commit/abc48c9cb808a4069f8e4f027bac80e505e638aa))
+* **deps:** bump the tambo-ai group with 2 updates ([#2025](https://github.com/tambo-ai/tambo-cloud/issues/2025)) ([bacee59](https://github.com/tambo-ai/tambo-cloud/commit/bacee59741f1a91532bc61de1973fbb32f7d6749))
+* **deps:** bump the trpc group with 3 updates ([#2020](https://github.com/tambo-ai/tambo-cloud/issues/2020)) ([0bc5ded](https://github.com/tambo-ai/tambo-cloud/commit/0bc5ded67dcdeed4a9c9f52fe62be201af21660c))
+
+## [0.120.5](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.120.4...repo-v0.120.5) (2025-10-31)
+
+
+### Bug Fixes
+
+* re-enable strict json mode for openai ([#2016](https://github.com/tambo-ai/tambo-cloud/issues/2016)) ([c212a04](https://github.com/tambo-ai/tambo-cloud/commit/c212a0478a55028beb291061905351daa869dc6c))
+
+
+### Code Refactoring
+
+* change default transcription model to whisper ([#2017](https://github.com/tambo-ai/tambo-cloud/issues/2017)) ([7c0b60e](https://github.com/tambo-ai/tambo-cloud/commit/7c0b60ef4abcb3737f6447b644caf895ea1c2397))
+
 ## [0.120.4](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.120.3...repo-v0.120.4) (2025-10-30)
 
 
