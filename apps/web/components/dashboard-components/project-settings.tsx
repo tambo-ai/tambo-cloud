@@ -9,7 +9,7 @@ import { InteractableAvailableMcpServers } from "@/components/dashboard-componen
 import { InteractableCustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
 import { OAuthSettings } from "@/components/dashboard-components/project-details/oauth-settings";
 import { ProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
-import { ToolCallLimitEditor } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
+import { InteractableToolCallLimitEditor } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
 import { SettingsPageSkeleton } from "@/components/skeletons/settings-skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -487,8 +487,9 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             </div>
 
             <div ref={toolCallLimitRef} className="p-2">
-              <ToolCallLimitEditor
-                project={project}
+              <InteractableToolCallLimitEditor
+                projectId={project.id}
+                maxToolCallLimit={project.maxToolCallLimit}
                 onEdited={handleRefreshProject}
               />
             </div>
