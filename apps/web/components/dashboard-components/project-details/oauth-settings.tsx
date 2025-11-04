@@ -15,9 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { oauthSettingsSuggestions } from "@/lib/component-suggestions";
 import { api, type RouterOutputs } from "@/trpc/react";
 import { OAuthValidationMode } from "@tambo-ai-cloud/core";
+import type { Suggestion } from "@tambo-ai/react";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -36,6 +36,27 @@ import {
   SiSupabase,
 } from "react-icons/si";
 import { z } from "zod";
+
+const oauthSettingsSuggestions: Suggestion[] = [
+  {
+    id: "fetch-oauth-settings",
+    title: "Fetch OAuth Settings",
+    detailedSuggestion: "Fetch the OAuth settings for this project",
+    messageId: "fetch-oauth-settings",
+  },
+  {
+    id: "update-oauth-settings",
+    title: "Update OAuth Settings",
+    detailedSuggestion: "Update the OAuth settings for this project",
+    messageId: "update-oauth-settings",
+  },
+  {
+    id: "make-token-required-true",
+    title: "Make Token Required True",
+    detailedSuggestion: "Make the token required for this project to be true",
+    messageId: "make-token-required-true",
+  },
+];
 
 export const OAuthSettingsPropsSchema = z.object({
   project: z

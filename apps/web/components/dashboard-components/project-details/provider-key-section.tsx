@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { providerKeySectionSuggestions } from "@/lib/component-suggestions";
 import { cn } from "@/lib/utils";
 import { api, type RouterOutputs } from "@/trpc/react";
 import {
@@ -14,6 +13,7 @@ import {
   AiProviderType,
   DEFAULT_OPENAI_MODEL,
 } from "@tambo-ai-cloud/core";
+import type { Suggestion } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLinkIcon, InfoIcon, Loader2 } from "lucide-react";
 import {
@@ -28,6 +28,28 @@ import { useDebounce } from "use-debounce";
 import { z } from "zod";
 import { AgentSettings } from "./agent-settings";
 import { CustomLlmParametersEditor } from "./custom-llm-parameters/editor";
+
+const providerKeySectionSuggestions: Suggestion[] = [
+  {
+    id: "change-model",
+    title: "Change Model",
+    detailedSuggestion: "Change the model used for this project to gpt-4o",
+    messageId: "change-model",
+  },
+  {
+    id: "turn-on-thinking",
+    title: "Turn on Thinking",
+    detailedSuggestion: "Turn on thinking for the model used for this project",
+    messageId: "turn-on-thinking",
+  },
+  {
+    id: "change-input-token-limit",
+    title: "Change Input Token Limit",
+    detailedSuggestion:
+      "Change the input token limit for the model used for this project",
+    messageId: "change-input-token-limit",
+  },
+];
 
 export const ProviderKeySectionSchema = z
   .object({
