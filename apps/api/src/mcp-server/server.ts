@@ -42,7 +42,13 @@ export async function createMcpServer(
     },
   );
 
-  const mcpHandlers: Partial<MCPHandlers> = {};
+  // These will be immediately replaced by the handlers from the MCP clients,
+  // but we need to set them now so that MCPClient.create() tells the servers that we support elicitation and sampling.
+  const mcpHandlers: Partial<MCPHandlers> = {
+    elicitation: async (_request) => {
+      throw new Error("Not implemented");
+    },
+  };
   const mcpClients = await getThreadMCPClients(
     db,
     projectId,
