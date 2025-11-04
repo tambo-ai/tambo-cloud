@@ -7,7 +7,7 @@ import {
 import { InteractableAPIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
 import { InteractableAvailableMcpServers } from "@/components/dashboard-components/project-details/available-mcp-servers";
 import { InteractableCustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
-import { OAuthSettings } from "@/components/dashboard-components/project-details/oauth-settings";
+import { InteractableOAuthSettings } from "@/components/dashboard-components/project-details/oauth-settings";
 import { ProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
 import { InteractableToolCallLimitEditor } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
 import { SettingsPageSkeleton } from "@/components/skeletons/settings-skeletons";
@@ -495,7 +495,11 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             </div>
 
             <div ref={oauthSettingsRef} className="p-2">
-              <OAuthSettings project={project} />
+              <InteractableOAuthSettings
+                projectId={project.id}
+                isTokenRequired={project.isTokenRequired ?? false}
+                onEdited={handleRefreshProject}
+              />
             </div>
           </div>
         </div>

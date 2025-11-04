@@ -6,10 +6,6 @@ import {
   DailyMessagesChartSchema,
 } from "@/components/dashboard-components/project-details/daily-messages-chart";
 import {
-  OAuthSettings,
-  OAuthSettingsPropsSchema,
-} from "@/components/dashboard-components/project-details/oauth-settings";
-import {
   ProjectInfo,
   ProjectInfoProps,
 } from "@/components/dashboard-components/project-details/project-info";
@@ -69,12 +65,5 @@ export const tamboRegisteredComponents = [
       "Displays a comprehensive table of all threads for a specific project with full functionality including search, sorting, deletion, and message viewing. Features responsive design with smooth animations, loading states, and empty state handling. Shows thread ID, creation date, message count, tools, components, and errors. Supports compact mode which hides Updated, Context Key, and Thread Name columns for a cleaner view. IMPORTANT: This component requires a valid project ID (not project name). Always set compact=true for a cleaner interface. Use when users want to view and manage all threads for a specific project.",
     component: ThreadTableContainer,
     propsSchema: ThreadTableContainerSchema,
-  },
-  {
-    name: "OAuthSettings",
-    description:
-      "Comprehensive OAuth token validation configuration interface for project security settings. Allows users to configure different validation modes including none, symmetric key (HS256), asymmetric auto (OpenID Connect), and asymmetric manual. Features preset configurations for popular providers (Google, GitHub, Auth0, Clerk, Supabase, etc.), secure key management with encryption, and real-time validation status. Includes animated form sections and handles loading states. Use when users need to configure OAuth token validation for their project's API endpoints and security requirements.",
-    component: OAuthSettings,
-    propsSchema: OAuthSettingsPropsSchema,
   },
 ];
