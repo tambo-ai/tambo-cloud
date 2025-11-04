@@ -5,11 +5,10 @@ import { Input } from "@/components/ui/input";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
-import { withInteractable } from "@tambo-ai/react";
-import type { Suggestion } from "@tambo-ai/react";
+import { withInteractable, type Suggestion } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Copy } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
   DeleteConfirmationDialog,
@@ -94,6 +93,7 @@ export function APIKeyList({
   const [, copy] = useClipboard(newGeneratedKey ?? "");
   const { toast } = useToast();
   const utils = api.useUtils();
+  const lastCreateKeyRef = useRef<string | undefined>();
 
   const {
     data: apiKeys,
@@ -194,11 +194,15 @@ export function APIKeyList({
 
   // When Tambo sends createKeyWithName, automatically create the key
   useEffect(() => {
-    if (createKeyWithName !== undefined && projectId) {
+    if (
+      createKeyWithName !== undefined &&
+      projectId &&
+      createKeyWithName !== lastCreateKeyRef.current
+    ) {
+      lastCreateKeyRef.current = createKeyWithName;
       handleCreateApiKey(createKeyWithName).catch(console.error);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [createKeyWithName]);
+  }, [createKeyWithName, projectId, handleCreateApiKey]);
 
   // When Tambo sends enterCreateMode, open the create form
   useEffect(() => {
