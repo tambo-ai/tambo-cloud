@@ -135,46 +135,39 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
   return await ctx.db.transaction(async (tx) => {
     const user = ctx.user;
-
-    // Create JWT-like claims structure for the database
     const role = user ? "authenticated" : "anon";
-    const jwtClaims: JWTPayload = user
-      ? {
-          sub: user.id,
-          iss: "nextauth", // NextAuth as issuer
-          aud: "tambo",
-          iat: Math.floor(Date.now() / 1000),
-          exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
-          email: user.email,
-          name: user.name,
-          role,
-        }
-      : {};
+
+    const claimsText = JSON.stringify(
+      user
+        ? {
+            sub: user.id,
+            iss: "nextauth",
+            aud: "tambo",
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            email: user.email,
+            name: user.name,
+            role,
+          }
+        : {},
+    );
+    const sub = user?.id ?? "";
+
+    // Prefer your client’s parameter binding instead of raw
+    await tx.execute(sql`
+      select set_config('request.jwt.claims', ${claimsText}, TRUE);
+      select set_config('request.jwt.claim.sub', ${sub}, TRUE);
+      set local role ${role === "authenticated" ? sql.raw("authenticated") : sql.raw("anon")};
+    `);
 
     try {
-      await tx.execute(sql`
-        -- auth.jwt()
-        select set_config('request.jwt.claims', '${sql.raw(
-          JSON.stringify(jwtClaims),
-        )}', TRUE);
-        -- auth.uid()
-        select set_config('request.jwt.claim.sub', '${sql.raw(
-          jwtClaims.sub ?? "",
-        )}', TRUE);												
-        -- set local role
-        set local role ${sql.raw(role)};
-      `);
       return await next({ ctx: { ...ctx, db: tx } });
-    } catch (error) {
-      console.error("error setting config: ", error);
-      throw error;
     } finally {
       await tx.execute(sql`
-        -- reset
         select set_config('request.jwt.claims', NULL, TRUE);
         select set_config('request.jwt.claim.sub', NULL, TRUE);
         reset role;
-        `);
+      `);
     }
   });
 });
