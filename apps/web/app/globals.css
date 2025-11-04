@@ -384,11 +384,12 @@ pre {
   background-color: #f6f8fa; /* GitHub light theme background */
 }
 
-@media (prefers-color-scheme: dark) {
+/* Dark-mode override temporarily disabled. Re-enable when dark theme is supported. */
+/* @media (prefers-color-scheme: dark) {
   pre {
-    background-color: #0d1117; /* GitHub dark theme background */
+    background-color: #0d1117; 
   }
-}
+} */
 
 code {
   @apply text-sm font-mono;
@@ -399,11 +400,11 @@ pre code span {
   color: var(--shiki-light);
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   pre code span {
     color: var(--shiki-dark);
   }
-}
+} */
 
 /* Inline code (not in pre blocks) */
 :not(pre) > code {
