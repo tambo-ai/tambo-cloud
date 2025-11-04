@@ -152,7 +152,8 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
       : {};
 
     // whitelist role for identifier interpolation
-    const roleSql = role === "authenticated" ? sql.raw("authenticated") : sql.raw("anon");
+    const roleSql =
+      role === "authenticated" ? sql.raw("authenticated") : sql.raw("anon");
 
     // precompute parameter values (avoid raw)
     const claimsText = JSON.stringify(jwtClaims);
