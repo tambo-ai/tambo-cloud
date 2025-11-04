@@ -136,14 +136,15 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
   return await ctx.db.transaction(async (tx) => {
     const user = ctx.user;
 
+    // Create JWT-like claims structure for the database
     const role = user ? "authenticated" : "anon";
     const jwtClaims: JWTPayload = user
       ? {
           sub: user.id,
-          iss: "nextauth",
+          iss: "nextauth", // NextAuth as issuer
           aud: "tambo",
           iat: Math.floor(Date.now() / 1000),
-          exp: Math.floor(Date.now() / 1000) + 3600,
+          exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour expiry
           email: user.email,
           name: user.name,
           role,
@@ -153,10 +154,17 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
     // whitelist role for identifier interpolation
     const roleSql = role === "authenticated" ? sql.raw("authenticated") : sql.raw("anon");
 
+    // precompute parameter values (avoid raw)
+    const claimsText = JSON.stringify(jwtClaims);
+    const sub = jwtClaims.sub ?? "";
+
     try {
       await tx.execute(sql`
-        select set_config('request.jwt.claims', ${JSON.stringify(jwtClaims)}, TRUE);
-        select set_config('request.jwt.claim.sub', ${jwtClaims.sub ?? ""}, TRUE);
+        -- auth.jwt()
+        select set_config('request.jwt.claims', ${claimsText}, TRUE);
+        -- auth.uid()
+        select set_config('request.jwt.claim.sub', ${sub}, TRUE);
+        -- set local role
         set local role ${roleSql};
       `);
       return await next({ ctx: { ...ctx, db: tx } });
@@ -165,6 +173,7 @@ const transactionMiddleware = t.middleware<Context>(async ({ next, ctx }) => {
       throw error;
     } finally {
       await tx.execute(sql`
+        -- reset
         select set_config('request.jwt.claims', NULL, TRUE);
         select set_config('request.jwt.claim.sub', NULL, TRUE);
         reset role;
