@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -152,14 +153,20 @@ export function ContextAttachmentProvider({
   >(null);
   const { addContextHelper, removeContextHelper } = useTamboContextHelpers();
 
-  // Cleanup: remove all context helpers on unmount
+  // Track latest attachments for cleanup without triggering effect re-runs
+  const attachmentsRef = useRef<ContextAttachment[]>([]);
+  useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
+
+  // Cleanup: remove all context helpers on unmount only
   useEffect(() => {
     return () => {
-      attachments.forEach((context) => {
+      attachmentsRef.current.forEach((context) => {
         removeContextHelper(context.id);
       });
     };
-  }, [attachments, removeContextHelper]);
+  }, [removeContextHelper]);
 
   const addContextAttachment = useCallback(
     (context: Omit<ContextAttachment, "id">) => {
