@@ -1,5 +1,5 @@
 import { ToolCallLimitEditor } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
-import { ContextAttachmentProvider } from "@/components/ui/tambo/context-attachment-provider";
+import { TamboContextAttachmentProvider } from "@tambo-ai/react";
 import { MessageThreadPanelProvider } from "@/providers/message-thread-panel-provider";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -43,11 +43,11 @@ function renderEditor(
     ...overrides,
   };
   const view = render(
-    <ContextAttachmentProvider>
+    <TamboContextAttachmentProvider>
       <MessageThreadPanelProvider>
         <ToolCallLimitEditor {...props} />
       </MessageThreadPanelProvider>
-    </ContextAttachmentProvider>,
+    </TamboContextAttachmentProvider>,
   );
   return { onEdited, ...view };
 }
