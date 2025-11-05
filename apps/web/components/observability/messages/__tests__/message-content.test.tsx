@@ -1,6 +1,6 @@
 import { MessageContent } from "@/components/observability/messages/message-content";
-import { TamboContextAttachmentProvider } from "@tambo-ai/react";
 import { ChatCompletionContentPart, MessageRole } from "@tambo-ai-cloud/core";
+import { TamboContextAttachmentProvider } from "@tambo-ai/react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -52,6 +52,15 @@ jest.mock("@tambo-ai/react", () => ({
     addContextHelper: jest.fn(),
     removeContextHelper: jest.fn(),
   }),
+  useTamboContextAttachment: () => ({
+    attachments: [],
+    removeContextAttachment: jest.fn(),
+  }),
+  TamboContextAttachmentProvider: ({
+    children,
+  }: {
+    children: React.ReactNode;
+  }): React.ReactElement => children as React.ReactElement,
 }));
 
 // Get the clipboard mock from navigator (set up in jest.setup.ts)
