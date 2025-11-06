@@ -12,7 +12,6 @@ import {
 import { HydraDb } from "@tambo-ai-cloud/db";
 import { SQL } from "drizzle-orm";
 import { PgTable, PgTransaction } from "drizzle-orm/pg-core";
-import type OpenAI from "openai";
 import {
   addUserMessage,
   finishInProgressMessage,
@@ -394,8 +393,7 @@ describe("Thread State", () => {
         .mockResolvedValue([mockAssistantMessage, mockUserMessage]);
       jest.mocked(operations.updateMessage).mockResolvedValue({
         ...mockFinalMessage,
-        content:
-          mockFinalMessage.content as OpenAI.Chat.Completions.ChatCompletionContentPart[],
+        content: mockFinalMessage.content,
         parentMessageId: null,
         componentState: mockFinalMessage.componentState ?? {},
         toolCallId: null,

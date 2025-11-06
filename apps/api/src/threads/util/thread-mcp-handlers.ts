@@ -10,7 +10,6 @@ import {
 import type { HydraDb } from "@tambo-ai-cloud/db";
 import { operations } from "@tambo-ai-cloud/db";
 import mimeTypes from "mime-types";
-import type OpenAI from "openai";
 import { AdvanceThreadResponseDto } from "../dto/advance-thread.dto";
 import { AudioFormat } from "../dto/message.dto";
 import { convertContentPartToDto } from "./content";
@@ -46,20 +45,10 @@ export function createMcpHandlers(
       // add serially for now
       // TODO: add messages in a batch
       for (const m of messages) {
-        // TODO: Handle File types - filter them out as they're not stored in database yet
-        const contentWithoutFiles = m.content.filter(
-          (part) => part.type !== "file",
-        );
-        if (contentWithoutFiles.length !== m.content.length) {
-          console.warn(
-            "Filtered out File content parts in MCP message - not yet supported in storage",
-          );
-        }
         const message = await operations.addMessage(db, {
           threadId,
           role: m.role as MessageRole,
-          content:
-            contentWithoutFiles as OpenAI.Chat.Completions.ChatCompletionContentPart[],
+          content: m.content,
           parentMessageId,
         });
 
@@ -79,15 +68,24 @@ export function createMcpHandlers(
       }
       // TODO: Handle File types in MCP sampling messages
       // Filter out File content parts before passing to LLM
+      // When S3 storage is implemented, convert Files to appropriate formats instead
       const messagesForLLM = messages.map((m) => ({
         ...m,
-        content: m.content.filter((part) => part.type !== "file"),
+        content: m.content.filter((part) => {
+          if (part.type === "file") {
+            console.warn(
+              "Filtering out File content part in MCP sampling - not yet supported for LLM",
+            );
+            return false;
+          }
+          return true;
+        }),
       }));
       const response = await tamboBackend.llmClient.complete({
         stream: false,
         promptTemplateName: "sampling",
         promptTemplateParams: {},
-        messages: messagesForLLM as any, // Type assertion needed due to our extended types
+        messages: messagesForLLM as any, // Type assertion needed - our extended types filtered down to OpenAI types
       });
 
       const message = await operations.addMessage(db, {

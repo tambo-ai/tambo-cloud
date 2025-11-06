@@ -1,4 +1,5 @@
 import {
+  ChatCompletionContentPart,
   ChatCompletionContentPartText,
   ChatCompletionMessageParam,
   ComponentDecisionV2,
@@ -290,13 +291,13 @@ function makeUserMessages(
   }
   const additionalContextMessage = generateAdditionalContext(message);
 
-  // TODO: Handle File types - filter them out for now until S3 storage is implemented
+  // TODO: Handle File types - filter them out before passing to AI SDK
   // When File content parts are properly stored in S3 and converted to appropriate
-  // SDK-compatible format (e.g., text or image_url), this filter can be removed
+  // formats (text, image_url, etc.), this filter can be updated to convert instead of remove
   const contentWithoutFiles = message.content.filter((part) => {
     if (part.type === "file") {
       console.warn(
-        "Filtering out File content part - not yet supported for LLM consumption",
+        "Filtering out File content part before LLM call - not yet supported",
         {
           hasUri: !!(part as any).uri,
           hasText: !!(part as any).text,
@@ -307,10 +308,10 @@ function makeUserMessages(
       return false;
     }
     return true;
-  }) as OpenAI.Chat.Completions.ChatCompletionContentPart[];
+  });
 
   // Only wrap text content with <User> tags, preserve other content types as-is
-  const wrappedContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
+  const wrappedContent: ChatCompletionContentPart[] =
     message.role === MessageRole.User
       ? [
           { type: "text", text: "<User>" },
@@ -320,17 +321,18 @@ function makeUserMessages(
       : contentWithoutFiles;
 
   // Combine additional context (if any) with the wrapped content
-  const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
-    additionalContextMessage
-      ? [additionalContextMessage, ...wrappedContent]
-      : wrappedContent;
+  const content: ChatCompletionContentPart[] = additionalContextMessage
+    ? [additionalContextMessage, ...wrappedContent]
+    : wrappedContent;
 
   // user messages support mixed content, system messages only support text
+  // Type assertion is safe here because we've filtered out File types above
   return [
     message.role === MessageRole.User
       ? {
           role: message.role,
-          content: content,
+          content:
+            content as OpenAI.Chat.Completions.ChatCompletionContentPart[],
         }
       : {
           role: message.role,

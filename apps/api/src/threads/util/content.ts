@@ -2,22 +2,20 @@ import {
   ChatCompletionContentPart,
   ContentPartType,
 } from "@tambo-ai-cloud/core";
-import type OpenAI from "openai";
 import { ChatCompletionContentPartDto } from "../dto/message.dto";
 
 /**
  * Convert a serialized content part to a content part that can be consumed by an LLM.
  * Note: File types are filtered out and logged as they are not yet fully supported.
- * Returns only OpenAI-compatible content parts for storage and LLM consumption.
  */
 export function convertContentDtoToContentPart(
   content: string | ChatCompletionContentPartDto[],
-): OpenAI.Chat.Completions.ChatCompletionContentPart[] {
+): ChatCompletionContentPart[] {
   if (!Array.isArray(content)) {
     return [{ type: ContentPartType.Text, text: content }];
   }
   return content
-    .map((part): OpenAI.Chat.Completions.ChatCompletionContentPart | null => {
+    .map((part): ChatCompletionContentPart | null => {
       switch (part.type) {
         case ContentPartType.Text:
           // empty strings are ok, but undefined/null is not
@@ -74,10 +72,7 @@ export function convertContentDtoToContentPart(
           throw new Error(`Unknown content part type: ${part.type}`);
       }
     })
-    .filter(
-      (part): part is OpenAI.Chat.Completions.ChatCompletionContentPart =>
-        !!part,
-    );
+    .filter((part): part is ChatCompletionContentPart => !!part);
 }
 
 /**
