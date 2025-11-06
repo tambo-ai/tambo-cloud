@@ -31,40 +31,92 @@ export class ImageUrl {
 }
 
 /**
+ * Annotations for file resources (MCP-specific metadata).
+ */
+export class FileResourceAnnotations {
+  @ApiProperty({
+    description: "Target audience for this resource",
+    type: [String],
+    required: false,
+  })
+  audience?: string[];
+
+  @ApiProperty({
+    description: "Priority level for this resource",
+    type: Number,
+    required: false,
+  })
+  priority?: number;
+
+  // Additional custom properties (no decorator needed for index signature)
+  [key: string]: unknown;
+}
+
+/**
  * MCP Resource-compatible file content.
  * Based on https://modelcontextprotocol.io/specification/2025-06-18/schema#resource
  *
  * Note: This is a flattened representation for our API. When storing or passing to LLMs,
  * File types are currently filtered out until S3 storage is implemented.
  */
-export interface FileResource {
-  /** URI identifying the resource (e.g., file://, https://, s3://) */
+@ApiSchema({ name: "FileResource" })
+export class FileResource {
+  @ApiProperty({
+    description:
+      "URI identifying the resource (e.g., file://, https://, s3://)",
+    type: String,
+    required: false,
+    example: "file:///path/to/document.pdf",
+  })
   uri?: string;
 
-  /** Human-readable name for the resource */
+  @ApiProperty({
+    description: "Human-readable name for the resource",
+    type: String,
+    required: false,
+    example: "project-documentation.pdf",
+  })
   name?: string;
 
-  /** Optional description of the resource */
+  @ApiProperty({
+    description: "Optional description of the resource",
+    type: String,
+    required: false,
+    example: "Project documentation for Q4 2024",
+  })
   description?: string;
 
-  /** MIME type of the resource */
+  @ApiProperty({
+    description: "MIME type of the resource",
+    type: String,
+    required: false,
+    example: "application/pdf",
+  })
   mimeType?: string;
 
-  /** Inline text content (alternative to uri) */
+  @ApiProperty({
+    description: "Inline text content (alternative to uri)",
+    type: String,
+    required: false,
+    example: "The contents of the document...",
+  })
   text?: string;
 
-  /** Base64-encoded blob data (alternative to uri or text) */
+  @ApiProperty({
+    description: "Base64-encoded blob data (alternative to uri or text)",
+    type: String,
+    required: false,
+    example: "SGVsbG8gV29ybGQh",
+  })
   blob?: string;
 
-  /**
-   * Annotations for additional metadata (MCP-specific).
-   * Can include audience, priority, or custom properties.
-   */
-  annotations?: {
-    audience?: string[];
-    priority?: number;
-    [key: string]: unknown;
-  };
+  @ApiProperty({
+    description:
+      "Annotations for additional metadata (MCP-specific). Can include audience, priority, or custom properties.",
+    type: FileResourceAnnotations,
+    required: false,
+  })
+  annotations?: FileResourceAnnotations;
 }
 
 /**
@@ -75,14 +127,44 @@ export interface FileResource {
  */
 @ApiSchema({ name: "ChatCompletionContentPart" })
 export class ChatCompletionContentPartDto {
+  @ApiProperty({
+    description: "The type of content part",
+    enum: ContentPartType,
+    enumName: "ContentPartType",
+  })
   @IsEnum(ContentPartType)
   type!: ContentPartType;
+
+  @ApiProperty({
+    description: "Text content (when type is 'text')",
+    type: String,
+    required: false,
+  })
   @ValidateIf((o) => o.type === ContentPartType.Text)
   text?: string;
+
+  @ApiProperty({
+    description: "Image URL content (when type is 'image_url')",
+    type: ImageUrl,
+    required: false,
+  })
   @ValidateIf((o) => o.type === ContentPartType.ImageUrl)
   image_url?: ImageUrl;
+
+  @ApiProperty({
+    description: "Input audio content (when type is 'input_audio')",
+    type: InputAudio,
+    required: false,
+  })
   @ValidateIf((o) => o.type === ContentPartType.InputAudio)
   input_audio?: InputAudio;
+
+  @ApiProperty({
+    description:
+      "File/resource content (when type is 'file'). Supports MCP Resources with URI, text, or blob data. Currently filtered out before storage.",
+    type: FileResource,
+    required: false,
+  })
   @ValidateIf((o) => o.type === ContentPartType.File)
   file?: FileResource;
 }
