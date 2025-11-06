@@ -246,16 +246,37 @@ export interface Thread {
  * When `warn` is true, a minimal warning is emitted for each filtered item
  * without logging potentially sensitive metadata.
  */
-export function filterUnsupportedContent<T extends { type: string }>(
+// Internal type guards kept local to avoid leaking legacy types
+function hasStringType(x: unknown): x is { type: string } {
+  return (
+    typeof x === "object" &&
+    x !== null &&
+    typeof (x as Record<string, unknown>).type === "string"
+  );
+}
+
+function isLegacyResourcePart(x: unknown): x is { type: "resource" } {
+  return hasStringType(x) && (x as { type: string }).type === "resource";
+}
+
+export function filterUnsupportedContent<T extends ChatCompletionContentPart>(
+  parts: T[],
+  options?: { warn?: boolean },
+): T[];
+export function filterUnsupportedContent<T extends { type: ContentPartType }>(
+  parts: T[],
+  options?: { warn?: boolean },
+): T[];
+export function filterUnsupportedContent<T extends { type: ContentPartType }>(
   parts: T[],
   { warn = true }: { warn?: boolean } = {},
 ): T[] {
   return parts.filter((p) => {
-    if ((p as any).type === "resource") {
+    if (isLegacyResourcePart(p)) {
       if (warn) console.warn("Filtering out legacy 'resource' content part");
       return false;
     }
-    if ((p as any).type === ContentPartType.File) {
+    if (p.type === ContentPartType.File) {
       if (warn)
         console.warn("Filtering out 'file' content part for provider call");
       return false;
