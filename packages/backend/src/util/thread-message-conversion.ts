@@ -1,5 +1,4 @@
 import {
-  ChatCompletionContentPart,
   ChatCompletionContentPartText,
   ChatCompletionMessageParam,
   ComponentDecisionV2,
@@ -295,20 +294,22 @@ function makeUserMessages(
   // TODO: Handle File types - filter them out before passing to AI SDK
   // When File content parts are properly stored in S3 and converted to appropriate
   // formats (text, image_url, etc.), this filter can be updated to convert instead of remove
-  const contentWithoutFiles = message.content.filter((p) => {
-    if ((p.type as string) === "resource") {
-      console.warn("Filtering out legacy 'resource' content part");
-      return false;
-    }
-    if (p.type === ContentPartType.File) {
-      console.warn("Filtering out 'file' content part for provider call");
-      return false;
-    }
-    return true;
-  });
+  const contentWithoutFiles = message.content.filter(
+    (p): p is OpenAI.Chat.Completions.ChatCompletionContentPart => {
+      if ((p.type as string) === "resource") {
+        console.warn("Filtering out legacy 'resource' content part");
+        return false;
+      }
+      if (p.type === ContentPartType.File) {
+        console.warn("Filtering out 'file' content part for provider call");
+        return false;
+      }
+      return true;
+    },
+  );
 
   // Only wrap text content with <User> tags, preserve other content types as-is
-  const wrappedContent: ChatCompletionContentPart[] =
+  const wrappedContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
     message.role === MessageRole.User
       ? [
           { type: "text", text: "<User>" },
@@ -318,7 +319,7 @@ function makeUserMessages(
       : contentWithoutFiles;
 
   // Combine additional context (if any) with the wrapped content
-  const content: ChatCompletionContentPart[] = additionalContextMessage
+  const content = additionalContextMessage
     ? [additionalContextMessage, ...wrappedContent]
     : wrappedContent;
 
@@ -328,8 +329,7 @@ function makeUserMessages(
     message.role === MessageRole.User
       ? {
           role: message.role,
-          content:
-            content as OpenAI.Chat.Completions.ChatCompletionContentPart[],
+          content: content,
         }
       : {
           role: message.role,
