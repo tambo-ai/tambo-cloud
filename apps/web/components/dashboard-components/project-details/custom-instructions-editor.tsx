@@ -162,7 +162,7 @@ export function CustomInstructionsEditor({
           if (onEdited) onEdited();
         },
         onError: () => {
-          setAllowSystemPromptOverride(Boolean(allowSystemPromptOverrideProp));
+          setAllowSystemPromptOverride(savedToggleValue);
         },
       },
     );
