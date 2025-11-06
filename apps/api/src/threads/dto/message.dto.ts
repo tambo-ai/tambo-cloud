@@ -36,13 +36,11 @@ export class ImageUrl {
 export class FileResourceAnnotations {
   @ApiProperty({
     description: "Target audience for this resource",
-    required: false,
   })
   audience?: string[];
 
   @ApiProperty({
     description: "Priority level for this resource",
-    required: false,
   })
   priority?: number;
 
@@ -62,42 +60,36 @@ export class FileResource {
   @ApiProperty({
     description:
       "URI identifying the resource (e.g., file://, https://, s3://)",
-    required: false,
     example: "file:///path/to/document.pdf",
   })
   uri?: string;
 
   @ApiProperty({
     description: "Human-readable name for the resource",
-    required: false,
     example: "project-documentation.pdf",
   })
   name?: string;
 
   @ApiProperty({
     description: "Optional description of the resource",
-    required: false,
     example: "Project documentation for Q4 2024",
   })
   description?: string;
 
   @ApiProperty({
     description: "MIME type of the resource",
-    required: false,
     example: "application/pdf",
   })
   mimeType?: string;
 
   @ApiProperty({
     description: "Inline text content (alternative to uri)",
-    required: false,
     example: "The contents of the document...",
   })
   text?: string;
 
   @ApiProperty({
     description: "Base64-encoded blob data (alternative to uri or text)",
-    required: false,
     example: "SGVsbG8gV29ybGQh",
   })
   blob?: string;
@@ -105,7 +97,6 @@ export class FileResource {
   @ApiProperty({
     description:
       "Annotations for additional metadata (MCP-specific). Can include audience, priority, or custom properties.",
-    required: false,
   })
   annotations?: FileResourceAnnotations;
 }
@@ -128,21 +119,18 @@ export class ChatCompletionContentPartDto {
 
   @ApiProperty({
     description: "Text content (when type is 'text')",
-    required: false,
   })
   @ValidateIf((o) => o.type === ContentPartType.Text)
   text?: string;
 
   @ApiProperty({
     description: "Image URL content (when type is 'image_url')",
-    required: false,
   })
   @ValidateIf((o) => o.type === ContentPartType.ImageUrl)
   image_url?: ImageUrl;
 
   @ApiProperty({
     description: "Input audio content (when type is 'input_audio')",
-    required: false,
   })
   @ValidateIf((o) => o.type === ContentPartType.InputAudio)
   input_audio?: InputAudio;
@@ -150,7 +138,6 @@ export class ChatCompletionContentPartDto {
   @ApiProperty({
     description:
       "File/resource content (when type is 'file'). Supports MCP Resources with URI, text, or blob data. Currently filtered out before storage.",
-    required: false,
   })
   @ValidateIf((o) => o.type === ContentPartType.File)
   file?: FileResource;
@@ -216,7 +203,6 @@ generation of another message, such as during an agent call, MCP Elicitation, or
   error?: string;
 
   @ApiProperty({
-    required: false,
     type: Boolean,
     description: "Whether the message has been cancelled",
   })
@@ -295,7 +281,6 @@ export class MessageRequest {
 
   @IsOptional()
   @ApiProperty({
-    required: false,
     type: Boolean,
     description: "Whether the message has been cancelled",
   })
