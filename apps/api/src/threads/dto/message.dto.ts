@@ -1,5 +1,10 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
 import { ActionType, ContentPartType, MessageRole } from "@tambo-ai-cloud/core";
+import type {
+  ChatCompletionContentPart,
+  ChatCompletionContentPartFileResource,
+  CombineUnion,
+} from "@tambo-ai-cloud/core";
 import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from "class-validator";
 import { type OpenAI } from "openai";
 import {
@@ -144,6 +149,28 @@ export class ChatCompletionContentPartDto {
   @ValidateIf((o) => o.type === ContentPartType.File)
   file?: FileResource;
 }
+
+// Type-level alignment with core content-part union (excluding our custom `file` shape).
+// This catches drift for text/image_url/input_audio without affecting decorators or runtime.
+type NonFileContentPart = Exclude<
+  ChatCompletionContentPart,
+  ChatCompletionContentPartFileResource
+>;
+type NonFileDtoContract = CombineUnion<NonFileContentPart>;
+type AssertTrue<T extends true> = T;
+// 1) Ensure DTO fields (excluding `type`) are compatible with the core non-file union
+type _DtoShapeAligns = AssertTrue<
+  Omit<ChatCompletionContentPartDto, "type"> extends Omit<
+    NonFileDtoContract,
+    "type"
+  >
+    ? true
+    : false
+>;
+// 2) Ensure DTO's enum covers the known non-file discriminator literals (ignoring OpenAI-only 'refusal')
+// Intentionally not asserting discriminator equality here because providers may
+// introduce provider-only literals (e.g., "refusal"). The DTO enum is kept
+// aligned via code review and tests.
 
 @ApiSchema({ name: "ThreadMessage" })
 export class ThreadMessageDto {
