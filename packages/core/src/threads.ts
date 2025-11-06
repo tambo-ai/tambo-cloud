@@ -79,34 +79,7 @@ export type ChatCompletionContentPartFile =
  */
 export interface ChatCompletionContentPartFileResource {
   type: "file";
-
-  /** URI identifying the resource (e.g., file://, https://, s3://) */
-  uri?: string;
-
-  /** Human-readable name for the resource */
-  name?: string;
-
-  /** Optional description of the resource */
-  description?: string;
-
-  /** MIME type of the resource */
-  mimeType?: string;
-
-  /** Inline text content (alternative to uri) */
-  text?: string;
-
-  /** Base64-encoded blob data (alternative to uri or text) */
-  blob?: string;
-
-  /**
-   * Annotations for additional metadata (MCP-specific).
-   * Can include audience, priority, or custom properties.
-   */
-  annotations?: {
-    audience?: string[];
-    priority?: number;
-    [key: string]: unknown;
-  };
+  file: FileResource;
 }
 
 /**
@@ -284,4 +257,35 @@ export function filterUnsupportedContent<T extends { type: ContentPartType }>(
     }
     return true;
   });
+}
+
+export interface FileResource {
+  /** URI identifying the resource (e.g., file://, https://, s3://) */
+  uri?: string;
+  /** Human-readable name for the resource */
+  name?: string;
+  /** Optional description of the resource */
+  description?: string;
+  /** MIME type of the resource */
+  mimeType?: string;
+  /** Inline text content (alternative to uri) */
+  text?: string;
+  /** Base64-encoded blob data (alternative to uri or text) */
+  blob?: string;
+  /**
+   * Annotations for additional metadata (MCP-specific).
+   * Can include audience, priority, or custom properties.
+   */
+  annotations?: FileResourceAnnotations;
+}
+
+/**
+ * Annotations for file resources (MCP-specific metadata).
+ */
+export interface FileResourceAnnotations {
+  /** Target audience for this resource */
+  audience?: string[];
+  /** Priority level for this resource */
+  priority?: number;
+  [key: string]: unknown;
 }

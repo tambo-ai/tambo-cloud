@@ -1,10 +1,10 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
-import { ActionType, ContentPartType, MessageRole } from "@tambo-ai-cloud/core";
 import type {
-  ChatCompletionContentPart,
-  ChatCompletionContentPartFileResource,
-  CombineUnion,
+  ChatCompletionContentPartUnion,
+  FileResource,
+  FileResourceAnnotations,
 } from "@tambo-ai-cloud/core";
+import { ActionType, ContentPartType, MessageRole } from "@tambo-ai-cloud/core";
 import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from "class-validator";
 import { type OpenAI } from "openai";
 import {
@@ -38,7 +38,8 @@ export class ImageUrl {
 /**
  * Annotations for file resources (MCP-specific metadata).
  */
-export class FileResourceAnnotations {
+@ApiSchema({ name: "FileResourceAnnotations" })
+export class FileResourceAnnotationsDto implements FileResourceAnnotations {
   @ApiProperty({
     description: "Target audience for this resource",
   })
@@ -62,7 +63,7 @@ export class FileResourceAnnotations {
  * provider-native content types.
  */
 @ApiSchema({ name: "FileResource" })
-export class FileResource {
+export class FileResourceDto implements FileResource {
   @ApiProperty({
     description:
       "URI identifying the resource (e.g., file://, https://, s3://)",
@@ -104,7 +105,7 @@ export class FileResource {
     description:
       "Annotations for additional metadata (MCP-specific). Can include audience, priority, or custom properties.",
   })
-  annotations?: FileResourceAnnotations;
+  annotations?: FileResourceAnnotationsDto;
 }
 
 /**
@@ -115,7 +116,9 @@ export class FileResource {
  * may be filtered or converted.
  */
 @ApiSchema({ name: "ChatCompletionContentPart" })
-export class ChatCompletionContentPartDto {
+export class ChatCompletionContentPartDto
+  implements ChatCompletionContentPartUnion
+{
   @ApiProperty({
     description: "The type of content part",
     enum: ContentPartType,
@@ -147,30 +150,8 @@ export class ChatCompletionContentPartDto {
       "File/resource content (when type is 'file'). Supports MCP Resources with URI, text, or blob data.",
   })
   @ValidateIf((o) => o.type === ContentPartType.File)
-  file?: FileResource;
+  file?: FileResourceDto;
 }
-
-// Type-level alignment with core content-part union (excluding our custom `file` shape).
-// This catches drift for text/image_url/input_audio without affecting decorators or runtime.
-type NonFileContentPart = Exclude<
-  ChatCompletionContentPart,
-  ChatCompletionContentPartFileResource
->;
-type NonFileDtoContract = CombineUnion<NonFileContentPart>;
-type AssertTrue<T extends true> = T;
-// 1) Ensure DTO fields (excluding `type`) are compatible with the core non-file union
-type _DtoShapeAligns = AssertTrue<
-  Omit<ChatCompletionContentPartDto, "type"> extends Omit<
-    NonFileDtoContract,
-    "type"
-  >
-    ? true
-    : false
->;
-// 2) Ensure DTO's enum covers the known non-file discriminator literals (ignoring OpenAI-only 'refusal')
-// Intentionally not asserting discriminator equality here because providers may
-// introduce provider-only literals (e.g., "refusal"). The DTO enum is kept
-// aligned via code review and tests.
 
 @ApiSchema({ name: "ThreadMessage" })
 export class ThreadMessageDto {
