@@ -1,14 +1,13 @@
 import {
   ChatCompletionContentPart,
   ContentPartType,
-  filterUnsupportedContent,
 } from "@tambo-ai-cloud/core";
 import { ChatCompletionContentPartDto } from "../dto/message.dto";
 
 /**
  * Convert a serialized content part to a content part that can be consumed by an LLM.
  * Unsupported parts (e.g., legacy "resource" and our extended `file`) are removed
- * via the shared `filterUnsupportedContent()` helper.
+ * inline here to avoid over-abstracting a one-off filter.
  */
 export function convertContentDtoToContentPart(
   content: string | ChatCompletionContentPartDto[],
@@ -16,10 +15,19 @@ export function convertContentDtoToContentPart(
   if (!Array.isArray(content)) {
     return [{ type: ContentPartType.Text, text: content }];
   }
-  const filtered = filterUnsupportedContent<ChatCompletionContentPartDto>(
-    content,
-    { warn: true },
-  );
+  const filtered = content.filter((p) => {
+    // Filter legacy MCP 'resource' parts without leaking metadata
+    if ((p as any)?.type === "resource") {
+      console.warn("Filtering out legacy 'resource' content part");
+      return false;
+    }
+    // Filter our extended File parts before provider consumption
+    if (p.type === ContentPartType.File) {
+      console.warn("Filtering out 'file' content part for provider call");
+      return false;
+    }
+    return true;
+  });
   return filtered
     .map((part): ChatCompletionContentPart | null => {
       switch (part.type) {

@@ -3,7 +3,6 @@ import {
   AsyncQueue,
   ChatCompletionContentPart,
   ContentPartType,
-  filterUnsupportedContent,
   ChatCompletionMessageParam,
   GenerationStage,
   MCPHandlers,
@@ -68,10 +67,24 @@ export function createMcpHandlers(
           statusMessage: `Streaming response...`,
         });
       }
-      // Filter unsupported parts and narrow to provider message type using the MCP input
+      // Filter unsupported parts (legacy 'resource' and our extended 'file')
+      // and narrow to provider message type using the MCP input
       const messagesForLLM = messages.map((m) => ({
         role: m.role,
-        content: filterUnsupportedContent(m.content),
+        content: m.content.filter((p) => {
+          if (
+            typeof (p as any)?.type === "string" &&
+            (p as any).type === "resource"
+          ) {
+            console.warn("Filtering out legacy 'resource' content part");
+            return false;
+          }
+          if (p.type === ContentPartType.File) {
+            console.warn("Filtering out 'file' content part for provider call");
+            return false;
+          }
+          return true;
+        }),
       })) as unknown as ChatCompletionMessageParam[];
       const response = await tamboBackend.llmClient.complete({
         stream: false,
