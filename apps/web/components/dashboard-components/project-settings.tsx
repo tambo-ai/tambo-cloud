@@ -465,7 +465,6 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
             <div ref={llmProvidersRef} className="p-2">
               <InteractableProviderKeySection
                 projectId={project.id}
-                providerType={project.providerType ?? undefined}
                 onEdited={handleRefreshProject}
               />
             </div>

@@ -54,12 +54,6 @@ const providerKeySectionSuggestions: Suggestion[] = [
 
 export const InteractableProviderKeySectionProps = z.object({
   projectId: z.string().describe("The unique identifier for the project."),
-  providerType: z
-    .string()
-    .optional()
-    .describe(
-      "The current AI provider type ('llm' or 'agent'). Determines which configuration panel is displayed.",
-    ),
   changeMode: z
     .enum(["llm", "agent"])
     .optional()
@@ -144,7 +138,6 @@ export const InteractableProviderKeySectionProps = z.object({
 
 interface ProviderKeySectionProps {
   projectId: string;
-  providerType?: string;
   // Interactable control props
   changeMode?: "llm" | "agent";
   changeProviderAndModel?: { provider: string; model?: string };
@@ -207,7 +200,6 @@ function agentHeadersRecordToArray(
 
 function ProviderKeySectionBase({
   projectId,
-  providerType: externalProviderType,
   changeMode,
   changeProviderAndModel,
   updateApiKey,
@@ -875,7 +867,7 @@ function ProviderKeySectionBase({
     setShowValidationErrors(false);
     // Ensure providerType is set back to LLM when saving in LLM mode.
     // Do not clear any agent fields—preserve previously saved values.
-    if (externalProviderType !== AiProviderType.LLM) {
+    if (projectLlmSettings?.providerType !== AiProviderType.LLM) {
       await updateAgentSettingsAsync({
         projectId,
         providerType: AiProviderType.LLM,
@@ -899,7 +891,7 @@ function ProviderKeySectionBase({
     });
   }, [
     projectId,
-    externalProviderType,
+    projectLlmSettings,
     combinedSelectValue,
     parsedSelection,
     customModelName,
