@@ -11,12 +11,13 @@ import {
 import { EditableHint } from "@/components/ui/editable-hint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHandleOnChange } from "@/hooks/use-handle-on-change";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import type { Suggestion } from "@tambo-ai/react";
 import { withInteractable } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { z } from "zod";
 
 const toolCallLimitEditorSuggestions: Suggestion[] = [
@@ -79,9 +80,6 @@ export function ToolCallLimitEditor({
   const [isEditing, setIsEditing] = useState(false);
   const [limitValue, setLimitValue] = useState("");
 
-  // Track previous editedLimit to prevent unnecessary re-triggers
-  const prevEditedLimitRef = useRef<number | undefined>(undefined);
-
   const { mutateAsync: updateProject, isPending: isUpdating } =
     api.project.updateProject.useMutation();
 
@@ -93,16 +91,10 @@ export function ToolCallLimitEditor({
   }, [maxToolCallLimit, isEditing]);
 
   // When Tambo sends editedLimit, enter edit mode with that value
-  useEffect(() => {
-    if (
-      editedLimit !== undefined &&
-      editedLimit !== prevEditedLimitRef.current
-    ) {
-      prevEditedLimitRef.current = editedLimit;
-      setLimitValue(editedLimit.toString());
-      setIsEditing(true);
-    }
-  }, [editedLimit]);
+  useHandleOnChange(editedLimit, (limit) => {
+    setLimitValue(limit.toString());
+    setIsEditing(true);
+  });
 
   const handleSave = async () => {
     const limit = parseInt(limitValue);
@@ -128,8 +120,6 @@ export function ToolCallLimitEditor({
       });
 
       setIsEditing(false);
-      // Reset ref so Tambo can trigger the same action again later
-      prevEditedLimitRef.current = undefined;
       onEdited?.();
     } catch (_error) {
       toast({
@@ -143,8 +133,6 @@ export function ToolCallLimitEditor({
   const handleCancel = () => {
     setLimitValue(maxToolCallLimit.toString());
     setIsEditing(false);
-    // Reset ref so Tambo can trigger the same action again later
-    prevEditedLimitRef.current = undefined;
   };
 
   return (

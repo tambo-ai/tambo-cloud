@@ -5,6 +5,7 @@ import { EditableHint } from "@/components/ui/editable-hint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useHandleOnChange } from "@/hooks/use-handle-on-change";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
@@ -437,63 +438,33 @@ function ProviderKeySectionBase({
   }, [changeProviderAndModel]);
 
   // Watch updateApiKey to enter edit mode with pre-filled value
-  useEffect(() => {
-    if (updateApiKey !== undefined) {
-      setApiKeyInput(updateApiKey);
-      setIsEditingApiKey(true);
-    }
-  }, [updateApiKey]);
+  useHandleOnChange(updateApiKey, (key) => {
+    setApiKeyInput(key);
+    setIsEditingApiKey(true);
+  });
 
   // Watch enterApiKeyEditMode to open API key editing interface
-  useEffect(() => {
-    if (enterApiKeyEditMode === true) {
-      setApiKeyInput("");
-      setIsEditingApiKey(true);
-    }
-  }, [enterApiKeyEditMode]);
+  useHandleOnChange(enterApiKeyEditMode, () => {
+    setApiKeyInput("");
+    setIsEditingApiKey(true);
+  });
 
   // Watch updateCustomModelName to update custom model name field
-  useEffect(() => {
-    if (externalCustomModelName !== undefined) {
-      setCustomModelName(externalCustomModelName);
-    }
-  }, [externalCustomModelName]);
+  useHandleOnChange(externalCustomModelName, setCustomModelName);
 
   // Watch updateBaseUrl to update base URL field
-  useEffect(() => {
-    if (externalBaseUrl !== undefined) {
-      setBaseUrl(externalBaseUrl);
-    }
-  }, [externalBaseUrl]);
+  useHandleOnChange(externalBaseUrl, setBaseUrl);
 
   // Watch updateMaxInputTokens to update token limit
-  useEffect(() => {
-    if (externalMaxInputTokens !== undefined) {
-      setMaxInputTokens(externalMaxInputTokens.toString());
-    }
-  }, [externalMaxInputTokens]);
-
-  // Watch saveSettings to trigger save action
-  useEffect(() => {
-    if (triggerSaveSettings === true) {
-      handleSaveDefaults().catch(console.error);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [triggerSaveSettings]);
+  useHandleOnChange(externalMaxInputTokens, (tokens) => {
+    setMaxInputTokens(tokens.toString());
+  });
 
   // Watch updateAgentUrl to update agent URL field
-  useEffect(() => {
-    if (externalAgentUrl !== undefined) {
-      setAgentUrl(externalAgentUrl);
-    }
-  }, [externalAgentUrl]);
+  useHandleOnChange(externalAgentUrl, setAgentUrl);
 
   // Watch updateAgentName to update agent name field
-  useEffect(() => {
-    if (externalAgentName !== undefined) {
-      setAgentName(externalAgentName);
-    }
-  }, [externalAgentName]);
+  useHandleOnChange(externalAgentName, setAgentName);
 
   // API key validation
   const [debouncedApiKey] = useDebounce(apiKeyInput, 500);
@@ -917,6 +888,14 @@ function ProviderKeySectionBase({
     agentHeaders,
     toast,
   ]);
+
+  // Watch saveSettings to trigger save action
+  useHandleOnChange(
+    triggerSaveSettings,
+    useCallback(() => {
+      handleSaveDefaults().catch(console.error);
+    }, [handleSaveDefaults]),
+  );
 
   const handleSaveApiKey = useCallback(async () => {
     if (!projectId || !parsedSelection.provider) {

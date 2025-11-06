@@ -8,10 +8,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useHandleOnChange } from "@/hooks/use-handle-on-change";
 import { LlmParameterUIType } from "@tambo-ai-cloud/core";
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { PARAMETER_SUGGESTIONS, type ParameterEntry } from "./types";
 import {
   getDefaultValueForType,
@@ -49,12 +50,18 @@ export function ParameterRow({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Reset local state when param changes from parent
-  useEffect(() => {
-    if (!isEditing) {
-      setLocal(param);
-      setValidationError(null);
-    }
-  }, [param, isEditing]);
+  useHandleOnChange(
+    param,
+    useCallback(
+      (newParam) => {
+        if (!isEditing) {
+          setLocal(newParam);
+          setValidationError(null);
+        }
+      },
+      [isEditing],
+    ),
+  );
 
   const handleKeyChange = (value: string) => {
     if (!isEditing) onBeginEdit(index);
