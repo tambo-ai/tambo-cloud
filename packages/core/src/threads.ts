@@ -78,7 +78,7 @@ export type ChatCompletionContentPartFile =
  * - Base64-encoded blob data (may be stored in S3 for large blobs)
  */
 export interface ChatCompletionContentPartFileResource {
-  type: "file";
+  type: ContentPartType.File;
   file: FileResource;
 }
 
