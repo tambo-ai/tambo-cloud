@@ -3,11 +3,11 @@ import {
   ChatCompletionContentPartText,
   ChatCompletionMessageParam,
   ComponentDecisionV2,
+  ContentPartType,
   LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
   ToolCallRequest,
-  filterUnsupportedContent,
 } from "@tambo-ai-cloud/core";
 import type OpenAI from "openai";
 import { formatFunctionCall, generateAdditionalContext } from "./tools";
@@ -295,8 +295,16 @@ function makeUserMessages(
   // TODO: Handle File types - filter them out before passing to AI SDK
   // When File content parts are properly stored in S3 and converted to appropriate
   // formats (text, image_url, etc.), this filter can be updated to convert instead of remove
-  const contentWithoutFiles = filterUnsupportedContent(message.content, {
-    warn: true,
+  const contentWithoutFiles = message.content.filter((p) => {
+    if ((p as any)?.type === "resource") {
+      console.warn("Filtering out legacy 'resource' content part");
+      return false;
+    }
+    if (p.type === ContentPartType.File) {
+      console.warn("Filtering out 'file' content part for provider call");
+      return false;
+    }
+    return true;
   });
 
   // Only wrap text content with <User> tags, preserve other content types as-is

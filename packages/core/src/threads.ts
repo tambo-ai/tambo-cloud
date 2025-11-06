@@ -211,54 +211,6 @@ export interface Thread {
   updatedAt: Date;
 }
 
-/**
- * Filter out content parts that are not currently supported for provider calls.
- * - Excludes legacy MCP "resource" parts
- * - Excludes our extended `file` parts (these may be converted later)
- *
- * When `warn` is true, a minimal warning is emitted for each filtered item
- * without logging potentially sensitive metadata.
- */
-// Internal type guards kept local to avoid leaking legacy types
-function hasStringType(x: unknown): x is { type: string } {
-  return (
-    typeof x === "object" &&
-    x !== null &&
-    typeof (x as Record<string, unknown>).type === "string"
-  );
-}
-
-function isLegacyResourcePart(x: unknown): x is { type: "resource" } {
-  if (!hasStringType(x)) return false;
-  return x.type === "resource";
-}
-
-export function filterUnsupportedContent<T extends ChatCompletionContentPart>(
-  parts: T[],
-  options?: { warn?: boolean },
-): T[];
-export function filterUnsupportedContent<T extends { type: ContentPartType }>(
-  parts: T[],
-  options?: { warn?: boolean },
-): T[];
-export function filterUnsupportedContent<T extends { type: ContentPartType }>(
-  parts: T[],
-  { warn = true }: { warn?: boolean } = {},
-): T[] {
-  return parts.filter((p) => {
-    if (isLegacyResourcePart(p)) {
-      if (warn) console.warn("Filtering out legacy 'resource' content part");
-      return false;
-    }
-    if (p.type === ContentPartType.File) {
-      if (warn)
-        console.warn("Filtering out 'file' content part for provider call");
-      return false;
-    }
-    return true;
-  });
-}
-
 export interface FileResource {
   /** URI identifying the resource (e.g., file://, https://, s3://) */
   uri?: string;
