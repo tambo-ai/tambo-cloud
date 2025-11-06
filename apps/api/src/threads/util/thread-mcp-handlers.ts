@@ -46,7 +46,6 @@ export function createMcpHandlers(
       }));
       // add serially for now
       // TODO: add messages in a batch
-      const dbMessages: any[] = [];
       for (const m of messages) {
         const message = await operations.addMessage(db, {
           threadId,
@@ -54,7 +53,6 @@ export function createMcpHandlers(
           content: m.content,
           parentMessageId,
         });
-        dbMessages.push(message);
 
         queue.push({
           responseMessageDto: {

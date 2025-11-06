@@ -16,7 +16,10 @@ export function convertContentDtoToContentPart(
   if (!Array.isArray(content)) {
     return [{ type: ContentPartType.Text, text: content }];
   }
-  const filtered = filterUnsupportedContent(content as any[], { warn: true });
+  const filtered = filterUnsupportedContent<ChatCompletionContentPartDto>(
+    content,
+    { warn: true },
+  );
   return filtered
     .map((part): ChatCompletionContentPart | null => {
       switch (part.type) {
@@ -29,16 +32,36 @@ export function convertContentDtoToContentPart(
             type: ContentPartType.Text,
             text: part.text,
           };
-        case ContentPartType.ImageUrl:
+        case ContentPartType.ImageUrl: {
+          if (
+            !part.image_url ||
+            typeof part.image_url.url !== "string" ||
+            part.image_url.url.length === 0
+          ) {
+            throw new Error(
+              "image_url with a non-empty 'url' is required for image_url type",
+            );
+          }
           return {
             type: ContentPartType.ImageUrl,
             image_url: part.image_url,
           };
-        case ContentPartType.InputAudio:
+        }
+        case ContentPartType.InputAudio: {
+          if (
+            !part.input_audio ||
+            typeof part.input_audio.data !== "string" ||
+            part.input_audio.data.length === 0
+          ) {
+            throw new Error(
+              "input_audio with base64 'data' is required for input_audio type",
+            );
+          }
           return {
             type: ContentPartType.InputAudio,
             input_audio: part.input_audio,
           };
+        }
         default:
           throw new Error(`Unknown content part type: ${part.type}`);
       }

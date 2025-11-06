@@ -7,6 +7,7 @@ import {
   MessageRole,
   ThreadMessage,
   ToolCallRequest,
+  filterUnsupportedContent,
 } from "@tambo-ai-cloud/core";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { ChatCompletionContentPartDto } from "../dto/message.dto";
@@ -18,11 +19,9 @@ export function validateToolResponse(message: ThreadMessage): boolean {
   // - Check for required fields (at least one of: uri, text, or blob)
   // - Validate MIME types if present
   // - For large content, ensure it will be stored in S3 before sending to LLM
-  const nonResourceContent = message.content.filter(
-    (part) =>
-      (part.type as string) !== "resource" &&
-      part.type !== ContentPartType.File,
-  );
+  const nonResourceContent = filterUnsupportedContent(message.content, {
+    warn: false,
+  });
   if (nonResourceContent.length === 0) {
     return false;
   }
