@@ -256,7 +256,8 @@ function hasStringType(x: unknown): x is { type: string } {
 }
 
 function isLegacyResourcePart(x: unknown): x is { type: "resource" } {
-  return hasStringType(x) && (x as { type: string }).type === "resource";
+  if (!hasStringType(x)) return false;
+  return x.type === "resource";
 }
 
 export function filterUnsupportedContent<T extends ChatCompletionContentPart>(
