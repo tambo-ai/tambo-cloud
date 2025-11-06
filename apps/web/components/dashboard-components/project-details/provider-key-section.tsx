@@ -626,11 +626,17 @@ function ProviderKeySectionBase({
       if (agentUrl !== (projectLlmSettings.agentUrl ?? "")) return true;
       if (agentName !== (projectLlmSettings.agentName ?? "")) return true;
 
-      // Check agent headers
+      // Check agent headers - normalize by sorting to avoid order sensitivity
+      const normalizeHeaders = (arr: { header: string; value: string }[]) =>
+        [...arr].sort((a, b) => a.header.localeCompare(b.header));
+
       const savedHeaders = agentHeadersRecordToArray(
         projectLlmSettings.agentHeaders,
       );
-      if (JSON.stringify(agentHeaders) !== JSON.stringify(savedHeaders))
+      if (
+        JSON.stringify(normalizeHeaders(agentHeaders)) !==
+        JSON.stringify(normalizeHeaders(savedHeaders))
+      )
         return true;
     }
 
