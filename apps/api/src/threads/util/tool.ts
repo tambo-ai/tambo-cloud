@@ -13,9 +13,13 @@ import { ChatCompletionContentPartDto } from "../dto/message.dto";
 import { tryParseJson } from "./content";
 
 export function validateToolResponse(message: ThreadMessage): boolean {
-  // TODO: we get back "resource" from MCP servers, but it is not supported yet
+  // TODO: Handle File types - MCP servers return "resource" content parts that are now mapped to "file"
+  // Need to validate File content parts:
+  // - Check for required fields (at least one of: uri, text, or blob)
+  // - Validate MIME types if present
+  // - For large content, ensure it will be stored in S3 before sending to LLM
   const nonResourceContent = message.content.filter(
-    (part) => (part.type as string) !== "resource",
+    (part) => (part.type as string) !== "resource" && part.type !== "file",
   );
   if (nonResourceContent.every((part) => part.type === "text")) {
     const contentString = nonResourceContent.map((part) => part.text).join("");
@@ -70,8 +74,18 @@ export async function callSystemTool(
     });
     const responseContent = buildToolResponseContent(result);
 
-    // TODO: handle cases where MCP server returns *only* resource types
+    // TODO: Handle File types - MCP servers can return resource content parts (now "file" type)
+    // When processing MCP responses with File content:
+    // 1. Check for File content parts in the response
+    // 2. For large text/blob content, upload to S3 before proceeding
+    // 3. Store file metadata in database
+    // 4. Replace large content with S3 URI references
+    // 5. Ensure Files are properly validated and sanitized
     if (responseContent.length === 0) {
+      console.warn(
+        "No response content found from MCP tool call - may contain only file/resource types that need processing",
+        { toolName: toolCallRequest.toolName },
+      );
       throw new Error("No response content found");
     }
 

@@ -1,6 +1,5 @@
 import {
   ActionType,
-  ChatCompletionContentPart,
   ContentPartType,
   LegacyComponentDecision,
   MessageRole,
@@ -12,6 +11,7 @@ import {
   operations,
   schema,
 } from "@tambo-ai-cloud/db";
+import type OpenAI from "openai";
 import { ThreadMessageDto } from "../../dto/message.dto";
 import {
   addAssistantMessageToThread,
@@ -258,7 +258,7 @@ describe("messages utilities", () => {
             type: "text" as ContentPartType.Text,
             text: "Latest message",
           },
-        ] as ChatCompletionContentPart[],
+        ] as OpenAI.Chat.Completions.ChatCompletionContentPart[],
         additionalContext: { extra: "context" },
         createdAt: new Date(),
         componentState: {},

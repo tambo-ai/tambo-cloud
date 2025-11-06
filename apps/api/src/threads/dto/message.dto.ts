@@ -1,11 +1,5 @@
 import { ApiProperty, ApiSchema } from "@nestjs/swagger";
-import {
-  ActionType,
-  ChatCompletionContentPartUnion,
-  ContentPartType,
-  InternalThreadMessage,
-  MessageRole,
-} from "@tambo-ai-cloud/core";
+import { ActionType, ContentPartType, MessageRole } from "@tambo-ai-cloud/core";
 import { IsEnum, IsNotEmpty, IsOptional, ValidateIf } from "class-validator";
 import { type OpenAI } from "openai";
 import {
@@ -36,11 +30,51 @@ export class ImageUrl {
   detail?: ImageDetail;
 }
 
-/** DTO for the content part of a message. This may be safely cast to or from the ChatCompletionContentPart interface. */
+/**
+ * MCP Resource-compatible file content.
+ * Based on https://modelcontextprotocol.io/specification/2025-06-18/schema#resource
+ *
+ * Note: This is a flattened representation for our API. When storing or passing to LLMs,
+ * File types are currently filtered out until S3 storage is implemented.
+ */
+export interface FileResource {
+  /** URI identifying the resource (e.g., file://, https://, s3://) */
+  uri?: string;
+
+  /** Human-readable name for the resource */
+  name?: string;
+
+  /** Optional description of the resource */
+  description?: string;
+
+  /** MIME type of the resource */
+  mimeType?: string;
+
+  /** Inline text content (alternative to uri) */
+  text?: string;
+
+  /** Base64-encoded blob data (alternative to uri or text) */
+  blob?: string;
+
+  /**
+   * Annotations for additional metadata (MCP-specific).
+   * Can include audience, priority, or custom properties.
+   */
+  annotations?: {
+    audience?: string[];
+    priority?: number;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * DTO for the content part of a message.
+ *
+ * Note: This extends ChatCompletionContentPartUnion with our custom File type.
+ * File types are currently filtered out before database storage and LLM consumption.
+ */
 @ApiSchema({ name: "ChatCompletionContentPart" })
-export class ChatCompletionContentPartDto
-  implements ChatCompletionContentPartUnion
-{
+export class ChatCompletionContentPartDto {
   @IsEnum(ContentPartType)
   type!: ContentPartType;
   @ValidateIf((o) => o.type === ContentPartType.Text)
@@ -49,6 +83,8 @@ export class ChatCompletionContentPartDto
   image_url?: ImageUrl;
   @ValidateIf((o) => o.type === ContentPartType.InputAudio)
   input_audio?: InputAudio;
+  @ValidateIf((o) => o.type === ContentPartType.File)
+  file?: FileResource;
 }
 
 @ApiSchema({ name: "ThreadMessage" })
@@ -131,7 +167,11 @@ generation of another message, such as during an agent call, MCP Elicitation, or
   additionalContext?: Record<string, any>;
 }
 
-export class MessageRequest implements InternalThreadMessage {
+/**
+ * Request DTO for creating or updating messages.
+ * Supports our extended File content type which is filtered before storage.
+ */
+export class MessageRequest {
   @IsEnum(MessageRole)
   role!: MessageRole;
 

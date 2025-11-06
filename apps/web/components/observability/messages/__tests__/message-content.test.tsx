@@ -3,6 +3,7 @@ import { ChatCompletionContentPart, MessageRole } from "@tambo-ai-cloud/core";
 import { TamboContextAttachmentProvider } from "@tambo-ai/react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type OpenAI from "openai";
 import React from "react";
 
 // Mock the markdown components
@@ -185,7 +186,7 @@ describe("MessageContent", () => {
         "div",
         null,
         "Custom element",
-      ) as unknown as ChatCompletionContentPart[],
+      ) as unknown as OpenAI.Chat.Completions.ChatCompletionContentPart[],
     };
 
     renderWithProviders(

@@ -10,7 +10,6 @@ import {
   GenerationStage,
   MessageRole,
   OAuthValidationMode,
-  type ChatCompletionContentPart,
 } from "@tambo-ai-cloud/core";
 import { schema, type operations as dbOperations } from "@tambo-ai-cloud/db";
 import {
@@ -18,6 +17,7 @@ import {
   createMockDBProject,
   createMockDBThread,
 } from "@tambo-ai-cloud/testing";
+import type OpenAI from "openai";
 import { DATABASE } from "../../common/middleware/db-transaction-middleware";
 import { AuthService } from "../../common/services/auth.service";
 import { EmailService } from "../../common/services/email.service";
@@ -82,7 +82,7 @@ function createDBMessageWithSuggestions(
   id: string,
   threadId: string,
   role: MessageRole,
-  content: ChatCompletionContentPart[],
+  content: OpenAI.Chat.Completions.ChatCompletionContentPart[],
   suggestions: schema.DBSuggestion[] = [],
 ): schema.DBMessage & { suggestions: schema.DBSuggestion[] } {
   return {
@@ -128,7 +128,7 @@ function createDBMessageWithThread(
   id: string,
   threadId: string,
   role: MessageRole,
-  content: ChatCompletionContentPart[],
+  content: OpenAI.Chat.Completions.ChatCompletionContentPart[],
   thread: schema.DBThread,
 ): schema.DBMessage & { thread: schema.DBThread } {
   return {

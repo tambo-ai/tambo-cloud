@@ -2,19 +2,22 @@ import {
   ChatCompletionContentPart,
   ContentPartType,
 } from "@tambo-ai-cloud/core";
+import type OpenAI from "openai";
 import { ChatCompletionContentPartDto } from "../dto/message.dto";
 
 /**
- * Convert a serialized content part to a content part that can be consumed by an LLM
+ * Convert a serialized content part to a content part that can be consumed by an LLM.
+ * Note: File types are filtered out and logged as they are not yet fully supported.
+ * Returns only OpenAI-compatible content parts for storage and LLM consumption.
  */
 export function convertContentDtoToContentPart(
   content: string | ChatCompletionContentPartDto[],
-): ChatCompletionContentPart[] {
+): OpenAI.Chat.Completions.ChatCompletionContentPart[] {
   if (!Array.isArray(content)) {
     return [{ type: ContentPartType.Text, text: content }];
   }
   return content
-    .map((part): ChatCompletionContentPart | null => {
+    .map((part): OpenAI.Chat.Completions.ChatCompletionContentPart | null => {
       switch (part.type) {
         case ContentPartType.Text:
           // empty strings are ok, but undefined/null is not
@@ -41,10 +44,29 @@ export function convertContentDtoToContentPart(
               format: "wav",
             },
           };
-        case "resource" as ContentPartType:
-          // TODO: we get back "resource" from MCP servers, but it is not supported yet
+        case ContentPartType.File:
+          // TODO: Handle File types - Storage strategy:
+          // - For large text content (>100KB): store in S3, replace with S3 URI
+          // - For large blobs (>100KB): store in S3, replace with S3 URI
+          // - For URIs: fetch content if needed, optionally cache in S3
+          // - Store file metadata (name, mimeType, description) in database
+          // - Add S3 path/key to database for retrieval
+          // For now, filter out File types as they are not stored in the database
           console.warn(
-            "Ignoring 'resource' content part: it is not supported yet",
+            "File content part received but storage not yet implemented - filtering out",
+            {
+              hasUri: !!part.file?.uri,
+              hasText: !!part.file?.text,
+              hasBlob: !!part.file?.blob,
+              name: part.file?.name,
+              mimeType: part.file?.mimeType,
+            },
+          );
+          return null;
+        case "resource" as ContentPartType:
+          // MCP servers return "resource" - treat as File type, but filter out for now
+          console.warn(
+            'Filtering out legacy "resource" content part (would be "file" type) - not yet stored in database',
             part,
           );
           return null;
@@ -52,7 +74,10 @@ export function convertContentDtoToContentPart(
           throw new Error(`Unknown content part type: ${part.type}`);
       }
     })
-    .filter((part): part is ChatCompletionContentPart => !!part);
+    .filter(
+      (part): part is OpenAI.Chat.Completions.ChatCompletionContentPart =>
+        !!part,
+    );
 }
 
 /**

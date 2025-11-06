@@ -42,8 +42,11 @@ export enum ContentPartType {
   Text = "text",
   ImageUrl = "image_url",
   InputAudio = "input_audio",
-  // TODO: we get back "resource" from MCP servers, but it is not supported yet
-  // Resource = "resource",
+  /**
+   * File content part type - supports MCP Resources and other file types.
+   * Can include URIs, text content, or base64-encoded blobs.
+   */
+  File = "file",
 }
 
 /**
@@ -66,11 +69,56 @@ export type ChatCompletionContentPartFile =
   OpenAI.Chat.Completions.ChatCompletionContentPart.File;
 
 /**
+ * MCP Resource-compatible file content part.
+ * Based on https://modelcontextprotocol.io/specification/2025-06-18/schema#resource
+ *
+ * Supports multiple content formats:
+ * - URI/URL references (to be fetched and potentially stored in S3)
+ * - Inline text content (may be stored in S3 for large content)
+ * - Base64-encoded blob data (may be stored in S3 for large blobs)
+ */
+export interface ChatCompletionContentPartFileResource {
+  type: "file";
+
+  /** URI identifying the resource (e.g., file://, https://, s3://) */
+  uri?: string;
+
+  /** Human-readable name for the resource */
+  name?: string;
+
+  /** Optional description of the resource */
+  description?: string;
+
+  /** MIME type of the resource */
+  mimeType?: string;
+
+  /** Inline text content (alternative to uri) */
+  text?: string;
+
+  /** Base64-encoded blob data (alternative to uri or text) */
+  blob?: string;
+
+  /**
+   * Annotations for additional metadata (MCP-specific).
+   * Can include audience, priority, or custom properties.
+   */
+  annotations?: {
+    audience?: string[];
+    priority?: number;
+    [key: string]: unknown;
+  };
+}
+
+/**
  * Represents a single content part in a chat completion message
- * Can be a text, image, or audio
+ * Can be text, image, audio, or file
+ *
+ * Note: ChatCompletionContentPartFileResource is our custom extension for MCP resources
+ * and should be converted to appropriate SDK-compatible types when passing to LLM providers.
  */
 export type ChatCompletionContentPart =
-  OpenAI.Chat.Completions.ChatCompletionContentPart;
+  | OpenAI.Chat.Completions.ChatCompletionContentPart
+  | ChatCompletionContentPartFileResource;
 
 export type ChatCompletionMessageParam =
   OpenAI.Chat.Completions.ChatCompletionMessageParam;
