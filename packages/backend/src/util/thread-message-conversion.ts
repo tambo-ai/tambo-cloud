@@ -296,7 +296,7 @@ function makeUserMessages(
   // When File content parts are properly stored in S3 and converted to appropriate
   // formats (text, image_url, etc.), this filter can be updated to convert instead of remove
   const contentWithoutFiles = message.content.filter((p) => {
-    if ((p as any)?.type === "resource") {
+    if ((p.type as string) === "resource") {
       console.warn("Filtering out legacy 'resource' content part");
       return false;
     }

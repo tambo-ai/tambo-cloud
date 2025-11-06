@@ -130,7 +130,7 @@ export interface ThreadMessage {
   component?: LegacyComponentDecision;
   componentState?: Record<string, unknown>;
   /** Additional context for the message */
-  additionalContext?: Record<string, any>;
+  additionalContext?: Record<string, unknown>;
 
   /**
    * Type of action performed
