@@ -19,9 +19,14 @@ export function validateToolResponse(message: ThreadMessage): boolean {
   // - Validate MIME types if present
   // - For large content, ensure it will be stored in S3 before sending to LLM
   const nonResourceContent = message.content.filter(
-    (part) => (part.type as string) !== "resource" && part.type !== "file",
+    (part) =>
+      (part.type as string) !== "resource" &&
+      part.type !== ContentPartType.File,
   );
-  if (nonResourceContent.every((part) => part.type === "text")) {
+  if (nonResourceContent.length === 0) {
+    return false;
+  }
+  if (nonResourceContent.every((part) => part.type === ContentPartType.Text)) {
     const contentString = nonResourceContent.map((part) => part.text).join("");
     const jsonResponse = tryParseJson(contentString);
     if (jsonResponse) {
@@ -29,7 +34,9 @@ export function validateToolResponse(message: ThreadMessage): boolean {
     }
     return true;
   }
-  if (nonResourceContent.every((part) => part.type === "image_url")) {
+  if (
+    nonResourceContent.every((part) => part.type === ContentPartType.ImageUrl)
+  ) {
     return true;
   }
   return false;

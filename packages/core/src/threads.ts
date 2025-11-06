@@ -237,3 +237,29 @@ export interface Thread {
   /** Timestamp when thread was last updated */
   updatedAt: Date;
 }
+
+/**
+ * Filter out content parts that are not currently supported for provider calls.
+ * - Excludes legacy MCP "resource" parts
+ * - Excludes our extended `file` parts (these may be converted later)
+ *
+ * When `warn` is true, a minimal warning is emitted for each filtered item
+ * without logging potentially sensitive metadata.
+ */
+export function filterUnsupportedContent<T extends { type: string }>(
+  parts: T[],
+  { warn = true }: { warn?: boolean } = {},
+): T[] {
+  return parts.filter((p) => {
+    if ((p as any).type === "resource") {
+      if (warn) console.warn("Filtering out legacy 'resource' content part");
+      return false;
+    }
+    if ((p as any).type === ContentPartType.File) {
+      if (warn)
+        console.warn("Filtering out 'file' content part for provider call");
+      return false;
+    }
+    return true;
+  });
+}

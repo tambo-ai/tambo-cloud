@@ -7,6 +7,7 @@ import {
   MessageRole,
   ThreadMessage,
   ToolCallRequest,
+  ContentPartType,
 } from "@tambo-ai-cloud/core";
 import type OpenAI from "openai";
 import { formatFunctionCall, generateAdditionalContext } from "./tools";
@@ -295,16 +296,8 @@ function makeUserMessages(
   // When File content parts are properly stored in S3 and converted to appropriate
   // formats (text, image_url, etc.), this filter can be updated to convert instead of remove
   const contentWithoutFiles = message.content.filter((part) => {
-    if (part.type === "file") {
-      console.warn(
-        "Filtering out File content part before LLM call - not yet supported",
-        {
-          hasUri: !!(part as any).uri,
-          hasText: !!(part as any).text,
-          hasBlob: !!(part as any).blob,
-          name: (part as any).name,
-        },
-      );
+    if (part.type === ContentPartType.File) {
+      console.warn("Filtering out 'file' content part before LLM call");
       return false;
     }
     return true;

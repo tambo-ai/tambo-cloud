@@ -52,8 +52,9 @@ export class FileResourceAnnotations {
  * MCP Resource-compatible file content.
  * Based on https://modelcontextprotocol.io/specification/2025-06-18/schema#resource
  *
- * Note: This is a flattened representation for our API. When storing or passing to LLMs,
- * File types are currently filtered out until S3 storage is implemented.
+ * Note: This is a flattened representation for our API. File parts are stored in the
+ * database today. When sending to providers, they may be filtered or converted to
+ * provider-native content types.
  */
 @ApiSchema({ name: "FileResource" })
 export class FileResource {
@@ -104,8 +105,9 @@ export class FileResource {
 /**
  * DTO for the content part of a message.
  *
- * Note: This extends ChatCompletionContentPartUnion with our custom File type.
- * File types are currently filtered out before database storage and LLM consumption.
+ * Note: This extends ChatCompletionContentPartUnion with our custom `file` type.
+ * File parts are stored in the database. Before LLM consumption, unsupported parts
+ * may be filtered or converted.
  */
 @ApiSchema({ name: "ChatCompletionContentPart" })
 export class ChatCompletionContentPartDto {
@@ -137,7 +139,7 @@ export class ChatCompletionContentPartDto {
 
   @ApiProperty({
     description:
-      "File/resource content (when type is 'file'). Supports MCP Resources with URI, text, or blob data. Currently filtered out before storage.",
+      "File/resource content (when type is 'file'). Supports MCP Resources with URI, text, or blob data.",
   })
   @ValidateIf((o) => o.type === ContentPartType.File)
   file?: FileResource;
@@ -224,7 +226,8 @@ generation of another message, such as during an agent call, MCP Elicitation, or
 
 /**
  * Request DTO for creating or updating messages.
- * Supports our extended File content type which is filtered before storage.
+ * Supports our extended `file` content type which is stored in the database and may
+ * be filtered or converted before LLM consumption.
  */
 export class MessageRequest {
   @IsEnum(MessageRole)

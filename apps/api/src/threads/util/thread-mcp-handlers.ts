@@ -3,6 +3,8 @@ import {
   AsyncQueue,
   ChatCompletionContentPart,
   ContentPartType,
+  filterUnsupportedContent,
+  ChatCompletionMessageParam,
   GenerationStage,
   MCPHandlers,
   MessageRole,
@@ -44,6 +46,7 @@ export function createMcpHandlers(
       }));
       // add serially for now
       // TODO: add messages in a batch
+      const dbMessages: any[] = [];
       for (const m of messages) {
         const message = await operations.addMessage(db, {
           threadId,
@@ -51,6 +54,7 @@ export function createMcpHandlers(
           content: m.content,
           parentMessageId,
         });
+        dbMessages.push(message);
 
         queue.push({
           responseMessageDto: {
@@ -66,26 +70,16 @@ export function createMcpHandlers(
           statusMessage: `Streaming response...`,
         });
       }
-      // TODO: Handle File types in MCP sampling messages
-      // Filter out File content parts before passing to LLM
-      // When S3 storage is implemented, convert Files to appropriate formats instead
+      // Filter unsupported parts and narrow to provider message type using the MCP input
       const messagesForLLM = messages.map((m) => ({
-        ...m,
-        content: m.content.filter((part) => {
-          if (part.type === "file") {
-            console.warn(
-              "Filtering out File content part in MCP sampling - not yet supported for LLM",
-            );
-            return false;
-          }
-          return true;
-        }),
-      }));
+        role: m.role,
+        content: filterUnsupportedContent(m.content),
+      })) as unknown as ChatCompletionMessageParam[];
       const response = await tamboBackend.llmClient.complete({
         stream: false,
         promptTemplateName: "sampling",
         promptTemplateParams: {},
-        messages: messagesForLLM as any, // Type assertion needed - our extended types filtered down to OpenAI types
+        messages: messagesForLLM,
       });
 
       const message = await operations.addMessage(db, {
