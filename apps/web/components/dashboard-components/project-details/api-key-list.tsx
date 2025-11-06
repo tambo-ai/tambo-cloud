@@ -241,6 +241,13 @@ export function APIKeyList({
     }
   }, [deleteKeyWithId, handleDeleteKey]);
 
+  // Reset lastDeleteKeyRef when dialog closes to allow retriggering same ID later
+  useEffect(() => {
+    if (!alertState.show) {
+      lastDeleteKeyRef.current = undefined;
+    }
+  }, [alertState.show]);
+
   const handleDeleteApiKey = async () => {
     try {
       if (!alertState.data || !projectId) return;
