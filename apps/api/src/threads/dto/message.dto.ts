@@ -36,14 +36,12 @@ export class ImageUrl {
 export class FileResourceAnnotations {
   @ApiProperty({
     description: "Target audience for this resource",
-    type: [String],
     required: false,
   })
   audience?: string[];
 
   @ApiProperty({
     description: "Priority level for this resource",
-    type: Number,
     required: false,
   })
   priority?: number;
@@ -64,7 +62,6 @@ export class FileResource {
   @ApiProperty({
     description:
       "URI identifying the resource (e.g., file://, https://, s3://)",
-    type: String,
     required: false,
     example: "file:///path/to/document.pdf",
   })
@@ -72,7 +69,6 @@ export class FileResource {
 
   @ApiProperty({
     description: "Human-readable name for the resource",
-    type: String,
     required: false,
     example: "project-documentation.pdf",
   })
@@ -80,7 +76,6 @@ export class FileResource {
 
   @ApiProperty({
     description: "Optional description of the resource",
-    type: String,
     required: false,
     example: "Project documentation for Q4 2024",
   })
@@ -88,7 +83,6 @@ export class FileResource {
 
   @ApiProperty({
     description: "MIME type of the resource",
-    type: String,
     required: false,
     example: "application/pdf",
   })
@@ -96,7 +90,6 @@ export class FileResource {
 
   @ApiProperty({
     description: "Inline text content (alternative to uri)",
-    type: String,
     required: false,
     example: "The contents of the document...",
   })
@@ -104,7 +97,6 @@ export class FileResource {
 
   @ApiProperty({
     description: "Base64-encoded blob data (alternative to uri or text)",
-    type: String,
     required: false,
     example: "SGVsbG8gV29ybGQh",
   })
@@ -113,7 +105,6 @@ export class FileResource {
   @ApiProperty({
     description:
       "Annotations for additional metadata (MCP-specific). Can include audience, priority, or custom properties.",
-    type: FileResourceAnnotations,
     required: false,
   })
   annotations?: FileResourceAnnotations;
@@ -137,7 +128,6 @@ export class ChatCompletionContentPartDto {
 
   @ApiProperty({
     description: "Text content (when type is 'text')",
-    type: String,
     required: false,
   })
   @ValidateIf((o) => o.type === ContentPartType.Text)
@@ -145,7 +135,6 @@ export class ChatCompletionContentPartDto {
 
   @ApiProperty({
     description: "Image URL content (when type is 'image_url')",
-    type: ImageUrl,
     required: false,
   })
   @ValidateIf((o) => o.type === ContentPartType.ImageUrl)
@@ -153,7 +142,6 @@ export class ChatCompletionContentPartDto {
 
   @ApiProperty({
     description: "Input audio content (when type is 'input_audio')",
-    type: InputAudio,
     required: false,
   })
   @ValidateIf((o) => o.type === ContentPartType.InputAudio)
@@ -162,7 +150,6 @@ export class ChatCompletionContentPartDto {
   @ApiProperty({
     description:
       "File/resource content (when type is 'file'). Supports MCP Resources with URI, text, or blob data. Currently filtered out before storage.",
-    type: FileResource,
     required: false,
   })
   @ValidateIf((o) => o.type === ContentPartType.File)
