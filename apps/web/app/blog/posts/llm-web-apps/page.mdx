@@ -57,12 +57,47 @@ At [Tambo](https://github.com/tambo-ai/tambo) we’re making it simple to integr
 
 To “tell” the LLM about the UI it can use, specify when to use the component and what props the component expects.
 
+```typescript
+const components: TamboComponent[] = [
+  {
+    name: "WeatherDisplay",
+    description: "A display of the weather in a city",
+    component: WeatherDisplayComponent,
+    propsSchema: WeatherDisplayPropsSchema,
+  }
+];
+
+<TamboProvider components={components}>
+  <App />
+</TamboProvider>;
+```
+
 Similarly, give the LLM tools:
+
+```typescript
+const getWeather = (city: string) => {
+  return `The weather in ${city} is warm and sunny!`;
+};
+
+export const tools: TamboTool[] = [
+  {
+    name: "getWeather",
+    description: "A tool to get the current weather conditions of a city",
+    tool: getWeather,
+    toolSchema: z
+      .function()
+      .args(z.string().describe("The city name to get weather information for"))
+      .returns(z.string()),
+  },
+];
+
+<TamboProvider tools={tools}>
+  <App />
+</TamboProvider>;
+```
 
 Then add a `<MessageInput>` component somewhere for users to submit messages, and render the output messages, including any used components or tool call information.
 
-Tambo processes and stores the messages automatically.
-
 With just those pieces, you can give your application a conversational interface powered by LLMs.
 
-From there, you can go much deeper with Tambo: connect MCP servers, integrate shared context across users, or let Tambo interact with components already rendered on the page.
+From there, you can go much deeper with Tambo: [connect MCP servers](https://docs.tambo.co/concepts/model-context-protocol), integrate dynamic [context](https://docs.tambo.co/concepts/additional-context), or let Tambo [interact with components](https://docs.tambo.co/concepts/components/interactable-components) already rendered on the page.
