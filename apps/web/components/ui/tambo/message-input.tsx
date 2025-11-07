@@ -15,6 +15,7 @@ import {
   useTamboThread,
   useTamboThreadInput,
 } from "@tambo-ai/react";
+import type { Editor } from "@tiptap/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { ArrowUp, Cuboid, Paperclip, Square } from "lucide-react";
 import * as React from "react";
@@ -61,7 +62,7 @@ const messageInputVariants = cva("w-full", {
  * @property {boolean} isPending - Whether a submission is in progress
  * @property {Error|null} error - Any error from the submission
  * @property {string|undefined} contextKey - The thread context key
- * @property {HTMLTextAreaElement|null} textareaRef - Reference to the textarea element
+ * @property {Editor|null} editorRef - Reference to the TipTap editor instance
  * @property {string | null} submitError - Error from the submission
  * @property {function} setSubmitError - Function to set the submission error
  */
@@ -76,7 +77,7 @@ interface MessageInputContextValue {
   isPending: boolean;
   error: Error | null;
   contextKey?: string;
-  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  editorRef: React.RefObject<Editor | null>;
   submitError: string | null;
   setSubmitError: React.Dispatch<React.SetStateAction<string | null>>;
 }
@@ -115,8 +116,8 @@ export interface MessageInputProps
   contextKey?: string;
   /** Optional styling variant for the input container. */
   variant?: VariantProps<typeof messageInputVariants>["variant"];
-  /** Optional ref to forward to the textarea element. */
-  inputRef?: React.RefObject<HTMLTextAreaElement>;
+  /** Optional ref to forward to the TipTap editor instance. */
+  inputRef?: React.RefObject<Editor | null>;
   /** The child elements to render within the form container. */
   children?: React.ReactNode;
 }
@@ -174,14 +175,11 @@ const MessageInputInternal = React.forwardRef<
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const editorRef = React.useRef<Editor | null>(null);
   const dragCounter = React.useRef(0);
 
   React.useEffect(() => {
     setDisplayValue(value);
-    if (value && textareaRef.current) {
-      textareaRef.current.focus();
-    }
   }, [value]);
 
   const handleSubmit = React.useCallback(
@@ -207,10 +205,6 @@ const MessageInputInternal = React.forwardRef<
           streamResponse: true,
         });
         setValue("");
-        // Images are cleared automatically by the TamboThreadInputProvider
-        setTimeout(() => {
-          textareaRef.current?.focus();
-        }, 0);
       } catch (error) {
         console.error("Failed to submit message:", error);
         setDisplayValue(value);
@@ -304,7 +298,7 @@ const MessageInputInternal = React.forwardRef<
       isPending: isPending ?? isSubmitting,
       error,
       contextKey,
-      textareaRef: inputRef ?? textareaRef,
+      editorRef: inputRef ?? editorRef,
       submitError,
       setSubmitError,
     }),
@@ -318,7 +312,7 @@ const MessageInputInternal = React.forwardRef<
       error,
       contextKey,
       inputRef,
-      textareaRef,
+      editorRef,
       submitError,
     ],
   );
@@ -388,8 +382,18 @@ export interface MessageInputTextareaProps
 }
 
 /**
- * Textarea component for entering message text.
- * Automatically connects to the context to handle value changes and key presses.
+ * Textarea component for entering message text with @ mention support.
+ *
+ * Uses the TipTap-based TextEditor component which provides:
+ * - @ mention autocomplete for interactable components
+ * - Keyboard navigation (Enter to submit, Shift+Enter for newline)
+ * - Image paste support
+ *
+ * **How @ mentions work here:**
+ * - When user types "@", suggestions appear from `interactables` (components that can be mentioned)
+ * - Selecting a mention adds it as a context attachment via `addContextAttachment`
+ * - Mentions appear as badges above the input (via ContextAttachmentBadgeList)
+ *
  * @component MessageInput.Textarea
  * @example
  * ```tsx
@@ -403,13 +407,14 @@ const MessageInputTextarea = ({
   placeholder = "What do you want to do?",
   ...props
 }: MessageInputTextareaProps) => {
-  const { value, setValue, handleSubmit } = useMessageInputContext();
+  const { value, setValue, handleSubmit, editorRef } = useMessageInputContext();
   const { isIdle } = useTamboThread();
   const { addImage } = useTamboThreadInput();
   const { addContextAttachment } = useTamboContextAttachment();
   const interactables = useCurrentInteractablesSnapshot();
   const isUpdatingToken = useIsTamboTokenUpdating();
 
+  // Convert interactable components into suggestion items for the @ mention dropdown
   const suggestions = React.useMemo(
     () =>
       interactables.map((component) => ({
@@ -421,6 +426,7 @@ const MessageInputTextarea = ({
     [interactables],
   );
 
+  // Handle Enter key to submit message (Shift+Enter creates newline)
   const handleKeyDown = React.useCallback(
     async (e: React.KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey && value.trim()) {
@@ -431,7 +437,9 @@ const MessageInputTextarea = ({
     [value, handleSubmit],
   );
 
-  // Handle image paste
+  // Handle image paste from clipboard
+  // Note: This is attached to the editor element via data-slot selector
+  // because TipTap handles its own paste events internally
   React.useEffect(() => {
     const handlePaste = async (e: Event) => {
       const clipboardEvent = e as ClipboardEvent;
@@ -477,7 +485,12 @@ const MessageInputTextarea = ({
         placeholder={placeholder}
         disabled={!isIdle || isUpdatingToken}
         suggestions={suggestions}
-        onMentionSelect={(item) => addContextAttachment({ name: item.name })}
+        editorRef={editorRef}
+        onMentionSelect={(item) => {
+          // When a mention is selected, add it as a context attachment
+          // This will appear as a badge above the input
+          addContextAttachment({ name: item.name });
+        }}
         className="bg-background text-foreground"
       />
     </div>
