@@ -2,12 +2,11 @@
 
 import { ContextAttachmentBadgeList } from "@/components/ui/tambo/context-attachment-badge";
 import { McpConfigModal } from "@/components/ui/tambo/mcp-config-modal";
-import type { SuggestionItem } from "@/components/ui/tambo/mention-suggestion-list";
 import {
   Tooltip,
   TooltipProvider,
 } from "@/components/ui/tambo/suggestions-tooltip";
-import { TiptapEditor } from "@/components/ui/tambo/tiptap-editor";
+import { TextEditor } from "@/components/ui/tambo/text-editor";
 import { cn } from "@/lib/utils";
 import {
   useCurrentInteractablesSnapshot,
@@ -16,7 +15,6 @@ import {
   useTamboThread,
   useTamboThreadInput,
 } from "@tambo-ai/react";
-import type { Editor } from "@tiptap/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { ArrowUp, Cuboid, Paperclip, Square } from "lucide-react";
 import * as React from "react";
@@ -411,44 +409,27 @@ const MessageInputTextarea = ({
   const { addContextAttachment } = useTamboContextAttachment();
   const interactables = useCurrentInteractablesSnapshot();
   const isUpdatingToken = useIsTamboTokenUpdating();
-  const isPending = !isIdle;
-  const editorRef = React.useRef<Editor | null>(null);
 
-  // Transform interactable components into suggestion items
   const suggestions = React.useMemo(
     () =>
       interactables.map((component) => ({
         id: component.id,
         name: component.name,
         icon: <Cuboid className="w-4 h-4" />,
-        // Store the component reference for when it's selected
         componentData: component,
       })),
     [interactables],
   );
 
-  // Handle when a mention is selected - add as context attachment
-  const handleMentionSelect = React.useCallback(
-    (item: SuggestionItem) => {
-      addContextAttachment({
-        name: item.name,
-      });
-    },
-    [addContextAttachment],
-  );
-
-  const handleEditorChange = (text: string) => {
-    setValue(text);
-  };
-
-  const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (value.trim()) {
+  const handleKeyDown = React.useCallback(
+    async (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey && value.trim()) {
+        e.preventDefault();
         await handleSubmit(e as React.FormEvent);
       }
-    }
-  };
+    },
+    [value, handleSubmit],
+  );
 
   // Handle image paste
   React.useEffect(() => {
@@ -457,16 +438,10 @@ const MessageInputTextarea = ({
       const items = Array.from(clipboardEvent.clipboardData?.items ?? []);
       const imageItems = items.filter((item) => item.type.startsWith("image/"));
 
-      if (imageItems.length === 0) {
-        return;
-      }
+      if (imageItems.length === 0) return;
 
-      const hasText =
-        (clipboardEvent.clipboardData?.getData("text/plain").length ?? 0) > 0;
-
-      if (!hasText) {
-        e.preventDefault();
-      }
+      const hasText = clipboardEvent.clipboardData?.getData("text/plain");
+      if (!hasText) e.preventDefault();
 
       for (const item of imageItems) {
         const file = item.getAsFile();
@@ -485,10 +460,8 @@ const MessageInputTextarea = ({
       '[data-slot="message-input-textarea"]',
     );
     editorElement?.addEventListener("paste", handlePaste as EventListener);
-
-    return () => {
+    return () =>
       editorElement?.removeEventListener("paste", handlePaste as EventListener);
-    };
   }, [addImage]);
 
   return (
@@ -497,19 +470,14 @@ const MessageInputTextarea = ({
       data-slot="message-input-textarea"
       {...props}
     >
-      <TiptapEditor
+      <TextEditor
         value={value}
-        onChange={handleEditorChange}
-        onKeyDown={async (event) => {
-          await handleKeyDown(
-            event as React.KeyboardEvent<HTMLTextAreaElement>,
-          );
-        }}
+        onChange={setValue}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        disabled={isPending || isUpdatingToken}
-        editorRef={editorRef}
+        disabled={!isIdle || isUpdatingToken}
         suggestions={suggestions}
-        onMentionSelect={handleMentionSelect}
+        onMentionSelect={(item) => addContextAttachment({ name: item.name })}
         className="bg-background text-foreground"
       />
     </div>
