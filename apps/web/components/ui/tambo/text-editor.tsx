@@ -270,7 +270,9 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
         attributes: {
           class: cn(
             "prose prose-sm max-w-none focus:outline-none",
+            "p-3 rounded-t-lg bg-transparent text-sm leading-relaxed",
             "min-h-[82px] max-h-[40vh] overflow-y-auto",
+            "break-words whitespace-pre-wrap",
             className,
           ),
         },

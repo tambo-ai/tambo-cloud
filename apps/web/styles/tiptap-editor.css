@@ -1,22 +1,5 @@
 /* Tiptap Editor Styles */
 
-/* Basic editor styling to match textarea */
-.tiptap {
-  padding: 0.75rem;
-  border-radius: 0.5rem 0.5rem 0 0;
-  background: transparent;
-  color: inherit;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  min-height: 82px;
-  max-height: 40vh;
-  overflow-y: auto;
-}
-
-.tiptap:focus {
-  outline: none;
-}
-
 /* Placeholder styling */
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
@@ -30,12 +13,6 @@
 /* Remove default paragraph margins */
 .tiptap p {
   margin: 0;
-}
-
-/* Ensure proper text wrapping */
-.tiptap {
-  word-wrap: break-word;
-  white-space: pre-wrap;
 }
 
 /* Mention badge styling (inline) */
