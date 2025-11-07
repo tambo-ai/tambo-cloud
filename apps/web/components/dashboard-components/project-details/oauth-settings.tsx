@@ -343,7 +343,7 @@ export function OAuthSettings({
           <EditableHint
             suggestions={oauthSettingsSuggestions}
             description="Click to know more about how to manage token required for this project"
-            componentName="OAuth Settings"
+            componentName="OAuthSettings"
           />
         </CardTitle>
         <p className="text-sm font-sans text-foreground">

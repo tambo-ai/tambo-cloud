@@ -1003,7 +1003,7 @@ function ProviderKeySectionBase({
             <EditableHint
               suggestions={providerKeySectionSuggestions}
               description="Click to know more about how to manage the LLM provider for this project"
-              componentName="LLM Providers"
+              componentName="ProviderKeySection"
             />
           </CardTitle>
           {hasActualChanges && (

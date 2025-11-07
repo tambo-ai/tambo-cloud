@@ -193,7 +193,7 @@ export function AvailableMcpServers({
             <EditableHint
               suggestions={availableMcpServersSuggestions}
               description="Click to know more about how to manage MCP servers"
-              componentName="MCP Servers"
+              componentName="AvailableMcpServers"
             />
           </CardTitle>
           {!isAddingNew && (

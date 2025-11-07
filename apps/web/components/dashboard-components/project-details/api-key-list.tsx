@@ -313,7 +313,7 @@ export function APIKeyList({
               <EditableHint
                 suggestions={apiKeyListSuggestions}
                 description="Click to know more about how to manage API keys"
-                componentName="API Keys"
+                componentName="APIKeyManager"
               />
             </h4>
           </div>

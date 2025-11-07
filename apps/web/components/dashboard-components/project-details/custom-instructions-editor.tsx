@@ -228,7 +228,7 @@ export function CustomInstructionsEditor({
           <EditableHint
             suggestions={customInstructionsEditorSuggestions}
             description="Click to know more about how to manage the custom instructions for this project"
-            componentName="Custom Instructions"
+            componentName="InstructionsEditor"
           />
         </CardTitle>
       </CardHeader>

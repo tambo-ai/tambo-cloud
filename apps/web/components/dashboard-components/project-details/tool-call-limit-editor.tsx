@@ -155,7 +155,7 @@ export function ToolCallLimitEditor({
           <EditableHint
             suggestions={toolCallLimitEditorSuggestions}
             description="Click to know more about how to manage the tool call limit for this project"
-            componentName="Tool Call Limit"
+            componentName="ToolCallLimitEditor"
           />
         </CardTitle>
         <CardDescription className="text-sm font-sans text-foreground">
