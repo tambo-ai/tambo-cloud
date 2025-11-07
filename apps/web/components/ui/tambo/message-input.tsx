@@ -6,7 +6,10 @@ import {
   Tooltip,
   TooltipProvider,
 } from "@/components/ui/tambo/suggestions-tooltip";
-import { TextEditor } from "@/components/ui/tambo/text-editor";
+import {
+  TextEditor,
+  type CommandConfig,
+} from "@/components/ui/tambo/text-editor";
 import { cn } from "@/lib/utils";
 import {
   useCurrentInteractablesSnapshot,
@@ -415,7 +418,7 @@ const MessageInputTextarea = ({
   const isUpdatingToken = useIsTamboTokenUpdating();
 
   // Convert interactable components into suggestion items for the @ mention dropdown
-  const suggestions = React.useMemo(
+  const mentionItems = React.useMemo(
     () =>
       interactables.map((component) => ({
         id: component.id,
@@ -424,6 +427,22 @@ const MessageInputTextarea = ({
         componentData: component,
       })),
     [interactables],
+  );
+
+  // Create the "@" mention command configuration
+  const mentionCommand = React.useMemo(
+    (): CommandConfig => ({
+      triggerChar: "@",
+      items: mentionItems,
+      onSelect: (item) => {
+        // When a mention is selected, add it as a context attachment
+        // This will appear as a badge above the input
+        addContextAttachment({ name: item.name });
+      },
+      renderLabel: ({ node }) => `@${(node.attrs.label as string) ?? ""}`,
+      HTMLAttributes: { class: "mention" },
+    }),
+    [mentionItems, addContextAttachment],
   );
 
   // Handle Enter key to submit message (Shift+Enter creates newline)
@@ -484,13 +503,8 @@ const MessageInputTextarea = ({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={!isIdle || isUpdatingToken}
-        suggestions={suggestions}
+        commands={[mentionCommand]}
         editorRef={editorRef}
-        onMentionSelect={(item) => {
-          // When a mention is selected, add it as a context attachment
-          // This will appear as a badge above the input
-          addContextAttachment({ name: item.name });
-        }}
         className="bg-background text-foreground"
       />
     </div>
