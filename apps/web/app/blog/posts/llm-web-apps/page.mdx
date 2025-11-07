@@ -75,7 +75,8 @@ Similarly, give the LLM tools:
 
 ```typescript
 const getWeather = (city: string) => {
-  return `The weather in ${city} is warm and sunny!`;
+  const forecast = await weather.getCityForecast(city);
+  return forecast; // return the data, Tambo will format it for the user
 };
 
 export const tools: TamboTool[] = [
