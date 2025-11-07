@@ -1,6 +1,6 @@
-/* Tiptap Editor Styles */
+/* TipTap Editor Styles */
 
-/* Placeholder styling */
+/* Placeholder */
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
@@ -10,12 +10,12 @@
   height: 0;
 }
 
-/* Remove default paragraph margins */
+/* Paragraph */
 .tiptap p {
   margin: 0;
 }
 
-/* Mention badge styling (inline) */
+/* Mention badges */
 .tiptap .mention {
   display: inline-flex;
   align-items: center;
@@ -35,7 +35,7 @@
   background-color: hsl(var(--primary) / 0.15);
 }
 
-/* Suggestion dropdown styling (tippy.js) */
+/* Suggestion dropdown (tippy.js) */
 .tippy-box[data-theme~="light-border"] {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));

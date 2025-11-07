@@ -140,16 +140,6 @@ const MentionSuggestionList = forwardRef<
 MentionSuggestionList.displayName = "MentionSuggestionList";
 
 /**
- * Creates a safe getter for client rect that handles null/undefined cases.
- * Used by tippy.js to position the suggestion dropdown.
- */
-const createSafeGetRect = (
-  clientRect?: (() => DOMRect | null) | null,
-): (() => DOMRect) => {
-  return () => clientRect?.() ?? new DOMRect();
-};
-
-/**
  * Creates a popup handler for the mention suggestion dropdown.
  *
  * This function manages the lifecycle of the tippy.js popup that displays
@@ -184,7 +174,7 @@ function createSuggestionPopup() {
       if (!props.clientRect) return;
 
       tippyPopup = tippy("body", {
-        getReferenceClientRect: createSafeGetRect(props.clientRect),
+        getReferenceClientRect: () => props.clientRect?.() ?? new DOMRect(),
         appendTo: () => document.body,
         content: suggestionListComponent.element,
         showOnCreate: true,
@@ -211,7 +201,7 @@ function createSuggestionPopup() {
       });
       if (props.clientRect && tippyPopup) {
         tippyPopup.setProps({
-          getReferenceClientRect: createSafeGetRect(props.clientRect),
+          getReferenceClientRect: () => props.clientRect?.() ?? new DOMRect(),
         });
       }
     },
