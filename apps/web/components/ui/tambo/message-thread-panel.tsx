@@ -188,10 +188,19 @@ export const MessageThreadPanel = forwardRef<
   const { data: session } = useSession();
   const isUserLoggedIn = !!session;
   const { thread } = useTambo();
-  const { isOpen, setIsOpen } = useMessageThreadPanel();
+  const {
+    isOpen,
+    setIsOpen,
+    editorRef: providerEditorRef,
+  } = useMessageThreadPanel();
   const { customSuggestions, setCustomSuggestions } =
     useTamboContextAttachment();
   const editorRef = useRef<Editor | null>(null);
+
+  // Sync local editorRef with provider's editorRef whenever it changes
+  useEffect(() => {
+    providerEditorRef.current = editorRef.current;
+  });
 
   // Update CSS variable and focus editor when panel opens/closes
   useEffect(() => {

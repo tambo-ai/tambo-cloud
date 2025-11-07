@@ -140,6 +140,29 @@ const MentionSuggestionList = forwardRef<
 MentionSuggestionList.displayName = "MentionSuggestionList";
 
 /**
+ * Checks if a mention with the given label already exists in the editor.
+ * Used to prevent duplicate mentions when inserting via @ command or EditableHint.
+ *
+ * @param editor - The TipTap editor instance
+ * @param label - The mention label to check for
+ * @returns true if a mention with the given label exists, false otherwise
+ */
+export function hasExistingMention(editor: Editor, label: string): boolean {
+  let hasMention = false;
+  editor.state.doc.descendants((node) => {
+    if (node.type.name === "mention") {
+      const mentionLabel = node.attrs.label as string;
+      if (mentionLabel === label) {
+        hasMention = true;
+        return false; // Stop traversing
+      }
+    }
+    return true;
+  });
+  return hasMention;
+}
+
+/**
  * Creates a popup handler for the suggestion dropdown using tippy.js.
  */
 function createSuggestionPopup() {
@@ -247,14 +270,19 @@ function createSuggestionConfig(
       const popupHandlers = createSuggestionPopup();
 
       /**
-       * Wraps TipTap's mention command to also call our callback.
-       * When a suggestion is selected:
-       * 1. TipTap's command inserts the mention into the editor
-       * 2. Our `onSelect` callback runs (e.g., to add context attachment)
+       * Creates a wrapped command that checks for duplicates before inserting.
+       * Must be created inside onStart/onUpdate where editor is available.
        */
-      const wrapCommand =
+      const createWrapCommand =
+        (editor: Editor) =>
         (tiptapCommand: (attrs: { id: string; label: string }) => void) =>
         (item: SuggestionItem) => {
+          // Check if mention already exists in the editor
+          if (hasExistingMention(editor, item.name)) {
+            // Don't insert duplicate mention
+            return;
+          }
+
           // Insert the command into the editor (e.g., "@ComponentName")
           tiptapCommand({ id: item.id, label: item.name });
           // Run custom logic (e.g., add context attachment, insert table, etc.)
@@ -272,7 +300,7 @@ function createSuggestionConfig(
             items: props.items,
             editor: props.editor,
             clientRect: props.clientRect,
-            command: wrapCommand(props.command),
+            command: createWrapCommand(props.editor)(props.command),
           });
         },
 
@@ -284,7 +312,7 @@ function createSuggestionConfig(
           popupHandlers.onUpdate({
             items: props.items,
             clientRect: props.clientRect,
-            command: wrapCommand(props.command),
+            command: createWrapCommand(props.editor)(props.command),
           });
         },
 
