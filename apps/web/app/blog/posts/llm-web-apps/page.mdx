@@ -1,5 +1,5 @@
 ---
-title: "Let LLMs control your UI"
+title: "Let LLMs Control Your UI"
 date: "2025-11-07"
 description: "Let LLMs control your web app"
 author: "Michael Milstead"
@@ -11,13 +11,13 @@ author: "Michael Milstead"
 
 The rise of LLMs and the popularity of chat apps have made it clear that the ability to communicate with a computer using natural language is powerful.
 
-When software understands natural language, we can be vague about our end goals. When we don’t know all the steps to get to our goal, or we don’t have a clear idea of what exactly our end goal looks like, we can have the LLM guide us towards it. When tools are available, it can even infer what actions to take and perform them for us.
+When software understands natural language, you can be vague about your end goals. When you don't know all the steps to get to your goal, or you don't have a clear idea of what exactly your end goal looks like, you can have the LLM guide you towards it. When tools are available, it can even infer what actions to take and perform them for you.
 
 After a few years of using LLM chat interfaces, though, it’s become clear that **natural language alone isn’t enough** for every use case.
 
 ## We Still Need UI
 
-When we give an AI a vague goal, it needs to fill in the gaps and assume the steps to get there. We usually don’t want the AI to perform the actions based on guesses without asking us for confirmation. When an LLM or an agent proposes an action, a UI allows helps us understand the context and input edits much more easily than language.
+When you give an AI a vague goal, it needs to fill in the gaps and assume the steps to get there. You usually don't want the AI to perform the actions based on guesses without asking for confirmation. When an LLM or an agent proposes an action, a UI helps you understand the context and input edits much more easily than language.
 
 For example, if a flight-booking AI tells me “Seat 23E is available,” I don’t have enough information to know whether I like the seat or not. Is that a middle seat? Are there other open seats in completely empty rows? Is that near the front or the back of the plane?
 
@@ -27,7 +27,7 @@ If it shows me a **seat map**, I instantly know the full context of seat 23E.
 
 I can also edit the proposed selection through the UI much more easily than I could through words. Every proposed action is, in effect, a function with a set of partially guessed parameters, and an interactive UI lets me easily edit those parameters.
 
-When an AI can orchestrate text and UI components together into an interface tailored to our intent, the experience becomes both flexible and efficient.
+When an AI can orchestrate text and UI components together into an interface tailored to your intent, the experience becomes both flexible and efficient.
 
 ## We Don’t Need to Generate UI
 
@@ -36,7 +36,7 @@ To some, that means the AI decides what UI should exist and literally creates it
 
 That approach introduces risk and unpredictability. The user might see some oddly styled or broken UI, or the AI might accidentally enable some unsafe functionality for the user.
 
-Instead, we can let the LLM control pre-built UI components that would normally be placed somewhere on the page. Then the AI only has access to the components and functions it’s given by the developer.
+Instead, you can let the LLM control pre-built UI components that would normally be placed somewhere on the page. Then the AI only has access to the components and functions you give it as the developer.
 
 This approach makes integration of natural language control into an existing app simple to think through. Just allow the AI to use the existing components and functionality on behalf of the user.
 
