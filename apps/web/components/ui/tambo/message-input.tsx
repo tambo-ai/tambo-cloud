@@ -2,19 +2,23 @@
 
 import { ContextAttachmentBadgeList } from "@/components/ui/tambo/context-attachment-badge";
 import { McpConfigModal } from "@/components/ui/tambo/mcp-config-modal";
+import type { SuggestionItem } from "@/components/ui/tambo/mention-suggestion-list";
 import {
   Tooltip,
   TooltipProvider,
 } from "@/components/ui/tambo/suggestions-tooltip";
+import { TiptapEditor } from "@/components/ui/tambo/tiptap-editor";
 import { cn } from "@/lib/utils";
 import {
+  useCurrentInteractablesSnapshot,
   useIsTamboTokenUpdating,
   useTamboContextAttachment,
   useTamboThread,
   useTamboThreadInput,
 } from "@tambo-ai/react";
+import type { Editor } from "@tiptap/react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { ArrowUp, Paperclip, Square } from "lucide-react";
+import { ArrowUp, Cuboid, Paperclip, Square } from "lucide-react";
 import * as React from "react";
 
 /**
@@ -378,10 +382,9 @@ declare global {
 
 /**
  * Props for the MessageInputTextarea component.
- * Extends standard TextareaHTMLAttributes.
  */
 export interface MessageInputTextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  extends React.HTMLAttributes<HTMLDivElement> {
   /** Custom placeholder text. */
   placeholder?: string;
 }
@@ -402,72 +405,114 @@ const MessageInputTextarea = ({
   placeholder = "What do you want to do?",
   ...props
 }: MessageInputTextareaProps) => {
-  const { value, setValue, textareaRef, handleSubmit } =
-    useMessageInputContext();
+  const { value, setValue, handleSubmit } = useMessageInputContext();
   const { isIdle } = useTamboThread();
   const { addImage } = useTamboThreadInput();
+  const { addContextAttachment } = useTamboContextAttachment();
+  const interactables = useCurrentInteractablesSnapshot();
   const isUpdatingToken = useIsTamboTokenUpdating();
   const isPending = !isIdle;
+  const editorRef = React.useRef<Editor | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value);
+  // Transform interactable components into suggestion items
+  const suggestions = React.useMemo(
+    () =>
+      interactables.map((component) => ({
+        id: component.id,
+        name: component.name,
+        icon: <Cuboid className="w-4 h-4" />,
+        // Store the component reference for when it's selected
+        componentData: component,
+      })),
+    [interactables],
+  );
+
+  // Handle when a mention is selected - add as context attachment
+  const handleMentionSelect = React.useCallback(
+    (item: SuggestionItem) => {
+      addContextAttachment({
+        name: item.name,
+      });
+    },
+    [addContextAttachment],
+  );
+
+  const handleEditorChange = (text: string) => {
+    setValue(text);
   };
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (value.trim()) {
-        await handleSubmit(e as unknown as React.FormEvent);
+        await handleSubmit(e as React.FormEvent);
       }
     }
   };
 
-  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const items = Array.from(e.clipboardData.items);
-    const imageItems = items.filter((item) => item.type.startsWith("image/"));
+  // Handle image paste
+  React.useEffect(() => {
+    const handlePaste = async (e: Event) => {
+      const clipboardEvent = e as ClipboardEvent;
+      const items = Array.from(clipboardEvent.clipboardData?.items ?? []);
+      const imageItems = items.filter((item) => item.type.startsWith("image/"));
 
-    // Allow default paste if there is text, even when images exist
-    const hasText = e.clipboardData.getData("text/plain").length > 0;
+      if (imageItems.length === 0) {
+        return;
+      }
 
-    if (imageItems.length === 0) {
-      return; // Allow default text paste
-    }
+      const hasText =
+        (clipboardEvent.clipboardData?.getData("text/plain").length ?? 0) > 0;
 
-    if (!hasText) {
-      e.preventDefault(); // Only prevent when image-only paste
-    }
+      if (!hasText) {
+        e.preventDefault();
+      }
 
-    for (const item of imageItems) {
-      const file = item.getAsFile();
-      if (file) {
-        try {
-          // Mark this file as pasted so we can show "Image 1", "Image 2", etc.
-          file[IS_PASTED_IMAGE] = true;
-          await addImage(file);
-        } catch (error) {
-          console.error("Failed to add pasted image:", error);
+      for (const item of imageItems) {
+        const file = item.getAsFile();
+        if (file) {
+          try {
+            file[IS_PASTED_IMAGE] = true;
+            await addImage(file);
+          } catch (error) {
+            console.error("Failed to add pasted image:", error);
+          }
         }
       }
-    }
-  };
+    };
+
+    const editorElement = document.querySelector(
+      '[data-slot="message-input-textarea"]',
+    );
+    editorElement?.addEventListener("paste", handlePaste as EventListener);
+
+    return () => {
+      editorElement?.removeEventListener("paste", handlePaste as EventListener);
+    };
+  }, [addImage]);
 
   return (
-    <textarea
-      ref={textareaRef}
-      value={value}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-      onPaste={handlePaste}
-      className={cn(
-        "flex-1 p-3 rounded-t-lg bg-background text-foreground resize-none text-sm min-h-[82px] max-h-[40vh] focus:outline-none placeholder:text-muted-foreground/50",
-        className,
-      )}
-      disabled={isPending || isUpdatingToken}
-      placeholder={placeholder}
-      aria-label="Chat Message Input"
+    <div
+      className={cn("flex-1", className)}
       data-slot="message-input-textarea"
       {...props}
-    />
+    >
+      <TiptapEditor
+        value={value}
+        onChange={handleEditorChange}
+        onKeyDown={async (event) => {
+          await handleKeyDown(
+            event as React.KeyboardEvent<HTMLTextAreaElement>,
+          );
+        }}
+        placeholder={placeholder}
+        disabled={isPending || isUpdatingToken}
+        editorRef={editorRef}
+        suggestions={suggestions}
+        onMentionSelect={handleMentionSelect}
+        className="bg-background text-foreground"
+      />
+    </div>
   );
 };
 MessageInputTextarea.displayName = "MessageInput.Textarea";
