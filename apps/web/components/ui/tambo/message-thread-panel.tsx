@@ -4,6 +4,7 @@ import type { messageVariants } from "@/components/ui/tambo/message";
 import { Message, MessageContent } from "@/components/ui/tambo/message";
 import {
   MessageInput,
+  MessageInputContexts,
   MessageInputError,
   MessageInputFileButton,
   MessageInputSubmitButton,
@@ -27,6 +28,7 @@ import { useMessageThreadPanel } from "@/providers/message-thread-panel-provider
 import { api, useTRPCClient } from "@/trpc/react";
 import {
   useTambo,
+  useTamboContextAttachment,
   type Suggestion,
   type TamboThreadMessage,
 } from "@tambo-ai/react";
@@ -186,6 +188,8 @@ export const MessageThreadPanel = forwardRef<
   const isUserLoggedIn = !!session;
   const { thread } = useTambo();
   const { isOpen, setIsOpen } = useMessageThreadPanel();
+  const { customSuggestions, setCustomSuggestions } =
+    useTamboContextAttachment();
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Update CSS variable and focus input when panel opens/closes
@@ -287,6 +291,16 @@ export const MessageThreadPanel = forwardRef<
     },
   ];
 
+  // Use custom suggestions if available, otherwise use defaults
+  const activeSuggestions = customSuggestions ?? defaultSuggestions;
+
+  // Clear custom suggestions when a new message is sent
+  useEffect(() => {
+    if (thread?.messages?.length && customSuggestions !== null) {
+      setCustomSuggestions(null);
+    }
+  }, [thread?.messages?.length, customSuggestions, setCustomSuggestions]);
+
   return (
     <ResizablePanel ref={ref} className={className} isOpen={isOpen} {...props}>
       {/* Header */}
@@ -335,6 +349,7 @@ export const MessageThreadPanel = forwardRef<
         {/* Message input */}
         <div className="p-4 flex-shrink-0">
           <MessageInput contextKey={contextKey} inputRef={inputRef}>
+            <MessageInputContexts />
             <MessageInputTextarea placeholder="Type your message or paste images..." />
             <MessageInputToolbar>
               <MessageInputFileButton />
@@ -347,7 +362,7 @@ export const MessageThreadPanel = forwardRef<
         </div>
 
         {/* Message suggestions */}
-        <MessageSuggestions initialSuggestions={defaultSuggestions}>
+        <MessageSuggestions initialSuggestions={activeSuggestions}>
           <MessageSuggestionsList className="flex-shrink-0" />
         </MessageSuggestions>
       </div>

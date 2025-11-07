@@ -1,7 +1,7 @@
 "use client";
 
-import { tamboRegisteredComponents } from "@/lib/tambo/config";
 import { env } from "@/lib/env";
+import { tamboRegisteredComponents } from "@/lib/tambo/config";
 import { TamboProvider, currentPageContextHelper } from "@tambo-ai/react";
 
 type TamboProviderWrapperProps = Readonly<{

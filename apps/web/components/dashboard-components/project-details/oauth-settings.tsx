@@ -8,14 +8,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EditableHint } from "@/components/ui/editable-hint";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { api, type RouterOutputs } from "@/trpc/react";
+import { api } from "@/trpc/react";
 import { OAuthValidationMode } from "@tambo-ai-cloud/core";
+import type { Suggestion } from "@tambo-ai/react";
+import { withInteractable } from "@tambo-ai/react";
 import { motion } from "framer-motion";
 import {
   Building2,
@@ -24,7 +27,7 @@ import {
   Loader2,
   Shield,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import {
   SiAuth0,
   SiClerk,
@@ -35,18 +38,82 @@ import {
 } from "react-icons/si";
 import { z } from "zod";
 
-export const OAuthSettingsPropsSchema = z.object({
-  project: z
-    .object({
-      id: z.string().describe("The unique identifier for the project."),
-      name: z.string().describe("The name of the project."),
-    })
+const oauthSettingsSuggestions: Suggestion[] = [
+  {
+    id: "fetch-oauth-settings",
+    title: "Fetch OAuth Settings",
+    detailedSuggestion: "Fetch the OAuth settings for this project",
+    messageId: "fetch-oauth-settings",
+  },
+  {
+    id: "update-oauth-settings",
+    title: "Update OAuth Settings",
+    detailedSuggestion: "Update the OAuth settings for this project",
+    messageId: "update-oauth-settings",
+  },
+  {
+    id: "make-token-required-true",
+    title: "Make Token Required True",
+    detailedSuggestion: "Make the token required for this project to be true",
+    messageId: "make-token-required-true",
+  },
+];
+
+export const InteractableOAuthSettingsProps = z.object({
+  projectId: z.string().describe("The unique identifier for the project."),
+  isTokenRequired: z
+    .boolean()
     .optional()
-    .describe("The project to configure OAuth validation settings for."),
+    .describe(
+      "Current token required setting. When true, all API requests must include a valid OAuth bearer token.",
+    ),
+  setValidationMode: z
+    .nativeEnum(OAuthValidationMode)
+    .optional()
+    .describe(
+      "When set, changes the OAuth validation mode to the specified value (NONE, SYMMETRIC, ASYMMETRIC_AUTO, or ASYMMETRIC_MANUAL).",
+    ),
+  setTokenRequired: z
+    .boolean()
+    .optional()
+    .describe("When set, toggles the token required setting to this value."),
+  setSecretKeyValue: z
+    .string()
+    .optional()
+    .describe(
+      "When set, updates the symmetric secret key to this value. Only applicable when validation mode is SYMMETRIC.",
+    ),
+  setPublicKeyValue: z
+    .string()
+    .optional()
+    .describe(
+      "When set, updates the public key to this value. Only applicable when validation mode is ASYMMETRIC_MANUAL.",
+    ),
+  triggerSave: z
+    .boolean()
+    .optional()
+    .describe(
+      "When true, triggers saving the OAuth settings with current values.",
+    ),
+  onEdited: z
+    .function()
+    .args()
+    .returns(z.void())
+    .optional()
+    .describe(
+      "Optional callback function triggered when OAuth settings are successfully updated.",
+    ),
 });
 
 interface OAuthSettingsProps {
-  project?: RouterOutputs["project"]["getUserProjects"][number];
+  projectId: string;
+  isTokenRequired?: boolean;
+  setValidationMode?: OAuthValidationMode;
+  setTokenRequired?: boolean;
+  setSecretKeyValue?: string;
+  setPublicKeyValue?: string;
+  triggerSave?: boolean;
+  onEdited?: () => void;
 }
 
 // OAuth provider presets
@@ -80,7 +147,22 @@ const OAUTH_PRESETS = [
   },
 ] as const;
 
-export function OAuthSettings({ project }: OAuthSettingsProps) {
+export function OAuthSettings({
+  projectId,
+  isTokenRequired: initialIsTokenRequired,
+  setValidationMode,
+  setTokenRequired,
+  setSecretKeyValue,
+  setPublicKeyValue,
+  triggerSave,
+  onEdited,
+}: OAuthSettingsProps) {
+  const modeNoneId = useId();
+  const modeSymmetricId = useId();
+  const secretKeyId = useId();
+  const modeAsymmetricAutoId = useId();
+  const modeAsymmetricManualId = useId();
+  const publicKeyId = useId();
   const { toast } = useToast();
 
   // State management
@@ -89,7 +171,7 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
   );
   const [secretKey, setSecretKey] = useState("");
   const [publicKey, setPublicKey] = useState("");
-  const [isTokenRequired, setIsTokenRequired] = useState(false);
+  const [isTokenRequiredState, setIsTokenRequiredState] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // API queries and mutations
@@ -98,12 +180,23 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
     isLoading: isLoadingSettings,
     refetch: refetchSettings,
   } = api.project.getOAuthValidationSettings.useQuery(
-    { projectId: project?.id ?? "" },
-    { enabled: !!project?.id },
+    { projectId },
+    { enabled: !!projectId },
   );
 
   const { mutateAsync: updateSettings, isPending: isUpdating } =
     api.project.updateOAuthValidationSettings.useMutation();
+
+  const handleModeChange = useCallback((mode: OAuthValidationMode) => {
+    setSelectedMode(mode);
+    // Clear keys when switching modes
+    if (mode !== OAuthValidationMode.SYMMETRIC) {
+      setSecretKey("");
+    }
+    if (mode !== OAuthValidationMode.ASYMMETRIC_MANUAL) {
+      setPublicKey("");
+    }
+  }, []);
 
   // Initialize form with current settings
   useEffect(() => {
@@ -115,16 +208,52 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
     }
   }, [oauthSettings]);
 
-  // Initialize token required state from project data
+  // Initialize token required state from prop
   useEffect(() => {
-    if (project) {
-      setIsTokenRequired(project.isTokenRequired ?? false);
+    if (initialIsTokenRequired !== undefined) {
+      setIsTokenRequiredState(initialIsTokenRequired);
     }
-  }, [project]);
+  }, [initialIsTokenRequired]);
+
+  // When Tambo sends setValidationMode, change the mode
+  useEffect(() => {
+    if (setValidationMode !== undefined) {
+      handleModeChange(setValidationMode);
+    }
+  }, [setValidationMode, handleModeChange]);
+
+  // When Tambo sends setTokenRequired, update the state
+  useEffect(() => {
+    if (setTokenRequired !== undefined) {
+      setIsTokenRequiredState(setTokenRequired);
+    }
+  }, [setTokenRequired]);
+
+  // When Tambo sends setSecretKeyValue, update the secret key
+  useEffect(() => {
+    if (setSecretKeyValue !== undefined) {
+      setSecretKey(setSecretKeyValue);
+    }
+  }, [setSecretKeyValue]);
+
+  // When Tambo sends setPublicKeyValue, update the public key
+  useEffect(() => {
+    if (setPublicKeyValue !== undefined) {
+      setPublicKey(setPublicKeyValue);
+    }
+  }, [setPublicKeyValue]);
+
+  // When Tambo sends triggerSave, save the settings
+  useEffect(() => {
+    if (triggerSave === true) {
+      handleSave().catch(console.error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerSave]);
 
   // Track changes
   useEffect(() => {
-    if (!oauthSettings || !project) return;
+    if (!oauthSettings) return;
 
     const hasOAuthChanges =
       selectedMode !== oauthSettings.mode ||
@@ -133,24 +262,24 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
       (selectedMode === OAuthValidationMode.SYMMETRIC && secretKey !== "");
 
     const hasTokenRequiredChanges =
-      isTokenRequired !== (project.isTokenRequired ?? false);
+      isTokenRequiredState !== (initialIsTokenRequired ?? false);
 
     setHasUnsavedChanges(hasOAuthChanges || hasTokenRequiredChanges);
   }, [
     selectedMode,
     publicKey,
     secretKey,
-    isTokenRequired,
+    isTokenRequiredState,
     oauthSettings,
-    project,
+    initialIsTokenRequired,
   ]);
 
   const handleSave = useCallback(async () => {
-    if (!project?.id) return;
+    if (!projectId) return;
 
     try {
       await updateSettings({
-        projectId: project.id,
+        projectId,
         mode: selectedMode,
         secretKey:
           selectedMode === OAuthValidationMode.SYMMETRIC
@@ -160,7 +289,7 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
           selectedMode === OAuthValidationMode.ASYMMETRIC_MANUAL
             ? publicKey
             : undefined,
-        isTokenRequired,
+        isTokenRequired: isTokenRequiredState,
       });
 
       toast({
@@ -171,6 +300,7 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
       setSecretKey("");
       setHasUnsavedChanges(false);
       await refetchSettings();
+      onEdited?.();
     } catch (_error) {
       toast({
         title: "Error",
@@ -179,26 +309,16 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
       });
     }
   }, [
-    project?.id,
+    projectId,
     selectedMode,
     secretKey,
     publicKey,
-    isTokenRequired,
+    isTokenRequiredState,
     updateSettings,
     toast,
     refetchSettings,
+    onEdited,
   ]);
-
-  const handleModeChange = (mode: OAuthValidationMode) => {
-    setSelectedMode(mode);
-    // Clear keys when switching modes
-    if (mode !== OAuthValidationMode.SYMMETRIC) {
-      setSecretKey("");
-    }
-    if (mode !== OAuthValidationMode.ASYMMETRIC_MANUAL) {
-      setPublicKey("");
-    }
-  };
 
   if (isLoadingSettings) {
     return (
@@ -218,8 +338,13 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+        <CardTitle className="text-lg font-semibold">
           OAuth Token Validation
+          <EditableHint
+            suggestions={oauthSettingsSuggestions}
+            description="Click to know more about how to manage token required for this project"
+            componentName="OAuth Settings"
+          />
         </CardTitle>
         <p className="text-sm font-sans text-foreground">
           Configure how OAuth bearer tokens are validated for your
@@ -231,8 +356,8 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
         <div className="flex flex-col gap-2">
           <Label className="text-base font-medium">Token Required</Label>
           <Switch
-            checked={isTokenRequired}
-            onCheckedChange={setIsTokenRequired}
+            checked={isTokenRequiredState}
+            onCheckedChange={setIsTokenRequiredState}
           />
           <p className="text-sm text-muted-foreground">
             When enabled, all API requests must include a valid OAuth bearer
@@ -276,12 +401,12 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
           >
             {/* NONE */}
             <label
-              htmlFor="mode-none"
+              htmlFor={modeNoneId}
               className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <RadioGroupItem
                 value={OAuthValidationMode.NONE}
-                id="mode-none"
+                id={modeNoneId}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -295,12 +420,12 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
 
             {/* SYMMETRIC */}
             <label
-              htmlFor="mode-symmetric"
+              htmlFor={modeSymmetricId}
               className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <RadioGroupItem
                 value={OAuthValidationMode.SYMMETRIC}
-                id="mode-symmetric"
+                id={modeSymmetricId}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -316,11 +441,11 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
                     exit={{ opacity: 0, height: 0 }}
                     className="mt-3 space-y-2"
                   >
-                    <Label htmlFor="secret-key" className="text-sm">
+                    <Label htmlFor={secretKeyId} className="text-sm">
                       Secret Key
                     </Label>
                     <Input
-                      id="secret-key"
+                      id={secretKeyId}
                       type="password"
                       placeholder="Enter your shared secret key"
                       value={secretKey}
@@ -339,12 +464,12 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
 
             {/* ASYMMETRIC_AUTO */}
             <label
-              htmlFor="mode-asymmetric-auto"
+              htmlFor={modeAsymmetricAutoId}
               className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <RadioGroupItem
                 value={OAuthValidationMode.ASYMMETRIC_AUTO}
-                id="mode-asymmetric-auto"
+                id={modeAsymmetricAutoId}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -360,12 +485,12 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
 
             {/* ASYMMETRIC_MANUAL */}
             <label
-              htmlFor="mode-asymmetric-manual"
+              htmlFor={modeAsymmetricManualId}
               className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <RadioGroupItem
                 value={OAuthValidationMode.ASYMMETRIC_MANUAL}
-                id="mode-asymmetric-manual"
+                id={modeAsymmetricManualId}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -381,11 +506,11 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
                     exit={{ opacity: 0, height: 0 }}
                     className="mt-3 space-y-2"
                   >
-                    <Label htmlFor="public-key" className="text-sm">
+                    <Label htmlFor={publicKeyId} className="text-sm">
                       Public Key
                     </Label>
                     <Textarea
-                      id="public-key"
+                      id={publicKeyId}
                       placeholder={`-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----`}
                       value={publicKey}
                       onChange={(e) => setPublicKey(e.target.value)}
@@ -424,3 +549,10 @@ export function OAuthSettings({ project }: OAuthSettingsProps) {
     </Card>
   );
 }
+
+export const InteractableOAuthSettings = withInteractable(OAuthSettings, {
+  componentName: "OAuthSettings",
+  description:
+    "Manages OAuth token validation settings for a project. Configure how OAuth bearer tokens are validated, including validation mode (None, Symmetric, Asymmetric Auto, Asymmetric Manual), token required setting, secret keys, and public keys. Users can view current settings and update them.",
+  propsSchema: InteractableOAuthSettingsProps,
+});

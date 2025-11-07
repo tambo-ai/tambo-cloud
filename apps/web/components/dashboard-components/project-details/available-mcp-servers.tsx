@@ -1,44 +1,120 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EditableHint } from "@/components/ui/editable-hint";
 import { api } from "@/trpc/react";
 import { AiProviderType } from "@tambo-ai-cloud/core";
+import type { Suggestion } from "@tambo-ai/react";
+import { withInteractable } from "@tambo-ai/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import { McpServerRow } from "./mcp-server-row";
 
-export const AvailableMcpServersProps = z.object({
-  project: z
-    .object({
-      id: z.string().describe("The unique identifier for the project."),
-      name: z.string().describe("The name of the project."),
-      providerType: z.nativeEnum(AiProviderType).nullish(),
-    })
-    .describe("The project to fetch MCP servers for."),
-  onEdited: z
-    .function()
-    .args()
-    .returns(z.void())
+const availableMcpServersSuggestions: Suggestion[] = [
+  {
+    id: "fetch-mcp-servers",
+    title: "Fetch MCP Servers",
+    detailedSuggestion: "Fetch all MCP servers for this project",
+    messageId: "fetch-mcp-servers",
+  },
+  {
+    id: "add-mcp-server",
+    title: "Add MCP Server",
+    detailedSuggestion: "Add a new MCP server to this project",
+    messageId: "add-mcp-server",
+  },
+  {
+    id: "inspect-mcp-server-tools",
+    title: "Inspect MCP Server Tools",
+    detailedSuggestion:
+      "Inspect the tools available on the MCP servers of this project",
+    messageId: "inspect-mcp-server-tools",
+  },
+];
+
+export const InteractableAvailableMcpServersProps = z.object({
+  projectId: z.string().describe("The project to fetch MCP servers for."),
+  providerType: z.nativeEnum(AiProviderType).nullish(),
+  isAddingNew: z
+    .boolean()
     .optional()
     .describe(
-      "Optional callback function triggered when MCP servers are successfully updated.",
+      "When true, the component enters 'add new MCP server' mode, displaying an empty form to create a new server.",
+    ),
+  url: z
+    .string()
+    .optional()
+    .describe(
+      "When provided with isAddingNew, pre-fills the MCP server URL field.",
+    ),
+  customHeaders: z
+    .any()
+    .optional()
+    .describe(
+      "When provided with isAddingNew, pre-fills the custom headers for the MCP server. Should be an object with header names as keys and header values as strings.",
+    ),
+  serverIdToDelete: z
+    .string()
+    .optional()
+    .describe(
+      "When provided, triggers deletion of the MCP server with this ID. IMPORTANT: You must first call fetchProjectMcpServers to get the list of servers and find the correct server ID before using this parameter. Never guess or use the URL as the ID - always use the 'id' field from the server list.",
     ),
 });
 
-type AvailableMcpServersProps = z.infer<typeof AvailableMcpServersProps>;
+interface AvailableMcpServersProps {
+  projectId: string;
+  providerType?: AiProviderType | null;
+  isAddingNew?: boolean;
+  url?: string;
+  customHeaders?: Record<string, string>;
+  serverIdToDelete?: string;
+  onEdited?: () => void;
+}
 
 export function AvailableMcpServers({
-  project,
+  projectId,
+  providerType,
+  isAddingNew: isAddingNewProp,
+  url: urlProp,
+  customHeaders: customHeadersProp,
+  serverIdToDelete: serverIdToDeleteProp,
   onEdited,
 }: AvailableMcpServersProps) {
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [initialUrl, setInitialUrl] = useState<string | undefined>(undefined);
+  const [initialHeaders, setInitialHeaders] = useState<
+    Record<string, string> | undefined
+  >(undefined);
+  const [serverIdToDelete, setServerIdToDelete] = useState<string | undefined>(
+    undefined,
+  );
   const router = useRouter();
 
-  const isAgentMode = project?.providerType === AiProviderType.AGENT;
+  const isAgentMode = providerType === AiProviderType.AGENT;
+
+  // When Tambo sends isAddingNew prop, enter add mode
+  useEffect(() => {
+    if (isAddingNewProp !== undefined) {
+      setIsAddingNew(isAddingNewProp);
+      if (urlProp) {
+        setInitialUrl(urlProp);
+      }
+      if (customHeadersProp) {
+        setInitialHeaders(customHeadersProp);
+      }
+    }
+  }, [isAddingNewProp, urlProp, customHeadersProp]);
+
+  // When Tambo sends serverIdToDelete prop, set it for deletion
+  useEffect(() => {
+    if (serverIdToDeleteProp) {
+      setServerIdToDelete(serverIdToDeleteProp);
+    }
+  }, [serverIdToDeleteProp]);
 
   const { data: mcpServers, refetch } = api.tools.listMcpServers.useQuery(
-    { projectId: project?.id || "" },
-    { enabled: !!project?.id },
+    { projectId },
+    { enabled: !!projectId },
   );
 
   const handleRefresh = useCallback(async () => {
@@ -52,22 +128,6 @@ export function AvailableMcpServers({
     },
     [router],
   );
-
-  // Handle case when project is not provided
-  if (!project) {
-    return (
-      <Card className="border rounded-md overflow-hidden">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">MCP Servers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-sm text-muted-foreground">
-            Please select a project to view MCP Servers
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Show loading state while fetching data
   if (!mcpServers) {
@@ -128,7 +188,14 @@ export function AvailableMcpServers({
     <Card className="border rounded-md overflow-hidden">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">MCP Servers</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            MCP Servers
+            <EditableHint
+              suggestions={availableMcpServersSuggestions}
+              description="Click to know more about how to manage MCP servers"
+              componentName="MCP Servers"
+            />
+          </CardTitle>
           {!isAddingNew && (
             <Button
               variant="outline"
@@ -146,9 +213,11 @@ export function AvailableMcpServers({
             <McpServerRow
               key={server.id}
               server={server}
-              projectId={project.id}
+              projectId={projectId}
               onRefresh={handleRefresh}
               redirectToAuth={redirectToAuth}
+              shouldDelete={serverIdToDelete === server.id}
+              onDeleteComplete={() => setServerIdToDelete(undefined)}
             />
           ))}
 
@@ -156,13 +225,17 @@ export function AvailableMcpServers({
             <McpServerRow
               server={{
                 id: "new",
-                url: "",
-                customHeaders: {},
+                url: initialUrl || "",
+                customHeaders: initialHeaders || {},
               }}
-              projectId={project.id}
+              projectId={projectId}
               onRefresh={handleRefresh}
               isNew
-              onCancel={() => setIsAddingNew(false)}
+              onCancel={() => {
+                setIsAddingNew(false);
+                setInitialUrl(undefined);
+                setInitialHeaders(undefined);
+              }}
               redirectToAuth={redirectToAuth}
             />
           )}
@@ -171,3 +244,13 @@ export function AvailableMcpServers({
     </Card>
   );
 }
+
+export const InteractableAvailableMcpServers = withInteractable(
+  AvailableMcpServers,
+  {
+    componentName: "AvailableMcpServers",
+    description:
+      "Manages and displays MCP (Model Context Protocol) servers for a project. Shows a list of configured MCP servers with options to add new servers, edit existing ones, or delete them. Each server can be configured with a URL and custom headers. The component can be controlled to enter 'add new server' mode where users can create new MCP server configurations. To delete a server: (1) First call fetchProjectMcpServers to get the server list, (2) Find the server by matching the URL, (3) Use the server's 'id' field with serverIdToDelete parameter to trigger deletion.",
+    propsSchema: InteractableAvailableMcpServersProps,
+  },
+);

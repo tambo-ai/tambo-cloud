@@ -1,4 +1,6 @@
 import { ToolCallLimitEditor } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
+import { MessageThreadPanelProvider } from "@/providers/message-thread-panel-provider";
+import { TamboContextAttachmentProvider } from "@tambo-ai/react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -21,16 +23,43 @@ jest.mock("@/trpc/react", () => ({
   },
 }));
 
+// Mock the Tambo React hooks
+jest.mock("@tambo-ai/react", () => ({
+  useTamboContextHelpers: () => ({
+    addContextHelper: jest.fn(),
+    removeContextHelper: jest.fn(),
+  }),
+  withInteractable: (Component: React.ComponentType) => Component,
+  TamboContextAttachmentProvider: ({
+    children,
+  }: {
+    children: React.ReactNode;
+  }): React.ReactElement => children as React.ReactElement,
+  useTamboContextAttachment: () => ({
+    attachments: [],
+    removeContextAttachment: jest.fn(),
+    setCustomSuggestions: jest.fn(),
+    addContextAttachment: jest.fn(),
+  }),
+}));
+
 function renderEditor(
   overrides?: Partial<React.ComponentProps<typeof ToolCallLimitEditor>>,
 ) {
   const onEdited = jest.fn();
-  const props = {
-    project: { id: "proj_1", maxToolCallLimit: 3 },
+  const props: React.ComponentProps<typeof ToolCallLimitEditor> = {
+    projectId: "proj_1",
+    maxToolCallLimit: 3,
     onEdited,
     ...overrides,
-  } as unknown as React.ComponentProps<typeof ToolCallLimitEditor>;
-  const view = render(<ToolCallLimitEditor {...props} />);
+  };
+  const view = render(
+    <TamboContextAttachmentProvider>
+      <MessageThreadPanelProvider>
+        <ToolCallLimitEditor {...props} />
+      </MessageThreadPanelProvider>
+    </TamboContextAttachmentProvider>,
+  );
   return { onEdited, ...view };
 }
 
@@ -118,9 +147,24 @@ describe("ToolCallLimitEditor", () => {
     expect(input2.value).toBe("3");
   });
 
-  it("renders loading placeholder when project is missing", () => {
-    // @ts-expect-error testing defensive branch
-    render(<ToolCallLimitEditor project={undefined} />);
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  it("treats zero as invalid when editing", async () => {
+    const user = userEvent.setup();
+    renderEditor({ maxToolCallLimit: 5 });
+
+    await user.click(screen.getByRole("button", { name: /edit/i }));
+    const input = await screen.findByLabelText(/maximum tool calls/i);
+    await user.clear(input);
+    await user.type(input, "0");
+
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    // Should show error toast and not save
+    expect(mockToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variant: "destructive",
+        description: "Please enter a valid number greater than 0.",
+      }),
+    );
+    expect(mutateAsyncMock).not.toHaveBeenCalled();
   });
 });

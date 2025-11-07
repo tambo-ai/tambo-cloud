@@ -13,11 +13,20 @@ import { ChatCompletionContentPartDto } from "../dto/message.dto";
 import { tryParseJson } from "./content";
 
 export function validateToolResponse(message: ThreadMessage): boolean {
-  // TODO: we get back "resource" from MCP servers, but it is not supported yet
-  const nonResourceContent = message.content.filter(
-    (part) => (part.type as string) !== "resource",
-  );
-  if (nonResourceContent.every((part) => part.type === "text")) {
+  // TODO: Handle Resource types - MCP servers return resource content parts
+  // Need to validate Resource content parts:
+  // - Check for required fields (at least one of: uri, text, or blob)
+  // - Validate MIME types if present
+  // - For large content, ensure it will be stored in S3 before sending to LLM
+  const nonResourceContent = message.content.filter((part) => {
+    // Do not log here (warn: false previously)
+    if (part.type === ContentPartType.Resource) return false;
+    return true;
+  });
+  if (nonResourceContent.length === 0) {
+    return false;
+  }
+  if (nonResourceContent.every((part) => part.type === ContentPartType.Text)) {
     const contentString = nonResourceContent.map((part) => part.text).join("");
     const jsonResponse = tryParseJson(contentString);
     if (jsonResponse) {
@@ -25,7 +34,9 @@ export function validateToolResponse(message: ThreadMessage): boolean {
     }
     return true;
   }
-  if (nonResourceContent.every((part) => part.type === "image_url")) {
+  if (
+    nonResourceContent.every((part) => part.type === ContentPartType.ImageUrl)
+  ) {
     return true;
   }
   return false;
@@ -70,8 +81,18 @@ export async function callSystemTool(
     });
     const responseContent = buildToolResponseContent(result);
 
-    // TODO: handle cases where MCP server returns *only* resource types
+    // TODO: Handle File types - MCP servers can return resource content parts (now "file" type)
+    // When processing MCP responses with File content:
+    // 1. Check for File content parts in the response
+    // 2. For large text/blob content, upload to S3 before proceeding
+    // 3. Store file metadata in database
+    // 4. Replace large content with S3 URI references
+    // 5. Ensure Files are properly validated and sanitized
     if (responseContent.length === 0) {
+      console.warn(
+        "No response content found from MCP tool call - may contain only file/resource types that need processing",
+        { toolName: toolCallRequest.toolName },
+      );
       throw new Error("No response content found");
     }
 

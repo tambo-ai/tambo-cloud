@@ -3,6 +3,7 @@ import {
   AsyncQueue,
   ChatCompletionContentPart,
   ContentPartType,
+  ChatCompletionMessageParam,
   GenerationStage,
   MCPHandlers,
   MessageRole,
@@ -66,11 +67,24 @@ export function createMcpHandlers(
           statusMessage: `Streaming response...`,
         });
       }
+      // Filter unsupported parts (resource content) and narrow to provider message type using the MCP input
+      const messagesForLLM = messages.map((m) => ({
+        role: m.role,
+        content: m.content.filter((p) => {
+          if (p.type === ContentPartType.Resource) {
+            console.warn(
+              "Filtering out 'resource' content part for provider call",
+            );
+            return false;
+          }
+          return true;
+        }),
+      })) as unknown as ChatCompletionMessageParam[];
       const response = await tamboBackend.llmClient.complete({
         stream: false,
         promptTemplateName: "sampling",
         promptTemplateParams: {},
-        messages: messages,
+        messages: messagesForLLM,
       });
 
       const message = await operations.addMessage(db, {

@@ -6,12 +6,12 @@ import {
   AgentProviderType,
 } from "@tambo-ai-cloud/core";
 import { motion } from "framer-motion";
+import { useId } from "react";
 import { HeadersEditor, type HeaderKV } from "./headers-editor";
 
 export function AgentSettings({
   agentProvider,
   setAgentProvider,
-  setHasUnsavedChanges,
   agentUrl,
   setAgentUrl,
   showValidationErrors,
@@ -22,7 +22,6 @@ export function AgentSettings({
 }: {
   agentProvider: AgentProviderType;
   setAgentProvider: (agentProvider: AgentProviderType) => void;
-  setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void;
   agentUrl: string;
   setAgentUrl: (agentUrl: string) => void;
   showValidationErrors: boolean;
@@ -31,6 +30,8 @@ export function AgentSettings({
   agentHeaders: HeaderKV[];
   setAgentHeaders: (headers: HeaderKV[]) => void;
 }) {
+  const agentUrlId = useId();
+  const agentNameId = useId();
   return (
     <motion.div
       key="agent-settings"
@@ -51,7 +52,6 @@ export function AgentSettings({
           value={agentProvider}
           onChange={(newProvider) => {
             setAgentProvider(newProvider);
-            setHasUnsavedChanges(true);
           }}
           placeholder="Select agent provider..."
           searchPlaceholder="Search agent providers..."
@@ -60,15 +60,14 @@ export function AgentSettings({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="agent-url">Agent URL</Label>
+        <Label htmlFor={agentUrlId}>Agent URL</Label>
         <Input
-          id="agent-url"
+          id={agentUrlId}
           type="url"
           placeholder="e.g., https://my-agent.example.com"
           value={agentUrl}
           onChange={(e) => {
             setAgentUrl(e.target.value);
-            setHasUnsavedChanges(true);
           }}
         />
         {showValidationErrors && !agentUrl.trim() && (
@@ -82,7 +81,6 @@ export function AgentSettings({
           headers={agentHeaders}
           onSave={(updated) => {
             setAgentHeaders(updated);
-            setHasUnsavedChanges(true);
           }}
         />
         <p className="text-xs text-foreground">
@@ -91,15 +89,14 @@ export function AgentSettings({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="agent-name">Agent Name</Label>
+        <Label htmlFor={agentNameId}>Agent Name</Label>
         <Input
-          id="agent-name"
+          id={agentNameId}
           type="text"
           placeholder="e.g., tambo-agent"
           value={agentName}
           onChange={(e) => {
             setAgentName(e.target.value);
-            setHasUnsavedChanges(true);
           }}
         />
         <p className="text-xs text-foreground">

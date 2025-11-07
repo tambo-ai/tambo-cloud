@@ -4,12 +4,12 @@ import {
   DeleteConfirmationDialog,
   type AlertState,
 } from "@/components/dashboard-components/delete-confirmation-dialog";
-import { APIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
-import { AvailableMcpServers } from "@/components/dashboard-components/project-details/available-mcp-servers";
-import { CustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
-import { OAuthSettings } from "@/components/dashboard-components/project-details/oauth-settings";
-import { ProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
-import { ToolCallLimitEditor } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
+import { InteractableAPIKeyList } from "@/components/dashboard-components/project-details/api-key-list";
+import { InteractableAvailableMcpServers } from "@/components/dashboard-components/project-details/available-mcp-servers";
+import { InteractableCustomInstructionsEditor } from "@/components/dashboard-components/project-details/custom-instructions-editor";
+import { InteractableOAuthSettings } from "@/components/dashboard-components/project-details/oauth-settings";
+import { InteractableProviderKeySection } from "@/components/dashboard-components/project-details/provider-key-section";
+import { InteractableToolCallLimitEditor } from "@/components/dashboard-components/project-details/tool-call-limit-editor";
 import { SettingsPageSkeleton } from "@/components/skeletons/settings-skeletons";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -456,36 +456,50 @@ export function ProjectSettings({ projectId }: ProjectSettingsProps) {
         >
           <div className="space-y-4">
             <div ref={apiKeysRef} className="p-2">
-              <APIKeyList project={project} />
+              <InteractableAPIKeyList
+                projectId={project.id}
+                onEdited={handleRefreshProject}
+              />
             </div>
 
             <div ref={llmProvidersRef} className="p-2">
-              <ProviderKeySection
-                project={project}
+              <InteractableProviderKeySection
+                projectId={project.id}
                 onEdited={handleRefreshProject}
               />
             </div>
 
             <div ref={customInstructionsRef} className="p-2">
-              <CustomInstructionsEditor
-                project={project}
+              <InteractableCustomInstructionsEditor
+                projectId={project.id}
+                customInstructions={project.customInstructions}
+                allowSystemPromptOverride={project.allowSystemPromptOverride}
                 onEdited={handleRefreshProject}
               />
             </div>
 
             <div ref={mcpServersRef} className="p-2">
-              <AvailableMcpServers project={project} />
+              <InteractableAvailableMcpServers
+                projectId={project.id}
+                providerType={project.providerType}
+                onEdited={handleRefreshProject}
+              />
             </div>
 
             <div ref={toolCallLimitRef} className="p-2">
-              <ToolCallLimitEditor
-                project={project}
+              <InteractableToolCallLimitEditor
+                projectId={project.id}
+                maxToolCallLimit={project.maxToolCallLimit}
                 onEdited={handleRefreshProject}
               />
             </div>
 
             <div ref={oauthSettingsRef} className="p-2">
-              <OAuthSettings project={project} />
+              <InteractableOAuthSettings
+                projectId={project.id}
+                isTokenRequired={project.isTokenRequired ?? false}
+                onEdited={handleRefreshProject}
+              />
             </div>
           </div>
         </div>
