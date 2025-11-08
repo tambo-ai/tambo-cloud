@@ -5,8 +5,6 @@ description: "Using natural language to control UI"
 author: "Michael Milstead"
 ---
 
-(screenshot/gif placeholder)
-
 ## Natural Language Interfaces
 
 The rise of LLMs and the popularity of chat apps have made it clear that the ability to communicate with a computer using natural language is powerful.
@@ -23,7 +21,13 @@ For example, if a flight-booking AI tells me “Seat 23E is available,” I don�
 
 If it shows me a **seat map**, I instantly know the full context of seat 23E.
 
-(screenshot/gif placeholder)
+<ImageZoom>
+  <img
+    src="/assets/blog/llm-web-apps/seatmap.gif"
+    alt="seatmap"
+    className="max-w-md mx-auto rounded-lg"
+  />
+</ImageZoom>
 
 I can also edit the proposed selection through the UI much more easily than I could through words. Every proposed action is, in effect, a function with a set of partially guessed parameters, and an interactive UI lets me easily edit those parameters.
 
@@ -97,6 +101,14 @@ export const tools: TamboTool[] = [
 ```
 
 Then add a `<MessageInput>` component somewhere for users to submit messages, and decide how you want to display responses, including any used components or tool call information. Tambo handles everything else.
+
+<ImageZoom>
+  <img
+    src="/assets/blog/llm-web-apps/weather.gif"
+    alt="weather UX"
+    className="max-w-md mx-auto rounded-lg"
+  />
+</ImageZoom>
 
 With just those pieces, you can give your application a conversational interface powered by LLMs.
 
