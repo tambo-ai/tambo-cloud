@@ -35,6 +35,7 @@ import {
   type ToolSet,
 } from "ai";
 import type OpenAI from "openai";
+import mimeTypes from "mime-types";
 import { UnreachableCaseError } from "ts-essentials";
 import { z } from "zod";
 import { createLangfuseTelemetryConfig } from "../../config/langfuse.config";
@@ -196,12 +197,14 @@ export class AISdkClient implements LLMClient {
     const responseFormat = this.extractResponseFormat(params);
 
     // Convert to AI SDK format
-    const modelMessages = messagesFormatted.map(
-      (message, index): ModelMessage =>
-        convertOpenAIMessageToCoreMessage(
-          message,
-          messagesFormatted.slice(0, index),
-        ),
+    const modelMessages = await Promise.all(
+      messagesFormatted.map(
+        async (message, index): Promise<ModelMessage> =>
+          await convertOpenAIMessageToCoreMessage(
+            message,
+            messagesFormatted.slice(0, index),
+          ),
+      ),
     );
 
     // Prepare experimental telemetry for Langfuse
@@ -604,10 +607,10 @@ function findToolNameById(
  * convertToCoreMessages, (which is supposedly deprecated anyway)
  * but for some reason that function doesn't deal with tool calls.
  */
-function convertOpenAIMessageToCoreMessage(
+async function convertOpenAIMessageToCoreMessage(
   message: ChatCompletionMessageParam,
   previousMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-): ModelMessage {
+): Promise<ModelMessage> {
   if (message.role === "developer" || message.role === "function") {
     throw new Error("Developer messages are not supported");
   }
@@ -730,23 +733,76 @@ function convertOpenAIMessageToCoreMessage(
         content: message.content,
       } satisfies UserModelMessage;
     } else if (Array.isArray(message.content)) {
-      const processedContent = message.content
-        .map((part) => {
-          if (part.type === "text") {
-            return {
-              type: "text" as const,
-              text: part.text,
-            };
-          } else if (part.type === "image_url" && part.image_url.url) {
-            // Convert image_url to AI SDK's expected image format
-            return {
-              type: "image" as const,
-              image: part.image_url.url,
-            };
+      const processedContent: Array<
+        | { type: "text"; text: string }
+        | { type: "image"; image: string }
+        | { type: "file"; data: Buffer; filename?: string; mediaType: string }
+      > = [];
+
+      for (const part of message.content) {
+        if (part.type === "text") {
+          processedContent.push({ type: "text", text: part.text });
+          continue;
+        }
+
+        if (part.type === "image_url" && part.image_url.url) {
+          processedContent.push({ type: "image", image: part.image_url.url });
+          continue;
+        }
+
+        if (part.type === "file") {
+          const anyPart = part as any;
+          const filename: string | undefined = anyPart.file?.filename;
+          const tamboMimeType: string | undefined = anyPart.tamboMimeType;
+          const detectedMime = filename ? mimeTypes.lookup(filename) : false;
+          const lookupMime =
+            typeof detectedMime === "string" ? detectedMime : undefined;
+          const resolvedMimeType =
+            tamboMimeType ?? lookupMime ?? "application/octet-stream";
+
+          try {
+            let buffer: Buffer | undefined;
+            const fileData: string | undefined = anyPart.file?.file_data;
+            const fileUrl: string | undefined = anyPart.file_url;
+
+            if (fileData) {
+              buffer = Buffer.from(fileData, "base64");
+            } else if (fileUrl) {
+              const res = await fetch(fileUrl);
+              if (!res.ok) {
+                console.warn(
+                  "Failed to fetch file_url for attachment:",
+                  fileUrl,
+                  res.status,
+                );
+                continue;
+              }
+              const arr = await res.arrayBuffer();
+              buffer = Buffer.from(arr);
+            } else {
+              console.warn(
+                "Skipping file content without file_data or file_url. Filename:",
+                filename,
+              );
+              continue;
+            }
+
+            processedContent.push({
+              type: "file",
+              data: buffer,
+              filename,
+              mediaType: resolvedMimeType,
+            });
+          } catch (error) {
+            console.error(
+              "Failed to prepare file content for filename:",
+              filename,
+              error,
+            );
           }
-          return null;
-        })
-        .filter((part) => part !== null);
+          continue;
+        }
+      }
 
       return {
         role: message.role,

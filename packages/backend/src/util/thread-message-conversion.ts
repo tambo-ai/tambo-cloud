@@ -11,6 +11,92 @@ import {
 import type OpenAI from "openai";
 import { formatFunctionCall, generateAdditionalContext } from "./tools";
 
+/**
+ * Custom file content part for AI SDK client.
+ * This extends OpenAI's content parts with file upload capabilities.
+ * The AI SDK client will fetch and process these files.
+ */
+interface FileContentPart {
+  readonly type: "file";
+  readonly file: {
+    readonly filename: string;
+    readonly file_data?: string;
+  };
+  readonly file_url?: string;
+  readonly tamboMimeType?: string;
+}
+
+/**
+ * Convert a Resource content part into provider-friendly message parts.
+ * We prefer passing files via URL (signed S3 URL) and let the model client
+ * fetch the bytes server-side just-in-time.
+ *
+ * Minimal allowlist is applied to avoid forwarding clearly unsupported types.
+ */
+function convertResourceToProviderParts(resource: {
+  uri?: string;
+  blob?: string;
+  name?: string;
+  mimeType?: string;
+}): (OpenAI.Chat.Completions.ChatCompletionContentPart | FileContentPart)[] {
+  // Common, broadly supported types across major providers
+  const allowedMimeTypes = new Set<string>([
+    // documents
+    "application/pdf",
+    "application/json",
+    "text/plain",
+    "text/markdown",
+    "text/html",
+    "text/csv",
+    "text/tab-separated-values",
+    // office/open formats
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation", // pptx
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // xlsx
+    "application/rtf",
+    "application/vnd.oasis.opendocument.text", // odt
+  ]);
+  const isAllowed =
+    (resource.mimeType && allowedMimeTypes.has(resource.mimeType)) ||
+    (resource.mimeType?.startsWith("text/") ?? false);
+  if (resource.mimeType && !isAllowed) {
+    throw new Error(
+      `Unsupported file type "${resource.mimeType}" for "${resource.name ?? resource.uri ?? "file"}".`,
+    );
+  }
+  // If we have a URI (preferred path) and type is allowed, return a "file" part with URL.
+  if (resource.uri && isAllowed) {
+    return [
+      {
+        type: "file",
+        file: { filename: resource.name ?? "file" },
+        file_url: resource.uri,
+        tamboMimeType: resource.mimeType,
+      } satisfies FileContentPart,
+    ];
+  }
+  // Backward compatibility: if an older message still has a blob, keep supporting it.
+  if (resource.blob) {
+    return [
+      {
+        type: "file",
+        file: {
+          filename: resource.name ?? "file",
+          file_data: resource.blob,
+        },
+        tamboMimeType: resource.mimeType,
+      } satisfies FileContentPart,
+    ];
+  }
+  // Fallback: do not forward unknown/unsupported resource types
+  console.warn(
+    "Skipping unsupported resource content part",
+    resource.name ?? resource.uri ?? "<unknown>",
+    resource.mimeType,
+  );
+  return [];
+}
+
 export function threadMessagesToChatCompletionMessageParam(
   messages: ThreadMessage[],
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam[] {
@@ -291,28 +377,35 @@ function makeUserMessages(
   }
   const additionalContextMessage = generateAdditionalContext(message);
 
-  // TODO: Handle Resource types - filter them out before passing to AI SDK
-  // When Resource content parts are properly stored in S3 and converted to appropriate
-  // formats (text, image_url, etc.), this filter can be updated to convert instead of remove
-  const contentWithoutResources = message.content.filter(
-    (p): p is OpenAI.Chat.Completions.ChatCompletionContentPart => {
+  // Convert Resource parts into provider-friendly file parts; keep other parts intact.
+  const convertedContent = message.content.flatMap(
+    (
+      p,
+    ): (
+      | OpenAI.Chat.Completions.ChatCompletionContentPart
+      | FileContentPart
+    )[] => {
       if (p.type === ContentPartType.Resource) {
-        console.warn("Filtering out 'resource' content part for provider call");
-        return false;
+        return convertResourceToProviderParts(p.resource);
       }
-      return true;
+      // passthrough for text/image/audio parts
+
+      return [p];
     },
   );
 
   // Only wrap text content with <User> tags, preserve other content types as-is
-  const wrappedContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
+  const wrappedContent: (
+    | OpenAI.Chat.Completions.ChatCompletionContentPart
+    | FileContentPart
+  )[] =
     message.role === MessageRole.User
       ? [
           { type: "text", text: "<User>" },
-          ...contentWithoutResources,
+          ...convertedContent,
           { type: "text", text: "</User>" },
         ]
-      : contentWithoutResources;
+      : convertedContent;
 
   // Combine additional context (if any) with the wrapped content
   const content = additionalContextMessage
