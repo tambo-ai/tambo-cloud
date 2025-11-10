@@ -42,6 +42,7 @@
     "@opentelemetry/semantic-conventions": "^1.37.0",
     "@sentry/nestjs": "^10.22.0",
     "@sentry/profiling-node": "^10.22.0",
+    "@supabase/supabase-js": "^2.80.0",
     "@tambo-ai-cloud/backend": "*",
     "@tambo-ai-cloud/core": "*",
     "@tambo-ai-cloud/db": "*",

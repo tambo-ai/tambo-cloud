@@ -6,11 +6,11 @@ import {
   AgentProviderType,
   AiProviderType,
   AsyncQueue,
-  ChatCompletionContentPart,
   ContentPartType,
   GenerationStage,
   MessageRole,
   OAuthValidationMode,
+  type ChatCompletionContentPart,
 } from "@tambo-ai-cloud/core";
 import { schema, type operations as dbOperations } from "@tambo-ai-cloud/db";
 import {
@@ -22,6 +22,7 @@ import { DATABASE } from "../../common/middleware/db-transaction-middleware";
 import { AuthService } from "../../common/services/auth.service";
 import { EmailService } from "../../common/services/email.service";
 import { CorrelationLoggerService } from "../../common/services/logger.service";
+import { StorageService } from "../../common/services/storage.service";
 import { ProjectsService } from "../../projects/projects.service";
 import {
   AdvanceThreadDto,
@@ -378,6 +379,16 @@ describe("ThreadsService.advanceThread initialization", () => {
               customInstructions: undefined,
               getProviderKeys: () => [],
             }),
+          },
+        },
+        {
+          provide: StorageService,
+          useValue: {
+            upload: jest.fn().mockResolvedValue("storage://test/path"),
+            get: jest.fn().mockResolvedValue(Buffer.from("test")),
+            getSignedUrl: jest
+              .fn()
+              .mockResolvedValue("https://signed.url/test"),
           },
         },
       ],

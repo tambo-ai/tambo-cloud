@@ -135,6 +135,9 @@ export async function processThreadMessage(
     advanceRequestDto.availableComponents ?? [],
   );
 
+  console.log(
+    "[THREAD-STATE] About to call tamboBackend.runDecisionLoop with messages",
+  );
   const decisionStream = await tamboBackend.runDecisionLoop({
     messages,
     strictTools,

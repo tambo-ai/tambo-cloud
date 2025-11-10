@@ -36,6 +36,7 @@ import { DATABASE } from "../common/middleware/db-transaction-middleware";
 import { AuthService } from "../common/services/auth.service";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
+import { StorageService } from "../common/services/storage.service";
 import { getSystemTools } from "../common/systemTools";
 import { ProjectsService } from "../projects/projects.service";
 import {
@@ -59,6 +60,7 @@ import {
   threadMessageDtoToThreadMessage,
   updateMessage,
 } from "./util/messages";
+import { processStorageUrls } from "./util/storage-url-processor";
 import { mapSuggestionToDto } from "./util/suggestions";
 import { createMcpHandlers } from "./util/thread-mcp-handlers";
 import {
@@ -95,11 +97,51 @@ export class ThreadsService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
+    private readonly storageService: StorageService,
   ) {}
 
   getDb() {
     // return this.tx ?? this.db;
     return this.db;
+  }
+
+  /**
+   * Process storage:// URLs in messages before sending to LLM
+   * @param messages - Thread messages to process
+   * @returns Promise resolving to processed messages
+   */
+  private async processMessagesForLlm(
+    messages: ThreadMessage[],
+  ): Promise<ThreadMessage[]> {
+    console.log(
+      "[THREADS-SERVICE] processMessagesForLlm called with",
+      messages.length,
+      "messages",
+    );
+    const processed = await Promise.all(
+      messages.map(async (msg, index) => {
+        console.log(
+          `[THREADS-SERVICE] Processing message ${index}, role: ${msg.role}, content parts:`,
+          msg.content.length,
+        );
+        const processedContent = await processStorageUrls(
+          msg.content,
+          this.storageService,
+        );
+        console.log(
+          `[THREADS-SERVICE] Message ${index} processed, result content parts:`,
+          processedContent.length,
+        );
+        return {
+          ...msg,
+          content: processedContent,
+        };
+      }),
+    );
+    console.log(
+      "[THREADS-SERVICE] processMessagesForLlm finished processing all messages",
+    );
+    return processed;
   }
 
   /**
@@ -1119,6 +1161,10 @@ export class ThreadsService {
         ? await this.authService.generateMcpAccessToken(projectId, thread.id)
         : undefined;
 
+      const processedMessages = await this.processMessagesForLlm(
+        threadMessageDtoToThreadMessage(messages),
+      );
+
       if (stream) {
         await this.generateStreamingResponse(
           projectId,
@@ -1126,7 +1172,7 @@ export class ThreadsService {
           db,
           tamboBackend,
           queue,
-          threadMessageDtoToThreadMessage(messages),
+          processedMessages,
           userMessage,
           advanceRequestDto,
           toolCallCounts,
@@ -1140,7 +1186,7 @@ export class ThreadsService {
       const responseMessage = await processThreadMessage(
         db,
         thread.id,
-        threadMessageDtoToThreadMessage(messages),
+        processedMessages,
         userMessage,
         advanceRequestDto,
         tamboBackend,
@@ -2114,7 +2160,6 @@ export class ThreadsService {
         }
         return fallbackKey;
       }
-
       throw new Error(
         `No key found for provider ${providerName} in project ${projectId}`,
       );

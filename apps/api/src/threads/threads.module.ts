@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { AuthService } from "../common/services/auth.service";
 import { EmailService } from "../common/services/email.service";
 import { CorrelationLoggerService } from "../common/services/logger.service";
+import { StorageService } from "../common/services/storage.service";
 import { ProjectsModule } from "../projects/projects.module";
 import { ThreadsController } from "./threads.controller";
 import { ThreadsService } from "./threads.service";
@@ -15,6 +16,7 @@ import { ThreadsService } from "./threads.service";
     EmailService,
     AuthService,
     CorrelationLoggerService,
+    StorageService,
     {
       provide: "OPENAI_API_KEY", //todo: weird api keys don't match?
       useFactory: (configService: ConfigService) => {
