@@ -32,7 +32,7 @@
     "@ai-sdk/mistral": "^2.0.23",
     "@ai-sdk/openai": "^2.0.64",
     "@ai-sdk/openai-compatible": "^1.0.26",
-    "@mastra/client-js": "^0.16.9",
+    "@mastra/client-js": "^0.15.2",
     "@tambo-ai-cloud/core": "*",
     "ai": "^5.0.89",
     "ajv": "^8.17.1",
