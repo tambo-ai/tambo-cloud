@@ -376,10 +376,11 @@ describe("registerResourceHandlers", () => {
         workingClient,
       ]);
 
-      // Verify error was logged
+      // Verify error was logged with serverId, url, and the error
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Error listing resources for MCP server",
         "failing-server",
+        "http://failing.example.com",
         expect.any(Error),
       );
 
@@ -429,11 +430,13 @@ describe("registerResourceHandlers", () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Error listing resources for MCP server",
         "failing-server-1",
+        "http://failing1.example.com",
         expect.objectContaining({ message: "Client 1 failed" }),
       );
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Error listing resources for MCP server",
         "failing-server-2",
+        "http://failing2.example.com",
         expect.objectContaining({ message: "Client 2 failed" }),
       );
     });

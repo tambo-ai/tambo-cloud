@@ -12,12 +12,13 @@ export async function registerResourceHandlers(
     url: string;
   }[],
 ) {
-  const registrations = await Promise.allSettled(
-    mcpClients.map(async ({ client, serverId, serverKey }) => {
+  const results = await Promise.allSettled(
+    mcpClients.map(async ({ client, serverId: _serverId, serverKey }) => {
       try {
-        const resourceResponse = await client.client.listResources();
+        const listResponse = await client.client.listResources();
 
-        for (const resource of resourceResponse.resources) {
+        let registered = 0;
+        for (const resource of listResponse.resources) {
           const resourceName = serverKey
             ? `${serverKey}:${resource.name}`
             : resource.name;
@@ -40,31 +41,32 @@ export async function registerResourceHandlers(
             String(resource.uri),
             metadata,
             async (uri) => {
-              const resourceResponse = await client.client.readResource({
+              const readResponse = await client.client.readResource({
                 uri: uri.toString(),
               });
-              return resourceResponse;
+              return readResponse;
             },
           );
+          registered += 1;
         }
+        return registered;
       } catch (error) {
         if (
           error instanceof McpError &&
           error.code === ErrorCode.MethodNotFound
         ) {
-          return;
+          // Treat as success with zero registrations when the server
+          // doesn't support resources.
+          return 0;
         }
-
-        console.error(
-          "Error listing resources for MCP server",
-          serverId,
-          error,
-        );
+        // Propagate all other errors so Promise.allSettled can classify
+        // this client as a rejection and the summary pass can log it once.
+        throw error;
       }
     }),
   );
 
-  for (const [index, result] of enumerate(registrations)) {
+  results.forEach((result, index) => {
     const { serverId, serverKey, url } = mcpClients[index];
     if (result.status === "rejected") {
       console.error(
@@ -73,9 +75,14 @@ export async function registerResourceHandlers(
         url,
         result.reason,
       );
-    } else {
+      return;
+    }
+    // Only log a success message when at least one resource was registered
+    if (result.value > 0) {
       console.log(
-        "Registered resources from:",
+        "Registered",
+        result.value,
+        "resources from:",
         serverId,
         "with key:",
         serverKey,
@@ -83,14 +90,5 @@ export async function registerResourceHandlers(
         url,
       );
     }
-  }
-}
-
-function enumerate<T>(iterable: Iterable<T>): Array<[number, T]> {
-  const result: [number, T][] = [];
-  let index = 0;
-  for (const value of iterable) {
-    result.push([index++, value]);
-  }
-  return result;
+  });
 }
