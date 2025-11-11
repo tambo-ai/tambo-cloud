@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tooltip } from "@/components/ui/tooltip";
 import { api } from "@/trpc/react";
 import { deriveServerKey, MCPTransport } from "@tambo-ai-cloud/core";
 import { useMutation } from "@tanstack/react-query";
@@ -357,53 +358,63 @@ export function McpServerEditor({
           )}
         </div>
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor={serverKeyId} className="block text-sm font-medium">
-          Server Key
-        </label>
-        <Input
-          id={serverKeyId}
-          value={serverKey}
-          disabled={!isEditing}
-          onChange={async (e) => {
-            setServerKey(e.target.value);
-            if (hideEditButtons && isEditing) {
-              await debouncedSave();
-            }
-          }}
-          onKeyDown={handleKeyDown}
-          placeholder="e.g., github"
-          className="rounded-lg"
-        />
-        {!serverKey.trim() && isEditing && (
-          <p className="text-xs text-muted-foreground px-2">
-            Automatically derived from server URL if left blank. Must be at
-            least 2 characters.
-          </p>
-        )}
-        {serverKey.trim() && serverKey.trim().length < 2 && (
-          <p className="text-xs text-destructive px-2">
-            Must be at least 2 characters
-          </p>
-        )}
-      </div>
-      <div>
-        <label htmlFor={transportId} className="block text-sm font-medium">
-          Server Type
-        </label>
-        <Select
-          value={mcpTransport}
-          onValueChange={handleTransportChange}
-          disabled={!isEditing}
-        >
-          <SelectTrigger className="w-full rounded-lg mt-1">
-            <SelectValue placeholder="Select transport type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={MCPTransport.HTTP}>HTTP Streamable</SelectItem>
-            <SelectItem value={MCPTransport.SSE}>SSE</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-4 sm:flex-row sm:gap-2">
+        <div className="flex-1">
+          <label htmlFor={transportId} className="block text-sm font-medium">
+            Server Type
+          </label>
+          <Select
+            value={mcpTransport}
+            onValueChange={handleTransportChange}
+            disabled={!isEditing}
+          >
+            <SelectTrigger className="w-full rounded-lg mt-1">
+              <SelectValue placeholder="Select transport type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={MCPTransport.HTTP}>HTTP Streamable</SelectItem>
+              <SelectItem value={MCPTransport.SSE}>SSE</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex-1 flex flex-col gap-1">
+          <div className="flex items-center gap-1">
+            <label htmlFor={serverKeyId} className="block text-sm font-medium">
+              Server Key
+            </label>
+            <Tooltip
+              content="Unique name for this MCP server to disambiguate tools, prompts, and resources from other servers in this project"
+              side="top"
+            >
+              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+            </Tooltip>
+          </div>
+          <Input
+            id={serverKeyId}
+            value={serverKey}
+            disabled={!isEditing}
+            onChange={async (e) => {
+              setServerKey(e.target.value);
+              if (hideEditButtons && isEditing) {
+                await debouncedSave();
+              }
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder="e.g., github"
+            className="rounded-lg"
+          />
+          {!serverKey.trim() && isEditing && (
+            <p className="text-xs text-muted-foreground px-2">
+              Automatically derived from server URL if left blank. Must be at
+              least 2 characters.
+            </p>
+          )}
+          {serverKey.trim() && serverKey.trim().length < 2 && (
+            <p className="text-xs text-destructive px-2">
+              Must be at least 2 characters
+            </p>
+          )}
+        </div>
       </div>
       <div>
         <label className="block text-sm font-medium mt-1">Custom Headers</label>
