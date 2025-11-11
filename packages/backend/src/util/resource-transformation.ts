@@ -10,6 +10,7 @@ import {
   ChatCompletionContentPartResource,
   ContentPartType,
   Resource,
+  ThreadMessage,
 } from "@tambo-ai-cloud/core";
 import { FilePart, ImagePart, TextPart } from "ai";
 
@@ -183,4 +184,111 @@ export function extractServerKeyFromResourceName(
     return undefined;
   }
   return resourceName.split(":")[0];
+}
+
+/**
+ * Pre-fetch all resources from thread messages and cache them inline.
+ * This converts URI-based resources to cached text/blob resources.
+ *
+ * @param messages - Thread messages potentially containing resources
+ * @param resourceFetchers - Map of serverKey to fetch functions
+ * @returns New messages with fetched resources cached as text/blob
+ */
+export async function prefetchAndCacheResources(
+  messages: ThreadMessage[],
+  resourceFetchers?: ResourceFetcherMap,
+): Promise<ThreadMessage[]> {
+  if (!resourceFetchers) {
+    return messages;
+  }
+
+  return await Promise.all(
+    messages.map(async (message) => {
+      // Process all content parts in the message
+      const transformedContent = await Promise.all(
+        message.content.map(async (part) => {
+          // Only process Resource type parts
+          if (part.type !== ContentPartType.Resource) {
+            return part;
+          }
+
+          const resource = part.resource;
+
+          // Skip if already has text or blob cached
+          if (resource.text || resource.blob) {
+            return part;
+          }
+
+          // Skip if no URI to fetch
+          if (!resource.uri) {
+            return part;
+          }
+
+          // Find fetcher for this resource's serverKey
+          const serverKey = extractServerKeyFromResourceName(resource.name);
+          const fetchFn = serverKey ? resourceFetchers[serverKey] : undefined;
+
+          if (!fetchFn) {
+            console.warn(
+              `No fetcher available for resource with serverKey: ${serverKey}`,
+            );
+            return part;
+          }
+
+          try {
+            const result = await fetchFn(resource.uri);
+
+            if (result.contents.length > 0) {
+              const content = result.contents[0];
+
+              // Cache the fetched content back into the resource
+              const cachedResource: ChatCompletionContentPartResource = {
+                type: ContentPartType.Resource,
+                resource: {
+                  ...resource,
+                  // Set text or blob based on what was fetched
+                  text: content.text,
+                  blob: content.blob,
+                  // Update MIME type if provided
+                  mimeType: content.mimeType || resource.mimeType,
+                },
+              };
+
+              return cachedResource;
+            }
+          } catch (error) {
+            console.error(`Error fetching resource ${resource.uri}:`, error);
+          }
+
+          // Return original part if fetch failed
+          return part;
+        }),
+      );
+
+      return {
+        ...message,
+        content: transformedContent,
+      };
+    }),
+  );
+}
+
+/**
+ * Extract all Resource content parts from messages for pre-fetching.
+ * Useful for identifying which resources need to be fetched upfront.
+ */
+export function extractResourcesFromMessages(
+  messages: ThreadMessage[],
+): ChatCompletionContentPartResource[] {
+  const resources: ChatCompletionContentPartResource[] = [];
+
+  for (const message of messages) {
+    for (const part of message.content) {
+      if (isResourceContentPart(part)) {
+        resources.push(part);
+      }
+    }
+  }
+
+  return resources;
 }

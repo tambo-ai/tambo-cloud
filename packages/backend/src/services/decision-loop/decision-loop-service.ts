@@ -12,7 +12,10 @@ import { parse } from "partial-json";
 import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
 import { extractMessageContent } from "../../util/response-parsing";
 import { objectTemplate } from "../../util/template";
-import { ResourceFetcherMap } from "../../util/resource-transformation";
+import {
+  prefetchAndCacheResources,
+  ResourceFetcherMap,
+} from "../../util/resource-transformation";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
 import {
   getLLMResponseMessage,
@@ -58,8 +61,15 @@ export async function* runDecisionLoop(
 
   const { template: systemPrompt, args: systemPromptArgs } =
     generateDecisionLoopPrompt(customInstructions);
-  const chatCompletionMessages = threadMessagesToChatCompletionMessageParam(
+
+  // Pre-fetch and cache all resources before converting messages
+  const messagesWithCachedResources = await prefetchAndCacheResources(
     messages,
+    resourceFetchers,
+  );
+
+  const chatCompletionMessages = threadMessagesToChatCompletionMessageParam(
+    messagesWithCachedResources,
     resourceFetchers,
   );
   const promptMessages = objectTemplate<ChatCompletionMessageParam[]>([
