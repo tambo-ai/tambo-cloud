@@ -84,22 +84,13 @@ export async function registerPromptHandlers(
     }),
   );
   for (const [index, result] of enumerate(registrations)) {
-    const { serverId, serverKey, url } = mcpClients[index];
+    const { serverId, url } = mcpClients[index];
     if (result.status === "rejected") {
       console.error(
         "Error listing prompts for MCP server",
         serverId,
         url,
         result.reason,
-      );
-    } else {
-      console.log(
-        "Registered prompts from:",
-        serverId,
-        "with key:",
-        serverKey,
-        "at:",
-        url,
       );
     }
   }
