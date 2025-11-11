@@ -202,6 +202,7 @@ class AgenticTamboBackend implements TamboBackend {
         queue,
         params.messages,
         params.strictTools,
+        params.resourceFetchers,
       );
     }
     return runDecisionLoop(

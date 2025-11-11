@@ -7,6 +7,10 @@ import {
   ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import OpenAI from "openai";
+import {
+  prefetchAndCacheResources,
+  ResourceFetcherMap,
+} from "../../util/resource-transformation";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
 import { AgentClient } from "../llm/agent-client";
 import { EventHandlerParams } from "../llm/async-adapters";
@@ -16,10 +20,19 @@ export async function* runAgentLoop(
   queue: AsyncQueue<EventHandlerParams>,
   messages: ThreadMessage[],
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
+  resourceFetchers?: ResourceFetcherMap,
   //   customInstructions: string | undefined,
 ): AsyncIterableIterator<LegacyComponentDecision> {
-  const chatCompletionMessages =
-    threadMessagesToChatCompletionMessageParam(messages);
+  // Pre-fetch and cache all resources before converting messages
+  const messagesWithCachedResources = await prefetchAndCacheResources(
+    messages,
+    resourceFetchers,
+  );
+
+  const chatCompletionMessages = threadMessagesToChatCompletionMessageParam(
+    messagesWithCachedResources,
+    !!resourceFetchers,
+  );
   // const systemPromptArgs = customInstructions
   //     ? { custom_instructions: customInstructions }
   //     : {};

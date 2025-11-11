@@ -8,16 +8,12 @@ import {
   ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import type OpenAI from "openai";
-import {
-  extractServerKeyFromResourceName,
-  isResourceContentPart,
-  ResourceFetcherMap,
-} from "./resource-transformation";
+import { isResourceContentPart } from "./resource-transformation";
 import { formatFunctionCall, generateAdditionalContext } from "./tools";
 
 export function threadMessagesToChatCompletionMessageParam(
   messages: ThreadMessage[],
-  resourceFetchers?: ResourceFetcherMap,
+  allowUnresolvedResources: boolean = false,
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam[] {
   // as per
   // https://platform.openai.com/docs/guides/function-calling?api-mode=chat#handling-function-calls,
@@ -44,7 +40,7 @@ export function threadMessagesToChatCompletionMessageParam(
           return makeAssistantMessages(message, respondedToolIds);
         }
         default: {
-          return makeUserMessages(message, resourceFetchers);
+          return makeUserMessages(message, allowUnresolvedResources);
         }
       }
     },
@@ -283,7 +279,7 @@ function makeFakeDecisionCall(component: ComponentDecisionV2): ToolCallRequest {
 
 function makeUserMessages(
   message: ThreadMessage,
-  resourceFetchers?: ResourceFetcherMap,
+  allowUnresolvedResources: boolean,
 ): (
   | OpenAI.Chat.Completions.ChatCompletionUserMessageParam
   | OpenAI.Chat.Completions.ChatCompletionSystemMessageParam
@@ -303,51 +299,41 @@ function makeUserMessages(
 
   for (const part of message.content) {
     if (isResourceContentPart(part)) {
-      // Extract serverKey from resource name to find the fetcher
-      const serverKey = extractServerKeyFromResourceName(part.resource.name);
-      const fetchFn =
-        serverKey && resourceFetchers ? resourceFetchers[serverKey] : undefined;
-
-      // Try to transform the resource asynchronously (inline await)
-      // Note: This is a synchronous context, so we handle transformation errors gracefully
-      if (fetchFn) {
-        // For synchronous context, we can only add already-loaded content
-        // Fetch-based resources will need to be handled separately or batched before this call
-
-        // If resource has inline text or blob, transform it
-        if (part.resource.text) {
+      // If resource has inline text or blob, transform it
+      if (part.resource.text) {
+        transformedContent.push({
+          type: "text",
+          text: part.resource.text,
+        });
+      } else if (part.resource.blob) {
+        const mimeType = part.resource.mimeType || "application/octet-stream";
+        if (mimeType.startsWith("image/")) {
           transformedContent.push({
-            type: "text",
-            text: part.resource.text,
+            type: "image_url",
+            image_url: {
+              url: `data:${mimeType};base64,${Buffer.from(part.resource.blob, "base64").toString("base64")}`,
+            },
           });
-        } else if (part.resource.blob) {
-          const mimeType = part.resource.mimeType || "application/octet-stream";
-          if (mimeType.startsWith("image/")) {
-            transformedContent.push({
-              type: "image_url",
-              image_url: {
-                url: `data:${mimeType};base64,${Buffer.from(part.resource.blob, "base64").toString("base64")}`,
-              },
-            });
-          } else {
-            transformedContent.push({
-              type: "file",
-              file: {
-                file_data: `data:${mimeType};base64,${Buffer.from(part.resource.blob, "base64").toString("base64")}`,
-                filename: part.resource.name,
-              },
-            });
-          }
         } else {
-          // URI-based resources need async fetching - for now log warning
-          console.warn(
-            `Resource with URI requires async fetching: ${part.resource.uri}. Consider pre-fetching resources.`,
+          transformedContent.push({
+            type: "file",
+            file: {
+              file_data: `data:${mimeType};base64,${Buffer.from(part.resource.blob, "base64").toString("base64")}`,
+              filename: part.resource.name,
+            },
+          });
+        }
+      } else if (part.resource.uri) {
+        // URI-based resources must have been pre-fetched
+        if (!allowUnresolvedResources) {
+          throw new Error(
+            `Resource with URI should have been pre-fetched: ${part.resource.uri}. ` +
+              `Call prefetchAndCacheResources() before converting messages when resource fetchers are available.`,
           );
         }
-      } else {
-        // No fetcher available, skip the resource
+        // If resources are allowed to be unresolved, skip them (shouldn't happen in normal flow)
         console.warn(
-          `No fetcher available for resource: ${part.resource.name}`,
+          `Skipping unresolved resource with URI: ${part.resource.uri}`,
         );
       }
     } else {
