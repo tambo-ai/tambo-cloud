@@ -13,7 +13,7 @@ export async function registerResourceHandlers(
   }[],
 ) {
   const results = await Promise.allSettled(
-    mcpClients.map(async ({ client, serverId: _serverId, serverKey }) => {
+    mcpClients.map(async ({ client, serverKey }) => {
       try {
         const listResponse = await client.client.listResources();
 
@@ -26,7 +26,7 @@ export async function registerResourceHandlers(
           // We only support static URIs; resource templates require list/complete callbacks
           // which we can't easily proxy from remote MCP servers
           if (!resource.uri) {
-            console.warn(`Resource ${resource.name} has no URI, skipping`);
+            console.warn(`Resource ${resourceName} has no URI, skipping`);
             continue;
           }
 
@@ -66,8 +66,9 @@ export async function registerResourceHandlers(
     }),
   );
 
-  results.forEach((result, index) => {
-    const { serverId, serverKey, url } = mcpClients[index];
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const { serverId, serverKey, url } = mcpClients[i];
     if (result.status === "rejected") {
       console.error(
         "Error listing resources for MCP server",
@@ -75,7 +76,7 @@ export async function registerResourceHandlers(
         url,
         result.reason,
       );
-      return;
+      continue;
     }
     // Only log a success message when at least one resource was registered
     if (result.value > 0) {
@@ -90,5 +91,5 @@ export async function registerResourceHandlers(
         url,
       );
     }
-  });
+  }
 }
