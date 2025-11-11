@@ -119,17 +119,15 @@ function preprocessMentions(
     return content;
   }
 
-  // Create a case-insensitive set for fast lookup
-  const nameSet = new Set(
-    interactableNames.map((name) => name.toLocaleLowerCase()),
-  );
+  // Create a set for fast lookup (exact case matching)
+  const nameSet = new Set(interactableNames);
 
   // Match @ComponentName patterns and only convert if they match an interactable
   return content.replace(
     /@([A-Za-z][A-Za-z0-9_-]*)/g,
     (match, componentName) => {
-      // Check if this component name matches any interactable (case-insensitive)
-      if (nameSet.has(componentName.toLocaleLowerCase())) {
+      // Check if this component name matches any interactable (exact match)
+      if (nameSet.has(componentName)) {
         return `<span class="mention-badge-inline">${match}</span>`;
       }
       // Return original match if not an interactable
