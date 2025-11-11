@@ -16,6 +16,7 @@ import {
   MCPTransport,
   ToolProviderType,
   deriveServerKey,
+  isValidServerKey,
   validateMcpServer,
 } from "@tambo-ai-cloud/core";
 import {
@@ -92,7 +93,10 @@ export const toolsRouter = createTRPCRouter({
         serverKey: z
           .string()
           .trim()
-          .min(2, "Server key must be at least 2 characters"),
+          .refine(
+            isValidServerKey,
+            "Server key must be at least 2 characters and contain only alphanumeric characters and underscores",
+          ),
         customHeaders: customHeadersSchema,
         mcpTransport: z.nativeEnum(MCPTransport),
       }),
@@ -264,7 +268,10 @@ export const toolsRouter = createTRPCRouter({
         serverKey: z
           .string()
           .trim()
-          .min(2, "Server key must be at least 2 characters"),
+          .refine(
+            isValidServerKey,
+            "Server key must be at least 2 characters and contain only alphanumeric characters and underscores",
+          ),
         customHeaders: customHeadersSchema,
         mcpTransport: z.nativeEnum(MCPTransport),
       }),
