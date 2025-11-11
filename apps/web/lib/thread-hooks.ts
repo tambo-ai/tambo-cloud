@@ -125,14 +125,17 @@ function preprocessMentions(
   );
 
   // Match @ComponentName patterns and only convert if they match an interactable
-  return content.replace(/@([A-Za-z][A-Za-z0-9]*)/g, (match, componentName) => {
-    // Check if this component name matches any interactable (case-insensitive)
-    if (nameSet.has(componentName.toLocaleLowerCase())) {
-      return `<span class="mention-badge-inline">${match}</span>`;
-    }
-    // Return original match if not an interactable
-    return match;
-  });
+  return content.replace(
+    /@([A-Za-z][A-Za-z0-9_-]*)/g,
+    (match, componentName) => {
+      // Check if this component name matches any interactable (case-insensitive)
+      if (nameSet.has(componentName.toLocaleLowerCase())) {
+        return `<span class="mention-badge-inline">${match}</span>`;
+      }
+      // Return original match if not an interactable
+      return match;
+    },
+  );
 }
 
 /**
