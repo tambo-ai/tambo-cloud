@@ -13,7 +13,7 @@
  *   npx ts-node scripts/backfill-server-keys.ts
  */
 
-import { deriveServerKey } from "@tambo-ai-cloud/core";
+import { deriveServerKey, isValidServerKey } from "@tambo-ai-cloud/core";
 import { getDb, schema } from "@tambo-ai-cloud/db";
 import { eq, inArray } from "drizzle-orm";
 
@@ -75,12 +75,16 @@ async function main() {
         continue;
       }
 
-      const derivedKey = deriveServerKey(server.url);
+      let baseKey = deriveServerKey(server.url);
+      // Sanitize to match API rules (alphanumeric + underscore); keep lowercase from deriveServerKey
+      if (!isValidServerKey(baseKey)) {
+        baseKey = baseKey.replace(/[^A-Za-z0-9_]/g, "_");
+      }
 
       // Ensure the key is at least 2 characters
-      if (derivedKey.length < 2) {
+      if (baseKey.length < 2) {
         console.log(
-          `⚠️  Skipping server ${server.id}: derived key "${derivedKey}" is too short (min 2 chars)`,
+          `⚠️  Skipping server ${server.id}: derived key "${baseKey}" is too short (min 2 chars)`,
         );
         failed++;
         continue;
@@ -88,13 +92,13 @@ async function main() {
 
       // Ensure uniqueness within the project by appending a numeric suffix only when needed.
       const taken = takenByProject.get(server.projectId) ?? new Set<string>();
-      let uniqueKey = derivedKey;
+      let uniqueKey = baseKey;
       if (taken.has(uniqueKey)) {
         let suffix = 1;
-        while (taken.has(`${derivedKey}${suffix}`)) {
+        while (taken.has(`${baseKey}${suffix}`)) {
           suffix++;
         }
-        uniqueKey = `${derivedKey}${suffix}`;
+        uniqueKey = `${baseKey}${suffix}`;
       }
 
       // Update the server with the (possibly suffixed) key
@@ -108,9 +112,9 @@ async function main() {
       takenByProject.set(server.projectId, taken);
 
       const suffixNote =
-        uniqueKey === derivedKey ? "" : ` (deduped → "${uniqueKey}")`;
+        uniqueKey === baseKey ? "" : ` (deduped → "${uniqueKey}")`;
       console.log(
-        `✅ Server ${server.id}: URL "${server.url}" → serverKey "${derivedKey}"${suffixNote}`,
+        `✅ Server ${server.id}: URL "${server.url}" → serverKey "${baseKey}"${suffixNote}`,
       );
       updated++;
     } catch (error) {
