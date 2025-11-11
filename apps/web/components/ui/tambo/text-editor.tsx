@@ -351,7 +351,11 @@ function createResourceItemConfig(
          * Cleans up the popup and updates the menu state.
          */
         onExit: () => {
-          if (isMenuOpenRef) isMenuOpenRef.current = false;
+          // Delay setting menu to closed to give our handleKeyDown a chance to see it was open
+          // This prevents the form from submitting when Enter is used to select an item
+          setTimeout(() => {
+            if (isMenuOpenRef) isMenuOpenRef.current = false;
+          }, 100);
           popupHandlers.onExit();
         },
       };
@@ -383,24 +387,38 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
     const tamboContextAttachment = useTamboContextAttachment();
     const interactables = useCurrentInteractablesSnapshot();
 
+    // Ref to access the current interactables without capturing them in a closure
+    const interactablesRef = React.useRef(interactables);
+    useEffect(() => {
+      interactablesRef.current = interactables;
+    }, [interactables]);
+
     const tamboCommands = React.useMemo((): CommandConfig[] => {
       if (!onSubmit) return [];
 
-      // Convert interactable components into resource items for the @ mention dropdown
-      const resourceItems = interactables.map((component) => ({
-        id: component.id,
-        name: component.name,
-        icon: React.createElement(Cuboid, { className: "w-4 h-4" }),
-        componentData: component,
-      }));
+      // Function to get the resource items for the @ mention dropdown
+      const getResourceItems = async (
+        query: string,
+      ): Promise<ResourceItem[]> => {
+        // Get the current interactables via ref to get the current value
+        const resourceItems = interactablesRef.current.map((component) => ({
+          id: component.id,
+          name: component.name,
+          icon: React.createElement(Cuboid, { className: "w-4 h-4" }),
+          componentData: component,
+        }));
 
-      // Only create command if there are interactables to show
-      if (resourceItems.length === 0) return [];
+        // Filter the resource items by query
+        return resourceItems.filter((item) =>
+          item.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+        );
+      };
 
+      // Create the @ command
       return [
         {
           triggerChar: "@",
-          items: resourceItems,
+          items: getResourceItems,
           onSelect: (item: ResourceItem) => {
             // When a mention is selected, add it as a context attachment
             // This will appear as a badge above the input
@@ -414,7 +432,7 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
           HTMLAttributes: { class: "mention" },
         },
       ];
-    }, [onSubmit, tamboContextAttachment, interactables]);
+    }, [onSubmit, tamboContextAttachment]);
 
     // Handle image paste from clipboard when onSubmit is provided
     React.useEffect(() => {
@@ -480,10 +498,12 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
       [onSubmit, value, onKeyDown],
     );
     // Initialize menu open refs for each command
+    // Use a stable ref that persists across renders to track menu state
+    const stableMenuOpenRef = React.useRef<boolean>(false);
     const commandRefs = React.useMemo(
       () =>
         commands.map((cmd) => ({
-          isMenuOpenRef: cmd.isMenuOpenRef ?? { current: false },
+          isMenuOpenRef: cmd.isMenuOpenRef ?? stableMenuOpenRef,
         })),
       [commands],
     );
@@ -530,6 +550,10 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
 
           // Prevent Enter from submitting form when selecting from any resource item menu
           if (event.key === "Enter" && !event.shiftKey && anyMenuOpen) {
+            // Prevent the DOM event from propagating
+            event.preventDefault();
+            event.stopPropagation();
+            // Return false to let the suggestion plugin handle the selection
             return false;
           }
 
