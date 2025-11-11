@@ -15,7 +15,7 @@
 
 import { deriveServerKey } from "@tambo-ai-cloud/core";
 import { getDb, schema } from "@tambo-ai-cloud/db";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 async function main() {
   const dbUrl = process.env.DATABASE_URL;
@@ -41,6 +41,29 @@ async function main() {
     `Found ${serversNeedingKeys.length} server(s) that need serverKey...\n`,
   );
 
+  // Build a map of existing (non-empty) keys per project so we can ensure uniqueness
+  const projectIds = Array.from(
+    new Set(serversNeedingKeys.map((s) => s.projectId)),
+  );
+
+  const existingForProjects = projectIds.length
+    ? await db
+        .select({
+          projectId: schema.toolProviders.projectId,
+          serverKey: schema.toolProviders.serverKey,
+        })
+        .from(schema.toolProviders)
+        .where(inArray(schema.toolProviders.projectId, projectIds))
+    : ([] as Array<{ projectId: string; serverKey: string }>);
+
+  const takenByProject = new Map<string, Set<string>>();
+  for (const row of existingForProjects) {
+    if (!row.serverKey) continue;
+    const set = takenByProject.get(row.projectId) ?? new Set<string>();
+    set.add(row.serverKey);
+    takenByProject.set(row.projectId, set);
+  }
+
   let updated = 0;
   let failed = 0;
 
@@ -63,14 +86,31 @@ async function main() {
         continue;
       }
 
-      // Update the server with the derived key
+      // Ensure uniqueness within the project by appending a numeric suffix only when needed.
+      const taken = takenByProject.get(server.projectId) ?? new Set<string>();
+      let uniqueKey = derivedKey;
+      if (taken.has(uniqueKey)) {
+        let suffix = 1;
+        while (taken.has(`${derivedKey}${suffix}`)) {
+          suffix++;
+        }
+        uniqueKey = `${derivedKey}${suffix}`;
+      }
+
+      // Update the server with the (possibly suffixed) key
       await db
         .update(schema.toolProviders)
-        .set({ serverKey: derivedKey })
+        .set({ serverKey: uniqueKey })
         .where(eq(schema.toolProviders.id, server.id));
 
+      // Track the new key to avoid collisions for subsequent servers in the same project
+      taken.add(uniqueKey);
+      takenByProject.set(server.projectId, taken);
+
+      const suffixNote =
+        uniqueKey === derivedKey ? "" : ` (deduped → "${uniqueKey}")`;
       console.log(
-        `✅ Server ${server.id}: URL "${server.url}" → serverKey "${derivedKey}"`,
+        `✅ Server ${server.id}: URL "${server.url}" → serverKey "${derivedKey}"${suffixNote}`,
       );
       updated++;
     } catch (error) {
