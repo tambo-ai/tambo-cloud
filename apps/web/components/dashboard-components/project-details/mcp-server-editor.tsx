@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/trpc/react";
-import { MCPTransport } from "@tambo-ai-cloud/core";
+import { deriveServerKey, MCPTransport } from "@tambo-ai-cloud/core";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { Check, Info, Loader2 } from "lucide-react";
@@ -24,6 +24,7 @@ import { McpServerToolsDialog } from "./mcp-server-tools-dialog";
 export interface MCPServerInfo {
   id: string;
   url: string | null;
+  serverKey: string;
   customHeaders: Record<string, string> | null;
   mcpTransport?: MCPTransport;
   mcpRequiresAuth?: boolean;
@@ -44,6 +45,7 @@ interface McpServerEditorProps {
   onCancel: () => void;
   onSave: (serverInfo: {
     url: string;
+    serverKey: string;
     customHeaders: Record<string, string>;
     mcpTransport: MCPTransport;
   }) => Promise<MCPServerInfo | undefined>;
@@ -75,6 +77,7 @@ export function McpServerEditor({
     server.mcpTransport || MCPTransport.HTTP,
   );
   const [url, setUrl] = useState(server.url || (isNew ? "https://" : ""));
+  const [serverKey, setServerKey] = useState(server.serverKey || "");
   const [headers, setHeaders] = useState<HeaderKV[]>(
     Object.entries(server.customHeaders ?? {}).map(([header, value]) => ({
       header,
@@ -104,6 +107,7 @@ export function McpServerEditor({
   const inputRef = useRef<HTMLInputElement>(null);
   // Dynamic IDs based on server ID
   const urlInputId = useId();
+  const serverKeyId = useId();
   const transportId = useId();
 
   useEffect(() => {
@@ -117,6 +121,7 @@ export function McpServerEditor({
   useEffect(() => {
     setMcpTransport(server.mcpTransport || MCPTransport.HTTP);
     setUrl(server.url || (isNew ? "https://" : ""));
+    setServerKey(server.serverKey || "");
     setHeaders(
       Object.entries(server.customHeaders ?? {}).map(([header, value]) => ({
         header,
@@ -149,22 +154,30 @@ export function McpServerEditor({
   } = useMutation({
     mutationFn: async (input: {
       url: string;
+      serverKey: string;
       customHeaders: Record<string, string>;
       mcpTransport: MCPTransport;
     }) => {
       if (!input.url.trim()) return;
+      if (!input.serverKey.trim() || input.serverKey.trim().length < 2) return;
       return await onSave(input);
     },
   });
 
   const handleSave = () => {
     const trimmedUrl = url.trim();
+    const trimmedServerKey = serverKey.trim();
     const customHeaders: Record<string, string> = Object.fromEntries(
       headers
         .map(({ header, value }) => [header.trim(), value] as const)
         .filter(([key]) => Boolean(key)),
     );
-    mutateSave({ url: trimmedUrl, customHeaders, mcpTransport });
+    mutateSave({
+      url: trimmedUrl,
+      serverKey: trimmedServerKey,
+      customHeaders,
+      mcpTransport,
+    });
   };
 
   const handleConfirmDelete = async () => {
@@ -232,7 +245,12 @@ export function McpServerEditor({
                     variant="outline"
                     size="sm"
                     onClick={() => handleSave()}
-                    disabled={isSaving || !url.trim()}
+                    disabled={
+                      isSaving ||
+                      !url.trim() ||
+                      !serverKey.trim() ||
+                      serverKey.trim().length < 2
+                    }
                     className="font-sans bg-transparent hover:bg-accent text-sm"
                   >
                     {isSaving ? (
@@ -329,6 +347,37 @@ export function McpServerEditor({
             <p className="text-sm text-destructive px-2">{authError.message}</p>
           )}
         </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={serverKeyId} className="block text-sm font-medium">
+          Server Key
+        </label>
+        <Input
+          id={serverKeyId}
+          value={serverKey}
+          disabled={!isEditing}
+          onChange={async (e) => {
+            setServerKey(e.target.value);
+            if (hideEditButtons && isEditing) {
+              await debouncedSave();
+            }
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder={
+            isNew ? deriveServerKey(url) || "e.g., github" : undefined
+          }
+          className="rounded-lg"
+        />
+        {!serverKey.trim() && isEditing && (
+          <p className="text-xs text-muted-foreground px-2">
+            Can be auto-filled from URL. Must be at least 2 characters.
+          </p>
+        )}
+        {serverKey.trim() && serverKey.trim().length < 2 && (
+          <p className="text-xs text-destructive px-2">
+            Must be at least 2 characters
+          </p>
+        )}
       </div>
       <div>
         <label htmlFor={transportId} className="block text-sm font-medium">

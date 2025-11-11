@@ -52,6 +52,7 @@ export const toolsRouter = createTRPCRouter({
       return servers.map((server) => ({
         id: server.id,
         url: server.url,
+        serverKey: server.serverKey,
         customHeaders: server.customHeaders,
         mcpRequiresAuth: server.mcpRequiresAuth,
         mcpIsAuthed:
@@ -72,6 +73,10 @@ export const toolsRouter = createTRPCRouter({
             validateServerUrl,
             "URL appears to be unsafe: must not point to internal, local, or private networks",
           ),
+        serverKey: z
+          .string()
+          .trim()
+          .min(2, "Server key must be at least 2 characters"),
         customHeaders: customHeadersSchema,
         mcpTransport: z.nativeEnum(MCPTransport),
       }),
@@ -84,7 +89,7 @@ export const toolsRouter = createTRPCRouter({
         ctx.user.id,
       );
 
-      const { projectId, url, customHeaders, mcpTransport } = input;
+      const { projectId, url, customHeaders, mcpTransport, serverKey } = input;
       const parsedUrl = new URL(url);
 
       // Perform additional safety checks
@@ -118,11 +123,13 @@ export const toolsRouter = createTRPCRouter({
         customHeaders,
         mcpTransport,
         validity.requiresAuth,
+        serverKey,
       );
 
       return {
         id: server.id,
         url: server.url,
+        serverKey: server.serverKey,
         customHeaders: server.customHeaders,
         mcpTransport: server.mcpTransport,
         mcpRequiresAuth: server.mcpRequiresAuth,
@@ -223,6 +230,10 @@ export const toolsRouter = createTRPCRouter({
             validateServerUrl,
             "URL appears to be unsafe: must not point to internal, local, or private networks",
           ),
+        serverKey: z
+          .string()
+          .trim()
+          .min(2, "Server key must be at least 2 characters"),
         customHeaders: customHeadersSchema,
         mcpTransport: z.nativeEnum(MCPTransport),
       }),
@@ -235,7 +246,14 @@ export const toolsRouter = createTRPCRouter({
         ctx.user.id,
       );
 
-      const { projectId, serverId, url, customHeaders, mcpTransport } = input;
+      const {
+        projectId,
+        serverId,
+        url,
+        customHeaders,
+        mcpTransport,
+        serverKey,
+      } = input;
       const validity = await getServerValidity(
         ctx.db,
         projectId,
@@ -256,10 +274,12 @@ export const toolsRouter = createTRPCRouter({
             customHeaders,
             mcpTransport,
             true,
+            serverKey,
           );
           return {
             id: server.id,
             url: server.url,
+            serverKey: server.serverKey,
             customHeaders: server.customHeaders,
             mcpTransport: server.mcpTransport,
             mcpRequiresAuth: server.mcpRequiresAuth,
@@ -282,10 +302,12 @@ export const toolsRouter = createTRPCRouter({
         customHeaders,
         mcpTransport,
         validity.requiresAuth,
+        serverKey,
       );
       return {
         id: server.id,
         url: server.url,
+        serverKey: server.serverKey,
         customHeaders: server.customHeaders,
         mcpTransport: server.mcpTransport,
         mcpRequiresAuth: server.mcpRequiresAuth,
