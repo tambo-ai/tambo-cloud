@@ -6,13 +6,9 @@ import {
   Tooltip,
   TooltipProvider,
 } from "@/components/ui/tambo/suggestions-tooltip";
-import {
-  TextEditor,
-  type CommandConfig,
-} from "@/components/ui/tambo/text-editor";
+import { TextEditor } from "@/components/ui/tambo/text-editor";
 import { cn } from "@/lib/utils";
 import {
-  useCurrentInteractablesSnapshot,
   useIsTamboTokenUpdating,
   useTamboContextAttachment,
   useTamboThread,
@@ -20,7 +16,7 @@ import {
 } from "@tambo-ai/react";
 import type { Editor } from "@tiptap/react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { ArrowUp, Cuboid, Paperclip, Square } from "lucide-react";
+import { ArrowUp, Paperclip, Square } from "lucide-react";
 import * as React from "react";
 
 /**
@@ -359,23 +355,6 @@ MessageInputInternal.displayName = "MessageInputInternal";
 MessageInput.displayName = "MessageInput";
 
 /**
- * Symbol for marking pasted images.
- * Using Symbol.for to create a global symbol that can be accessed across modules.
- * @internal
- */
-export const IS_PASTED_IMAGE = Symbol.for("tambo-is-pasted-image");
-
-/**
- * Extend the File interface to include the IS_PASTED_IMAGE property.
- * This is a type-safe way to mark pasted images without using a broad index signature.
- */
-declare global {
-  interface File {
-    [IS_PASTED_IMAGE]?: boolean;
-  }
-}
-
-/**
  * Props for the MessageInputTextarea component.
  */
 export interface MessageInputTextareaProps
@@ -412,84 +391,7 @@ const MessageInputTextarea = ({
 }: MessageInputTextareaProps) => {
   const { value, setValue, handleSubmit, editorRef } = useMessageInputContext();
   const { isIdle } = useTamboThread();
-  const { addImage } = useTamboThreadInput();
-  const { addContextAttachment } = useTamboContextAttachment();
-  const interactables = useCurrentInteractablesSnapshot();
   const isUpdatingToken = useIsTamboTokenUpdating();
-
-  // Convert interactable components into suggestion items for the @ mention dropdown
-  const mentionItems = React.useMemo(
-    () =>
-      interactables.map((component) => ({
-        id: component.id,
-        name: component.name,
-        icon: <Cuboid className="w-4 h-4" />,
-        componentData: component,
-      })),
-    [interactables],
-  );
-
-  // Create the "@" mention command configuration
-  const mentionCommand = React.useMemo(
-    (): CommandConfig => ({
-      triggerChar: "@",
-      items: mentionItems,
-      onSelect: (item) => {
-        // When a mention is selected, add it as a context attachment
-        // This will appear as a badge above the input
-        addContextAttachment({ name: item.name });
-      },
-      renderLabel: ({ node }) => `@${(node.attrs.label as string) ?? ""}`,
-      HTMLAttributes: { class: "mention" },
-    }),
-    [mentionItems, addContextAttachment],
-  );
-
-  // Handle Enter key to submit message (Shift+Enter creates newline)
-  const handleKeyDown = React.useCallback(
-    async (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey && value.trim()) {
-        e.preventDefault();
-        await handleSubmit(e as React.FormEvent);
-      }
-    },
-    [value, handleSubmit],
-  );
-
-  // Handle image paste from clipboard
-  // Note: This is attached to the editor element via data-slot selector
-  // because TipTap handles its own paste events internally
-  React.useEffect(() => {
-    const handlePaste = async (e: Event) => {
-      const clipboardEvent = e as ClipboardEvent;
-      const items = Array.from(clipboardEvent.clipboardData?.items ?? []);
-      const imageItems = items.filter((item) => item.type.startsWith("image/"));
-
-      if (imageItems.length === 0) return;
-
-      const hasText = clipboardEvent.clipboardData?.getData("text/plain");
-      if (!hasText) e.preventDefault();
-
-      for (const item of imageItems) {
-        const file = item.getAsFile();
-        if (file) {
-          try {
-            file[IS_PASTED_IMAGE] = true;
-            await addImage(file);
-          } catch (error) {
-            console.error("Failed to add pasted image:", error);
-          }
-        }
-      }
-    };
-
-    const editorElement = document.querySelector(
-      '[data-slot="message-input-textarea"]',
-    );
-    editorElement?.addEventListener("paste", handlePaste as EventListener);
-    return () =>
-      editorElement?.removeEventListener("paste", handlePaste as EventListener);
-  }, [addImage]);
 
   return (
     <div
@@ -500,10 +402,9 @@ const MessageInputTextarea = ({
       <TextEditor
         value={value}
         onChange={setValue}
-        onKeyDown={handleKeyDown}
+        onSubmit={handleSubmit}
         placeholder={placeholder}
         disabled={!isIdle || isUpdatingToken}
-        commands={[mentionCommand]}
         editorRef={editorRef}
         className="bg-background text-foreground"
       />

@@ -1,6 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import {
+  useCurrentInteractablesSnapshot,
+  useTamboContextAttachment,
+  useTamboThreadInput,
+} from "@tambo-ai/react";
 import Document from "@tiptap/extension-document";
 import Mention from "@tiptap/extension-mention";
 import Paragraph from "@tiptap/extension-paragraph";
@@ -20,10 +25,11 @@ import tippy, { type Instance as TippyInstance } from "tippy.js";
 import "tippy.js/dist/tippy.css";
 
 /**
- * Represents an item that appears in a command dropdown (e.g., "@" mentions or "/" commands).
- * Used to suggest components, actions, or other entities that can be triggered.
+ * Represents a resource item that appears in a command dropdown (e.g., "@" mentions or "/" commands).
+ * Used to represent components, actions, or other entities that can be triggered.
+ * Interactables are one type of resource.
  */
-export interface SuggestionItem {
+export interface ResourceItem {
   id: string;
   name: string;
   icon?: React.ReactNode;
@@ -33,16 +39,24 @@ export interface SuggestionItem {
 /**
  * Configuration for a command trigger (e.g., "@" or "/").
  * Note: TipTap's Mention only supports "@". For "/", create a custom extension using Suggestion plugin with `char: "/"`.
- * Use `createSuggestionConfig` from this file. See: https://tiptap.dev/docs/editor/api/utilities/suggestion
+ * Use `createResourceItemConfig` from this file. See: https://tiptap.dev/docs/editor/api/utilities/suggestion
  */
 export interface CommandConfig {
   /** The character that triggers this command (e.g., "@" or "/") */
   triggerChar: string;
-  /** List of items to show in the dropdown when user types the trigger */
-  items: SuggestionItem[];
+  /**
+   * Items to show in the dropdown when user types the trigger.
+   * Can be either a static array or an async function that fetches items based on the query.
+   * The query parameter is the text after the trigger character (e.g., "@foo" → query is "foo").
+   */
+  items: ResourceItem[] | ((query: string) => Promise<ResourceItem[]>);
   /** Callback when a user selects an item from the dropdown */
-  onSelect?: (item: SuggestionItem) => void;
-  /** How to render the command label in the editor (e.g., "@name" or "/name") */
+  onSelect?: (item: ResourceItem) => void;
+  /**
+   * How to render the command label in the editor (e.g., "@name" or "/name").
+   * The typed text appears in `node.attrs.label` (e.g., if user types "@foo", then `node.attrs.label` is "foo").
+   * This function should return the string to display in the editor for this mention/command.
+   */
   renderLabel: (props: {
     options: unknown;
     node: { attrs: Record<string, unknown> };
@@ -63,26 +77,28 @@ export interface TextEditorProps {
   className?: string;
   editorRef?: React.MutableRefObject<Editor | null>;
   commands?: CommandConfig[];
+  /** Optional submit handler for Tambo-specific Enter key behavior */
+  onSubmit?: (e: React.FormEvent) => Promise<void>;
 }
 
 /**
- * Ref interface for the suggestion list component.
+ * Ref interface for the resource item list component.
  * Allows parent components to handle keyboard events.
  */
-interface SuggestionListRef {
+interface ResourceItemListRef {
   onKeyDown: (props: { event: KeyboardEvent }) => boolean;
 }
 
 /**
- * Dropdown component that displays mention suggestions.
+ * Dropdown component that displays resource items.
  *
  * When the user types "@" in the editor, this component renders a list
- * of suggestions with keyboard navigation (arrow keys, Enter, Escape).
+ * of resource items with keyboard navigation (arrow keys, Enter, Escape).
  *
  */
-const MentionSuggestionList = forwardRef<
-  SuggestionListRef,
-  { items: SuggestionItem[]; command: (item: SuggestionItem) => void }
+const ResourceItemList = forwardRef<
+  ResourceItemListRef,
+  { items: ResourceItem[]; command: (item: ResourceItem) => void }
 >(({ items, command }, ref) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -137,7 +153,7 @@ const MentionSuggestionList = forwardRef<
     </div>
   );
 });
-MentionSuggestionList.displayName = "MentionSuggestionList";
+ResourceItemList.displayName = "ResourceItemList";
 
 /**
  * Checks if a mention with the given label already exists in the editor.
@@ -163,24 +179,24 @@ export function hasExistingMention(editor: Editor, label: string): boolean {
 }
 
 /**
- * Creates a popup handler for the suggestion dropdown using tippy.js.
+ * Creates a popup handler for the resource item dropdown using tippy.js.
  */
-function createSuggestionPopup() {
-  let suggestionListComponent: ReactRenderer<SuggestionListRef> | undefined;
+function createResourceItemPopup() {
+  let itemListComponent: ReactRenderer<ResourceItemListRef> | undefined;
   let tippyPopup: TippyInstance | undefined;
 
   return {
     /**
-     * Called when the user starts typing "@" and suggestions should appear.
+     * Called when the user starts typing "@" and resource items should appear.
      * Creates the React component and tippy popup.
      */
     onStart(props: {
-      items: SuggestionItem[];
-      command: (item: SuggestionItem) => void;
+      items: ResourceItem[];
+      command: (item: ResourceItem) => void;
       editor: Editor;
       clientRect?: (() => DOMRect | null) | null;
     }) {
-      suggestionListComponent = new ReactRenderer(MentionSuggestionList, {
+      itemListComponent = new ReactRenderer(ResourceItemList, {
         props: { items: props.items, command: props.command },
         editor: props.editor,
       });
@@ -190,7 +206,7 @@ function createSuggestionPopup() {
       tippyPopup = tippy("body", {
         getReferenceClientRect: () => props.clientRect?.() ?? new DOMRect(),
         appendTo: () => document.body,
-        content: suggestionListComponent.element,
+        content: itemListComponent.element,
         showOnCreate: true,
         interactive: true,
         trigger: "manual",
@@ -201,15 +217,15 @@ function createSuggestionPopup() {
     },
 
     /**
-     * Called when suggestions change (user continues typing after "@").
-     * Updates the suggestion list and repositions the popup.
+     * Called when resource items change (user continues typing after "@").
+     * Updates the resource item list and repositions the popup.
      */
     onUpdate(props: {
-      items: SuggestionItem[];
-      command: (item: SuggestionItem) => void;
+      items: ResourceItem[];
+      command: (item: ResourceItem) => void;
       clientRect?: (() => DOMRect | null) | null;
     }) {
-      suggestionListComponent?.updateProps({
+      itemListComponent?.updateProps({
         items: props.items,
         command: props.command,
       });
@@ -221,53 +237,59 @@ function createSuggestionPopup() {
     },
 
     /**
-     * Handles keyboard events in the suggestion dropdown.
+     * Handles keyboard events in the resource item dropdown.
      * - Escape: closes the popup
-     * - Arrow keys/Enter: delegated to the suggestion list component
+     * - Arrow keys/Enter: delegated to the resource item list component
      */
     onKeyDown({ event }: { event: KeyboardEvent }) {
       if (event.key === "Escape") {
         tippyPopup?.hide();
         return true;
       }
-      const handled =
-        suggestionListComponent?.ref?.onKeyDown({ event }) ?? false;
+      const handled = itemListComponent?.ref?.onKeyDown({ event }) ?? false;
       if (handled) event.preventDefault();
       return handled;
     },
 
     /**
-     * Called when the suggestion popup should be closed.
+     * Called when the resource item popup should be closed.
      * Cleans up the React component and tippy popup.
      */
     onExit() {
       tippyPopup?.destroy();
-      suggestionListComponent?.destroy();
+      itemListComponent?.destroy();
     },
   };
 }
 
 /**
- * Creates the suggestion configuration for TipTap Mention extension.
- * Filters suggestions as user types and handles dropdown lifecycle.
+ * Creates the resource item configuration for TipTap Mention extension.
+ * Filters resource items as user types and handles dropdown lifecycle.
+ * Supports both static arrays and async fetching.
  */
-function createSuggestionConfig(
-  itemsRef: React.MutableRefObject<SuggestionItem[]>,
-  onSelect?: (item: SuggestionItem) => void,
+function createResourceItemConfig(
+  items: ResourceItem[] | ((query: string) => Promise<ResourceItem[]>),
+  onSelect?: (item: ResourceItem) => void,
   isMenuOpenRef?: React.MutableRefObject<boolean>,
 ): Omit<SuggestionOptions, "editor"> {
   return {
-    items: ({ query }) =>
-      itemsRef.current.filter((item) =>
+    items: async ({ query }) => {
+      // If items is a function, call it with the query
+      if (typeof items === "function") {
+        return await items(query);
+      }
+      // Otherwise, filter the static array
+      return items.filter((item) =>
         item.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
-      ),
+      );
+    },
 
     /**
-     * Returns handlers for managing the suggestion popup lifecycle.
+     * Returns handlers for managing the resource item popup lifecycle.
      * Called once when the mention system initializes (when editor is created).
      */
     render: () => {
-      const popupHandlers = createSuggestionPopup();
+      const popupHandlers = createResourceItemPopup();
 
       /**
        * Creates a wrapped command that checks for duplicates before inserting.
@@ -276,7 +298,7 @@ function createSuggestionConfig(
       const createWrapCommand =
         (editor: Editor) =>
         (tiptapCommand: (attrs: { id: string; label: string }) => void) =>
-        (item: SuggestionItem) => {
+        (item: ResourceItem) => {
           // Check if mention already exists in the editor
           if (hasExistingMention(editor, item.name)) {
             // Don't insert duplicate mention
@@ -292,7 +314,7 @@ function createSuggestionConfig(
       return {
         /**
          * Called when user starts typing the trigger character (e.g., "@").
-         * Shows the suggestion dropdown.
+         * Shows the resource item dropdown.
          */
         onStart: (props) => {
           if (isMenuOpenRef) isMenuOpenRef.current = true;
@@ -306,7 +328,7 @@ function createSuggestionConfig(
 
         /**
          * Called as user continues typing after the trigger (e.g., "@jo" -> "@john").
-         * Updates the filtered suggestions in the dropdown.
+         * Updates the filtered resource items in the dropdown.
          */
         onUpdate: (props) => {
           popupHandlers.onUpdate({
@@ -317,15 +339,15 @@ function createSuggestionConfig(
         },
 
         /**
-         * Handles keyboard events in the suggestion dropdown.
-         * - ArrowUp/ArrowDown: Navigate through suggestions
-         * - Enter: Select current suggestion
+         * Handles keyboard events in the resource item dropdown.
+         * - ArrowUp/ArrowDown: Navigate through resource items
+         * - Enter: Select current resource item
          * - Escape: Close dropdown
          */
         onKeyDown: popupHandlers.onKeyDown,
 
         /**
-         * Called when the suggestion dropdown should close.
+         * Called when the resource item dropdown should close.
          * Cleans up the popup and updates the menu state.
          */
         onExit: () => {
@@ -350,35 +372,121 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
       disabled = false,
       className,
       editorRef,
-      commands = [],
+      commands: providedCommands = [],
+      onSubmit,
     },
     ref,
   ) => {
-    const commandRefsRef = React.useRef<
-      Array<{
-        itemsRef: React.MutableRefObject<SuggestionItem[]>;
-        isMenuOpenRef: React.MutableRefObject<boolean>;
-      }>
-    >([]);
+    // Use Tambo-specific hooks - must be called unconditionally per React rules
+    // These hooks will throw if not in Tambo context, which is expected when onSubmit is provided
+    const tamboThreadInput = useTamboThreadInput();
+    const tamboContextAttachment = useTamboContextAttachment();
+    const interactables = useCurrentInteractablesSnapshot();
 
-    // Initialize command references for each command
-    for (let i = 0; i < commands.length; i++) {
-      if (!commandRefsRef.current[i]) {
-        commandRefsRef.current[i] = {
-          itemsRef: { current: [] },
-          isMenuOpenRef: commands[i].isMenuOpenRef ?? { current: false },
-        };
-      }
-      // Update the command references with the current items and menu state
-      const ref = commandRefsRef.current[i];
-      ref.itemsRef.current = commands[i].items;
-      const menuRef = commands[i].isMenuOpenRef;
-      if (menuRef) {
-        ref.isMenuOpenRef = menuRef;
-      }
-    }
+    const tamboCommands = React.useMemo((): CommandConfig[] => {
+      if (!onSubmit) return [];
 
-    const commandRefs = commandRefsRef.current;
+      // Convert interactable components into resource items for the @ mention dropdown
+      const resourceItems = interactables.map((component) => ({
+        id: component.id,
+        name: component.name,
+        icon: React.createElement(Cuboid, { className: "w-4 h-4" }),
+        componentData: component,
+      }));
+
+      // Only create command if there are interactables to show
+      if (resourceItems.length === 0) return [];
+
+      return [
+        {
+          triggerChar: "@",
+          items: resourceItems,
+          onSelect: (item: ResourceItem) => {
+            // When a mention is selected, add it as a context attachment
+            // This will appear as a badge above the input
+            tamboContextAttachment.addContextAttachment({ name: item.name });
+          },
+          renderLabel: ({
+            node,
+          }: {
+            node: { attrs: Record<string, unknown> };
+          }) => `@${(node.attrs.label as string) ?? ""}`,
+          HTMLAttributes: { class: "mention" },
+        },
+      ];
+    }, [onSubmit, tamboContextAttachment, interactables]);
+
+    // Handle image paste from clipboard when onSubmit is provided
+    React.useEffect(() => {
+      if (!onSubmit) return;
+
+      const handlePaste = async (e: Event) => {
+        const clipboardEvent = e as ClipboardEvent;
+        const items = Array.from(clipboardEvent.clipboardData?.items ?? []);
+        const imageItems = items.filter((item) =>
+          item.type.startsWith("image/"),
+        );
+
+        if (imageItems.length === 0) return;
+
+        const hasText = clipboardEvent.clipboardData?.getData("text/plain");
+        if (!hasText) e.preventDefault();
+
+        for (const item of imageItems) {
+          const file = item.getAsFile();
+          if (file) {
+            try {
+              file[IS_PASTED_IMAGE] = true;
+              await tamboThreadInput.addImage(file);
+            } catch (error) {
+              console.error("Failed to add pasted image:", error);
+            }
+          }
+        }
+      };
+
+      const editorElement = document.querySelector(
+        '[data-slot="message-input-textarea"]',
+      );
+      editorElement?.addEventListener("paste", handlePaste as EventListener);
+      return () =>
+        editorElement?.removeEventListener(
+          "paste",
+          handlePaste as EventListener,
+        );
+    }, [onSubmit, tamboThreadInput]);
+
+    // Merge provided commands with Tambo-specific commands
+    const commands = React.useMemo(
+      () => [...providedCommands, ...tamboCommands],
+      [providedCommands, tamboCommands],
+    );
+
+    // Handle Enter key to submit message when onSubmit is provided
+    const handleKeyDown = React.useCallback(
+      (e: React.KeyboardEvent, editor: Editor) => {
+        // Handle Tambo-specific Enter key behavior
+        if (onSubmit && e.key === "Enter" && !e.shiftKey && value.trim()) {
+          e.preventDefault();
+          void onSubmit(e as React.FormEvent);
+          return;
+        }
+
+        // Delegate to provided onKeyDown handler
+        if (onKeyDown) {
+          onKeyDown(e, editor);
+        }
+      },
+      [onSubmit, value, onKeyDown],
+    );
+    // Initialize menu open refs for each command
+    const commandRefs = React.useMemo(
+      () =>
+        commands.map((cmd) => ({
+          isMenuOpenRef: cmd.isMenuOpenRef ?? { current: false },
+        })),
+      [commands],
+    );
 
     const editor = useEditor({
       immediatelyRender: false,
@@ -391,8 +499,8 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
           const ref = commandRefs[index];
           return Mention.configure({
             HTMLAttributes: cmd.HTMLAttributes ?? {},
-            suggestion: createSuggestionConfig(
-              ref.itemsRef,
+            suggestion: createResourceItemConfig(
+              cmd.items,
               cmd.onSelect,
               ref.isMenuOpenRef,
             ),
@@ -406,6 +514,7 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
       editorProps: {
         attributes: {
           class: cn(
+            "tiptap",
             "prose prose-sm max-w-none focus:outline-none",
             "p-3 rounded-t-lg bg-transparent text-sm leading-relaxed",
             "min-h-[82px] max-h-[40vh] overflow-y-auto",
@@ -419,15 +528,15 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
             (ref) => ref.isMenuOpenRef.current,
           );
 
-          // Prevent Enter from submitting form when selecting from any suggestion menu
+          // Prevent Enter from submitting form when selecting from any resource item menu
           if (event.key === "Enter" && !event.shiftKey && anyMenuOpen) {
             return false;
           }
 
-          // Delegate to parent's onKeyDown handler if provided
-          if (onKeyDown && editor) {
+          // Delegate to handleKeyDown (which handles both Tambo-specific and custom handlers)
+          if (editor) {
             const reactEvent = event as unknown as React.KeyboardEvent;
-            onKeyDown(reactEvent, editor);
+            handleKeyDown(reactEvent, editor);
             return reactEvent.defaultPrevented;
           }
           return false;
@@ -456,3 +565,20 @@ export const TextEditor = React.forwardRef<HTMLDivElement, TextEditorProps>(
 );
 
 TextEditor.displayName = "TextEditor";
+
+/**
+ * Symbol for marking pasted images.
+ * Using Symbol.for to create a global symbol that can be accessed across modules.
+ * @internal
+ */
+const IS_PASTED_IMAGE = Symbol.for("tambo-is-pasted-image");
+
+/**
+ * Extend the File interface to include the IS_PASTED_IMAGE property.
+ * This is a type-safe way to mark pasted images without using a broad index signature.
+ */
+declare global {
+  interface File {
+    [IS_PASTED_IMAGE]?: boolean;
+  }
+}
