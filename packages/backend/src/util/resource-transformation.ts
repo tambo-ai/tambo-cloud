@@ -187,8 +187,27 @@ export function extractServerKeyFromResourceName(
 }
 
 /**
+ * Resource content that has been fetched and cached
+ */
+interface FetchedResourceContent {
+  text?: string;
+  blob?: string;
+  mimeType?: string;
+}
+
+/**
  * Pre-fetch all resources from thread messages and cache them inline.
  * This converts URI-based resources to cached text/blob resources.
+ *
+ * Strategy:
+ * 1. Extract all unique resource URIs from messages
+ * 2. Fetch them in parallel into a map (uri -> content)
+ * 3. Apply the map to messages to cache content inline
+ *
+ * This approach:
+ * - Handles duplicates efficiently (fetch once, use many times)
+ * - Gracefully handles fetch failures
+ * - Keeps async work in one phase, then does synchronous message updates
  *
  * @param messages - Thread messages potentially containing resources
  * @param resourceFetchers - Map of serverKey to fetch functions
@@ -202,75 +221,126 @@ export async function prefetchAndCacheResources(
     return messages;
   }
 
-  return await Promise.all(
-    messages.map(async (message) => {
-      // Process all content parts in the message
-      const transformedContent = await Promise.all(
-        message.content.map(async (part) => {
-          // Only process Resource type parts
-          if (part.type !== ContentPartType.Resource) {
-            return part;
-          }
+  // Phase 1: Extract all unique resource URIs that need fetching
+  const urisToFetch = new Map<
+    string,
+    {
+      uri: string;
+      serverKey?: string;
+      fetchFn: (
+        uri: string,
+      ) => Promise<{ contents: Array<FetchedResourceContent> }>;
+    }
+  >();
 
-          const resource = part.resource;
+  for (const message of messages) {
+    if (!Array.isArray(message.content)) {
+      continue;
+    }
 
-          // Skip if already has text or blob cached
-          if (resource.text || resource.blob) {
-            return part;
-          }
+    for (const part of message.content) {
+      if (
+        part.type !== ContentPartType.Resource ||
+        !isResourceContentPart(part)
+      ) {
+        continue;
+      }
 
-          // Skip if no URI to fetch
-          if (!resource.uri) {
-            return part;
-          }
+      const resource = part.resource;
 
-          // Find fetcher for this resource's serverKey
-          const serverKey = extractServerKeyFromResourceName(resource.name);
-          const fetchFn = serverKey ? resourceFetchers[serverKey] : undefined;
+      // Skip if already has content
+      if (resource.text || resource.blob) {
+        continue;
+      }
 
-          if (!fetchFn) {
-            console.warn(
-              `No fetcher available for resource with serverKey: ${serverKey}`,
-            );
-            return part;
-          }
+      // Skip if no URI to fetch
+      if (!resource.uri) {
+        continue;
+      }
 
-          try {
-            const result = await fetchFn(resource.uri);
+      // Skip if we've already queued this URI
+      if (urisToFetch.has(resource.uri)) {
+        continue;
+      }
 
-            if (result.contents.length > 0) {
-              const content = result.contents[0];
+      // Find fetcher for this resource's serverKey
+      const serverKey = extractServerKeyFromResourceName(resource.name);
+      const fetchFn = serverKey ? resourceFetchers[serverKey] : undefined;
 
-              // Cache the fetched content back into the resource
-              const cachedResource: ChatCompletionContentPartResource = {
-                type: ContentPartType.Resource,
-                resource: {
-                  ...resource,
-                  // Set text or blob based on what was fetched
-                  text: content.text,
-                  blob: content.blob,
-                  // Update MIME type if provided
-                  mimeType: content.mimeType || resource.mimeType,
-                },
-              };
+      if (!fetchFn) {
+        console.warn(
+          `No fetcher available for resource with serverKey: ${serverKey}`,
+        );
+        continue;
+      }
 
-              return cachedResource;
-            }
-          } catch (error) {
-            console.error(`Error fetching resource ${resource.uri}:`, error);
-          }
+      urisToFetch.set(resource.uri, { uri: resource.uri, serverKey, fetchFn });
+    }
+  }
 
-          // Return original part if fetch failed
-          return part;
-        }),
-      );
+  // Phase 2: Fetch all unique URIs in parallel
+  const fetchedContent = new Map<string, FetchedResourceContent>();
 
-      return {
-        ...message,
-        content: transformedContent,
-      };
+  await Promise.all(
+    Array.from(urisToFetch.entries()).map(async ([uri, { fetchFn }]) => {
+      try {
+        const result = await fetchFn(uri);
+        if (result.contents.length > 0) {
+          fetchedContent.set(uri, result.contents[0]);
+        }
+      } catch (error) {
+        // Make sure not to throw an error here, so we do not break other resource fetches
+        console.error(`Error fetching resource ${uri}:`, error);
+      }
     }),
   );
+
+  // Phase 3: Apply cached content to messages
+  return messages.map((message) => {
+    if (!Array.isArray(message.content)) {
+      return message;
+    }
+
+    const transformedContent = message.content.map((part) => {
+      if (
+        part.type !== ContentPartType.Resource ||
+        !isResourceContentPart(part)
+      ) {
+        return part;
+      }
+
+      const resource = part.resource;
+
+      // Skip if already has content
+      if (resource.text || resource.blob || !resource.uri) {
+        return part;
+      }
+
+      // Check if we fetched content for this URI
+      const content = fetchedContent.get(resource.uri);
+      if (!content) {
+        return part;
+      }
+
+      // Cache the fetched content back into the resource
+      const cachedResource: ChatCompletionContentPartResource = {
+        type: ContentPartType.Resource,
+        resource: {
+          ...resource,
+          text: content.text,
+          blob: content.blob,
+          mimeType: content.mimeType || resource.mimeType,
+        },
+      };
+
+      return cachedResource;
+    });
+
+    return {
+      ...message,
+      content: transformedContent,
+    };
+  });
 }
 
 /**
