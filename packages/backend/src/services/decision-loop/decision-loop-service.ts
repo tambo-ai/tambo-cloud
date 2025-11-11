@@ -12,6 +12,7 @@ import { parse } from "partial-json";
 import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
 import { extractMessageContent } from "../../util/response-parsing";
 import { objectTemplate } from "../../util/template";
+import { ResourceFetcherMap } from "../../util/resource-transformation";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
 import {
   getLLMResponseMessage,
@@ -35,6 +36,7 @@ export async function* runDecisionLoop(
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   customInstructions: string | undefined,
   forceToolChoice?: string,
+  resourceFetchers?: ResourceFetcherMap,
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const componentTools = strictTools.filter((tool) =>
     getToolName(tool).startsWith(UI_TOOLNAME_PREFIX),
@@ -56,8 +58,10 @@ export async function* runDecisionLoop(
 
   const { template: systemPrompt, args: systemPromptArgs } =
     generateDecisionLoopPrompt(customInstructions);
-  const chatCompletionMessages =
-    threadMessagesToChatCompletionMessageParam(messages);
+  const chatCompletionMessages = threadMessagesToChatCompletionMessageParam(
+    messages,
+    resourceFetchers,
+  );
   const promptMessages = objectTemplate<ChatCompletionMessageParam[]>([
     { role: "system", content: systemPrompt },
     { role: "chat_history" as "user", content: "{chat_history}" },

@@ -7,6 +7,7 @@ import {
   LegacyComponentDecision,
   ThreadMessage,
 } from "@tambo-ai-cloud/core";
+import { ResourceFetcherMap } from "./util/resource-transformation";
 import OpenAI from "openai";
 import { AvailableComponent } from "./model/component-metadata";
 import { Provider } from "./model/providers";
@@ -46,6 +47,7 @@ interface RunDecisionLoopParams {
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[];
   customInstructions?: string | undefined;
   forceToolChoice?: string;
+  resourceFetchers?: ResourceFetcherMap;
 }
 
 export interface TamboBackend {
@@ -208,6 +210,7 @@ class AgenticTamboBackend implements TamboBackend {
       params.strictTools,
       params.customInstructions,
       params.forceToolChoice,
+      params.resourceFetchers,
     );
   }
 

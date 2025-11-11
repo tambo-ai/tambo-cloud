@@ -327,3 +327,37 @@ async function getAuthProvider(
   });
   return authProvider;
 }
+
+/**
+ * Create a map of resource fetchers from MCP clients, indexed by serverKey.
+ * Each fetcher function can be used to read resources from that MCP server.
+ */
+export function createResourceFetcherMap(
+  mcpClients: ThreadMcpClient[],
+): Record<
+  string,
+  (
+    uri: string,
+  ) => Promise<{
+    contents: Array<{ text?: string; blob?: string; mimeType?: string }>;
+  }>
+> {
+  const fetchers: Record<
+    string,
+    (
+      uri: string,
+    ) => Promise<{
+      contents: Array<{ text?: string; blob?: string; mimeType?: string }>;
+    }>
+  > = {};
+
+  for (const { client, serverKey } of mcpClients) {
+    if (!serverKey) continue;
+
+    fetchers[serverKey] = async (uri: string) => {
+      return await client.client.readResource({ uri });
+    };
+  }
+
+  return fetchers;
+}

@@ -2,17 +2,22 @@ import {
   ChatCompletionContentPartText,
   ChatCompletionMessageParam,
   ComponentDecisionV2,
-  ContentPartType,
   LegacyComponentDecision,
   MessageRole,
   ThreadMessage,
   ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import type OpenAI from "openai";
+import {
+  extractServerKeyFromResourceName,
+  isResourceContentPart,
+  ResourceFetcherMap,
+} from "./resource-transformation";
 import { formatFunctionCall, generateAdditionalContext } from "./tools";
 
 export function threadMessagesToChatCompletionMessageParam(
   messages: ThreadMessage[],
+  resourceFetchers?: ResourceFetcherMap,
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam[] {
   // as per
   // https://platform.openai.com/docs/guides/function-calling?api-mode=chat#handling-function-calls,
@@ -39,7 +44,7 @@ export function threadMessagesToChatCompletionMessageParam(
           return makeAssistantMessages(message, respondedToolIds);
         }
         default: {
-          return makeUserMessages(message);
+          return makeUserMessages(message, resourceFetchers);
         }
       }
     },
@@ -278,6 +283,7 @@ function makeFakeDecisionCall(component: ComponentDecisionV2): ToolCallRequest {
 
 function makeUserMessages(
   message: ThreadMessage,
+  resourceFetchers?: ResourceFetcherMap,
 ): (
   | OpenAI.Chat.Completions.ChatCompletionUserMessageParam
   | OpenAI.Chat.Completions.ChatCompletionSystemMessageParam
@@ -291,28 +297,74 @@ function makeUserMessages(
   }
   const additionalContextMessage = generateAdditionalContext(message);
 
-  // TODO: Handle Resource types - filter them out before passing to AI SDK
-  // When Resource content parts are properly stored in S3 and converted to appropriate
-  // formats (text, image_url, etc.), this filter can be updated to convert instead of remove
-  const contentWithoutResources = message.content.filter(
-    (p): p is OpenAI.Chat.Completions.ChatCompletionContentPart => {
-      if (p.type === ContentPartType.Resource) {
-        console.warn("Filtering out 'resource' content part for provider call");
-        return false;
+  // Transform content parts: handle resources and preserve other content types
+  const transformedContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
+    [];
+
+  for (const part of message.content) {
+    if (isResourceContentPart(part)) {
+      // Extract serverKey from resource name to find the fetcher
+      const serverKey = extractServerKeyFromResourceName(part.resource.name);
+      const fetchFn =
+        serverKey && resourceFetchers ? resourceFetchers[serverKey] : undefined;
+
+      // Try to transform the resource asynchronously (inline await)
+      // Note: This is a synchronous context, so we handle transformation errors gracefully
+      if (fetchFn) {
+        // For synchronous context, we can only add already-loaded content
+        // Fetch-based resources will need to be handled separately or batched before this call
+
+        // If resource has inline text or blob, transform it
+        if (part.resource.text) {
+          transformedContent.push({
+            type: "text",
+            text: part.resource.text,
+          });
+        } else if (part.resource.blob) {
+          const mimeType = part.resource.mimeType || "application/octet-stream";
+          if (mimeType.startsWith("image/")) {
+            transformedContent.push({
+              type: "image_url",
+              image_url: {
+                url: `data:${mimeType};base64,${Buffer.from(part.resource.blob, "base64").toString("base64")}`,
+              },
+            });
+          } else {
+            transformedContent.push({
+              type: "file",
+              file: {
+                file_data: `data:${mimeType};base64,${Buffer.from(part.resource.blob, "base64").toString("base64")}`,
+                filename: part.resource.name,
+              },
+            });
+          }
+        } else {
+          // URI-based resources need async fetching - for now log warning
+          console.warn(
+            `Resource with URI requires async fetching: ${part.resource.uri}. Consider pre-fetching resources.`,
+          );
+        }
+      } else {
+        // No fetcher available, skip the resource
+        console.warn(
+          `No fetcher available for resource: ${part.resource.name}`,
+        );
       }
-      return true;
-    },
-  );
+    } else {
+      // Preserve non-resource content types as-is
+      transformedContent.push(part);
+    }
+  }
 
   // Only wrap text content with <User> tags, preserve other content types as-is
   const wrappedContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
     message.role === MessageRole.User
       ? [
           { type: "text", text: "<User>" },
-          ...contentWithoutResources,
+          ...transformedContent,
           { type: "text", text: "</User>" },
         ]
-      : contentWithoutResources;
+      : transformedContent;
 
   // Combine additional context (if any) with the wrapped content
   const content = additionalContextMessage
@@ -320,7 +372,6 @@ function makeUserMessages(
     : wrappedContent;
 
   // user messages support mixed content, system messages only support text
-  // Type assertion is safe here because we've filtered out Resource types above
   return [
     message.role === MessageRole.User
       ? {

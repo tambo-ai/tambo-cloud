@@ -11,6 +11,7 @@ import {
   getToolName,
   LegacyComponentDecision,
   MessageRole,
+  MCPClient,
   ThreadMessage,
   ToolCallRequest,
   unstrictifyToolCallRequest,
@@ -18,6 +19,7 @@ import {
 import { HydraDatabase, HydraDb, operations, schema } from "@tambo-ai-cloud/db";
 import { eq } from "drizzle-orm";
 import OpenAI from "openai";
+import { createResourceFetcherMap } from "../../common/systemTools";
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { MessageRequest } from "../dto/message.dto";
 import { convertContentPartToDto } from "./content";
@@ -95,7 +97,7 @@ export async function updateGenerationStage(
  * @param advanceRequestDto
  * @param tamboBackend
  * @param allTools
- * @param availableComponentMap
+ * @param mcpClients - MCP clients for resource fetching
  * @returns
  */
 export async function processThreadMessage(
@@ -106,6 +108,12 @@ export async function processThreadMessage(
   advanceRequestDto: AdvanceThreadDto,
   tamboBackend: ITamboBackend,
   allTools: ToolRegistry,
+  mcpClients?: Array<{
+    client: MCPClient;
+    serverKey: string;
+    url: string;
+    serverId: string;
+  }>,
 ): Promise<LegacyComponentDecision> {
   const latestMessage = messages[messages.length - 1];
   // For tool responses, we can fully hydrate the component
@@ -135,6 +143,11 @@ export async function processThreadMessage(
     advanceRequestDto.availableComponents ?? [],
   );
 
+  // Build resource fetchers from MCP clients
+  const resourceFetchers = mcpClients
+    ? createResourceFetcherMap(mcpClients)
+    : undefined;
+
   const decisionStream = await tamboBackend.runDecisionLoop({
     messages,
     strictTools,
@@ -142,6 +155,7 @@ export async function processThreadMessage(
       latestMessage.role === MessageRole.User
         ? advanceRequestDto.forceToolChoice
         : undefined,
+    resourceFetchers,
   });
 
   return await getFinalDecision(decisionStream, originalTools);
