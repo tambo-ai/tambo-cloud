@@ -10,12 +10,13 @@ import { EditableHint } from "@/components/ui/editable-hint";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useHandleOnChange } from "@/hooks/use-handle-on-change";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { withInteractable, type Suggestion } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { z } from "zod";
 
 const customInstructionsEditorSuggestions: Suggestion[] = [
@@ -109,37 +110,45 @@ export function CustomInstructionsEditor({
 
   // Update the saved value when props change (e.g., after loading or Tambo updates)
   // Only sync if not currently editing to avoid overwriting unsaved changes
-  useEffect(() => {
-    if (customInstructions !== undefined && !isEditing) {
-      setSavedValue(customInstructions ?? "");
-      setDisplayValue(customInstructions ?? "");
-    }
-  }, [customInstructions, isEditing]);
+  useHandleOnChange(
+    customInstructions,
+    useCallback(
+      (instructions) => {
+        if (!isEditing) {
+          setSavedValue(instructions ?? "");
+          setDisplayValue(instructions ?? "");
+        }
+      },
+      [isEditing],
+    ),
+  );
 
   // Sync toggle state from props (no auto-save, just state sync)
-  useEffect(() => {
-    if (allowSystemPromptOverrideProp !== undefined && !isEditing) {
-      setAllowSystemPromptOverride(Boolean(allowSystemPromptOverrideProp));
-      setSavedToggleValue(Boolean(allowSystemPromptOverrideProp));
-    }
-  }, [allowSystemPromptOverrideProp, isEditing]);
+  useHandleOnChange(
+    allowSystemPromptOverrideProp,
+    useCallback(
+      (override) => {
+        if (!isEditing) {
+          setAllowSystemPromptOverride(Boolean(override));
+          setSavedToggleValue(Boolean(override));
+        }
+      },
+      [isEditing],
+    ),
+  );
 
   // When Tambo sends a new editedValue, enter edit mode automatically
-  useEffect(() => {
-    if (editedValue !== undefined) {
-      setDisplayValue(editedValue);
-      setIsEditing(true);
-    }
-  }, [editedValue]);
+  useHandleOnChange(editedValue, (value) => {
+    setDisplayValue(value);
+    setIsEditing(true);
+  });
 
   // When Tambo sends a new editedAllowSystemPromptOverride, stage it for saving
-  useEffect(() => {
-    if (editedAllowSystemPromptOverride !== undefined) {
-      setAllowSystemPromptOverride(editedAllowSystemPromptOverride);
-      setHasEditedToggle(true);
-      setIsEditing(true);
-    }
-  }, [editedAllowSystemPromptOverride]);
+  useHandleOnChange(editedAllowSystemPromptOverride, (override) => {
+    setAllowSystemPromptOverride(override);
+    setHasEditedToggle(true);
+    setIsEditing(true);
+  });
 
   const updateAllowOverride = (val: boolean) => {
     // If in edit mode, just update local state (will be saved with instructions)

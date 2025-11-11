@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useHandleOnChange } from "@/hooks/use-handle-on-change";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { OAuthValidationMode } from "@tambo-ai-cloud/core";
@@ -209,47 +210,19 @@ export function OAuthSettings({
   }, [oauthSettings]);
 
   // Initialize token required state from prop
-  useEffect(() => {
-    if (initialIsTokenRequired !== undefined) {
-      setIsTokenRequiredState(initialIsTokenRequired);
-    }
-  }, [initialIsTokenRequired]);
+  useHandleOnChange(initialIsTokenRequired, setIsTokenRequiredState);
 
   // When Tambo sends setValidationMode, change the mode
-  useEffect(() => {
-    if (setValidationMode !== undefined) {
-      handleModeChange(setValidationMode);
-    }
-  }, [setValidationMode, handleModeChange]);
+  useHandleOnChange(setValidationMode, handleModeChange);
 
   // When Tambo sends setTokenRequired, update the state
-  useEffect(() => {
-    if (setTokenRequired !== undefined) {
-      setIsTokenRequiredState(setTokenRequired);
-    }
-  }, [setTokenRequired]);
+  useHandleOnChange(setTokenRequired, setIsTokenRequiredState);
 
   // When Tambo sends setSecretKeyValue, update the secret key
-  useEffect(() => {
-    if (setSecretKeyValue !== undefined) {
-      setSecretKey(setSecretKeyValue);
-    }
-  }, [setSecretKeyValue]);
+  useHandleOnChange(setSecretKeyValue, setSecretKey);
 
   // When Tambo sends setPublicKeyValue, update the public key
-  useEffect(() => {
-    if (setPublicKeyValue !== undefined) {
-      setPublicKey(setPublicKeyValue);
-    }
-  }, [setPublicKeyValue]);
-
-  // When Tambo sends triggerSave, save the settings
-  useEffect(() => {
-    if (triggerSave === true) {
-      handleSave().catch(console.error);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [triggerSave]);
+  useHandleOnChange(setPublicKeyValue, setPublicKey);
 
   // Track changes
   useEffect(() => {
@@ -319,6 +292,14 @@ export function OAuthSettings({
     refetchSettings,
     onEdited,
   ]);
+
+  // When Tambo sends triggerSave, save the settings
+  useHandleOnChange(
+    triggerSave,
+    useCallback(() => {
+      handleSave().catch(console.error);
+    }, [handleSave]),
+  );
 
   if (isLoadingSettings) {
     return (

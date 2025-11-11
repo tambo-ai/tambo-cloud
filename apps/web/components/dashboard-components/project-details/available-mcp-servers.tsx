@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EditableHint } from "@/components/ui/editable-hint";
+import { useHandleOnChange } from "@/hooks/use-handle-on-change";
 import { api } from "@/trpc/react";
 import { AiProviderType } from "@tambo-ai-cloud/core";
 import type { Suggestion } from "@tambo-ai/react";
 import { withInteractable } from "@tambo-ai/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { z } from "zod";
 import { McpServerRow } from "./mcp-server-row";
 
@@ -93,24 +94,24 @@ export function AvailableMcpServers({
   const isAgentMode = providerType === AiProviderType.AGENT;
 
   // When Tambo sends isAddingNew prop, enter add mode
-  useEffect(() => {
-    if (isAddingNewProp !== undefined) {
-      setIsAddingNew(isAddingNewProp);
-      if (urlProp) {
-        setInitialUrl(urlProp);
-      }
-      if (customHeadersProp) {
-        setInitialHeaders(customHeadersProp);
-      }
-    }
-  }, [isAddingNewProp, urlProp, customHeadersProp]);
+  useHandleOnChange(
+    isAddingNewProp,
+    useCallback(
+      (isAdding) => {
+        setIsAddingNew(isAdding);
+        if (urlProp) {
+          setInitialUrl(urlProp);
+        }
+        if (customHeadersProp) {
+          setInitialHeaders(customHeadersProp);
+        }
+      },
+      [urlProp, customHeadersProp],
+    ),
+  );
 
   // When Tambo sends serverIdToDelete prop, set it for deletion
-  useEffect(() => {
-    if (serverIdToDeleteProp) {
-      setServerIdToDelete(serverIdToDeleteProp);
-    }
-  }, [serverIdToDeleteProp]);
+  useHandleOnChange(serverIdToDeleteProp, setServerIdToDelete);
 
   const { data: mcpServers, refetch } = api.tools.listMcpServers.useQuery(
     { projectId },

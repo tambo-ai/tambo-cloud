@@ -3,12 +3,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { EditableHint } from "@/components/ui/editable-hint";
 import { Input } from "@/components/ui/input";
 import { useClipboard } from "@/hooks/use-clipboard";
+import { useHandleOnChange } from "@/hooks/use-handle-on-change";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/trpc/react";
 import { withInteractable, type Suggestion } from "@tambo-ai/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Copy } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import {
   DeleteConfirmationDialog,
@@ -101,8 +102,6 @@ export function APIKeyList({
   const [, copy] = useClipboard(newGeneratedKey ?? "");
   const { toast } = useToast();
   const utils = api.useUtils();
-  const lastCreateKeyRef = useRef<string | undefined>();
-  const lastDeleteKeyRef = useRef<string | undefined>();
 
   const {
     data: apiKeys,
@@ -202,16 +201,17 @@ export function APIKeyList({
   }, [apiKeysLoading, apiKeys, handleCreateApiKey]);
 
   // When Tambo sends createKeyWithName, automatically create the key
-  useEffect(() => {
-    if (
-      createKeyWithName !== undefined &&
-      projectId &&
-      createKeyWithName !== lastCreateKeyRef.current
-    ) {
-      lastCreateKeyRef.current = createKeyWithName;
-      handleCreateApiKey(createKeyWithName).catch(console.error);
-    }
-  }, [createKeyWithName, projectId, handleCreateApiKey]);
+  useHandleOnChange(
+    createKeyWithName,
+    useCallback(
+      (keyName) => {
+        if (projectId) {
+          handleCreateApiKey(keyName).catch(console.error);
+        }
+      },
+      [projectId, handleCreateApiKey],
+    ),
+  );
 
   // When Tambo sends enterCreateMode, open the create form
   useEffect(() => {
@@ -231,22 +231,7 @@ export function APIKeyList({
   }, []);
 
   // When Tambo sends deleteKeyWithId, open the delete confirmation dialog
-  useEffect(() => {
-    if (
-      deleteKeyWithId !== undefined &&
-      deleteKeyWithId !== lastDeleteKeyRef.current
-    ) {
-      lastDeleteKeyRef.current = deleteKeyWithId;
-      handleDeleteKey(deleteKeyWithId);
-    }
-  }, [deleteKeyWithId, handleDeleteKey]);
-
-  // Reset lastDeleteKeyRef when dialog closes to allow retriggering same ID later
-  useEffect(() => {
-    if (!alertState.show) {
-      lastDeleteKeyRef.current = undefined;
-    }
-  }, [alertState.show]);
+  useHandleOnChange(deleteKeyWithId, handleDeleteKey, !alertState.show);
 
   const handleDeleteApiKey = async () => {
     try {

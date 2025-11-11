@@ -7,12 +7,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useHandleOnChange } from "@/hooks/use-handle-on-change";
 import { api } from "@/trpc/react";
 import { MCPTransport } from "@tambo-ai-cloud/core";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { Check, Info, Loader2 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import {
   DeleteConfirmationDialog,
@@ -126,15 +127,16 @@ export function McpServerEditor({
   }, [server, isNew]);
 
   // Show delete confirmation when triggered
-  useEffect(() => {
-    if (showDeleteConfirmation) {
+  useHandleOnChange(
+    showDeleteConfirmation,
+    useCallback(() => {
       setDeleteAlertState({
         show: true,
         title: "Delete MCP Server",
         description: `Are you sure you want to delete this MCP server?\n\n${server.url}\n\nThis action cannot be undone.`,
       });
-    }
-  }, [showDeleteConfirmation, server.url]);
+    }, [server.url]),
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
