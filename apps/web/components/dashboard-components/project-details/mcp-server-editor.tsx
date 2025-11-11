@@ -9,7 +9,11 @@ import {
 } from "@/components/ui/select";
 import { Tooltip } from "@/components/ui/tooltip";
 import { api } from "@/trpc/react";
-import { deriveServerKey, MCPTransport } from "@tambo-ai-cloud/core";
+import {
+  deriveServerKey,
+  MCPTransport,
+  isValidServerKey,
+} from "@tambo-ai-cloud/core";
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientErrorLike } from "@trpc/client";
 import { Check, Info, Loader2 } from "lucide-react";
@@ -170,7 +174,7 @@ export function McpServerEditor({
       mcpTransport: MCPTransport;
     }) => {
       if (!input.url.trim()) return;
-      if (!input.serverKey.trim() || input.serverKey.trim().length < 2) return;
+      if (!isValidServerKey(input.serverKey)) return;
       return await onSave(input);
     },
   });
@@ -231,6 +235,7 @@ export function McpServerEditor({
     !authResult?.redirectUrl &&
     projectId &&
     redirectToAuth;
+  const serverKeyValid = isValidServerKey(serverKey);
   return (
     <div className="flex flex-col gap-2 rounded-md w-full">
       <div className="flex flex-col gap-1">
@@ -260,7 +265,7 @@ export function McpServerEditor({
                       isSaving ||
                       !url.trim() ||
                       !serverKey.trim() ||
-                      serverKey.trim().length < 2
+                      !serverKeyValid
                     }
                     className="font-sans bg-transparent hover:bg-accent text-sm"
                   >
@@ -405,13 +410,13 @@ export function McpServerEditor({
           />
           {!serverKey.trim() && isEditing && (
             <p className="text-xs text-muted-foreground px-2">
-              Automatically derived from server URL if left blank. Must be at
-              least 2 characters.
+              Automatically derived from server URL if left blank. Use letters,
+              numbers, or underscores; minimum 2 characters.
             </p>
           )}
-          {serverKey.trim() && serverKey.trim().length < 2 && (
+          {serverKey.trim() && !serverKeyValid && (
             <p className="text-xs text-destructive px-2">
-              Must be at least 2 characters
+              Use only letters, numbers, and underscores (min 2 characters)
             </p>
           )}
         </div>
