@@ -15,7 +15,6 @@ import {
   MCPClient,
   MCPTransport,
   ToolProviderType,
-  deriveServerKey,
   isValidServerKey,
   validateMcpServer,
 } from "@tambo-ai-cloud/core";
@@ -113,10 +112,8 @@ export const toolsRouter = createTRPCRouter({
       const { projectId, url, customHeaders, mcpTransport } = input;
       const parsedUrl = new URL(url);
 
-      // Auto-fill serverKey if blank
-      if (!serverKey || !serverKey.trim()) {
-        serverKey = deriveServerKey(url);
-      }
+      // Normalize minor whitespace only (preserve original casing as requested)
+      serverKey = serverKey.trim();
 
       // Check for duplicate serverKey in the project
       const existingKeys = await getExistingServerKeys(ctx.db, projectId);
@@ -287,10 +284,8 @@ export const toolsRouter = createTRPCRouter({
       let { serverKey } = input;
       const { projectId, serverId, url, customHeaders, mcpTransport } = input;
 
-      // Auto-fill serverKey if blank
-      if (!serverKey || !serverKey.trim()) {
-        serverKey = deriveServerKey(url);
-      }
+      // Normalize minor whitespace only (preserve original casing as requested)
+      serverKey = serverKey.trim();
 
       // Check for duplicate serverKey in the project (excluding current server)
       const existingKeys = await getExistingServerKeys(
