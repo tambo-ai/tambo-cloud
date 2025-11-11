@@ -130,6 +130,16 @@ export function McpServerEditor({
     );
   }, [server, isNew]);
 
+  // Auto-fill serverKey from URL when editing and serverKey is empty
+  useEffect(() => {
+    if (isEditing && !serverKey.trim() && url && url !== "https://") {
+      const derived = deriveServerKey(url);
+      if (derived && derived.length >= 2) {
+        setServerKey(derived);
+      }
+    }
+  }, [url, isEditing, serverKey]);
+
   // Show delete confirmation when triggered
   useEffect(() => {
     if (showDeleteConfirmation) {
@@ -308,11 +318,10 @@ export function McpServerEditor({
             </>
           )}
         </div>
-        {errorMessage && (
-          <p className="text-sm text-destructive px-2">{errorMessage}</p>
-        )}
-        {saveError && (
-          <p className="text-sm text-destructive px-2">{saveError.message}</p>
+        {(errorMessage || saveError?.message) && (
+          <p className="text-sm text-destructive px-2">
+            {saveError?.message || errorMessage}
+          </p>
         )}
         {server.mcpRequiresAuth && (
           <div className="flex flex-col gap-1 mt-1">
@@ -363,14 +372,13 @@ export function McpServerEditor({
             }
           }}
           onKeyDown={handleKeyDown}
-          placeholder={
-            isNew ? deriveServerKey(url) || "e.g., github" : undefined
-          }
+          placeholder="e.g., github"
           className="rounded-lg"
         />
         {!serverKey.trim() && isEditing && (
           <p className="text-xs text-muted-foreground px-2">
-            Can be auto-filled from URL. Must be at least 2 characters.
+            Automatically derived from server URL if left blank. Must be at
+            least 2 characters.
           </p>
         )}
         {serverKey.trim() && serverKey.trim().length < 2 && (

@@ -15,6 +15,7 @@ import {
   MCPClient,
   MCPTransport,
   ToolProviderType,
+  deriveServerKey,
   validateMcpServer,
 } from "@tambo-ai-cloud/core";
 import {
@@ -32,6 +33,21 @@ type McpServer = Awaited<
 >[number];
 
 type OAuthClientProvider = OAuthLocalProvider;
+
+/**
+ * Get all existing serverKeys for a project to validate uniqueness
+ */
+async function getExistingServerKeys(
+  db: HydraDb,
+  projectId: string,
+  excludeServerId?: string,
+): Promise<string[]> {
+  const servers = await operations.getProjectMcpServers(db, projectId, null);
+  return servers
+    .filter((server) => !excludeServerId || server.id !== excludeServerId)
+    .map((server) => server.serverKey)
+    .filter((key) => key !== ""); // Exclude empty serverKeys during transition
+}
 
 export const toolsRouter = createTRPCRouter({
   listMcpServers: protectedProcedure
@@ -89,8 +105,23 @@ export const toolsRouter = createTRPCRouter({
         ctx.user.id,
       );
 
-      const { projectId, url, customHeaders, mcpTransport, serverKey } = input;
+      let { serverKey } = input;
+      const { projectId, url, customHeaders, mcpTransport } = input;
       const parsedUrl = new URL(url);
+
+      // Auto-fill serverKey if blank
+      if (!serverKey || !serverKey.trim()) {
+        serverKey = deriveServerKey(url);
+      }
+
+      // Check for duplicate serverKey in the project
+      const existingKeys = await getExistingServerKeys(ctx.db, projectId);
+      if (existingKeys.includes(serverKey)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Server key "${serverKey}" is already in use by another MCP server in this project`,
+        });
+      }
 
       // Perform additional safety checks
       const safetyCheck = await validateSafeURL(parsedUrl.hostname);
@@ -246,14 +277,27 @@ export const toolsRouter = createTRPCRouter({
         ctx.user.id,
       );
 
-      const {
+      let { serverKey } = input;
+      const { projectId, serverId, url, customHeaders, mcpTransport } = input;
+
+      // Auto-fill serverKey if blank
+      if (!serverKey || !serverKey.trim()) {
+        serverKey = deriveServerKey(url);
+      }
+
+      // Check for duplicate serverKey in the project (excluding current server)
+      const existingKeys = await getExistingServerKeys(
+        ctx.db,
         projectId,
         serverId,
-        url,
-        customHeaders,
-        mcpTransport,
-        serverKey,
-      } = input;
+      );
+      if (existingKeys.includes(serverKey)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Server key "${serverKey}" is already in use by another MCP server in this project`,
+        });
+      }
+
       const validity = await getServerValidity(
         ctx.db,
         projectId,
