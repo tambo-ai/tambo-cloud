@@ -84,11 +84,15 @@ describe("tool utilities", () => {
   });
 
   describe("callSystemTool", () => {
+    const mockCallTool = jest.fn();
     const mockSystemTools: McpToolRegistry = {
       mcpToolSources: {
         testTool: {
-          callTool: jest.fn(),
-        } as unknown as MCPClient,
+          client: {
+            callTool: mockCallTool,
+          } as unknown as MCPClient,
+          serverKey: "test",
+        },
       },
       mcpToolsSchema: [],
       mcpHandlers: {
@@ -127,11 +131,9 @@ describe("tool utilities", () => {
 
     it("should call tool and return formatted response for string result", async () => {
       const mockResult = "test result";
-      jest
-        .mocked(mockSystemTools.mcpToolSources.testTool.callTool)
-        .mockResolvedValue({
-          content: [{ type: ContentPartType.Text, text: mockResult }],
-        });
+      mockCallTool.mockResolvedValue({
+        content: [{ type: ContentPartType.Text, text: mockResult }],
+      });
 
       const result = await callSystemTool(
         mockSystemTools,
@@ -142,9 +144,7 @@ describe("tool utilities", () => {
         advanceRequestDto,
       );
 
-      expect(
-        mockSystemTools.mcpToolSources.testTool.callTool,
-      ).toHaveBeenCalledWith(
+      expect(mockCallTool).toHaveBeenCalledWith(
         "testTool",
         {
           param1: "value1",
@@ -173,9 +173,7 @@ describe("tool utilities", () => {
           { type: ContentPartType.Text, text: "part 2" },
         ],
       };
-      (
-        mockSystemTools.mcpToolSources.testTool.callTool as jest.Mock
-      ).mockResolvedValue(mockResult);
+      mockCallTool.mockResolvedValue(mockResult);
 
       const result = await callSystemTool(
         mockSystemTools,
@@ -191,9 +189,7 @@ describe("tool utilities", () => {
 
     it("should throw error when no response content", async () => {
       const mockResult = { content: [] };
-      (
-        mockSystemTools.mcpToolSources.testTool.callTool as jest.Mock
-      ).mockResolvedValue(mockResult);
+      mockCallTool.mockResolvedValue(mockResult);
 
       await expect(
         callSystemTool(

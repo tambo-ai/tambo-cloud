@@ -203,7 +203,10 @@ async function getMcpTools(
   );
 
   const mcpTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
-  const mcpToolSources: Record<string, MCPClient> = {};
+  const mcpToolSources: Record<
+    string,
+    { client: MCPClient; serverKey: string }
+  > = {};
 
   for (const result of toolResults) {
     if (result.status === "rejected") {
@@ -251,8 +254,10 @@ async function getMcpTools(
     );
 
     for (const tool of tools) {
-      mcpToolSources[serverKey ? `${serverKey}__${tool.name}` : tool.name] =
-        mcpClient;
+      mcpToolSources[serverKey ? `${serverKey}__${tool.name}` : tool.name] = {
+        client: mcpClient,
+        serverKey,
+      };
     }
   }
 
