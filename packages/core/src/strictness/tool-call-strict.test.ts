@@ -179,6 +179,177 @@ describe("unstrictifyToolCallRequest", () => {
     });
   });
 
+  it("should keep optional nested objects even when all their properties become null", () => {
+    // Start with an original schema that has an optional nested object
+    const originalSchema: JSONSchema7 = {
+      type: "object",
+      properties: {
+        config: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+          },
+          required: [],
+        },
+      },
+      required: [],
+    };
+
+    // Build the original tool from the original schema
+    const originalTool: OpenAI.Chat.Completions.ChatCompletionTool = {
+      type: "function",
+      function: {
+        name: "test",
+        parameters: originalSchema as Record<string, unknown>,
+      },
+    };
+
+    // Simulate what the LLM would return when given the strict schema
+    // The strict schema makes all properties required and nullable,
+    // so the LLM returns { config: { name: null } }
+    const toolCallRequest: ToolCallRequest = {
+      toolName: "test",
+      parameters: [
+        {
+          parameterName: "config",
+          parameterValue: {
+            name: null,
+          },
+        },
+      ],
+    };
+
+    const result = unstrictifyToolCallRequest(originalTool, toolCallRequest);
+    expect(result).toEqual({
+      toolName: "test",
+      parameters: [
+        {
+          parameterName: "config",
+          parameterValue: {
+            // name should be removed as it's optional and null, but the config object itself is kept
+          },
+        },
+      ],
+    });
+  });
+
+  it("should handle nested objects with mix of required and optional properties", () => {
+    // Original schema for { name?: string; key: string }
+    // This creates a nested object where 'key' is required but 'name' is optional
+    const originalSchema: JSONSchema7 = {
+      type: "object",
+      properties: {
+        user: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            key: { type: "string" },
+          },
+          required: ["key"],
+        },
+      },
+      required: ["user"],
+    };
+
+    // Build the original tool from the original schema
+    const originalTool: OpenAI.Chat.Completions.ChatCompletionTool = {
+      type: "function",
+      function: {
+        name: "test",
+        parameters: originalSchema as Record<string, unknown>,
+      },
+    };
+
+    // The strict schema makes all properties required and nullable,
+    // so the LLM returns { user: { name: null, key: 'key1' } }
+    const toolCallRequest: ToolCallRequest = {
+      toolName: "test",
+      parameters: [
+        {
+          parameterName: "user",
+          parameterValue: {
+            name: null,
+            key: "key1",
+          },
+        },
+      ],
+    };
+
+    const result = unstrictifyToolCallRequest(originalTool, toolCallRequest);
+    expect(result).toEqual({
+      toolName: "test",
+      parameters: [
+        {
+          parameterName: "user",
+          parameterValue: {
+            key: "key1",
+            // name should be removed since it's optional and null
+          },
+        },
+      ],
+    });
+  });
+
+  it("should remove null values from optional properties in nested objects with no required array", () => {
+    // Original schema like: { style?: { bold?: boolean; fontFamily?: string; backgroundColor?: string } }
+    // When there's no 'required' array, ALL properties are implicitly optional
+    const originalSchema: JSONSchema7 = {
+      type: "object",
+      properties: {
+        style: {
+          type: "object",
+          properties: {
+            bold: { type: "boolean" },
+            fontFamily: { type: "string" },
+            backgroundColor: { type: "string" },
+          },
+          additionalProperties: false,
+          // NOTE: no 'required' array means all properties are optional
+        },
+      },
+      required: [],
+    };
+
+    // Build the original tool from the original schema
+    const originalTool: OpenAI.Chat.Completions.ChatCompletionTool = {
+      type: "function",
+      function: {
+        name: "test",
+        parameters: originalSchema as Record<string, unknown>,
+      },
+    };
+
+    // The LLM returns { style: { bold: true, fontFamily: null, backgroundColor: "#E8F0FE" } }
+    const toolCallRequest: ToolCallRequest = {
+      toolName: "test",
+      parameters: [
+        {
+          parameterName: "style",
+          parameterValue: {
+            bold: true,
+            fontFamily: null,
+            backgroundColor: "#E8F0FE",
+          },
+        },
+      ],
+    };
+
+    const result = unstrictifyToolCallRequest(originalTool, toolCallRequest);
+    expect(result).toEqual({
+      toolName: "test",
+      parameters: [
+        {
+          parameterName: "style",
+          parameterValue: {
+            bold: true,
+            backgroundColor: "#E8F0FE",
+            // fontFamily should be removed since it's optional and null
+          },
+        },
+      ],
+    });
+  });
+
   it("should throw an error if parameter in tool call request not found in original tool", () => {
     const originalTool: OpenAI.Chat.Completions.ChatCompletionTool = {
       type: "function",
