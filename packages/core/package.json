@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "default": "./src/index.ts",
     "import": "./src/index.ts"
   },
   "main": "./src/index.ts",
