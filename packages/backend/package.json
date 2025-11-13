@@ -4,7 +4,6 @@
   "description": "Supporting package for running the Tambo AI service",
   "type": "module",
   "exports": {
-    "default": "./src/index.ts",
     "import": "./src/index.ts"
   },
   "files": [
