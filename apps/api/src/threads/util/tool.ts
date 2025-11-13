@@ -1,4 +1,4 @@
-import { McpToolRegistry } from "@tambo-ai-cloud/backend";
+import { McpToolRegistry, unprefixToolName } from "@tambo-ai-cloud/backend";
 import {
   ActionType,
   ContentPartType,
@@ -11,23 +11,6 @@ import {
 import { AdvanceThreadDto } from "../dto/advance-thread.dto";
 import { ChatCompletionContentPartDto } from "../dto/message.dto";
 import { tryParseJson } from "./content";
-
-/**
- * Extracts the original tool name from a potentially prefixed tool name.
- * Removes the serverKey prefix (e.g., "github__search_code" -> "search_code").
- * @param toolName - The tool name, prefixed with "serverKey__"
- * @param serverKey - The serverKey prefix for this tool
- * @returns The original tool name without the prefix
- */
-function getOriginalToolName(toolName: string, serverKey: string): string {
-  const prefix = `${serverKey}__`;
-  if (toolName.startsWith(prefix)) {
-    return toolName.substring(prefix.length);
-  }
-
-  // Fallback: return as-is if prefix doesn't match (shouldn't happen)
-  return toolName;
-}
 
 export function validateToolResponse(message: ThreadMessage): boolean {
   // TODO: Handle Resource types - MCP servers return resource content parts
@@ -93,12 +76,12 @@ export async function callSystemTool(
         p.parameterValue,
       ]),
     );
-    const originalToolName = getOriginalToolName(
+    const unprefixedToolName = unprefixToolName(
       toolCallRequest.toolName,
       toolSourceInfo.serverKey,
     );
     const result = await toolSourceInfo.client.callTool(
-      originalToolName,
+      unprefixedToolName,
       params,
       {
         [MCP_PARENT_MESSAGE_ID_META_KEY]: toolCallMessageId,
