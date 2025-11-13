@@ -10,12 +10,12 @@ import {
 import OpenAI from "openai";
 import { parse } from "partial-json";
 import { generateDecisionLoopPrompt } from "../../prompt/decision-loop-prompts";
-import { extractMessageContent } from "../../util/response-parsing";
-import { objectTemplate } from "../../util/template";
 import {
   prefetchAndCacheResources,
   ResourceFetcherMap,
 } from "../../util/resource-transformation";
+import { extractMessageContent } from "../../util/response-parsing";
+import { objectTemplate } from "../../util/template";
 import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-message-conversion";
 import {
   getLLMResponseMessage,
@@ -38,8 +38,8 @@ export async function* runDecisionLoop(
   messages: ThreadMessage[],
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
   customInstructions: string | undefined,
-  forceToolChoice?: string,
-  resourceFetchers?: ResourceFetcherMap,
+  forceToolChoice: string | undefined,
+  resourceFetchers: ResourceFetcherMap,
 ): AsyncIterableIterator<LegacyComponentDecision> {
   const componentTools = strictTools.filter((tool) =>
     getToolName(tool).startsWith(UI_TOOLNAME_PREFIX),

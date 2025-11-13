@@ -1,6 +1,10 @@
 import {
+  ChatCompletionAssistantMessageParam,
   ChatCompletionContentPartText,
   ChatCompletionMessageParam,
+  ChatCompletionSystemMessageParam,
+  ChatCompletionToolMessageParam,
+  ChatCompletionUserMessageParam,
   ComponentDecisionV2,
   LegacyComponentDecision,
   MessageRole,
@@ -14,7 +18,7 @@ import { formatFunctionCall, generateAdditionalContext } from "./tools";
 export function threadMessagesToChatCompletionMessageParam(
   messages: ThreadMessage[],
   allowUnresolvedResources: boolean = false,
-): OpenAI.Chat.Completions.ChatCompletionMessageParam[] {
+): ChatCompletionMessageParam[] {
   // as per
   // https://platform.openai.com/docs/guides/function-calling?api-mode=chat#handling-function-calls,
   // if the model responds with a tool call then the user MUST respond to the
@@ -57,37 +61,29 @@ export function threadMessagesToChatCompletionMessageParam(
 
 function makeToolMessages(
   message: ThreadMessage,
-): (
-  | OpenAI.Chat.Completions.ChatCompletionToolMessageParam
-  | OpenAI.Chat.Completions.ChatCompletionUserMessageParam
-)[] {
+): (ChatCompletionToolMessageParam | ChatCompletionUserMessageParam)[] {
   if (message.tool_call_id) {
-    const toolMessage: OpenAI.Chat.Completions.ChatCompletionToolMessageParam =
-      {
-        role: "tool",
-        content: message.content as ChatCompletionContentPartText[],
-        tool_call_id: message.tool_call_id,
-      };
+    const toolMessage: ChatCompletionToolMessageParam = {
+      role: "tool",
+      content: message.content as ChatCompletionContentPartText[],
+      tool_call_id: message.tool_call_id,
+    };
     return [toolMessage];
   }
   console.warn(
     `no tool id in tool message ${message.id}, converting to user message`,
   );
   // If there's no tool id the we just call it a user message
-  const userToolMessage: OpenAI.Chat.Completions.ChatCompletionUserMessageParam =
-    {
-      role: "user",
-      content: message.content as ChatCompletionContentPartText[],
-    };
+  const userToolMessage: ChatCompletionUserMessageParam = {
+    role: "user",
+    content: message.content as ChatCompletionContentPartText[],
+  };
   return [userToolMessage];
 }
 function makeAssistantMessages(
   message: ThreadMessage,
   respondedToolIds: string[],
-): (
-  | OpenAI.Chat.Completions.ChatCompletionAssistantMessageParam
-  | OpenAI.Chat.Completions.ChatCompletionToolMessageParam
-)[] {
+): (ChatCompletionAssistantMessageParam | ChatCompletionToolMessageParam)[] {
   // Old entries in the db had toolcallrequest in the component decision, but this has since been elevated to its own column/prop
   const toolCallRequest =
     message.toolCallRequest ?? message.component?.toolCallRequest;
@@ -286,10 +282,7 @@ function makeFakeDecisionCall(component: ComponentDecisionV2): ToolCallRequest {
 function makeUserMessages(
   message: ThreadMessage,
   allowUnresolvedResources: boolean,
-): (
-  | OpenAI.Chat.Completions.ChatCompletionUserMessageParam
-  | OpenAI.Chat.Completions.ChatCompletionSystemMessageParam
-)[] {
+): (ChatCompletionUserMessageParam | ChatCompletionSystemMessageParam)[] {
   if (
     message.role === MessageRole.Hydra ||
     message.role === MessageRole.Assistant ||
