@@ -1758,12 +1758,17 @@ export class ThreadsService {
           const originalTool = originalTools.find(
             (tool) => getToolName(tool) === toolCallRequest.toolName,
           );
-          if (originalTool) {
-            currentThreadMessage.toolCallRequest = unstrictifyToolCallRequest(
-              originalTool,
-              toolCallRequest,
+          if (!originalTool) {
+            // This should never happen, because the original tools are part of this same callchain, it would
+            // have to have been filtered out during the decision loop.
+            throw new Error(
+              `Original tool not found for tool call request: ${toolCallRequest.toolName}`,
             );
           }
+          currentThreadMessage.toolCallRequest = unstrictifyToolCallRequest(
+            originalTool,
+            toolCallRequest,
+          );
         }
         chunkCount++;
         if (!ttfbEnded) {
