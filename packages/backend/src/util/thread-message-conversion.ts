@@ -39,8 +39,14 @@ export function threadMessagesToChatCompletionMessageParam(
         case MessageRole.Assistant: {
           return makeAssistantMessages(message, respondedToolIds);
         }
-        default: {
+        case MessageRole.User: {
           return makeUserMessages(message, allowUnresolvedResources);
+        }
+        case MessageRole.System: {
+          return makeUserMessages(message, allowUnresolvedResources);
+        }
+        default: {
+          throw new Error(`Unknown message role: ${message.role}`);
         }
       }
     },

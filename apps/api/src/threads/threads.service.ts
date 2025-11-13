@@ -1395,7 +1395,7 @@ export class ThreadsService {
     allTools: ToolRegistry,
     mcpAccessToken: string | undefined,
     maxToolCallLimit: number,
-    mcpClients?: Array<{
+    mcpClients: Array<{
       client: MCPClient;
       serverKey: string;
       url: string;
@@ -1448,7 +1448,7 @@ export class ThreadsService {
     allTools: ToolRegistry,
     mcpAccessToken: string | undefined,
     maxToolCallLimit: number,
-    mcpClients?: Array<{
+    mcpClients: Array<{
       client: MCPClient;
       serverKey: string;
       url: string;
@@ -1518,9 +1518,7 @@ export class ThreadsService {
         });
 
         // Build resource fetchers from MCP clients
-        const resourceFetchers = mcpClients
-          ? createResourceFetcherMap(mcpClients)
-          : undefined;
+        const resourceFetchers = createResourceFetcherMap(mcpClients);
 
         const messageStream = await tamboBackend.runDecisionLoop({
           messages,
@@ -1597,6 +1595,7 @@ export class ThreadsService {
         messages,
         strictTools,
         forceToolChoice: advanceRequestDto.forceToolChoice,
+        resourceFetchers: createResourceFetcherMap(mcpClients),
       });
 
       decisionLoopSpan.end();

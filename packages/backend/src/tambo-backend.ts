@@ -7,7 +7,6 @@ import {
   LegacyComponentDecision,
   ThreadMessage,
 } from "@tambo-ai-cloud/core";
-import { ResourceFetcherMap } from "./util/resource-transformation";
 import OpenAI from "openai";
 import { AvailableComponent } from "./model/component-metadata";
 import { Provider } from "./model/providers";
@@ -20,6 +19,7 @@ import { LLMClient } from "./services/llm/llm-client";
 import { generateSuggestions } from "./services/suggestion/suggestion.service";
 import { SuggestionDecision } from "./services/suggestion/suggestion.types";
 import { generateThreadName } from "./services/thread-name/thread-name.service";
+import { ResourceFetcherMap } from "./util/resource-transformation";
 
 interface TamboBackendOptions {
   model?: string;
@@ -47,7 +47,7 @@ interface RunDecisionLoopParams {
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[];
   customInstructions?: string | undefined;
   forceToolChoice?: string;
-  resourceFetchers?: ResourceFetcherMap;
+  resourceFetchers: ResourceFetcherMap;
 }
 
 export interface TamboBackend {
