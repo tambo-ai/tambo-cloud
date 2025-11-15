@@ -1,0 +1,76 @@
+---
+title: "What is Generative UI?"
+date: "2025-11-14"
+description: "The shift from interfaces users must learn to interfaces that learn users."
+author: "Michael Magan"
+---
+
+import { BlogPostWithFrontmatter as BlogPost } from "@/components/blog/blog-post-wrapper";
+
+export default function Layout(props) {
+  return <BlogPost meta={frontmatter}>{props.children}</BlogPost>;
+}
+
+Generative UI is an interface that adapts in real-time to the user's context, which could include natural language input, their past interactions, or system data. Instead of a fixed experience everyone must learn, the software learns to fit what each user needs in the moment.
+
+> "We used to adapt to software, now software will adapt to us."
+
+## Why This Matters
+
+Traditional software forces a trade-off: either overwhelm users with features upfront or hide functionality behind menus they'll never find.
+
+Generative UI breaks this trade-off. The interface reveals complexity only when needed, adapting to each user's skill level and goals.
+
+**For users:** Software that responds to intent rather than demanding mastery of menus and shortcuts.
+
+**For developers:** Build once, personalize infinitely—without writing branching logic for every user type.
+
+## Beyond Code Generation
+
+A common misconception: Generative UI means AI generating HTML on the fly or users "vibe-coding" their own apps.
+
+The explosive popularity of AI code generation shows users crave more control and flexibility. But that doesn't mean everyone should become a programmer. Your parents shouldn't need to write code to customize their email client.
+
+Generative UI isn't about generating code; It's about developers building reliable, flexible software that AI can fit to individual needs. As this approach matures, the demand for users to build their own interfaces will actually decrease.
+
+## The Component Model
+
+Instead of generating code from scratch, generative UI works with **predefined components**:
+
+1. **You build:** UI components with typed props and schemas
+2. **AI chooses:** Which components to use and how to configure them
+3. **Users get:** Personalized interfaces without custom code
+
+Think of it as Lego blocks for AI. You define the pieces. The AI assembles them based on what each user needs.
+
+> "Legos for the AI to build new experiences for each user."
+
+The assistant can surface advanced features without cluttering the default view. No massive switch statements. No separate "power user" modes. Just flexible primitives that compose intelligently.
+
+While the AI doesn't generate code, you can expose conditional rendering or styling decisions: whether something should be highlighted, which variant of a component to show. This gives users more control over their own experiences without introducing unreliability or risk.
+
+## A Concrete Example: Intelligent Spreadsheets
+
+[video demo]
+
+Traditional spreadsheets demand upfront learning: formulas, cell references, chart configuration.
+
+With generative UI, the user starts with natural language:
+
+**User:** "Calculate compound annual growth rate for this data"
+
+**The AI:** Selects the relevant cells, applies the formula, formats the result, and creates a visualization.
+
+The complexity is still there—but it's revealed progressively, only when needed. The novice gets started immediately. The expert still has full control.
+
+## What This Enables
+
+Generative UI lets you build software that solves more problems without cluttering the interface with every feature upfront. You can support complex workflows and advanced use cases without overwhelming new users or maintaining separate views for different personas.
+
+As AI models improve at understanding context and intent, interfaces built on them will become increasingly fluid and personalized. Software that feels **less like a tool you have to master and more like a collaborator that understands what you're trying to do.**
+
+That's the shift: from interfaces users must learn to interfaces that learn users.
+
+---
+
+_This is why we built [Tambo](https://tambo.ai)—an open-source React SDK for building generative UIs. Ready to explore this paradigm? [Get started →](https://docs.tambo.co)_
