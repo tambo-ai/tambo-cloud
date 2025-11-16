@@ -1,5 +1,6 @@
 import { MessageRole, ToolCallRequest } from "@tambo-ai-cloud/core";
 import {
+  computePerToolCountsFromSignatures,
   DEFAULT_MAX_TOTAL_TOOL_CALLS,
   updateToolCallCounts,
   validateToolCallLimits,
@@ -395,6 +396,81 @@ describe("tool-call-tracking utilities", () => {
 
       // Should be allowed because per-tool override exists and current per-tool total(1) < 5
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe("computePerToolCountsFromSignatures", () => {
+    it("should aggregate counts for the same tool with different parameters", () => {
+      const signatureCounts = {
+        '{"toolName":"searchDatabase","parameters":[{"parameterName":"query","parameterValue":"test1"}]}': 2,
+        '{"toolName":"searchDatabase","parameters":[{"parameterName":"query","parameterValue":"test2"}]}': 3,
+        '{"toolName":"createUser","parameters":[{"parameterName":"name","parameterValue":"John"}]}': 1,
+      };
+
+      const result = computePerToolCountsFromSignatures(signatureCounts);
+
+      expect(result).toEqual({
+        searchDatabase: 5, // 2 + 3
+        createUser: 1,
+      });
+    });
+
+    it("should handle empty signature counts", () => {
+      const result = computePerToolCountsFromSignatures({});
+
+      expect(result).toEqual({});
+    });
+
+    it("should skip invalid JSON signatures", () => {
+      const signatureCounts = {
+        "invalid json": 2,
+        '{"toolName":"validTool","parameters":[]}': 3,
+      };
+
+      const result = computePerToolCountsFromSignatures(signatureCounts);
+
+      expect(result).toEqual({
+        validTool: 3,
+      });
+    });
+
+    it("should skip signatures without toolName", () => {
+      const signatureCounts = {
+        '{"parameters":[]}': 2,
+        '{"toolName":"validTool","parameters":[]}': 3,
+      };
+
+      const result = computePerToolCountsFromSignatures(signatureCounts);
+
+      expect(result).toEqual({
+        validTool: 3,
+      });
+    });
+
+    it("should handle multiple calls to the same tool", () => {
+      const signatureCounts = {
+        '{"toolName":"searchDatabase","parameters":[{"parameterName":"query","parameterValue":"test"}]}': 10,
+      };
+
+      const result = computePerToolCountsFromSignatures(signatureCounts);
+
+      expect(result).toEqual({
+        searchDatabase: 10,
+      });
+    });
+
+    it("should correctly aggregate when tool is called with no parameters", () => {
+      const signatureCounts = {
+        '{"toolName":"noParamTool","parameters":[]}': 5,
+        '{"toolName":"paramTool","parameters":[{"parameterName":"x","parameterValue":"y"}]}': 3,
+      };
+
+      const result = computePerToolCountsFromSignatures(signatureCounts);
+
+      expect(result).toEqual({
+        noParamTool: 5,
+        paramTool: 3,
+      });
     });
   });
 });

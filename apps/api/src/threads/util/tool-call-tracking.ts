@@ -113,7 +113,7 @@ export function validateToolCallLimits(
  * JSON produced by createToolCallSignature, which includes toolName at top
  * level.
  */
-function computePerToolCountsFromSignatures(
+export function computePerToolCountsFromSignatures(
   signatureCounts: Record<string, number>,
 ): Record<string, number> {
   const perTool: Record<string, number> = {};

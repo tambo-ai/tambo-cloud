@@ -2262,8 +2262,9 @@ async function syncThreadStatus(
   );
 }
 /**
- * A simple mapping of toolName -> { maxCalls?: number } from the
- * tool registry. This will pick up client tools and MCP tools if present.
+ * Extracts per-tool maxCalls limits from the unified tool registry.
+ * Returns a map of tool name → { maxCalls?: number }.
+ * MCP tools take precedence over client tools when names collide.
  */
 function deriveToolLimitsFromRegistry(
   allTools?: ToolRegistry | McpToolRegistry,
@@ -2271,49 +2272,44 @@ function deriveToolLimitsFromRegistry(
   const limits: Record<string, { maxCalls?: number }> = {};
   if (!allTools) return limits;
 
-  // We accept the concrete (existing) registry types so callers get full typing.
-  // Internally we only need the `name` and `maxCalls` fields — narrow array
-  // elements to a minimal shape to avoid using `any`.
-  const clientToolsMaybe =
-    "clientToolsSchema" in allTools
-      ? (allTools as { clientToolsSchema?: unknown }).clientToolsSchema
-      : undefined;
-  const clientTools = Array.isArray(clientToolsMaybe)
-    ? (clientToolsMaybe as Array<{ name?: string; maxCalls?: number }>)
-    : [];
-  for (const t of clientTools) {
-    const name = t.name;
-    const raw = t.maxCalls as unknown;
-    if (!name) continue;
-    // normalize maxCalls: accept numeric or numeric strings, reject negative/NaN
-    const maxCalls = (() => {
-      if (raw === undefined || raw === null) return undefined;
-      const n = Number(raw);
-      if (!Number.isFinite(n) || n < 0) return undefined;
-      return Math.trunc(n);
-    })();
-    limits[name] = { maxCalls };
+  const clientTools =
+    "clientToolsSchema" in allTools ? allTools.clientToolsSchema : undefined;
+
+  if (Array.isArray(clientTools)) {
+    for (const tool of clientTools) {
+      if (tool.type !== "function") continue;
+      const name = tool.function.name;
+      if (!name) continue;
+      // maxCalls is preserved from convertMetadataToTools
+      const raw = (tool as { maxCalls?: unknown }).maxCalls;
+      const maxCalls = (() => {
+        if (raw === undefined || raw === null) return undefined;
+        const n = Number(raw);
+        if (!Number.isFinite(n) || n < 0) return undefined;
+        return Math.trunc(n);
+      })();
+      limits[name] = { maxCalls };
+    }
   }
 
-  const mcpToolsMaybe =
-    "mcpToolsSchema" in allTools
-      ? (allTools as { mcpToolsSchema?: unknown }).mcpToolsSchema
-      : undefined;
-  const mcpTools = Array.isArray(mcpToolsMaybe)
-    ? (mcpToolsMaybe as Array<{ name?: string; maxCalls?: number }>)
-    : [];
-  for (const t of mcpTools) {
-    const name = t.name;
-    const raw = t.maxCalls as unknown;
-    if (!name) continue;
-    const maxCalls = (() => {
-      if (raw === undefined || raw === null) return undefined;
-      const n = Number(raw);
-      if (!Number.isFinite(n) || n < 0) return undefined;
-      return Math.trunc(n);
-    })();
-    // MCP tools overwrite client tools on name collision (intentional)
-    limits[name] = { maxCalls };
+  const mcpTools =
+    "mcpToolsSchema" in allTools ? allTools.mcpToolsSchema : undefined;
+
+  if (Array.isArray(mcpTools)) {
+    for (const tool of mcpTools) {
+      if (tool.type !== "function") continue;
+      const name = tool.function.name;
+      if (!name) continue;
+      const raw = (tool as { maxCalls?: unknown }).maxCalls;
+      const maxCalls = (() => {
+        if (raw === undefined || raw === null) return undefined;
+        const n = Number(raw);
+        if (!Number.isFinite(n) || n < 0) return undefined;
+        return Math.trunc(n);
+      })();
+      // MCP tools overwrite client tools on name collision (intentional)
+      limits[name] = { maxCalls };
+    }
   }
 
   return limits;
