@@ -1,6 +1,10 @@
 import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
 import { Logger } from "@nestjs/common";
-import { McpToolRegistry } from "@tambo-ai-cloud/backend";
+import {
+  McpToolRegistry,
+  type McpToolSource,
+  prefixToolName,
+} from "@tambo-ai-cloud/backend";
 import {
   getToolName,
   LogLevel,
@@ -66,7 +70,12 @@ export async function getSystemTools(
   };
 }
 
-type ThreadMcpClient = { client: MCPClient; serverId: string; url: string };
+type ThreadMcpClient = {
+  client: MCPClient;
+  serverId: string;
+  serverKey: string;
+  url: string;
+};
 
 /** Get all MCP clients for a given thread */
 export async function getThreadMCPClients(
@@ -138,6 +147,7 @@ export async function getThreadMCPClients(
         return {
           client: mcpClient,
           serverId: mcpServer.id,
+          serverKey: mcpServer.serverKey,
           url: mcpServer.url,
         };
       } catch (error) {
@@ -185,10 +195,10 @@ async function getMcpTools(
   );
 
   const toolResults = await Promise.allSettled(
-    mcpClients.map(async ({ client, serverId, url }) => {
+    mcpClients.map(async ({ client, serverId, serverKey, url }) => {
       try {
         const tools = await client.listTools();
-        return { mcpClient: client, tools, serverId, url };
+        return { mcpClient: client, tools, serverId, serverKey, url };
       } catch (e) {
         const err = e instanceof Error ? e : new Error(String(e));
         throw new ListToolsError(err.message, serverId, url, err);
@@ -197,7 +207,7 @@ async function getMcpTools(
   );
 
   const mcpTools: OpenAI.Chat.Completions.ChatCompletionTool[] = [];
-  const mcpToolSources: Record<string, MCPClient> = {};
+  const mcpToolSources: Record<string, McpToolSource> = {};
 
   for (const result of toolResults) {
     if (result.status === "rejected") {
@@ -221,14 +231,14 @@ async function getMcpTools(
       continue;
     }
 
-    const { mcpClient, tools } = result.value;
+    const { mcpClient, tools, serverKey } = result.value;
 
     mcpTools.push(
       ...tools.map(
         (tool): OpenAI.Chat.Completions.ChatCompletionTool => ({
           type: "function",
           function: {
-            name: tool.name,
+            name: prefixToolName(serverKey, tool.name),
             description: tool.description,
             strict: true,
             parameters: tool.inputSchema?.properties
@@ -245,7 +255,10 @@ async function getMcpTools(
     );
 
     for (const tool of tools) {
-      mcpToolSources[tool.name] = mcpClient;
+      mcpToolSources[prefixToolName(serverKey, tool.name)] = {
+        client: mcpClient,
+        serverKey,
+      };
     }
   }
 
