@@ -20,7 +20,7 @@ export async function* runAgentLoop(
   queue: AsyncQueue<EventHandlerParams>,
   messages: ThreadMessage[],
   strictTools: OpenAI.Chat.Completions.ChatCompletionTool[],
-  resourceFetchers?: ResourceFetcherMap,
+  resourceFetchers: ResourceFetcherMap,
   //   customInstructions: string | undefined,
 ): AsyncIterableIterator<LegacyComponentDecision> {
   // Pre-fetch and cache all resources before converting messages

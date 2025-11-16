@@ -1,4 +1,5 @@
 import { OAuthClientProvider } from "@modelcontextprotocol/sdk/client/auth.js";
+import { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
 import { Logger } from "@nestjs/common";
 import {
   McpToolRegistry,
@@ -332,18 +333,11 @@ async function getAuthProvider(
  * Create a map of resource fetchers from MCP clients, indexed by serverKey.
  * Each fetcher function can be used to read resources from that MCP server.
  */
-export function createResourceFetcherMap(mcpClients: ThreadMcpClient[]): Record<
-  string,
-  (uri: string) => Promise<{
-    contents: Array<{ text?: string; blob?: string; mimeType?: string }>;
-  }>
-> {
-  const fetchers: Record<
-    string,
-    (uri: string) => Promise<{
-      contents: Array<{ text?: string; blob?: string; mimeType?: string }>;
-    }>
-  > = {};
+export function createResourceFetcherMap(
+  mcpClients: ThreadMcpClient[],
+): Record<string, (uri: string) => Promise<ReadResourceResult>> {
+  const fetchers: Record<string, (uri: string) => Promise<ReadResourceResult>> =
+    {};
 
   for (const { client, serverKey } of mcpClients) {
     if (!serverKey) continue;

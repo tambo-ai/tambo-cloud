@@ -84,3 +84,4 @@ export function isValidServerKey(key: string): boolean {
 }
 
 export type ResourceFetcher = (uri: string) => Promise<ReadResourceResult>;
+export type ResourceFetchResult = ReadResourceResult;

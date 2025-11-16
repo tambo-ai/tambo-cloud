@@ -10,6 +10,8 @@ import {
   ChatCompletionContentPartResource,
   ContentPartType,
   Resource,
+  ResourceFetcher,
+  ResourceFetchResult,
   ThreadMessage,
 } from "@tambo-ai-cloud/core";
 import { FilePart, ImagePart, TextPart } from "ai";
@@ -25,136 +27,6 @@ export interface FetchedResourcePart {
 }
 
 /**
- * Fetch a resource from an MCP server by URI and transform it to an AI SDK compatible part.
- *
- * Supports multiple content formats:
- * - URI-based resources: fetched from the specified URI
- * - Text content: converted directly to TextPart
- * - Base64 blob data: converted to FilePart with appropriate MIME type
- *
- * @param resource - The MCP resource to fetch/transform
- * @param fetchFn - Function to fetch resource content by URI
- * @returns The transformed resource part, or undefined if transformation failed
- */
-export async function transformResourceToContentPart(
-  resource: Resource,
-  fetchFn?: (uri: string) => Promise<{
-    contents: Array<{ text?: string; blob?: string; mimeType?: string }>;
-  }>,
-): Promise<FetchedResourcePart | undefined> {
-  try {
-    // Case 1: Resource has inline text content
-    if (resource.text) {
-      return {
-        resource,
-        part: {
-          type: "text",
-          text: resource.text,
-        },
-      };
-    }
-
-    // Case 2: Resource has base64-encoded blob data
-    if (resource.blob) {
-      const mediaType = resource.mimeType || "application/octet-stream";
-      const filePart: FilePart = {
-        type: "file",
-        data: resource.blob,
-        mediaType,
-        filename: resource.name,
-      };
-      return {
-        resource,
-        part: filePart,
-      };
-    }
-
-    // Case 3: Resource has a URI - fetch the content
-    if (resource.uri && fetchFn) {
-      const result = await fetchFn(resource.uri);
-      if (result.contents.length > 0) {
-        const content = result.contents[0];
-
-        // If fetched content is text
-        if (content.text) {
-          return {
-            resource,
-            part: {
-              type: "text",
-              text: content.text,
-            },
-          };
-        }
-
-        // If fetched content is blob
-        if (content.blob) {
-          const mediaType =
-            content.mimeType || resource.mimeType || "application/octet-stream";
-
-          // For image content, use ImagePart
-          if (mediaType.startsWith("image/")) {
-            return {
-              resource,
-              part: {
-                type: "image",
-                image: Buffer.from(content.blob, "base64"),
-                mimeType: mediaType as
-                  | "image/jpeg"
-                  | "image/png"
-                  | "image/gif"
-                  | "image/webp",
-              } as ImagePart,
-            };
-          }
-
-          // For non-image files, use FilePart
-          return {
-            resource,
-            part: {
-              type: "file",
-              data: content.blob,
-              mediaType,
-            } as FilePart,
-          };
-        }
-      }
-    }
-
-    console.warn(
-      `Could not transform resource: no text, blob, or fetchable URI available`,
-      resource,
-    );
-    return undefined;
-  } catch (error) {
-    console.error(`Error transforming resource:`, error);
-    return undefined;
-  }
-}
-
-/**
- * Transform a ChatCompletionContentPartResource to an AI SDK compatible content part.
- *
- * This is the main entry point for converting MCP resources in thread messages
- * to a format suitable for AI SDK providers.
- *
- * @param resourcePart - The resource content part from a thread message
- * @param fetchFn - Function to fetch resource content from MCP servers
- * @returns The transformed part (TextPart, FilePart, or ImagePart), or undefined if transformation failed
- */
-export async function transformResourcePart(
-  resourcePart: ChatCompletionContentPartResource,
-  fetchFn?: (uri: string) => Promise<{
-    contents: Array<{ text?: string; blob?: string; mimeType?: string }>;
-  }>,
-): Promise<TextPart | FilePart | ImagePart | undefined> {
-  const result = await transformResourceToContentPart(
-    resourcePart.resource,
-    fetchFn,
-  );
-  return result?.part;
-}
-
-/**
  * Check if a content part is a resource type that needs transformation
  */
 export function isResourceContentPart(
@@ -167,32 +39,16 @@ export function isResourceContentPart(
  * Map of serverKey to fetch function.
  * This allows resource transformation to know which MCP server to fetch from.
  */
-export type ResourceFetcherMap = Record<
-  string,
-  (uri: string) => Promise<{
-    contents: Array<{ text?: string; blob?: string; mimeType?: string }>;
-  }>
->;
+export type ResourceFetcherMap = Record<string, ResourceFetcher>;
 
 /**
  * Extract serverKey from a resource name (e.g., "github:file" -> "github")
  */
-export function extractServerKeyFromResourceName(
-  resourceName?: string,
-): string | undefined {
-  if (!resourceName || !resourceName.includes(":")) {
-    return undefined;
+export function extractServerKeyFromResource(resource: Resource): string {
+  if (!resource.uri || !resource.uri.includes(":")) {
+    throw new Error(`No server key found in resource: ${resource.uri}`);
   }
-  return resourceName.split(":")[0];
-}
-
-/**
- * Resource content that has been fetched and cached
- */
-interface FetchedResourceContent {
-  text?: string;
-  blob?: string;
-  mimeType?: string;
+  return resource.uri.split(":")[0];
 }
 
 /**
@@ -215,21 +71,15 @@ interface FetchedResourceContent {
  */
 export async function prefetchAndCacheResources(
   messages: ThreadMessage[],
-  resourceFetchers?: ResourceFetcherMap,
+  resourceFetchers: ResourceFetcherMap,
 ): Promise<ThreadMessage[]> {
-  if (!resourceFetchers) {
-    return messages;
-  }
-
   // Phase 1: Extract all unique resource URIs that need fetching
   const urisToFetch = new Map<
     string,
     {
       uri: string;
-      serverKey?: string;
-      fetchFn: (
-        uri: string,
-      ) => Promise<{ contents: Array<FetchedResourceContent> }>;
+      serverKey: string;
+      fetchFn: ResourceFetcher;
     }
   >();
 
@@ -264,7 +114,7 @@ export async function prefetchAndCacheResources(
       }
 
       // Find fetcher for this resource's serverKey
-      const serverKey = extractServerKeyFromResourceName(resource.name);
+      const serverKey = extractServerKeyFromResource(resource);
       const fetchFn = serverKey ? resourceFetchers[serverKey] : undefined;
 
       if (!fetchFn) {
@@ -279,14 +129,17 @@ export async function prefetchAndCacheResources(
   }
 
   // Phase 2: Fetch all unique URIs in parallel
-  const fetchedContent = new Map<string, FetchedResourceContent>();
+  const fetchedContent = new Map<string, ResourceFetchResult>();
 
   await Promise.all(
     Array.from(urisToFetch.entries()).map(async ([uri, { fetchFn }]) => {
       try {
         const result = await fetchFn(uri);
+        console.log("--------------------------------");
+        console.log("fetched resource:", result);
+        console.log("--------------------------------");
         if (result.contents.length > 0) {
-          fetchedContent.set(uri, result.contents[0]);
+          fetchedContent.set(uri, result);
         }
       } catch (error) {
         // Make sure not to throw an error here, so we do not break other resource fetches
@@ -301,7 +154,7 @@ export async function prefetchAndCacheResources(
       return message;
     }
 
-    const transformedContent = message.content.map((part) => {
+    const transformedContent = message.content.flatMap((part) => {
       if (
         part.type !== ContentPartType.Resource ||
         !isResourceContentPart(part)
@@ -312,33 +165,42 @@ export async function prefetchAndCacheResources(
       const resource = part.resource;
 
       // Skip if already has content
-      if (resource.text || resource.blob || !resource.uri) {
+      if (!resource.uri) {
+        if (!resource.text || !resource.blob) {
+          console.warn(`Resource has no URI`);
+        }
+        // but I guess we'll return it either way
         return part;
       }
-
-      // Check if we fetched content for this URI
-      const content = fetchedContent.get(resource.uri);
-      if (!content) {
-        return part;
-      }
-
-      // Cache the fetched content back into the resource
-      const cachedResource: ChatCompletionContentPartResource = {
-        type: ContentPartType.Resource,
-        resource: {
-          ...resource,
-          text: content.text,
-          blob: content.blob,
-          mimeType: content.mimeType || resource.mimeType,
-        },
-      };
-
-      return cachedResource;
+      return convertResourceToContentParts(
+        resource,
+        fetchedContent.get(resource.uri),
+      );
     });
 
     return {
       ...message,
       content: transformedContent,
+    };
+  });
+}
+
+function convertResourceToContentParts(
+  resource: Resource,
+  resourceContents: ResourceFetchResult | undefined,
+): ChatCompletionContentPart[] {
+  if (!resourceContents) {
+    return [];
+  }
+
+  return resourceContents.contents.map((content) => {
+    return {
+      type: ContentPartType.Resource,
+      resource: {
+        ...resource,
+        // content is authoritative, so we override  resource fields with the content
+        ...content,
+      },
     };
   });
 }
