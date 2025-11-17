@@ -1,5 +1,6 @@
 import {
   ChatCompletionAssistantMessageParam,
+  ChatCompletionContentPart,
   ChatCompletionContentPartText,
   ChatCompletionMessageParam,
   ChatCompletionSystemMessageParam,
@@ -12,12 +13,10 @@ import {
   ToolCallRequest,
 } from "@tambo-ai-cloud/core";
 import type OpenAI from "openai";
-import { isResourceContentPart } from "./resource-transformation";
 import { formatFunctionCall, generateAdditionalContext } from "./tools";
 
 export function threadMessagesToChatCompletionMessageParam(
   messages: ThreadMessage[],
-  allowUnresolvedResources: boolean = false,
 ): ChatCompletionMessageParam[] {
   // as per
   // https://platform.openai.com/docs/guides/function-calling?api-mode=chat#handling-function-calls,
@@ -44,10 +43,10 @@ export function threadMessagesToChatCompletionMessageParam(
           return makeAssistantMessages(message, respondedToolIds);
         }
         case MessageRole.User: {
-          return makeUserMessages(message, allowUnresolvedResources);
+          return makeUserMessages(message);
         }
         case MessageRole.System: {
-          return makeUserMessages(message, allowUnresolvedResources);
+          return makeUserMessages(message);
         }
         default: {
           throw new Error(`Unknown message role: ${message.role}`);
@@ -281,7 +280,6 @@ function makeFakeDecisionCall(component: ComponentDecisionV2): ToolCallRequest {
 
 function makeUserMessages(
   message: ThreadMessage,
-  allowUnresolvedResources: boolean,
 ): (ChatCompletionUserMessageParam | ChatCompletionSystemMessageParam)[] {
   if (
     message.role === MessageRole.Hydra ||
@@ -292,80 +290,34 @@ function makeUserMessages(
   }
   const additionalContextMessage = generateAdditionalContext(message);
 
-  // Transform content parts: handle resources and preserve other content types
-  const transformedContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
-    [];
-
-  for (const part of message.content) {
-    if (isResourceContentPart(part)) {
-      // If resource has inline text or blob, transform it
-      if (part.resource.text) {
-        transformedContent.push({
-          type: "text",
-          text: part.resource.text,
-        });
-      } else if (part.resource.blob) {
-        const mimeType = part.resource.mimeType || "application/octet-stream";
-        if (mimeType.startsWith("image/")) {
-          transformedContent.push({
-            type: "image_url",
-            image_url: {
-              url: `data:${mimeType};base64,${Buffer.from(part.resource.blob, "base64").toString("base64")}`,
-            },
-          });
-        } else {
-          transformedContent.push({
-            type: "file",
-            file: {
-              file_data: `data:${mimeType};base64,${Buffer.from(part.resource.blob, "base64").toString("base64")}`,
-              filename: part.resource.name,
-            },
-          });
-        }
-      } else if (part.resource.uri) {
-        // URI-based resources must have been pre-fetched
-        if (!allowUnresolvedResources) {
-          throw new Error(
-            `Resource with URI should have been pre-fetched: ${part.resource.uri}. ` +
-              `Call prefetchAndCacheResources() before converting messages when resource fetchers are available.`,
-          );
-        }
-        // If resources are allowed to be unresolved, skip them (shouldn't happen in normal flow)
-        console.warn(
-          `Skipping unresolved resource with URI: ${part.resource.uri}`,
-        );
-      }
-    } else {
-      // Preserve non-resource content types as-is
-      transformedContent.push(part);
-    }
-  }
-
   // Only wrap text content with <User> tags, preserve other content types as-is
-  const wrappedContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] =
+  const wrappedContent: ChatCompletionContentPart[] =
     message.role === MessageRole.User
       ? [
           { type: "text", text: "<User>" },
-          ...transformedContent,
+          ...message.content,
           { type: "text", text: "</User>" },
         ]
-      : transformedContent;
+      : message.content;
 
   // Combine additional context (if any) with the wrapped content
-  const content = additionalContextMessage
+  const content: ChatCompletionContentPart[] = additionalContextMessage
     ? [additionalContextMessage, ...wrappedContent]
     : wrappedContent;
 
   // user messages support mixed content, system messages only support text
+  if (message.role === MessageRole.User) {
+    return [
+      {
+        role: message.role,
+        content: content as ChatCompletionContentPartText[],
+      } satisfies ChatCompletionUserMessageParam,
+    ] satisfies ChatCompletionUserMessageParam[];
+  }
   return [
-    message.role === MessageRole.User
-      ? {
-          role: message.role,
-          content: content,
-        }
-      : {
-          role: message.role,
-          content: content as ChatCompletionContentPartText[],
-        },
-  ];
+    {
+      role: message.role,
+      content: content as ChatCompletionContentPartText[],
+    } satisfies ChatCompletionSystemMessageParam,
+  ] satisfies ChatCompletionSystemMessageParam[];
 }

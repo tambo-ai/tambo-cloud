@@ -31,7 +31,6 @@ export async function* runAgentLoop(
 
   const chatCompletionMessages = threadMessagesToChatCompletionMessageParam(
     messagesWithCachedResources,
-    !!resourceFetchers,
   );
   // const systemPromptArgs = customInstructions
   //     ? { custom_instructions: customInstructions }

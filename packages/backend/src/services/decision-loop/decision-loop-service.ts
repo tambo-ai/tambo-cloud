@@ -70,8 +70,8 @@ export async function* runDecisionLoop(
 
   const chatCompletionMessages = threadMessagesToChatCompletionMessageParam(
     messagesWithCachedResources,
-    !!resourceFetchers,
   );
+
   const promptMessages = objectTemplate<ChatCompletionMessageParam[]>([
     { role: "system", content: systemPrompt },
     { role: "chat_history" as "user", content: "{chat_history}" },

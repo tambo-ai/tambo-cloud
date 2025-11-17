@@ -135,9 +135,6 @@ export async function prefetchAndCacheResources(
     Array.from(urisToFetch.entries()).map(async ([uri, { fetchFn }]) => {
       try {
         const result = await fetchFn(uri);
-        console.log("--------------------------------");
-        console.log("fetched resource:", result);
-        console.log("--------------------------------");
         if (result.contents.length > 0) {
           fetchedContent.set(uri, result);
         }

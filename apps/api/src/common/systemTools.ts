@@ -343,7 +343,11 @@ export function createResourceFetcherMap(
     if (!serverKey) continue;
 
     fetchers[serverKey] = async (uri: string) => {
-      return await client.client.readResource({ uri });
+      if (!uri.startsWith(`${serverKey}:`)) {
+        throw new Error(`Invalid URI for server ${serverKey}: ${uri}`);
+      }
+      const mcpUri = uri.slice(serverKey.length + 1);
+      return await client.client.readResource({ uri: mcpUri });
     };
   }
 
