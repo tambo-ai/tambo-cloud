@@ -33,6 +33,29 @@ import {
   UI_TOOLNAME_PREFIX,
 } from "../tool/tool-service";
 
+/**
+ * Run the decision loop for processing ThreadMessages and generating component
+ * decisions.
+ *
+ * This function handles the core decision-making flow:
+ * 1. Pre-fetches all MCP resources and caches them inline
+ * 2. Filters tools into component tools (UI) and agent tools (actions)
+ * 3. Adds standard parameters to all tools
+ * 4. Formats messages using the decision loop prompt template
+ * 5. Streams responses from the LLM client
+ * 6. Parses streaming responses into LegacyComponentDecision objects
+ * 7. Handles errors and malformed responses
+ *
+ * @param llmClient - The LLM client to use for generating responses
+ * @param messages - Array of thread messages to process
+ * @param strictTools - Array of available tools in OpenAI format
+ * @param customInstructions - Optional custom instructions to add to the system
+ *   prompt
+ * @param forceToolChoice - Optional tool name to force the LLM to use
+ * @param resourceFetchers - Map of serverKey to resource fetcher functions for
+ *   fetching MCP resources
+ * @returns Async iterator of component decisions
+ */
 export async function* runDecisionLoop(
   llmClient: LLMClient,
   messages: ThreadMessage[],

@@ -769,6 +769,18 @@ function convertOpenAIMessageToCoreMessage(
 }
 
 type UserContentItem = Exclude<UserContent[number], string>;
+
+/**
+ * Convert a ChatCompletionContentPart to AI SDK's UserContent format.
+ *
+ * This handles the conversion of various content types (text, images, resources, files)
+ * into formats that AI SDK providers can consume. For MCP resources, it performs
+ * intelligent fallback based on MIME type support.
+ *
+ * @param part - The content part to convert
+ * @param isSupportedMimeType - Predicate to check if provider supports a MIME type
+ * @returns AI SDK-compatible UserContentItem, or null if the part should be skipped
+ */
 function convertContentPartToUserContent(
   part: ChatCompletionContentPart,
   isSupportedMimeType: (mimeType: string) => boolean,
@@ -790,22 +802,27 @@ function convertContentPartToUserContent(
       return null;
     case ContentPartType.Resource: {
       const resourceData = part.resource;
+
+      // Handle binary resource content (blob)
       if (resourceData.blob) {
         const mimeType =
           resourceData.mimeType ??
           (mimeTypes.lookup(resourceData.uri ?? "") ||
             "application/octet-stream");
         if (isSupportedMimeType(mimeType)) {
+          // Provider supports this MIME type, send as file part
           return {
             type: "file",
             mediaType: mimeType,
             data: Buffer.from(resourceData.blob, "base64"),
           };
         } else {
-          // fallback to text content
+          // Provider doesn't support this type, fallback to text representation
           return makeTextContentFromResource(resourceData);
         }
       }
+
+      // Handle text resource content
       if (resourceData.text) {
         // This is a pretty hacky way to do this, but we have to do it because
         // the OpenAI SDK doesn't support text parts with mime types of
@@ -815,7 +832,10 @@ function convertContentPartToUserContent(
         const mimeType =
           resourceData.mimeType ??
           (mimeTypes.lookup(resourceData.uri ?? "") || "text/plain");
+
         if (isSupportedMimeType(mimeType)) {
+          // Provider supports this text-based MIME type (e.g., text/csv)
+          // Send as a file part to preserve MIME type information
           return {
             type: "file",
             mediaType: mimeType,
@@ -829,7 +849,7 @@ function convertContentPartToUserContent(
         const result = makeTextContentFromResource(resourceData);
         return result;
       }
-      throw new Error("Resource has no mimeType or blob");
+      throw new Error("Resource has no text or blob content");
     }
     case "file": {
       if (!part.file.file_data) {

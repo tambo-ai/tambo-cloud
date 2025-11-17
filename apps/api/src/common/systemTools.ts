@@ -332,6 +332,13 @@ async function getAuthProvider(
 /**
  * Create a map of resource fetchers from MCP clients, indexed by serverKey.
  * Each fetcher function can be used to read resources from that MCP server.
+ *
+ * @param mcpClients - Array of MCP client instances with their server keys
+ * @returns Map of serverKey to fetcher functions that can fetch resources by URI
+ *
+ * @example
+ * const fetchers = createResourceFetcherMap(mcpClients);
+ * const result = await fetchers['github']('github:path/to/file.txt');
  */
 export function createResourceFetcherMap(
   mcpClients: ThreadMcpClient[],
@@ -343,9 +350,11 @@ export function createResourceFetcherMap(
     if (!serverKey) continue;
 
     fetchers[serverKey] = async (uri: string) => {
+      // Validate that the URI starts with the serverKey prefix
       if (!uri.startsWith(`${serverKey}:`)) {
         throw new Error(`Invalid URI for server ${serverKey}: ${uri}`);
       }
+      // Strip the serverKey prefix to get the MCP-native URI
       const mcpUri = uri.slice(serverKey.length + 1);
       return await client.client.readResource({ uri: mcpUri });
     };

@@ -15,6 +15,23 @@ import { threadMessagesToChatCompletionMessageParam } from "../../util/thread-me
 import { AgentClient } from "../llm/agent-client";
 import { EventHandlerParams } from "../llm/async-adapters";
 
+/**
+ * Run the agent loop for processing ThreadMessages and generating decisions.
+ *
+ * This is a simpler alternative to the full decision loop that:
+ * 1. Pre-fetches all MCP resources and caches them inline
+ * 2. Converts messages to ChatCompletion format
+ * 3. Streams responses from the LLM via the AgentClient
+ * 4. Yields component decisions as they arrive
+ *
+ * @param agentClient - The agent client to use for generating responses
+ * @param queue - Async queue for handling streaming events
+ * @param messages - Array of thread messages to process
+ * @param strictTools - Array of available tools in OpenAI format
+ * @param resourceFetchers - Map of serverKey to resource fetcher functions for
+ *   fetching MCP resources
+ * @returns Async iterator of component decisions
+ */
 export async function* runAgentLoop(
   agentClient: AgentClient,
   queue: AsyncQueue<EventHandlerParams>,
