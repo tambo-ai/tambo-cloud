@@ -26,7 +26,7 @@
 
 ## Proposed Fixes
 
-### [ ] Fix 1: Simplify ref management
+### [x] Fix 1: Simplify ref management
 
 **Current code**:
 
@@ -53,7 +53,7 @@ const menuOpenRef = React.useRef<boolean>(false);
 
 **Why better**: Removes unnecessary array mapping and wrapper objects. Makes it clear that all commands share the same "is menu open" state.
 
-### [ ] Fix 2: Flatten wrapper function
+### [x] Fix 2: Flatten wrapper function
 
 **Current code**:
 
@@ -93,7 +93,7 @@ command: (item) =>
 
 **Why better**: Single function instead of curried triple-nesting. Easier to read, test, and debug.
 
-### [ ] Fix 3: Remove 100ms setTimeout hack
+### [x] Fix 3: Remove 100ms setTimeout hack
 
 **Current code**:
 
@@ -120,7 +120,7 @@ onExit: () => {
 
 **Testing note**: Verify that pressing Enter in dropdown selects item and doesn't submit form.
 
-### [ ] Fix 4: Consistent async handling
+### [x] Fix 4: Consistent async handling
 
 **Current code**:
 
@@ -358,15 +358,140 @@ After automated tests pass, manually verify:
 
 ## Implementation Order
 
-1. [ ] Write tests first (TDD approach)
-2. [ ] Fix 1: Simplify ref management
-3. [ ] Fix 2: Flatten wrapper function
-4. [ ] Fix 3: Remove setTimeout hack
-5. [ ] ~~Fix 4: Async consistency~~ (no change needed)
-6. [ ] Extract useTextEditor hook (separate refactoring)
-7. [ ] Run all tests to verify behavior preserved
+1. [x] Write tests first (TDD approach)
+2. [x] Fix 1: Simplify ref management
+3. [x] Fix 2: Flatten wrapper function
+4. [x] Fix 3: Remove setTimeout hack
+5. [x] ~~Fix 4: Async consistency~~ (no change needed)
+6. [x] Extract useTextEditor hook (separate refactoring)
+7. [x] Run all tests to verify behavior preserved
 8. [ ] Manual testing checklist
 9. [ ] Update documentation/comments if needed
+
+---
+
+## Second Pass - Additional Simplifications
+
+### [ ] Fix 5: Simplify keyboard handler logic in editorProps
+
+**Problem**: The `handleKeyDown` in `editorProps` (use-text-editor.ts:210-227) has duplicated logic for checking menu state and Enter key.
+
+**Current code** (use-text-editor.ts:210-227):
+
+```typescript
+handleKeyDown: (view, event) => {
+  // Prevent Enter from submitting form when selecting from menu
+  if (event.key === "Enter" && !event.shiftKey && menuOpenRef.current) {
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
+  }
+
+  // Delegate to handleKeyDown (which handles both Tambo-specific and custom handlers)
+  if (editor) {
+    const reactEvent = event as unknown as React.KeyboardEvent;
+    handleKeyDown(reactEvent, editor);
+    return reactEvent.defaultPrevented;
+  }
+  return false;
+},
+```
+
+**Analysis**: This handler has special logic to prevent Enter from submitting when menu is open. However, the outer `handleKeyDown` callback (lines 155-176) also checks for Enter. There's potential for simplification by consolidating the logic.
+
+**Status**: Needs investigation - may be necessary due to event flow differences between ProseMirror DOM events and React events.
+
+### [ ] Fix 6: Consolidate interactables ref pattern
+
+**Problem**: The interactables ref pattern (use-text-editor.ts:70-74) uses useEffect to sync, which could potentially be simplified.
+
+**Current code**:
+
+```typescript
+const interactablesRef = React.useRef(interactables);
+React.useEffect(() => {
+  interactablesRef.current = interactables;
+}, [interactables]);
+```
+
+**Why needed**: The ref is used in `getResourceItems` (line 82) to avoid capturing stale interactables in the closure. This is actually a good pattern to avoid recreating the command config unnecessarily.
+
+**Status**: Keep as-is - this is the correct React pattern for accessing fresh values in callbacks without recreating them.
+
+### [ ] Fix 7: Extract Tambo-specific logic into separate hook
+
+**Problem**: `useTextEditor` mixes generic editor setup with Tambo-specific logic (interactables, context attachments, image paste).
+
+**Proposed**: Create `useTamboCommands` hook to encapsulate:
+
+- Tambo hooks (useTamboContextAttachment, useTamboThreadInput, useCurrentInteractablesSnapshot)
+- Tambo command generation
+- Image paste handling
+
+**Why better**:
+
+- Makes `useTextEditor` truly generic and reusable
+- Separates concerns (generic editor vs Tambo-specific features)
+- Easier to test in isolation
+- Could use the generic editor elsewhere without Tambo dependencies
+
+**Implementation**:
+
+```typescript
+// New hook in use-text-editor.ts or separate file
+function useTamboCommands(enabled: boolean): CommandConfig[] {
+  const tamboThreadInput = useTamboThreadInput();
+  const tamboContextAttachment = useTamboContextAttachment();
+  const interactables = useCurrentInteractablesSnapshot();
+
+  // ... rest of Tambo logic
+
+  return enabled ? [tamboCommand] : [];
+}
+
+// In useTextEditor
+export function useTextEditor({ onSubmit, commands, ...rest }) {
+  const tamboCommands = useTamboCommands(!!onSubmit);
+  const allCommands = useMemo(
+    () => [...(commands ?? []), ...tamboCommands],
+    [commands, tamboCommands],
+  );
+  // ... rest uses allCommands
+}
+```
+
+### [ ] Fix 8: Simplify className string template
+
+**Problem**: The className template (use-text-editor.ts:208) is a very long string literal that's hard to read.
+
+**Current code**:
+
+```typescript
+class: `tiptap prose prose-sm max-w-none focus:outline-none p-3 rounded-t-lg bg-transparent text-sm leading-relaxed min-h-[82px] max-h-[40vh] overflow-y-auto break-words whitespace-pre-wrap ${className ?? ""}`,
+```
+
+**Proposed**:
+
+```typescript
+class: cn(
+  "tiptap prose prose-sm max-w-none focus:outline-none",
+  "p-3 rounded-t-lg bg-transparent",
+  "text-sm leading-relaxed",
+  "min-h-[82px] max-h-[40vh] overflow-y-auto",
+  "break-words whitespace-pre-wrap",
+  className
+),
+```
+
+**Why better**: Easier to read, modify, and understand the different categories of styles. Uses the `cn` utility that's already imported in text-editor-shared.tsx.
+
+### [ ] Fix 9: Remove unused IS_PASTED_IMAGE symbol
+
+**Problem**: The `IS_PASTED_IMAGE` symbol is defined and used to mark files (use-text-editor.ts:43, 131) but it's never actually checked anywhere.
+
+**Investigation needed**: Search codebase to see if this is used elsewhere, or if it's dead code that can be removed.
+
+**Status**: Needs verification before removing.
 
 ---
 
