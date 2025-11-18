@@ -3,7 +3,7 @@ import {
   hasExistingMention,
   type CommandConfig,
 } from "@/components/ui/tambo/text-editor-shared";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 
 // Mock Tambo hooks since we're testing the editor in isolation
 jest.mock("@tambo-ai/react", () => ({
@@ -128,7 +128,7 @@ describe("TextEditor - Smoke Tests", () => {
   });
 
   describe("Props integration", () => {
-    it("accepts editorRef prop", () => {
+    it("accepts editorRef prop", async () => {
       const editorRef = { current: null };
 
       render(
@@ -140,7 +140,9 @@ describe("TextEditor - Smoke Tests", () => {
       );
 
       // After render, ref should be populated with editor instance
-      expect(editorRef.current).toBeTruthy();
+      await waitFor(() => {
+        expect(editorRef.current).toBeTruthy();
+      });
     });
 
     it("renders with onSubmit handler", () => {

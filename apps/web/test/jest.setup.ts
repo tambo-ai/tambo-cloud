@@ -65,7 +65,7 @@ if (!Element.prototype.getClientRects) {
         width: 0,
         height: 0,
       },
-    } as DOMRectList;
+    } as unknown as DOMRectList;
   };
 }
 
