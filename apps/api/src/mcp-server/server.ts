@@ -14,13 +14,11 @@ import { registerResourceHandlers } from "./resources";
 const MCP_REQUEST_PROJECT_ID = Symbol("mcpProjectId");
 const MCP_REQUEST_THREAD_ID = Symbol("mcpThreadId");
 const MCP_REQUEST_CONTEXT_KEY = Symbol("mcpContextKey");
-const MCP_REQUEST_SESSIONLESS = Symbol("mcpSessionless");
 
 interface AuthenticatedMcpRequest extends Request {
   [MCP_REQUEST_PROJECT_ID]?: string;
   [MCP_REQUEST_THREAD_ID]?: string;
   [MCP_REQUEST_CONTEXT_KEY]?: string;
-  [MCP_REQUEST_SESSIONLESS]?: boolean;
 }
 
 export async function createMcpServer(
@@ -185,15 +183,12 @@ async function authenticateMcpRequest(
     // Attach projectId which is common to both token types
     (req as AuthenticatedMcpRequest)[MCP_REQUEST_PROJECT_ID] = claim.projectId;
 
-    // Check if this is a session-less token by presence of contextKey
+    // Attach either contextKey (session-less) or threadId (thread-bound)
     if (claim.contextKey) {
       (req as AuthenticatedMcpRequest)[MCP_REQUEST_CONTEXT_KEY] =
         claim.contextKey;
-      (req as AuthenticatedMcpRequest)[MCP_REQUEST_SESSIONLESS] = true;
     } else if (claim.threadId) {
-      // Thread-bound token
       (req as AuthenticatedMcpRequest)[MCP_REQUEST_THREAD_ID] = claim.threadId;
-      (req as AuthenticatedMcpRequest)[MCP_REQUEST_SESSIONLESS] = false;
     } else {
       res.status(403).send("Forbidden");
       return;
@@ -208,7 +203,6 @@ async function authenticateMcpRequest(
 
 const handler = async (req: AuthenticatedMcpRequest, res: Response) => {
   const projectId = req[MCP_REQUEST_PROJECT_ID];
-  const isSessionless = req[MCP_REQUEST_SESSIONLESS];
   const threadId = req[MCP_REQUEST_THREAD_ID];
   const contextKey = req[MCP_REQUEST_CONTEXT_KEY];
 
@@ -216,6 +210,9 @@ const handler = async (req: AuthenticatedMcpRequest, res: Response) => {
     res.status(401).send("Unauthorized");
     return;
   }
+
+  // Detect token type based on presence of contextKey (sessionless) vs threadId (thread-bound)
+  const isSessionless = !!contextKey;
 
   // Validate we have the required fields for the token type
   if (isSessionless && !contextKey) {
@@ -231,7 +228,7 @@ const handler = async (req: AuthenticatedMcpRequest, res: Response) => {
   // we create the "server" on the fly, it only lives for the duration of the request,
   // though the request could stay open for a long time if there is streaming/etc.
   const { server, dispose } = isSessionless
-    ? await createSessionlessMcpServer(db, projectId, contextKey!)
+    ? await createSessionlessMcpServer(db, projectId, contextKey)
     : await createMcpServer(db, projectId, threadId!);
 
   const transport = new StreamableHTTPServerTransport({

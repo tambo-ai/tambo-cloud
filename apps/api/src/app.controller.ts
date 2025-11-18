@@ -54,7 +54,7 @@ export class AppController {
 
   @ApiSecurity("apiKey")
   @UseGuards(ApiKeyGuard, BearerTokenGuard)
-  @Post("auth/mcp-access-token")
+  @Post("auth/mcp")
   @ApiOperation({
     summary: "Create an MCP access token",
     description:
@@ -106,7 +106,7 @@ export class AppController {
 
   @ApiSecurity("apiKey")
   @UseGuards(ApiKeyGuard, BearerTokenGuard)
-  @Post("auth/mcp-access-token/refresh")
+  @Post("auth/mcp/refresh")
   @ApiOperation({
     summary: "Refresh an MCP access token",
     description:
@@ -158,7 +158,7 @@ export class AppController {
 
   @ApiSecurity("apiKey")
   @UseGuards(ApiKeyGuard, BearerTokenGuard)
-  @Post("auth/mcp-access-token/sessionless")
+  @Post("auth/mcp/sessionless")
   @ApiOperation({
     summary: "Create a session-less MCP access token",
     description:
