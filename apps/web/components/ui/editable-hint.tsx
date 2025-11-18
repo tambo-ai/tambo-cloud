@@ -1,6 +1,6 @@
 "use client";
 
-import { hasExistingMention } from "@/components/ui/tambo/text-editor";
+import { hasExistingMention } from "@/components/ui/tambo/text-editor-shared";
 import { cn } from "@/lib/utils";
 import { useMessageThreadPanel } from "@/providers/message-thread-panel-provider";
 import { useTamboContextAttachment, type Suggestion } from "@tambo-ai/react";

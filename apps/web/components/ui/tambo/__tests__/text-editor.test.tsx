@@ -1,7 +1,8 @@
+import { TextEditor } from "@/components/ui/tambo/text-editor";
 import {
-  TextEditor,
+  hasExistingMention,
   type CommandConfig,
-} from "@/components/ui/tambo/text-editor";
+} from "@/components/ui/tambo/text-editor-shared";
 import { render, screen } from "@testing-library/react";
 
 // Mock Tambo hooks since we're testing the editor in isolation
@@ -166,7 +167,7 @@ describe("TextEditor - Smoke Tests", () => {
   describe("hasExistingMention utility", () => {
     it("exports hasExistingMention function", async () => {
       const { hasExistingMention } = await import(
-        "@/components/ui/tambo/text-editor"
+        "@/components/ui/tambo/text-editor-shared"
       );
       expect(typeof hasExistingMention).toBe("function");
     });
