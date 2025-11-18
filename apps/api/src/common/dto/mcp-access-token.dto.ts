@@ -36,3 +36,17 @@ export class McpAccessTokenResponseDto {
   })
   mcpAccessToken?: string;
 }
+
+@ApiSchema({
+  name: "RefreshMcpAccessToken",
+  description: "Refresh MCP access token request",
+})
+export class RefreshMcpAccessTokenDto {
+  @ApiProperty({
+    description: "The existing MCP access token to refresh",
+    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  })
+  @IsString()
+  @IsNotEmpty()
+  mcpAccessToken!: string;
+}
