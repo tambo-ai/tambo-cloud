@@ -485,13 +485,17 @@ class: cn(
 
 **Why better**: Easier to read, modify, and understand the different categories of styles. Uses the `cn` utility that's already imported in text-editor-shared.tsx.
 
-### [ ] Fix 9: Remove unused IS_PASTED_IMAGE symbol
+### [x] Fix 9: IS_PASTED_IMAGE symbol investigation
 
-**Problem**: The `IS_PASTED_IMAGE` symbol is defined and used to mark files (use-text-editor.ts:43, 131) but it's never actually checked anywhere.
+**Investigation results**: The symbol is defined and set on pasted files (use-text-editor.ts:44, 84) but not checked in this codebase.
 
-**Investigation needed**: Search codebase to see if this is used elsewhere, or if it's dead code that can be removed.
+**Status**: KEEP AS-IS
 
-**Status**: Needs verification before removing.
+- Symbol may be used by external consumers of the File object
+- The Symbol.for() pattern allows other modules to access the same symbol
+- Provides metadata to distinguish pasted vs uploaded images
+- No harm in keeping it, potential value for future features or external integrations
+- User confirmed it's likely used elsewhere to distinguish image sources
 
 ---
 
