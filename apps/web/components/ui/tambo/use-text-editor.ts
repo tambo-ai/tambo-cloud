@@ -44,26 +44,15 @@ export interface UseTextEditorOptions {
 const IS_PASTED_IMAGE = Symbol.for("tambo-is-pasted-image");
 
 /**
- * Custom hook that encapsulates all the TipTap editor setup logic.
- * This makes the TextEditor component simpler and the editor logic more testable.
+ * Hook that provides Tambo-specific commands and image paste handling.
+ * Encapsulates all Tambo AI integration logic separate from generic editor features.
  *
- * @param options - Configuration options for the editor
- * @returns The TipTap editor instance
+ * @param enabled - Whether Tambo features should be enabled (typically when onSubmit is provided)
+ * @returns Array of Tambo-specific command configurations
  */
-export function useTextEditor({
-  value,
-  onChange,
-  onKeyDown,
-  placeholder = "What do you want to do?",
-  disabled = false,
-  className,
-  commands: providedCommands = [],
-  onSubmit,
-  editorRef,
-  menuOpenRef: externalMenuOpenRef,
-}: UseTextEditorOptions) {
+function useTamboCommands(enabled: boolean): CommandConfig[] {
   // Use Tambo-specific hooks - must be called unconditionally per React rules
-  // These hooks will throw if not in Tambo context, which is expected when onSubmit is provided
+  // These hooks will throw if not in Tambo context, which is expected when enabled is true
   const tamboThreadInput = useTamboThreadInput();
   const tamboContextAttachment = useTamboContextAttachment();
   const interactables = useCurrentInteractablesSnapshot();
@@ -74,9 +63,44 @@ export function useTextEditor({
     interactablesRef.current = interactables;
   }, [interactables]);
 
+  // Handle image paste from clipboard when Tambo features are enabled
+  React.useEffect(() => {
+    if (!enabled) return;
+
+    const handlePaste = async (e: Event) => {
+      const clipboardEvent = e as ClipboardEvent;
+      const items = Array.from(clipboardEvent.clipboardData?.items ?? []);
+      const imageItems = items.filter((item) => item.type.startsWith("image/"));
+
+      if (imageItems.length === 0) return;
+
+      const hasText = clipboardEvent.clipboardData?.getData("text/plain");
+      if (!hasText) e.preventDefault();
+
+      for (const item of imageItems) {
+        const file = item.getAsFile();
+        if (file) {
+          try {
+            file[IS_PASTED_IMAGE] = true;
+            await tamboThreadInput.addImage(file);
+          } catch (error) {
+            console.error("Failed to add pasted image:", error);
+          }
+        }
+      }
+    };
+
+    const editorElement = document.querySelector(
+      '[data-slot="message-input-textarea"]',
+    );
+    editorElement?.addEventListener("paste", handlePaste as EventListener);
+    return () =>
+      editorElement?.removeEventListener("paste", handlePaste as EventListener);
+  }, [enabled, tamboThreadInput]);
+
   // Tambo-specific commands (@ mentions for interactables)
-  const tamboCommands = React.useMemo((): CommandConfig[] => {
-    if (!onSubmit) return [];
+  return React.useMemo((): CommandConfig[] => {
+    if (!enabled) return [];
 
     // Function to get the resource items for the @ mention dropdown
     const getResourceItems = async (query: string): Promise<ResourceItem[]> => {
@@ -109,42 +133,30 @@ export function useTextEditor({
         HTMLAttributes: { class: "mention" },
       },
     ];
-  }, [onSubmit, tamboContextAttachment]);
+  }, [enabled, tamboContextAttachment, interactablesRef]);
+}
 
-  // Handle image paste from clipboard when onSubmit is provided
-  React.useEffect(() => {
-    if (!onSubmit) return;
-
-    const handlePaste = async (e: Event) => {
-      const clipboardEvent = e as ClipboardEvent;
-      const items = Array.from(clipboardEvent.clipboardData?.items ?? []);
-      const imageItems = items.filter((item) => item.type.startsWith("image/"));
-
-      if (imageItems.length === 0) return;
-
-      const hasText = clipboardEvent.clipboardData?.getData("text/plain");
-      if (!hasText) e.preventDefault();
-
-      for (const item of imageItems) {
-        const file = item.getAsFile();
-        if (file) {
-          try {
-            file[IS_PASTED_IMAGE] = true;
-            await tamboThreadInput.addImage(file);
-          } catch (error) {
-            console.error("Failed to add pasted image:", error);
-          }
-        }
-      }
-    };
-
-    const editorElement = document.querySelector(
-      '[data-slot="message-input-textarea"]',
-    );
-    editorElement?.addEventListener("paste", handlePaste as EventListener);
-    return () =>
-      editorElement?.removeEventListener("paste", handlePaste as EventListener);
-  }, [onSubmit, tamboThreadInput]);
+/**
+ * Custom hook that encapsulates all the TipTap editor setup logic.
+ * This makes the TextEditor component simpler and the editor logic more testable.
+ *
+ * @param options - Configuration options for the editor
+ * @returns The TipTap editor instance
+ */
+export function useTextEditor({
+  value,
+  onChange,
+  onKeyDown,
+  placeholder = "What do you want to do?",
+  disabled = false,
+  className,
+  commands: providedCommands = [],
+  onSubmit,
+  editorRef,
+  menuOpenRef: externalMenuOpenRef,
+}: UseTextEditorOptions) {
+  // Get Tambo-specific commands (enabled when onSubmit is provided)
+  const tamboCommands = useTamboCommands(!!onSubmit);
 
   // Merge provided commands with Tambo-specific commands
   const commands = React.useMemo(
