@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.122.3](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.122.2...repo-v0.122.3) (2025-11-18)
+
+
+### Bug Fixes
+
+* **tools:** Drop `propertyNames` from strictness validation ([#2078](https://github.com/tambo-ai/tambo-cloud/issues/2078)) ([8e16847](https://github.com/tambo-ai/tambo-cloud/commit/8e168475c37898231c6192b613a7365f493c5dec))
+
 ## [0.122.2](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.122.1...repo-v0.122.2) (2025-11-13)
 
 
