@@ -23,7 +23,6 @@ import {
 } from "./common/dto/mcp-access-token.dto";
 import { AuthService } from "./common/services/auth.service";
 import { extractContextInfo } from "./common/utils/extract-context-info";
-import { extractAndVerifyMcpAccessToken } from "./common/utils/oauth";
 import { ApiKeyGuard } from "./projects/guards/apikey.guard";
 import { BearerTokenGuard } from "./projects/guards/bearer-token.guard";
 
@@ -111,16 +110,16 @@ export class AppController {
   @ApiOperation({
     summary: "Refresh an MCP access token",
     description:
-      "Refreshes an existing thread-bound MCP access token. The old token must still be valid (not expired). Returns a new token with the same threadId and a fresh 15-minute expiration.",
+      "Generates a new thread-bound MCP access token for the specified thread. Uses existing authorization to validate access. Returns a new token with a fresh 15-minute expiration.",
   })
   @ApiResponse({
     status: 201,
-    description: "MCP access token refreshed successfully",
+    description: "MCP access token generated successfully",
     type: McpAccessTokenResponseDto,
   })
   @ApiResponse({
     status: 400,
-    description: "Bad request - invalid or expired token",
+    description: "Bad request - invalid authentication context",
   })
   @ApiResponse({
     status: 404,
@@ -131,37 +130,9 @@ export class AppController {
     @Req() request: Request,
   ): Promise<McpAccessTokenResponseDto> {
     const { projectId } = extractContextInfo(request, undefined);
+    const { threadId } = dto;
 
-    // Verify and extract the old token
-    const secret = process.env.API_KEY_SECRET;
-    if (!secret) {
-      throw new Error("API_KEY_SECRET is not configured");
-    }
-
-    const payload = await extractAndVerifyMcpAccessToken(
-      dto.mcpAccessToken,
-      secret,
-    );
-
-    // Extract claim - must be thread-bound token
-    const claim = payload["https://api.tambo.co/mcp"] as
-      | { projectId?: string; threadId?: string; contextKey?: string }
-      | undefined;
-
-    if (!claim?.threadId) {
-      throw new NotFoundException(
-        "Token must be a thread-bound token (not session-less)",
-      );
-    }
-
-    const { threadId } = claim;
-
-    // Verify the token's projectId matches the authenticated project
-    if (claim.projectId !== projectId) {
-      throw new NotFoundException("Token does not belong to this project");
-    }
-
-    // Verify thread still exists and belongs to project
+    // Verify thread exists and belongs to project
     const thread = await operations.getThreadForProjectId(
       this.authService.getDb(),
       threadId,
