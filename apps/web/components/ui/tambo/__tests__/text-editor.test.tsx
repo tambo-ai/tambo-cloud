@@ -129,19 +129,14 @@ describe("TextEditor - Smoke Tests", () => {
 
   describe("Props integration", () => {
     it("accepts editorRef prop", async () => {
-      const editorRef = { current: null };
+      const editorRef: React.MutableRefObject<any> = { current: null };
 
-      render(
-        <TextEditor
-          value=""
-          onChange={() => {}}
-          editorRef={editorRef as React.MutableRefObject<any>}
-        />,
-      );
+      render(<TextEditor value="" onChange={() => {}} editorRef={editorRef} />);
 
-      // After render, ref should be populated with editor instance
+      // After render, ref should be populated with a TipTap editor instance
       await waitFor(() => {
-        expect(editorRef.current).toBeTruthy();
+        expect(editorRef.current).not.toBeNull();
+        expect(typeof editorRef.current?.commands).toBe("object");
       });
     });
 
