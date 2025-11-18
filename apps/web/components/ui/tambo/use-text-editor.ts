@@ -4,6 +4,7 @@ import {
   useTamboThreadInput,
 } from "@tambo-ai/react";
 import Document from "@tiptap/extension-document";
+import HardBreak from "@tiptap/extension-hard-break";
 import Mention from "@tiptap/extension-mention";
 import Paragraph from "@tiptap/extension-paragraph";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -153,6 +154,12 @@ export function useTextEditor({
   // Handle Enter key to submit message when onSubmit is provided
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent, editor: Editor) => {
+      // Handle Shift+Enter to insert newline (TipTap default behavior)
+      if (e.key === "Enter" && e.shiftKey) {
+        // Let TipTap handle Shift+Enter naturally (inserts hard break)
+        return;
+      }
+
       // Handle Tambo-specific Enter key behavior
       if (onSubmit && e.key === "Enter" && !e.shiftKey && value.trim()) {
         e.preventDefault();
@@ -179,6 +186,7 @@ export function useTextEditor({
       Document,
       Paragraph,
       Text,
+      HardBreak,
       Placeholder.configure({ placeholder }),
       ...commands.map((cmd) => {
         return Mention.configure({
