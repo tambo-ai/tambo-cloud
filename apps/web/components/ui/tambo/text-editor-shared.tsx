@@ -260,24 +260,25 @@ export function createResourceItemConfig(
       const popupHandlers = createResourceItemPopup();
 
       /**
-       * Creates a wrapped command that checks for duplicates before inserting.
-       * Must be created inside onStart/onUpdate where editor is available.
+       * Creates a command handler that checks for duplicates before inserting.
+       * Simpler than the previous triple-nested curried function.
        */
-      const createWrapCommand =
-        (editor: Editor) =>
-        (tiptapCommand: (attrs: { id: string; label: string }) => void) =>
-        (item: ResourceItem) => {
-          // Check if mention already exists in the editor
-          if (hasExistingMention(editor, item.name)) {
-            // Don't insert duplicate mention
-            return;
-          }
+      function createCommandHandler(
+        editor: Editor,
+        tiptapCommand: (attrs: { id: string; label: string }) => void,
+        item: ResourceItem,
+      ) {
+        // Check if mention already exists in the editor
+        if (hasExistingMention(editor, item.name)) {
+          // Don't insert duplicate mention
+          return;
+        }
 
-          // Insert the command into the editor (e.g., "@ComponentName")
-          tiptapCommand({ id: item.id, label: item.name });
-          // Run custom logic (e.g., add context attachment, insert table, etc.)
-          onSelect?.(item);
-        };
+        // Insert the command into the editor (e.g., "@ComponentName")
+        tiptapCommand({ id: item.id, label: item.name });
+        // Run custom logic (e.g., add context attachment, insert table, etc.)
+        onSelect?.(item);
+      }
 
       return {
         /**
@@ -290,7 +291,8 @@ export function createResourceItemConfig(
             items: props.items,
             editor: props.editor,
             clientRect: props.clientRect,
-            command: createWrapCommand(props.editor)(props.command),
+            command: (item) =>
+              createCommandHandler(props.editor, props.command, item),
           });
         },
 
@@ -302,7 +304,8 @@ export function createResourceItemConfig(
           popupHandlers.onUpdate({
             items: props.items,
             clientRect: props.clientRect,
-            command: createWrapCommand(props.editor)(props.command),
+            command: (item) =>
+              createCommandHandler(props.editor, props.command, item),
           });
         },
 
@@ -319,12 +322,11 @@ export function createResourceItemConfig(
          * Cleans up the popup and updates the menu state.
          */
         onExit: () => {
-          // Delay setting menu to closed to give our handleKeyDown a chance to see it was open
-          // This prevents the form from submitting when Enter is used to select an item
-          setTimeout(() => {
-            if (isMenuOpenRef) isMenuOpenRef.current = false;
-          }, 100);
           popupHandlers.onExit();
+          // Set menu to closed after cleanup
+          // Note: We do this after popupHandlers.onExit() to ensure any pending
+          // keyboard events see the menu as still open
+          if (isMenuOpenRef) isMenuOpenRef.current = false;
         },
       };
     },
