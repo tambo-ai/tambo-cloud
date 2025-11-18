@@ -18,6 +18,7 @@ import {
   type CommandConfig,
   type ResourceItem,
 } from "./text-editor-shared";
+import { cn } from "@/lib/utils";
 
 export interface UseTextEditorOptions {
   value: string;
@@ -205,7 +206,14 @@ export function useTextEditor({
     onUpdate: ({ editor }) => onChange(editor.getText()),
     editorProps: {
       attributes: {
-        class: `tiptap prose prose-sm max-w-none focus:outline-none p-3 rounded-t-lg bg-transparent text-sm leading-relaxed min-h-[82px] max-h-[40vh] overflow-y-auto break-words whitespace-pre-wrap ${className ?? ""}`,
+        class: cn(
+          "tiptap prose prose-sm max-w-none focus:outline-none",
+          "p-3 rounded-t-lg bg-transparent",
+          "text-sm leading-relaxed",
+          "min-h-[82px] max-h-[40vh] overflow-y-auto",
+          "break-words whitespace-pre-wrap",
+          className,
+        ),
       },
       handleKeyDown: (view, event) => {
         // Prevent Enter from submitting form when selecting from menu
