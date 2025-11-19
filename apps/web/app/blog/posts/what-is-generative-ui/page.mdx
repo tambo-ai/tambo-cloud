@@ -11,39 +11,41 @@ export default function Layout(props) {
   return <BlogPost meta={frontmatter}>{props.children}</BlogPost>;
 }
 
-Generative UI is an interface that adapts in real-time to the user's context, which could include natural language input, their past interactions, or system data. Instead of a fixed experience everyone must learn, the software learns to fit what each user needs in the moment.
+Generative UI is an interface that *adapts in real-time* to the user's context, which could include natural language input, their past interactions, or system data. Instead of a fixed experience everyone must learn, *the software learns to fit what each user needs* in the moment.
 
 > "We used to adapt to software, now software will adapt to us."
 
 ## Why This Matters
 
-Traditional software forces a trade-off: either overwhelm users with features upfront or hide functionality behind menus they'll never find.
+Traditional software forces an impossible trade-off: either overwhelm users with features upfront or hide functionality behind menus they'll never find. Every product team knows this pain: the power users demand shortcuts and advanced features, while new users bounce because they're lost.
 
-Generative UI breaks this trade-off. The interface reveals complexity only when needed, adapting to each user's skill level and goals.
+Generative UI breaks this trade-off. The interface reveals complexity only when needed, adapting to each user's skill level and goals in real-time.
 
-**For users:** Software that responds to intent rather than demanding mastery of menus and shortcuts.
+This changes the game for both sides of the screen:
 
-**For developers:** Build once, personalize infinitely without writing branching logic for every user type.
+**For users,** it means software that responds to their intent rather than demanding they master an ever-growing maze of menus and shortcuts. No more hunting through documentation to find the one feature you need.
+
+**For developers,** it means you can build once and personalize infinitely: without writing branching logic for every user type, without maintaining separate "beginner" and "advanced" modes, without the constant pressure to simplify at the expense of power.
 
 ## Beyond Code Generation
 
-A common misconception: Generative UI means AI generating HTML on the fly or users "vibe-coding" their own apps.
+When people talk about "generative UI," they often mean different things. For some, it's using an LLM to write frontend code. For others, it means dynamically generating raw HTML on the fly. Both approaches have their place, but we think there's a better path for most applications: one that's more reliable for users and more practical for developers.
 
 The explosive popularity of AI code generation shows users crave more control and flexibility. But that doesn't mean everyone should become a programmer. Your parents shouldn't need to write code to customize their email client.
 
-Generative UI isn't about generating code; It's about developers building reliable, flexible software that AI can fit to individual needs. As this approach matures, the demand for users to build their own interfaces will actually decrease.
+Code generation is powerful: like having Lego blocks that let you build anything from scratch. But imagine if you had to assemble individual blocks every single time you wanted to build something. Instead, we think engineers should put those Lego blocks together into reusable "sets" that the AI can select and configure as needed. Similar to how we don't expect AIs to generate code for every action (we give them tools like MCP that help perform tasks), we shouldn't expect them to generate UI from scratch when we can provide well-designed components.
+
+This approach gives you the flexibility users want without the risk of generating code on the fly or missing an HTML tag. As this approach matures, the demand for users to build their own interfaces will actually decrease.
 
 ## The Component Model
 
 Instead of generating code from scratch, generative UI works with **predefined components**:
 
-1. **You build:** UI components with typed props and schemas
-2. **AI chooses:** Which components to use and how to configure them
+1. **You build:** UI components with typed props and schemas: such as a line graph, a flight picker, or a pre-filled form
+2. **AI chooses:** Which components to use and how to configure them: the LLM helps fill in the graph data, the available flights, or the best form defaults for the situation
 3. **Users get:** Personalized interfaces without custom code
 
-Think of it as Lego blocks for AI. You define the pieces. The AI assembles them based on what each user needs.
-
-> "Legos for the AI to build new experiences for each user."
+> "Pre-built components for the AI to assemble into new experiences for each user."
 
 The assistant can surface advanced features without cluttering the default view. No massive switch statements. No separate "power user" modes. Just flexible primitives that compose intelligently.
 
