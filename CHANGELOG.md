@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.122.4](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.122.3...repo-v0.122.4) (2025-11-19)
+
+
+### Miscellaneous Chores
+
+* **deps:** Bump @modelcontextprotocol/sdk ([#2080](https://github.com/tambo-ai/tambo-cloud/issues/2080)) ([36bd28e](https://github.com/tambo-ai/tambo-cloud/commit/36bd28ec5e82ea1a90636cdef594ab6f0e28da78))
+
+
+### Code Refactoring
+
+* **web:** simplify and improve TextEditor component architecture ([#2077](https://github.com/tambo-ai/tambo-cloud/issues/2077)) ([921a81a](https://github.com/tambo-ai/tambo-cloud/commit/921a81a5b2068281f4786a2fa6764eae766c754a))
+
 ## [0.122.3](https://github.com/tambo-ai/tambo-cloud/compare/repo-v0.122.2...repo-v0.122.3) (2025-11-18)
 
 
