@@ -1,3 +1,7 @@
+# -- Repo Archived, moved [here](https://github.com/tambo-ai/tambo) --
+
+This repository is no longer in use. The code has been merged into the main [tambo repo](https://github.com/tambo-ai/tambo).
+
 # Tambo Cloud Monorepo
 
 ## Overview
